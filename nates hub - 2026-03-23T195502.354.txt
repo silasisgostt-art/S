@@ -90,7 +90,7 @@ local function LoadConfig()
         end)
         if success and data then
             ConfigData = data
-            print("[NATESHUB] ✅ Config loaded!")
+            print("[NATESHvh] ✅ Config loaded!")
             return true
         end
     end
