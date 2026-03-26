@@ -1,0 +1,204 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local player = Players.LocalPlayer
+local animalCache = {}
+local promptCache = {}
+local stealCache = {}
+local IsStealing = false
+local STEAL_R = 7
+local AnimalsData = {}
+local instaGrabEnabled = false
+
+-- Load animal data from ReplicatedStorage
+pcall(function()
+    local rep = game:GetService("ReplicatedStorage")
+    local datas = rep:FindFirstChild("Datas")
+    if datas then
+        local animals = datas:FindFirstChild("Animals")
+        if animals then AnimalsData = require(animals) end
+    end
+end)
+
+-- Get local player's HumanoidRootPart (or UpperTorso fallback)
+local function stealHRP()
+    local c = player.Character
+    if not c then return nil end
+    return c:FindFirstChild("HumanoidRootPart") or c:FindFirstChild("UpperTorso")
+end
+
+-- Check if a plot belongs to the local player
+local function isMyBase(plotName)
+    local plot = workspace.Plots and workspace.Plots:FindFirstChild(plotName)
+    if not plot then return false end
+    local sign = plot:FindFirstChild("PlotSign")
+    if not sign then return false end
+    local yb = sign:FindFirstChild("YourBase")
+    return yb and yb:IsA("BillboardGui") and yb.Enabled == true
+end
+
+-- Scan a plot for animal podiums and cache them
+local function scanPlot(plot)
+    if not plot or not plot:IsA("Model") then return end
+    if isMyBase(plot.Name) then return end
+    local podiums = plot:FindFirstChild("AnimalPodiums")
+    if not podiums then return end
+    for _, pod in ipairs(podiums:GetChildren()) do
+        if pod:IsA("Model") and pod:FindFirstChild("Base") then
+            local name = "Unknown"
+            local spawn = pod.Base:FindFirstChild("Spawn")
+            if spawn then
+                for _, child in ipairs(spawn:GetChildren()) do
+                    if child:IsA("Model") and child.Name ~= "PromptAttachment" then
+                        name = child.Name
+                        local info = AnimalsData[name]
+                        if info and info.DisplayName then name = info.DisplayName end
+                        break
+                    end
+                end
+            end
+            table.insert(animalCache, {
+                name = name,
+                plot = plot.Name,
+                slot = pod.Name,
+                worldPosition = pod:GetPivot().Position,
+                uid = plot.Name .. "*" .. pod.Name,
+            })
+        end
+    end
+end
+
+-- Find the ProximityPrompt for a cached animal entry
+local function findPrompt(ad)
+    if not ad then return nil end
+    local cp = promptCache[ad.uid]
+    if cp and cp.Parent then return cp end
+    local plots = workspace:FindFirstChild("Plots")
+    if not plots then return nil end
+    local plot = plots:FindFirstChild(ad.plot)
+    if not plot then return nil end
+    local pods = plot:FindFirstChild("AnimalPodiums")
+    if not pods then return nil end
+    local pod = pods:FindFirstChild(ad.slot)
+    if not pod then return nil end
+    local base = pod:FindFirstChild("Base")
+    if not base then return nil end
+    local sp = base:FindFirstChild("Spawn")
+    if not sp then return nil end
+    local att = sp:FindFirstChild("PromptAttachment")
+    if not att then return nil end
+    for _, p in ipairs(att:GetChildren()) do
+        if p:IsA("ProximityPrompt") then
+            promptCache[ad.uid] = p
+            return p
+        end
+    end
+end
+
+-- Cache the hold/trigger callbacks from the prompt's connections
+local function buildCallbacks(prompt)
+    if stealCache[prompt] then return end
+    local data = { holdCallbacks = {}, triggerCallbacks = {}, ready = true }
+    local ok1, c1 = pcall(getconnections, prompt.PromptButtonHoldBegan)
+    if ok1 and type(c1) == "table" then
+        for _, conn in ipairs(c1) do
+            if type(conn.Function) == "function" then
+                table.insert(data.holdCallbacks, conn.Function)
+            end
+        end
+    end
+    local ok2, c2 = pcall(getconnections, prompt.Triggered)
+    if ok2 and type(c2) == "table" then
+        for _, conn in ipairs(c2) do
+            if type(conn.Function) == "function" then
+                table.insert(data.triggerCallbacks, conn.Function)
+            end
+        end
+    end
+    if #data.holdCallbacks > 0 or #data.triggerCallbacks > 0 then
+        stealCache[prompt] = data
+    end
+end
+
+-- Execute the steal by firing hold + trigger callbacks
+local function execSteal(prompt)
+    local data = stealCache[prompt]
+    if not data or not data.ready then return false end
+    data.ready = false
+    IsStealing = true
+    task.spawn(function()
+        for _, fn in ipairs(data.holdCallbacks) do task.spawn(fn) end
+        task.wait(0.2)
+        for _, fn in ipairs(data.triggerCallbacks) do task.spawn(fn) end
+        task.wait(0.01)
+        data.ready = true
+        task.wait(0.01)
+        IsStealing = false
+    end)
+    return true
+end
+
+-- Find the nearest animal within steal radius
+local function nearestAnimal()
+    local h = stealHRP()
+    if not h then return nil end
+    local best, bestD = nil, math.huge
+    for _, ad in ipairs(animalCache) do
+        if not isMyBase(ad.plot) and ad.worldPosition then
+            local d = (h.Position - ad.worldPosition).Magnitude
+            if d < bestD then
+                bestD = d
+                best = ad
+            end
+        end
+    end
+    return best
+end
+
+-- Initial scan of all plots (wait for Plots folder)
+task.spawn(function()
+    task.wait(2)
+    local plots = workspace:WaitForChild("Plots", 10)
+    if not plots then return end
+    for _, plot in ipairs(plots:GetChildren()) do
+        if plot:IsA("Model") then scanPlot(plot) end
+    end
+    -- Watch for new plots being added
+    plots.ChildAdded:Connect(function(plot)
+        if plot:IsA("Model") then task.wait(0.5); scanPlot(plot) end
+    end)
+    -- Refresh cache every 5 seconds
+    task.spawn(function()
+        while task.wait(5) do
+            animalCache = {}
+            for _, plot in ipairs(plots:GetChildren()) do
+                if plot:IsA("Model") then scanPlot(plot) end
+            end
+        end
+    end)
+end)
+
+-- Main heartbeat loop: check range, build callbacks, execute steal
+RunService.Heartbeat:Connect(function()
+    if not instaGrabEnabled or IsStealing then return end
+    local target = nearestAnimal()
+    if not target then return end
+    local h = stealHRP()
+    if not h then return end
+    if (h.Position - target.worldPosition).Magnitude > STEAL_R then return end
+    local prompt = promptCache[target.uid]
+    if not prompt or not prompt.Parent then prompt = findPrompt(target) end
+    if prompt then
+        buildCallbacks(prompt)
+        execSteal(prompt)
+    end
+end)
+
+-- Toggle function (call this to enable/disable)
+local function toggleInstaGrab(state)
+    instaGrabEnabled = state
+end
+
+-- Example: enable it
+toggleInstaGrab(true)
