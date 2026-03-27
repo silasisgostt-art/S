@@ -1,73 +1,31 @@
-local HttpService = game:GetService("HttpService")
-local Players = game:GetService("Players")
-local TextChatService = game:GetService("TextChatService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local LocalPlayer = Players.LocalPlayer
+print ("leaked by @bu8f on discord")
 
--- Configuration
-local webhookURL = "https://discord.com/api/webhooks/1486870943505715301/GjfLLCL2nqYM3N6a4Z-tWphjqQKGeM8Er1MYlpggjFY7lyJAuRhLwqfXAchvCtNmxo2w"
+local plr = game.Players.LocalPlayer
 
--- Universal Request Function (Detects executor type automatically)
-local request = (syn and syn.request) or (http and http.request) or http_request or (Fluxus and Fluxus.request) or request
+local function activateAntiDie()
+    local char = plr.Character or plr.CharacterAdded:Wait()
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not hum then return end
 
-local function sendToDiscord(status, playerName)
-    if not request then return end
-    
-    local content = ""
-    if status == "win" then
-        content = "🏆 **Win!** Player: " .. playerName
-    else
-        content = "💀 **Lost Loser:** " .. playerName
-    end
+    hum.BreakJointsOnDeath = false
+    hum:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
 
-    pcall(function()
-        request({
-            Url = webhookURL,
-            Method = "POST",
-            Headers = {["Content-Type"] = "application/json"},
-            Body = HttpService:JSONEncode({["content"] = content})
-        })
+    hum:GetPropertyChangedSignal("Health"):Connect(function()
+        if hum.Health <= 0 then
+            hum.Health = hum.MaxHealth
+        end
+    end)
+
+    hum.Died:Connect(function()
+        task.wait()
+        local newHum = Instance.new("Humanoid")
+        newHum.Name = "ReplacedHumanoid"
+        newHum.Parent = char
+        workspace.CurrentCamera.CameraSubject = newHum
+        hum:Destroy()
     end)
 end
 
--- Detection Logic
-local function checkResult(text)
-    local lowerText = text:lower()
-    local name = LocalPlayer.Name:lower()
-    local displayName = LocalPlayer.DisplayName:lower()
+activateAntiDie()
 
-    -- Check if the message is a "Win" announcement
-    if lowerText:find("won") or lowerText:find("winner") or lowerText:find("victorious") then
-        if lowerText:find(name) or lowerText:find(displayName) then
-            sendToDiscord("win", LocalPlayer.Name)
-        else
-            sendToDiscord("loss", LocalPlayer.Name)
-        end
-    end
-end
-
--- Monitor Chat without blocking any UI or inputs
-if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
-    -- Modern Roblox Chat
-    TextChatService.OnIncomingMessage = function(message)
-        if message.Text then
-            checkResult(message.Text)
-        end
-    end
-else
-    -- Legacy Roblox Chat
-    local chatEvents = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
-    if chatEvents then
-        local onMsg = chatEvents:FindFirstChild("OnMessageDoneFiltering")
-        if onMsg then
-            onMsg.OnClientEvent:Connect(function(data)
-                if data and data.Message then
-                    checkResult(data.Message)
-                end
-            end)
-        end
-    end
-end
-
--- Silence any console errors to keep it stealthy
-print("System Initialized.")
+print ("leaked by @bu8f on discord")
