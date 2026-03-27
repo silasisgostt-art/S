@@ -1,0 +1,147 @@
+local C = {
+    P = game:GetService("Players"),
+    RS = game:GetService("RunService"),
+    UIS = game:GetService("UserInputService"),
+    HS = game:GetService("HttpService"),
+    CG = game:GetService("CoreGui"),
+    lp = game:GetService("Players").LocalPlayer
+}
+
+local char, hum, hrp
+local function upd() 
+    char = C.lp.Character or C.lp.CharacterAdded:Wait()
+    hum = char:FindFirstChildOfClass("Humanoid")
+    hrp = char:FindFirstChild("HumanoidRootPart")
+end
+upd()
+
+-- Configuration & Save System
+local CFG_FILE = "TimCheeseConfig.json"
+local Config = {
+    Float = false, FloatH = 5, FloatS = 3,
+    Speed = false, BSpeed = 27, AntiDie = false
+}
+
+local function saveSettings()
+    if writefile then writefile(CFG_FILE, C.HS:JSONEncode(Config)) end
+end
+
+local function loadSettings()
+    if isfile and isfile(CFG_FILE) then
+        local ok, data = pcall(C.HS.JSONDecode, C.HS, readfile(CFG_FILE))
+        if ok then for k, v in pairs(data) do Config[k] = v end end
+    end
+end
+loadSettings()
+
+-- Anti-Die Logic (Directly from your file)
+local function applyAntiDie()
+    if not hum or not Config.AntiDie then return end
+    hum.BreakJointsOnDeath = false
+    hum:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
+
+    local connection
+    connection = hum:GetPropertyChangedSignal("Health"):Connect(function()
+        if Config.AntiDie and hum.Health <= 0 then
+            hum.Health = hum.MaxHealth
+        elseif not Config.AntiDie then
+            connection:Disconnect()
+        end
+    end)
+end
+
+-- Draggable Logic
+local function makeDraggable(frame)
+    local dragging, dragInput, dragStart, startPos
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true dragStart = input.Position startPos = frame.Position
+            input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end)
+        end
+    end)
+    C.UIS.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+end
+
+-- UI Construction
+local sg = Instance.new("ScreenGui", C.CG)
+local main = Instance.new("Frame", sg)
+main.Size, main.Position = UDim2.new(0, 150, 0, 260), UDim2.new(0.5, -75, 0.4, 0)
+main.BackgroundColor3, main.BorderSizePixel = Color3.fromRGB(18, 18, 18), 0
+Instance.new("UICorner", main)
+makeDraggable(main)
+
+local title = Instance.new("TextLabel", main)
+title.Size, title.Text, title.TextColor3 = UDim2.new(1, 0, 0, 30), "Tim Cheese Hub", Color3.fromRGB(255, 215, 0)
+title.BackgroundTransparency, title.Font, title.TextSize = 1, 3, 16
+
+local scroll = Instance.new("ScrollingFrame", main)
+scroll.Size, scroll.Position, scroll.BackgroundTransparency = UDim2.new(1, -10, 1, -40), UDim2.new(0, 5, 0, 35), 1
+scroll.CanvasSize, scroll.ScrollBarThickness = UDim2.new(0, 0, 0, 300), 0
+
+local function createToggle(txt, prop, cb)
+    local b = Instance.new("TextButton", scroll)
+    b.Size = UDim2.new(1, -5, 0, 26)
+    local function update()
+        b.Text = txt .. ": " .. (Config[prop] and "ON" or "OFF")
+        b.BackgroundColor3 = Config[prop] and Color3.fromRGB(45, 90, 45) or Color3.fromRGB(35, 35, 35)
+    end
+    b.Position = UDim2.new(0, 2, 0, #scroll:GetChildren() * 30 - 30)
+    b.TextColor3, b.Font, b.TextSize = Color3.new(1, 1, 1), 3, 14
+    Instance.new("UICorner", b)
+    b.MouseButton1Click:Connect(function()
+        Config[prop] = not Config[prop]
+        update()
+        saveSettings()
+        if cb then cb(Config[prop]) end
+    end)
+    update()
+end
+
+local function createInput(txt, prop)
+    local f = Instance.new("Frame", scroll)
+    f.Size, f.BackgroundTransparency = UDim2.new(1, -5, 0, 30), 1
+    f.Position = UDim2.new(0, 2, 0, #scroll:GetChildren() * 30 - 30)
+    
+    local l = Instance.new("TextLabel", f)
+    l.Size, l.Text, l.TextColor3, l.TextSize = UDim2.new(0.6, 0, 1, 0), txt, Color3.new(0.7, 0.7, 0.7), 12
+    l.BackgroundTransparency, l.TextXAlignment = 1, 0
+    
+    local t = Instance.new("TextBox", f)
+    t.Size, t.Position, t.BackgroundColor3 = UDim2.new(0.35, 0, 0.7, 0), UDim2.new(0.6, 0, 0.15, 0), Color3.fromRGB(40, 40, 40)
+    t.Text, t.TextColor3 = tostring(Config[prop]), Color3.new(1, 1, 1)
+    Instance.new("UICorner", t)
+    
+    t.FocusLost:Connect(function()
+        local val = tonumber(t.Text)
+        if val then Config[prop] = val saveSettings() else t.Text = tostring(Config[prop]) end
+    end)
+end
+
+-- Add Elements
+createToggle("Anti-Die", "AntiDie", function(v) if v then applyAntiDie() end end)
+createToggle("Float Dodge", "Float")
+createToggle("Speed Boost", "Speed")
+createInput("F-Height", "FloatH")
+createInput("F-Speed", "FloatS")
+createInput("WalkSpeed", "BSpeed")
+
+-- Logic Loop
+local fCount = 0
+C.RS.Heartbeat:Connect(function(dt)
+    if not hrp or not hum then upd() return end
+    if Config.Speed and hum.MoveDirection.Magnitude > 0 then
+        hrp.AssemblyLinearVelocity = Vector3.new(hum.MoveDirection.X * Config.BSpeed, hrp.AssemblyLinearVelocity.Y, hum.MoveDirection.Z * Config.BSpeed)
+    end
+    if Config.Float then
+        fCount = fCount + dt * Config.FloatS
+        hrp.Velocity = Vector3.new(hrp.Velocity.X, 0, hrp.Velocity.Z)
+        hrp.CFrame = hrp.CFrame * CFrame.new(0, math.sin(fCount) * (Config.FloatH * 0.05), 0)
+    end
+end)
+
+if Config.AntiDie then applyAntiDie() end
