@@ -7,9 +7,9 @@ local animalCache = {}
 local promptCache = {}
 local stealCache = {}
 local IsStealing = false
-local STEAL_R = 7
+local STEAL_R = 9
 local AnimalsData = {}
-local instaGrabEnabled = false
+local instaGrabEnabled = true 
 
 -- Load animal data from ReplicatedStorage
 pcall(function()
