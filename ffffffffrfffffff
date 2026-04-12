@@ -189,7 +189,7 @@ local stealPath1 = {
     {pos=Vector3.new(-474.7,-5.9,91.0)},
     {pos=Vector3.new(-476.1,-5.5,25.4)},
     {pos=Vector3.new(-472.612, -7.002, 26.491), checkpointRadius = PATH_CHECKPOINT_RADIUS},
-    {pos=Vector3.new(-483.128, -5.037, 26.443), teleportHere = true}
+    {pos=Vector3.new(-483.128, -5.037, 26.443), teleportHere = true, teleportOffset = Vector3.new(-5, 0, 0)}
 }
 
 local stealPath2 = {
@@ -199,7 +199,7 @@ local stealPath2 = {
     {pos=Vector3.new(-475.6,-5.8,29.3)},
     {pos=Vector3.new(-473.4,-5.9,111)},
     {pos=Vector3.new(-472.699, -7.002, 95.855), checkpointRadius = PATH_CHECKPOINT_RADIUS},
-    {pos=Vector3.new(-484.563, -5.103, 94.365), teleportHere = true}
+    {pos=Vector3.new(-484.563, -5.103, 94.365), teleportHere = true, teleportOffset = Vector3.new(-5, 0, 0)}
 }
 
 local function pathMoveToPoint(hrp, current, nextPoint, speed)
@@ -257,8 +257,8 @@ local function runStealPath(path)
         if not pathActive then return end
 
         if p.teleportHere then
-            local leftOffsetPos = p.pos - (hrpLocal.CFrame.RightVector * 2)
-            hrpLocal.CFrame = CFrame.new(leftOffsetPos, p.pos)
+            local offset = p.teleportOffset or Vector3.zero
+            hrpLocal.CFrame = CFrame.new(p.pos + offset)
             hrpLocal.AssemblyLinearVelocity = Vector3.zero
             return
         end
