@@ -59,6 +59,7 @@ local ConfigData = {
     buttonPositions = nil,
     tpUpEnabled = false,
     tpDownVisible = false,
+    finalSnapRadius = 3,
 }
 
 local buttonsLocked = false
@@ -68,6 +69,7 @@ local function SaveConfig()
     ConfigData.normalSpeed = SpeedBooster and SpeedBooster.NormalSpeed or 57.9
     ConfigData.stealSpeed = SpeedBooster and SpeedBooster.StealSpeed or 29.6
     ConfigData.jumpPower = SpeedBooster and SpeedBooster.JumpPower or 25.8
+    ConfigData.finalSnapRadius = SpeedBooster and SpeedBooster.FinalSnapRadius or 3
     ConfigData.stealRadius = InstaSteal and InstaSteal.Radius or 9
     ConfigData.fovValue = fovValue or 70
     ConfigData.fovEnabled = fovEnabled or false
@@ -121,6 +123,7 @@ SpeedBooster = {
     NormalSpeed = ConfigData.normalSpeed or 57.9,
     StealSpeed = ConfigData.stealSpeed or 29.6,
     JumpPower = ConfigData.jumpPower or 25.8,
+    FinalSnapRadius = ConfigData.finalSnapRadius or 3,
     HeartbeatConn = nil,
     JumpConn = nil
 }
@@ -157,7 +160,7 @@ local function startSpeedBooster()
         if SpeedBooster.Enabled and player.Character then
             local r = player.Character:FindFirstChild("HumanoidRootPart")
             if r then
-                r.AssemblyLinearaelocity = Vector3.new(r.AssemblyLinearVelocity.X, SpeedBooster.JumpPower, r.AssemblyLinearVelocity.Z)
+                r.AssemblyLinearVelocity = Vector3.new(r.AssemblyLinearVelocity.X, SpeedBooster.JumpPower, r.AssemblyLinearVelocity.Z)
             end
         end
     end)
@@ -181,7 +184,6 @@ local PATH_BASE_STOP = 1.35
 local PATH_MIN_STOP = 0.65
 local PATH_NEXT_POINT_BIAS = 0.45
 local PATH_SMOOTH_FACTOR = 0.12
-local PATH_FINAL_SNAP_RADIUS = 3
 
 local stealPath1 = {
     {pos=Vector3.new(-473,-7,30)},{pos=Vector3.new(-483,-5,18)},
@@ -205,7 +207,7 @@ local function pathMoveToPoint(hrp, current, nextPoint, speed, finalPoint)
             return 
         end
 
-        if finalPoint and (hrp.Position - finalPoint).Magnitude <= PATH_FINAL_SNAP_RADIUS then
+        if finalPoint and (hrp.Position - finalPoint).Magnitude <= SpeedBooster.FinalSnapRadius then
             snappedToFinal = true
             conn:Disconnect()
             hrp.CFrame = CFrame.new(finalPoint)
@@ -689,7 +691,7 @@ local function autoStealLoop()
     end)
 end
 
-initializeScanner()
+task.spawn(initializeScanner)
 autoStealLoop() -- ✅ STARTS IMMEDIATELY!
 
 -- ═══════════════════════════════════════════════════════
@@ -797,6 +799,7 @@ local function disableHitbox()
 end
 
 local AntiDeathEnabled = false
+local AntiDeath = { Conn = nil }
 
 local AntiRagdollConns = {}
 
@@ -2395,8 +2398,8 @@ local function createMainGUI(device)
     -- ✅ SPEED SETTINGS POPUP (NEXT TO BUTTON!)
     local SpeedSettingsGUI = Instance.new("Frame")
     SpeedSettingsGUI.Name = "SpeedSettingsGUI"
-    SpeedSettingsGUI.Size = UDim2.new(0, 200, 0, 210)
-    SpeedSettingsGUI.Position = UDim2.new(0.5, -100, 0.5, -105)
+    SpeedSettingsGUI.Size = UDim2.new(0, 200, 0, 180)
+    SpeedSettingsGUI.Position = UDim2.new(0.5, -100, 0.5, -90)
     SpeedSettingsGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
     SpeedSettingsGUI.BackgroundTransparency = 0.1
     SpeedSettingsGUI.BorderSizePixel = 0
@@ -2499,6 +2502,43 @@ local function createMainGUI(device)
     JumpCorner.CornerRadius = UDim.new(0, 6)
     JumpCorner.Parent = JumpPowerBox
 
+    local FinalRadiusLabel = Instance.new("TextLabel")
+    FinalRadiusLabel.Size = UDim2.new(0.6, 0, 0, 25)
+    FinalRadiusLabel.Position = UDim2.new(0, 10, 0, 125)
+    FinalRadiusLabel.BackgroundTransparency = 1
+    FinalRadiusLabel.Text = "Final Snap Radius:"
+    FinalRadiusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    FinalRadiusLabel.Font = Enum.Font.Gotham
+    FinalRadiusLabel.TextSize = 11
+    FinalRadiusLabel.TextXAlignment = Enum.TextXAlignment.Left
+    FinalRadiusLabel.Parent = SpeedSettingsGUI
+
+    local FinalRadiusBox = Instance.new("TextBox")
+    FinalRadiusBox.Size = UDim2.new(0, 60, 0, 25)
+    FinalRadiusBox.Position = UDim2.new(1, -70, 0, 125)
+    FinalRadiusBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    FinalRadiusBox.Text = tostring(SpeedBooster.FinalSnapRadius)
+    FinalRadiusBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    FinalRadiusBox.Font = Enum.Font.GothamBold
+    FinalRadiusBox.TextSize = 12
+    FinalRadiusBox.ClearTextOnFocus = false
+    FinalRadiusBox.Parent = SpeedSettingsGUI
+
+    local FinalRadiusCorner = Instance.new("UICorner")
+    FinalRadiusCorner.CornerRadius = UDim.new(0, 6)
+    FinalRadiusCorner.Parent = FinalRadiusBox
+
+    FinalRadiusBox.FocusLost:Connect(function()
+        local value = tonumber(FinalRadiusBox.Text)
+        if value then
+            SpeedBooster.FinalSnapRadius = math.clamp(value, 0.5, 50)
+            FinalRadiusBox.Text = tostring(SpeedBooster.FinalSnapRadius)
+            SaveConfig()
+        else
+            FinalRadiusBox.Text = tostring(SpeedBooster.FinalSnapRadius)
+        end
+    end)
+
     JumpPowerBox.FocusLost:Connect(function()
         local value = tonumber(JumpPowerBox.Text)
         if value then
@@ -2508,31 +2548,6 @@ local function createMainGUI(device)
             JumpPowerBox.Text = tostring(SpeedBooster.JumpPower)
         end
     end)
-
-    local FinalSnapLabel2 = Instance.new("TextLabel")
-    FinalSnapLabel2.Size = UDim2.new(0.6, 0, 0, 25)
-    FinalSnapLabel2.Position = UDim2.new(0, 10, 0, 125)
-    FinalSnapLabel2.BackgroundTransparency = 1
-    FinalSnapLabel2.Text = "Snap Radius:"
-    FinalSnapLabel2.TextColor3 = Color3.fromRGB(255, 255, 255)
-    FinalSnapLabel2.Font = Enum.Font.Gotham
-    FinalSnapLabel2.TextSize = 12
-    FinalSnapLabel2.TextXAlignment = Enum.TextXAlignment.Left
-    FinalSnapLabel2.Parent = SpeedSettingsGUI
-
-    finalSnapRadiusBox = Instance.new("TextBox")
-    finalSnapRadiusBox.Size = UDim2.new(0, 60, 0, 25)
-    finalSnapRadiusBox.Position = UDim2.new(1, -70, 0, 125)
-    finalSnapRadiusBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-    finalSnapRadiusBox.Text = tostring(PATH_FINAL_SNAP_RADIUS)
-    finalSnapRadiusBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-    finalSnapRadiusBox.Font = Enum.Font.GothamBold
-    finalSnapRadiusBox.TextSize = 12
-    finalSnapRadiusBox.Parent = SpeedSettingsGUI
-
-    local FinalSnapBoxCorner = Instance.new("UICorner")
-    FinalSnapBoxCorner.CornerRadius = UDim.new(0, 6)
-    FinalSnapBoxCorner.Parent = finalSnapRadiusBox
 
     normalSpeedBox.FocusLost:Connect(function()
         local value = tonumber(normalSpeedBox.Text)
@@ -2592,12 +2607,12 @@ local function createMainGUI(device)
         local n = tonumber(normalSpeedBox.Text)
         local s = tonumber(stealSpeedBox.Text)
         local j = tonumber(JumpPowerBox.Text)
-        local f = tonumber(finalSnapRadiusBox.Text)
+        local f = tonumber(FinalRadiusBox.Text)
 
         if n then SpeedBooster.NormalSpeed = n else normalSpeedBox.Text = tostring(SpeedBooster.NormalSpeed) end
         if s then SpeedBooster.StealSpeed = s else stealSpeedBox.Text = tostring(SpeedBooster.StealSpeed) end
         if j then SpeedBooster.JumpPower = j else JumpPowerBox.Text = tostring(SpeedBooster.JumpPower) end
-        if f and f > 0 then PATH_FINAL_SNAP_RADIUS = f else finalSnapRadiusBox.Text = tostring(PATH_FINAL_SNAP_RADIUS) end
+        if f then SpeedBooster.FinalSnapRadius = math.clamp(f, 0.5, 50) else FinalRadiusBox.Text = tostring(SpeedBooster.FinalSnapRadius) end
 
         SaveConfig()
     end)
