@@ -180,18 +180,23 @@ local PATH_BASE_STOP = 1.35
 local PATH_MIN_STOP = 0.65
 local PATH_NEXT_POINT_BIAS = 0.45
 local PATH_SMOOTH_FACTOR = 0.12
+local PATH_CHECKPOINT_RADIUS = 5
 
 local stealPath1 = {
-    {pos=Vector3.new(-470.6,-5.9,34.4)},{pos=Vector3.new(-484.2,-3.9,21.4)},
-    {pos=Vector3.new(-475.6,-5.8,29.3)},{pos=Vector3.new(-473.4,-5.9,111)}
+    -- Auto Right: checkpoint then final checkpoint
+    {pos=Vector3.new(-472.699, -7.002, 95.855), checkpointRadius = PATH_CHECKPOINT_RADIUS},
+    {pos=Vector3.new(-484.563, -5.103, 94.365)}
 }
 
 local stealPath2 = {
-    {pos=Vector3.new(-474.7,-5.9,91.0)},{pos=Vector3.new(-483.4,-3.9,97.3)},
-    {pos=Vector3.new(-474.7,-5.9,91.0)},{pos=Vector3.new(-476.1,-5.5,25.4)}
+    -- Auto Left return: checkpoint then final checkpoint
+    {pos=Vector3.new(-472.612, -7.002, 26.491), checkpointRadius = PATH_CHECKPOINT_RADIUS},
+    {pos=Vector3.new(-483.128, -5.037, 26.443)}
 }
 
 local function pathMoveToPoint(hrp, current, nextPoint, speed)
+    local currentPos = current.pos or current
+    local stopRadius = current.checkpointRadius or PATH_BASE_STOP
     local conn
     conn = RunService.Heartbeat:Connect(function()
         if not pathActive then 
@@ -201,11 +206,16 @@ local function pathMoveToPoint(hrp, current, nextPoint, speed)
         end
         
         local pos = hrp.Position
-        local target = Vector3.new(current.X, pos.Y, current.Z)
+        local target = Vector3.new(currentPos.X, pos.Y, currentPos.Z)
         local dir = target - pos
         local dist = dir.Magnitude
         
-        local stopDist = math.clamp(PATH_BASE_STOP - dist*0.04, PATH_MIN_STOP, PATH_BASE_STOP)
+        local stopDist
+        if current.checkpointRadius then
+            stopDist = stopRadius
+        else
+            stopDist = math.clamp(PATH_BASE_STOP - dist*0.04, PATH_MIN_STOP, PATH_BASE_STOP)
+        end
         
         if dist <= stopDist then 
             conn:Disconnect() 
@@ -228,7 +238,7 @@ local function pathMoveToPoint(hrp, current, nextPoint, speed)
         lastFlatVel = Vector3.new(vel.X, 0, vel.Z)
     end)
     
-    while pathActive and (Vector3.new(hrp.Position.X,0,hrp.Position.Z)-Vector3.new(current.X,0,current.Z)).Magnitude > PATH_BASE_STOP do
+    while pathActive and (Vector3.new(hrp.Position.X,0,hrp.Position.Z)-Vector3.new(currentPos.X,0,currentPos.Z)).Magnitude > stopRadius do
         RunService.Heartbeat:Wait()
     end
 end
@@ -246,7 +256,7 @@ local function runStealPath(path)
         end
         
         local nextP = path[i+1] and path[i+1].pos
-        pathMoveToPoint(hrpLocal, p.pos, nextP, speed)
+        pathMoveToPoint(hrpLocal, p, nextP, speed)
         task.wait()
     end
 end
@@ -1484,15 +1494,28 @@ local function refreshSmallButtonPositions()
         end
     end
 
-    local columns = 2
-    local buttonWidth = 110
+    local columns = 5
     local buttonHeight = 30
-    local gapX = 10
-    local gapY = 10
-    local startX = 15
-    local startY = 70
+    local rows = 3
+    local gapX = 8
+    local gapY = 8
+    local topPadding = 8
+    local sidePadding = 10
+    local viewport = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1280, 720)
+    local availableWidth = math.max(400, viewport.X - sidePadding * 2)
+    local buttonWidth = math.floor((availableWidth - gapX * (columns - 1)) / columns)
+    buttonWidth = math.clamp(buttonWidth, 70, 150)
+    local totalWidth = columns * buttonWidth + (columns - 1) * gapX
+    local startX = math.max(sidePadding, math.floor((viewport.X - totalWidth) / 2))
+    local startY = topPadding
 
     for index, frame in ipairs(visibleFrames) do
+        if index > (rows * columns) then
+            frame.Visible = false
+            continue
+        end
+
+        frame.Size = UDim2.new(0, buttonWidth, 0, buttonHeight)
         local row = math.floor((index - 1) / columns)
         local col = (index - 1) % columns
         frame.Position = UDim2.new(
