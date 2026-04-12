@@ -1,23 +1,17 @@
--- leaked by https://discord.gg/WfTDsBPR9n join for more cheap sources
+-- TIM CHEESE DUELS
 
 --[[
 ══════════════════════════════════════════════════════════════
-          NATESHUB💵👑 V7.0 FINAL COMPLETE
+                TIM CHEESE DUELS
 ══════════════════════════════════════════════════════════════
-✅ Drop Brainrot - EXACT from Kawatan Hub (NEW!)
-✅ Main Tab: Speed, Unwalk, Inf Jump, Ragdoll TP, Drop Brainrot, Anti Ragdoll
-✅ MISC auto-enables: FPS, Optimizer, Hitbox (ON at script start!)
-✅ ALL 9 small GUIs are DRAGGABLE/MOVABLE
-✅ Tutorial under Credits with instructions
-✅ FOV warning about settings requirement
+✅ Speed, Unwalk, Inf Jump, Ragdoll TP, Drop Brainrot
+✅ FPS, Optimizer, Hitbox, auto buttons, right-side controls
+✅ Draggable small GUI buttons
 ✅ Config auto-loads on join
-✅ Anti Ragdoll & Ragdoll TP removed from MISC (in Main now)
-✅ EVERYTHING WORKING PERFECTLY!
 ══════════════════════════════════════════════════════════════
 ]]
 
 repeat task.wait() until game:IsLoaded()
-print("[NATESHUB] Script started loading...")
 
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
@@ -28,7 +22,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
 local Lighting = game:GetService("Lighting")
 
-local player = Players.LocalPlayer
+local player = Players.LocalPlayer or Players:GetPlayers()[1] or Players.PlayerAdded:Wait()
+local PlayerGui = player:WaitForChild("PlayerGui")
 local character
 local hrp
 local hum
@@ -46,7 +41,7 @@ player.CharacterAdded:Connect(setupCharacter)
 -- CONFIG SAVE/LOAD SYSTEM (AUTO-LOADS!)
 -- ═══════════════════════════════════════════════════════
 
-local CONFIG_FILE = "nateshub_v6_config.json"
+local CONFIG_FILE = "timcheeseduels_config.json"
 
 local ConfigData = {
     speedEnabled = false,
@@ -63,6 +58,9 @@ local ConfigData = {
 }
 
 local buttonsLocked = false
+local getButtonPositions
+local SmallTPDownGUI, SmallTPDownButton, TPDownDot
+local SmallTPUpGUI, SmallTPUpButton, TPUpDot
 
 local function SaveConfig()
     ConfigData.speedEnabled = SpeedBooster and SpeedBooster.Enabled or false
@@ -82,14 +80,14 @@ local function SaveConfig()
             writefile(CONFIG_FILE, HttpService:JSONEncode(ConfigData))
         end)
         if success then
-            print("[NATESHUB] ✅ Config saved!")
+            print("[TIM CHEESE DUELS] ✅ Config saved!")
             return true
         else
-            warn("[NATESHUB] ❌ Save failed:", err)
+            warn("[TIM CHEESE DUELS] ❌ Save failed:", err)
             return false
         end
     else
-        warn("[NATESHUB] ⚠️ writefile not available")
+        warn("[TIM CHEESE DUELS] ⚠️ writefile not available")
         return false
     end
 end
@@ -102,7 +100,7 @@ local function LoadConfig()
         if success and data then
             ConfigData = data
             buttonsLocked = ConfigData.buttonsLocked or false
-            print("[NATESHUB] ✅ Config loaded!")
+            print("[TIM CHEESE DUELS] ✅ Config loaded!")
             return true
         end
     end
@@ -182,36 +180,24 @@ local PATH_BASE_STOP = 1.35
 local PATH_MIN_STOP = 0.65
 local PATH_NEXT_POINT_BIAS = 0.45
 local PATH_SMOOTH_FACTOR = 0.12
-local PATH_FINAL_SNAP_RADIUS = 5
 
 local stealPath1 = {
-    {pos=Vector3.new(-473,-7,30)},{pos=Vector3.new(-483,-5,18)},
-    {pos=Vector3.new(-475,-7,26)},{pos=Vector3.new(-472.699,-7.002,95.855)},
-    {pos=Vector3.new(-484.563,-5.103,94.365)},{pos=Vector3.new(-482.631,-5.103,98.310)}
+    {pos=Vector3.new(-470.6,-5.9,34.4)},{pos=Vector3.new(-484.2,-3.9,21.4)},
+    {pos=Vector3.new(-475.6,-5.8,29.3)},{pos=Vector3.new(-473.4,-5.9,111)}
 }
 
 local stealPath2 = {
-    {pos=Vector3.new(-472,-7,90)},{pos=Vector3.new(-484,-5,100)},
-    {pos=Vector3.new(-475,-7,93)},{pos=Vector3.new(-472.612,-7.002,26.491)},
-    {pos=Vector3.new(-483.128,-5.037,26.443)}
+    {pos=Vector3.new(-474.7,-5.9,91.0)},{pos=Vector3.new(-483.4,-3.9,97.3)},
+    {pos=Vector3.new(-474.7,-5.9,91.0)},{pos=Vector3.new(-476.1,-5.5,25.4)}
 }
 
-local function pathMoveToPoint(hrp, current, nextPoint, speed, finalPoint)
+local function pathMoveToPoint(hrp, current, nextPoint, speed)
     local conn
-    local snappedToFinal = false
     conn = RunService.Heartbeat:Connect(function()
         if not pathActive then 
             conn:Disconnect()
             hrp.AssemblyLinearVelocity = Vector3.zero 
             return 
-        end
-
-        if finalPoint and (hrp.Position - finalPoint).Magnitude <= PATH_FINAL_SNAP_RADIUS then
-            snappedToFinal = true
-            conn:Disconnect()
-            hrp.CFrame = CFrame.new(finalPoint)
-            hrp.AssemblyLinearVelocity = Vector3.zero
-            return
         end
         
         local pos = hrp.Position
@@ -242,16 +228,13 @@ local function pathMoveToPoint(hrp, current, nextPoint, speed, finalPoint)
         lastFlatVel = Vector3.new(vel.X, 0, vel.Z)
     end)
     
-    while pathActive and not snappedToFinal and (Vector3.new(hrp.Position.X,0,hrp.Position.Z)-Vector3.new(current.X,0,current.Z)).Magnitude > PATH_BASE_STOP do
+    while pathActive and (Vector3.new(hrp.Position.X,0,hrp.Position.Z)-Vector3.new(current.X,0,current.Z)).Magnitude > PATH_BASE_STOP do
         RunService.Heartbeat:Wait()
     end
-
-    return snappedToFinal
 end
 
 local function runStealPath(path)
     local hrpLocal = (player.Character or player.CharacterAdded:Wait()):WaitForChild("HumanoidRootPart")
-    local finalPoint = path[#path] and path[#path].pos
     for i, p in ipairs(path) do
         if not pathActive then return end
         
@@ -263,10 +246,8 @@ local function runStealPath(path)
         end
         
         local nextP = path[i+1] and path[i+1].pos
-        local snapped = pathMoveToPoint(hrpLocal, p.pos, nextP, speed, finalPoint)
-        if snapped then
-            return
-        end
+        pathMoveToPoint(hrpLocal, p.pos, nextP, speed)
+        task.wait()
     end
 end
 
@@ -275,6 +256,7 @@ local function startStealPath(path)
     task.spawn(function() 
         while pathActive do 
             runStealPath(path) 
+            task.wait(0.1) 
         end 
     end)
 end
@@ -437,13 +419,7 @@ InstaSteal = {
 
 local AnimalsData = {}
 pcall(function()
-    local datas = ReplicatedStorage:WaitForChild("Datas", 5)
-    if datas then
-        local animals = datas:WaitForChild("Animals", 5)
-        if animals then
-            AnimalsData = require(animals)
-        end
-    end
+    AnimalsData = require(ReplicatedStorage:WaitForChild("Datas"):WaitForChild("Animals"))
 end)
 
 local allAnimalsCache = {}
@@ -696,7 +672,7 @@ local function autoStealLoop()
     end)
 end
 
-task.spawn(initializeScanner)
+initializeScanner()
 autoStealLoop() -- ✅ STARTS IMMEDIATELY!
 
 -- ═══════════════════════════════════════════════════════
@@ -804,7 +780,7 @@ local function disableHitbox()
 end
 
 local AntiDeathEnabled = false
-local AntiDeath = { Conn = nil }
+local AntiDeath = {Conn = nil}
 
 local AntiRagdollConns = {}
 
@@ -817,7 +793,7 @@ local function enableAntiRagdoll()
     local cam = workspace.CurrentCamera
     local animator = humanoid:WaitForChild("Animator")
     
-    -- ✅ EXACT VALUES FROM YOUR NATESHUB SCRIPT!
+    -- Tuned anti-ragdoll values
     local maxVelocity = 40
     local clampVelocity = 25
     local maxClamp = 15
@@ -904,7 +880,7 @@ local function disableAntiRagdoll()
 end
 
 -- ═══════════════════════════════════════════════════════
--- ✅ RAGDOLL TP (EXACT FROM YOUR SOURCE!)
+-- RAGDOLL TP
 -- ═══════════════════════════════════════════════════════
 
 local RAGDOLL_COORDS = {
@@ -1003,7 +979,7 @@ if player.Character then
 end
 
 -- ═══════════════════════════════════════════════════════
--- ✅ DROP BRAINROT (EXACT FROM KAWATAN HUB!)
+-- DROP BRAINROT
 -- ═══════════════════════════════════════════════════════
 
 local dropBusy = false
@@ -1057,7 +1033,7 @@ local floatJumpConn = nil
 local floatTargetY = nil
 
 -- TP UP state (teleport up on jump when enabled)
-local TPUpEnabled = false
+TPUpEnabled = false
 local TPUpJumpConn = nil
 
 local function startFloat()
@@ -1305,33 +1281,20 @@ end
 
 local selectedDevice = nil
 local GUI_SIZES = {
-    PC = {Width = 450, Height = 340},
-    iPad = {Width = 360, Height = 310},
-    iPhone = {Width = 220, Height = 300}
+    PC = {Width = 520, Height = 400},
+    iPad = {Width = 420, Height = 360},
+    iPhone = {Width = 260, Height = 360}
 }
 
 -- ═══════════════════════════════════════════════════════
 -- MAIN SCREENGUI
 -- ═══════════════════════════════════════════════════════
 
--- Destroy old GUI if re-running
-pcall(function()
-    local old = CoreGui:FindFirstChild("tim cheese duels")
-    if old then old:Destroy() end
-end)
-
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "tim cheese duels"
+ScreenGui.Name = "TimCheeseDuelsGUI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-local guiOk = pcall(function() ScreenGui.Parent = CoreGui end)
-if not guiOk then
-    pcall(function()
-        if syn and syn.protect_gui then syn.protect_gui(ScreenGui) end
-        ScreenGui.Parent = player.PlayerGui
-    end)
-end
-print("[NATESHUB] GUI parented:", ScreenGui.Parent and ScreenGui.Parent.Name or "FAILED")
+ScreenGui.Parent = PlayerGui
 
 -- Rainbow outline: cycles UIStroke colors across the GUI
 local function startRainbowOutline()
@@ -1436,11 +1399,11 @@ end)
 
 local SmallGUIInstances = {}
 
-local function createSmallGUI(name, yPosition, hasGear)
+local function createSmallGUI(name, yPosition)
     local SmallGUI = Instance.new("Frame")
     SmallGUI.Name = "Small"..name.."GUI"
-    SmallGUI.Size = UDim2.new(0, 96, 0, 26)
-    SmallGUI.Position = UDim2.new(0.5, -48, 0, yPosition)
+    SmallGUI.Size = UDim2.new(0, 110, 0, 30)
+    SmallGUI.Position = UDim2.new(0.5, -55, 0, yPosition)
     SmallGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
     SmallGUI.BackgroundTransparency = 0.3
     SmallGUI.BorderSizePixel = 0
@@ -1471,46 +1434,31 @@ local function createSmallGUI(name, yPosition, hasGear)
     DotCorner.Parent = GreenDot
     
     local Label = Instance.new("TextLabel")
-    Label.Size = hasGear and UDim2.new(1, -70, 1, 0) or UDim2.new(1, -45, 1, 0)
+    Label.Size = UDim2.new(1, -45, 1, 0)
     Label.Position = UDim2.new(0, 25, 0, 0)
     Label.BackgroundTransparency = 1
     Label.Text = name
     Label.TextColor3 = Color3.fromRGB(255, 255, 255)
     Label.Font = Enum.Font.GothamBold
-    Label.TextSize = 10
+    Label.TextSize = 11
     Label.TextXAlignment = Enum.TextXAlignment.Left
     Label.Parent = SmallGUI
     
-    local GearButton = nil
-    if hasGear then
-        GearButton = Instance.new("TextButton")
-        GearButton.Name = "SettingsButton"
-        GearButton.Size = UDim2.new(0, 22, 1, 0)
-        GearButton.Position = UDim2.new(1, -52, 0, 0)
-        GearButton.BackgroundTransparency = 1
-        GearButton.Text = "⚙"
-        GearButton.TextColor3 = Color3.fromRGB(255, 215, 0)
-        GearButton.Font = Enum.Font.GothamBold
-        GearButton.TextSize = 14
-        GearButton.ZIndex = 2
-        GearButton.Parent = SmallGUI
-    end
-
     -- ✅ CLICK BUTTON (smaller, on right side only - doesn't block dragging!)
     local Button = Instance.new("TextButton")
-    Button.Size = hasGear and UDim2.new(0, 26, 1, 0) or UDim2.new(0, 30, 1, 0)
-    Button.Position = hasGear and UDim2.new(1, -28, 0, 0) or UDim2.new(1, -30, 0, 0)
+    Button.Size = UDim2.new(0, 30, 1, 0)
+    Button.Position = UDim2.new(1, -30, 0, 0)
     Button.BackgroundTransparency = 1
     Button.Text = "⚡"
     Button.TextColor3 = Color3.fromRGB(138, 43, 226)
     Button.Font = Enum.Font.GothamBold
-    Button.TextSize = 14
+    Button.TextSize = 16
     Button.ZIndex = 2
     Button.Parent = SmallGUI
     
-    SmallGUIInstances[name] = {Frame = SmallGUI, Label = Label, Button = Button, Dot = GreenDot, GearButton = GearButton}
+    SmallGUIInstances[name] = {Frame = SmallGUI, Label = Label, Button = Button, Dot = GreenDot}
     
-    return SmallGUI, Button, GreenDot, GearButton
+    return SmallGUI, Button, GreenDot
 end
 
 local SmallButtonOrder = {
@@ -1536,32 +1484,29 @@ local function refreshSmallButtonPositions()
         end
     end
 
-    local maxButtons = 10
-    local columns = 5
-    local buttonWidth = 96
-    local buttonHeight = 26
+    local columns = 2
+    local buttonWidth = 110
+    local buttonHeight = 30
     local gapX = 10
     local gapY = 10
-    local startY = 15
+    local startX = 15
+    local startY = 70
 
     for index, frame in ipairs(visibleFrames) do
-        if index > maxButtons then
-            frame.Visible = false
-        else
-            local row = math.floor((index - 1) / columns)
-            local col = (index - 1) % columns
-            local rowCount = math.min(columns, maxButtons - row * columns)
-            local totalWidth = rowCount * buttonWidth + (rowCount - 1) * gapX
-            local xOffset = -math.floor(totalWidth / 2) + col * (buttonWidth + gapX)
-
-            frame.Position = UDim2.new(0.5, xOffset, 0, startY + row * (buttonHeight + gapY))
-            frame.Visible = true
-        end
+        local row = math.floor((index - 1) / columns)
+        local col = (index - 1) % columns
+        frame.Position = UDim2.new(
+            0,
+            startX + col * (buttonWidth + gapX),
+            0,
+            startY + row * (buttonHeight + gapY)
+        )
+        frame.Visible = true
     end
 end
 
 -- ✅ CREATE ALL SMALL GUIs WITH GREEN DOTS!
-local SmallSpeedGUI, SmallSpeedButton, SpeedDot, SmallSpeedGear = createSmallGUI("Speed", 100, true)
+local SmallSpeedGUI, SmallSpeedButton, SpeedDot = createSmallGUI("Speed", 100)
 local SmallUnwalkGUI, SmallUnwalkButton, UnwalkDot = createSmallGUI("Unwalk", 145)
 local SmallSpinBotGUI, SmallSpinBotButton, SpinDot = createSmallGUI("Spin Bot", 190)
 local SmallInfJumpGUI, SmallInfJumpButton, InfJumpDot = createSmallGUI("Inf Jump", 235)
@@ -1570,8 +1515,8 @@ local SmallFOVGUI, SmallFOVButton, FOVDot = createSmallGUI("FOV", 325)
 local SmallAntiRagGUI, SmallAntiRagButton, AntiRagDot = createSmallGUI("Anti Ragdoll", 370) -- ✅ Standalone!
 local SmallRagdollTPGUI, SmallRagdollTPButton, RagdollTPDot = createSmallGUI("Ragdoll TP", 415) -- ✅ NEW!
 local SmallDropGUI, SmallDropButton, DropDot = createSmallGUI("Drop Brainrot", 460) -- ✅ NEW!
-local SmallTPDownGUI, SmallTPDownButton, TPDownDot = createSmallGUI("TP Down", 505)
-local SmallTPUpGUI, SmallTPUpButton, TPUpDot = createSmallGUI("TP Up", 550)
+SmallTPDownGUI, SmallTPDownButton, TPDownDot = createSmallGUI("TP Down", 505)
+SmallTPUpGUI, SmallTPUpButton, TPUpDot = createSmallGUI("TP Up", 550)
 
 local function serializeUDim2(value)
     return {
@@ -1587,7 +1532,7 @@ local function deserializeUDim2(data)
     return UDim2.new(data.XScale or 0, data.XOffset or 0, data.YScale or 0, data.YOffset or 0)
 end
 
-local function getButtonPositions()
+getButtonPositions = function()
     return {
         Speed = serializeUDim2(SmallSpeedGUI.Position),
         Unwalk = serializeUDim2(SmallUnwalkGUI.Position),
@@ -1927,8 +1872,8 @@ end)
 
 local StealBarContainer = Instance.new("Frame")
 StealBarContainer.Name = "StealBarContainer"
-StealBarContainer.Size = UDim2.new(0, 280, 0, 44)
-StealBarContainer.Position = UDim2.new(0.5, -140, 1, -84)
+StealBarContainer.Size = UDim2.new(0, 320, 0, 50)
+StealBarContainer.Position = UDim2.new(0.5, -160, 1, -90)
 StealBarContainer.BackgroundColor3 = Color3.fromRGB(20, 25, 20)
 StealBarContainer.BorderSizePixel = 0
 StealBarContainer.Parent = ScreenGui
@@ -2189,7 +2134,7 @@ local function createMainGUI(device)
     TitleLabel.Size = UDim2.new(0, 150, 1, 0)
     TitleLabel.Position = UDim2.new(0, 50, 0, 0)
     TitleLabel.BackgroundTransparency = 1
-    TitleLabel.Text = "tim cheese duels"
+    TitleLabel.Text = "TIM CHEESE DUELS"
     TitleLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
     TitleLabel.Font = Enum.Font.GothamBold
     TitleLabel.TextSize = titleSize
@@ -2272,7 +2217,7 @@ local function createMainGUI(device)
     local MainTab = createTab("🛡️", "Main", 1)
     local MISCTab = createTab("🔧", "MISC", 2)
     local SettingsTab = createTab("⚙️", "Settings", 3)
-    local CreditsTab = createTab("⭐", "Credits", 4)
+    local CreditsTab = createTab("⭐", "Info", 4)
 
     local ContentContainer = Instance.new("Frame")
     ContentContainer.Size = UDim2.new(1, -sidebarWidth - 20, 1, -70)
@@ -2564,38 +2509,6 @@ local function createMainGUI(device)
         SpeedSettingsGUI.Visible = not SpeedSettingsGUI.Visible
     end)
 
-    if SmallSpeedGear then
-        SmallSpeedGear.MouseButton1Click:Connect(function()
-            SpeedSettingsGUI.Visible = not SpeedSettingsGUI.Visible
-        end)
-    end
-
-    local SpeedSaveBtn = Instance.new("TextButton")
-    SpeedSaveBtn.Size = UDim2.new(0, 70, 0, 22)
-    SpeedSaveBtn.Position = UDim2.new(0.5, -35, 1, -26)
-    SpeedSaveBtn.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-    SpeedSaveBtn.Text = "SAVE"
-    SpeedSaveBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    SpeedSaveBtn.Font = Enum.Font.GothamBold
-    SpeedSaveBtn.TextSize = 12
-    SpeedSaveBtn.Parent = SpeedSettingsGUI
-
-    local SpeedSaveCorner = Instance.new("UICorner")
-    SpeedSaveCorner.CornerRadius = UDim.new(0, 6)
-    SpeedSaveCorner.Parent = SpeedSaveBtn
-
-    SpeedSaveBtn.MouseButton1Click:Connect(function()
-        local n = tonumber(normalSpeedBox.Text)
-        local s = tonumber(stealSpeedBox.Text)
-        local j = tonumber(JumpPowerBox.Text)
-
-        if n then SpeedBooster.NormalSpeed = n else normalSpeedBox.Text = tostring(SpeedBooster.NormalSpeed) end
-        if s then SpeedBooster.StealSpeed = s else stealSpeedBox.Text = tostring(SpeedBooster.StealSpeed) end
-        if j then SpeedBooster.JumpPower = j else JumpPowerBox.Text = tostring(SpeedBooster.JumpPower) end
-
-        SaveConfig()
-    end)
-
     -- ✅ TP DOWN (under Speed)
     local TPDownContainer, TPDownBtn, TPDownLabel = createMainButton("TP Down", 2, function()
         SmallTPDownGUI.Visible = true
@@ -2830,15 +2743,21 @@ local function createMainGUI(device)
         
         -- ✅ FPS Booster
         enableFPSBooster()
-        fpsButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        if fpsButton then
+            fpsButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        end
         
         -- ✅ Optimizer
         enableOptimizer()
-        optimizerButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        if optimizerButton then
+            optimizerButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        end
         
         -- ✅ Hitbox Expander
         enableHitbox()
-        hitboxButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        if hitboxButton then
+            hitboxButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        end
         
         -- ✅ Anti Death
         AntiDeathEnabled = true
@@ -2851,9 +2770,11 @@ local function createMainGUI(device)
                 end
             end)
         end
-        antiDeathButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        if antiDeathButton then
+            antiDeathButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        end
         
-        print("[NATESHUB] ✅ Auto-enabled ALL MISC: FPS Booster, Optimizer, Hitbox, Anti Death")
+        print("[TIM CHEESE DUELS] ✅ Auto-enabled ALL MISC: FPS Booster, Optimizer, Hitbox, Anti Death")
     end)
 
     local function createMISCButton(name, order, callback)
@@ -3093,9 +3014,9 @@ local function initializeGUI(device)
         end
         
         refreshSmallButtonPositions()
-        print("[NATESHUB] ✅ Auto-enabled for "..device..": Speed, Unwalk, Anti Rag, Ragdoll TP")
-        print("[NATESHUB] ✅ Visible Small GUIs: Speed, Unwalk, Anti Rag, Ragdoll TP, Drop (OFF)")
-        print("[NATESHUB] ⚪ Hidden Small GUIs: Inf Jump, Spin Bot, Float, FOV (turn on from Main tab)")
+        print("[TIM CHEESE DUELS] ✅ Auto-enabled for "..device..": Speed, Unwalk, Anti Rag, Ragdoll TP")
+        print("[TIM CHEESE DUELS] ✅ Visible Small GUIs: Speed, Unwalk, Anti Rag, Ragdoll TP, Drop (OFF)")
+        print("[TIM CHEESE DUELS] ⚪ Hidden Small GUIs: Inf Jump, Spin Bot, Float, FOV (turn on from Main tab)")
     end)
 
     createMainGUI(device)
@@ -3136,14 +3057,11 @@ iPadButton.MouseButton1Click:Connect(function() initializeGUI("iPad") end)
 iPhoneButton.MouseButton1Click:Connect(function() initializeGUI("iPhone") end)
 
 function createOpenButton(device)
-    local buttonSize = device == "iPhone" and 48 or 60
-    local rightMargin = 15
-    local gap = 10
-    local col1X = -(buttonSize * 2) - gap - rightMargin
+    local buttonSize = device == "iPhone" and 55 or 70
 
     local OpenButton = Instance.new("TextButton")
     OpenButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    OpenButton.Position = UDim2.new(1, col1X, 0, 15)
+    OpenButton.Position = UDim2.new(0, 15, 0.5, -buttonSize/2)
     OpenButton.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
     OpenButton.BackgroundTransparency = 0.2
     OpenButton.Text = "OPEN"
@@ -3194,17 +3112,13 @@ end
 local AutoLeftSmallGUI, AutoRightSmallGUI
 
 function createAutoButtons(device)
-    local buttonSize = device == "iPhone" and 48 or 60
-    local rightMargin = 15
-    local gap = 10
-    local topOffset = buttonSize + 30
-    local col1X = -(buttonSize * 2) - gap - rightMargin
-    local col2X = -buttonSize - rightMargin
+    local buttonSize = device == "iPhone" and 55 or 70
+    local yOffset = buttonSize + 10
 
     -- ✅ AUTO LEFT Button (GRAY!)
     local AutoLeftButton = Instance.new("TextButton")
     AutoLeftButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    AutoLeftButton.Position = UDim2.new(1, col1X, 0, topOffset)
+    AutoLeftButton.Position = UDim2.new(0, 15, 0.5, -buttonSize/2 + yOffset)
     AutoLeftButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75) -- ✅ GRAY!
     AutoLeftButton.BackgroundTransparency = 0.3
     AutoLeftButton.Text = "AUTO\nLEFT"
@@ -3225,7 +3139,7 @@ function createAutoButtons(device)
     -- ✅ AUTO RIGHT Button (SIDE BY SIDE - GRAY!)
     local AutoRightButton = Instance.new("TextButton")
     AutoRightButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    AutoRightButton.Position = UDim2.new(1, col2X, 0, topOffset)
+    AutoRightButton.Position = UDim2.new(0, 15 + buttonSize + 10, 0.5, -buttonSize/2 + yOffset)
     AutoRightButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75) -- ✅ GRAY!
     AutoRightButton.BackgroundTransparency = 0.3
     AutoRightButton.Text = "AUTO\nRIGHT"
@@ -3277,17 +3191,12 @@ end
 -- ═══════════════════════════════════════════════════════
 
 function createRightButtons(device)
-    local buttonSize = device == "iPhone" and 52 or 64
-    local rightMargin = 15
-    local gap = 10
-    local topOffset = buttonSize * 2 + 40
-    local col1X = -(buttonSize * 2) - gap - rightMargin
-    local col2X = -buttonSize - rightMargin
+    local buttonSize = device == "iPhone" and 60 or 75
 
     -- ✅ TRACK PLAYER Button (RIGHT SIDE - GRAY!)
     local TrackPlayerButton = Instance.new("TextButton")
     TrackPlayerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    TrackPlayerButton.Position = UDim2.new(1, col1X, 0, topOffset)
+    TrackPlayerButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize - 10)
     TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75) -- ✅ GRAY!
     TrackPlayerButton.BackgroundTransparency = 0.3
     TrackPlayerButton.Text = "TRACK\nPLAYER"
@@ -3320,7 +3229,7 @@ function createRightButtons(device)
     -- ✅ HIT CIRCLE Button (UNDER TRACK PLAYER - GRAY!)
     local HitCircleButton = Instance.new("TextButton")
     HitCircleButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    HitCircleButton.Position = UDim2.new(1, col2X, 0, topOffset)
+    HitCircleButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, 10)
     HitCircleButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75) -- ✅ GRAY!
     HitCircleButton.BackgroundTransparency = 0.3
     HitCircleButton.Text = "HIT\nCIRCLE"
@@ -3352,7 +3261,7 @@ function createRightButtons(device)
 end
 
 print("══════════════════════════════════════════════")
-print("   NATESHUB💵👑 V7.0 FINAL COMPLETE!")
+print("   TIM CHEESE DUELS LOADED")
 print("══════════════════════════════════════════════")
 print("✅ VISIBLE SMALL GUIs (5):")
 print("   Speed (ON), Unwalk (ON), Anti Rag (ON),")
@@ -3369,6 +3278,6 @@ print("════════════════════════�
 game:GetService("Players").PlayerRemoving:Connect(function(plr)
     if plr == player then
         SaveConfig()
-        print("[NATESHUB] ✅ Auto-saved config on leave!")
+        print("[TIM CHEESE DUELS] ✅ Auto-saved config on leave!")
     end
 end)
