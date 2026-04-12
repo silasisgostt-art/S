@@ -182,7 +182,6 @@ local PATH_MIN_STOP = 0.65
 local PATH_NEXT_POINT_BIAS = 0.45
 local PATH_SMOOTH_FACTOR = 0.12
 local PATH_FINAL_SNAP_RADIUS = 5
-local PATH_LEFT_FINAL_SNAP_RADIUS = 5
 
 local stealPath1 = {
     {pos=Vector3.new(-473,-7,30)},{pos=Vector3.new(-483,-5,18)},
@@ -196,10 +195,9 @@ local stealPath2 = {
     {pos=Vector3.new(-486.811,-4.837,27.875)}
 }
 
-local function pathMoveToPoint(hrp, current, nextPoint, speed, finalPoint, finalSnapRadius)
+local function pathMoveToPoint(hrp, current, nextPoint, speed, finalPoint)
     local conn
     local snappedToFinal = false
-    local snapRadius = finalSnapRadius or PATH_FINAL_SNAP_RADIUS
     conn = RunService.Heartbeat:Connect(function()
         if not pathActive then 
             conn:Disconnect()
@@ -207,7 +205,7 @@ local function pathMoveToPoint(hrp, current, nextPoint, speed, finalPoint, final
             return 
         end
 
-        if finalPoint and (hrp.Position - finalPoint).Magnitude <= snapRadius then
+        if finalPoint and (hrp.Position - finalPoint).Magnitude <= PATH_FINAL_SNAP_RADIUS then
             snappedToFinal = true
             conn:Disconnect()
             hrp.CFrame = CFrame.new(finalPoint)
@@ -250,7 +248,7 @@ local function pathMoveToPoint(hrp, current, nextPoint, speed, finalPoint, final
     return snappedToFinal
 end
 
-local function runStealPath(path, finalSnapRadius)
+local function runStealPath(path)
     local hrpLocal = (player.Character or player.CharacterAdded:Wait()):WaitForChild("HumanoidRootPart")
     local finalPoint = path[#path] and path[#path].pos
     for i, p in ipairs(path) do
@@ -264,18 +262,18 @@ local function runStealPath(path, finalSnapRadius)
         end
         
         local nextP = path[i+1] and path[i+1].pos
-        local snapped = pathMoveToPoint(hrpLocal, p.pos, nextP, speed, finalPoint, finalSnapRadius)
+        local snapped = pathMoveToPoint(hrpLocal, p.pos, nextP, speed, finalPoint)
         if snapped then
             return
         end
     end
 end
 
-local function startStealPath(path, finalSnapRadius)
+local function startStealPath(path)
     pathActive = true
     task.spawn(function() 
         while pathActive do 
-            runStealPath(path, finalSnapRadius) 
+            runStealPath(path) 
         end 
     end)
 end
@@ -2398,7 +2396,7 @@ local function createMainGUI(device)
     local SpeedSettingsGUI = Instance.new("Frame")
     SpeedSettingsGUI.Name = "SpeedSettingsGUI"
     SpeedSettingsGUI.Size = UDim2.new(0, 200, 0, 185)
-    SpeedSettingsGUI.Position = UDim2.new(0.5, -100, 0.5, -75)
+    SpeedSettingsGUI.Position = UDim2.new(0.5, -100, 0.5, -93)
     SpeedSettingsGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
     SpeedSettingsGUI.BackgroundTransparency = 0.1
     SpeedSettingsGUI.BorderSizePixel = 0
@@ -2531,8 +2529,6 @@ local function createMainGUI(device)
         local value = tonumber(SnapRadiusBox.Text)
         if value and value > 0 then
             PATH_FINAL_SNAP_RADIUS = value
-            PATH_LEFT_FINAL_SNAP_RADIUS = value
-            SaveConfig()
         else
             SnapRadiusBox.Text = tostring(PATH_FINAL_SNAP_RADIUS)
         end
@@ -2607,9 +2603,12 @@ local function createMainGUI(device)
         local s = tonumber(stealSpeedBox.Text)
         local j = tonumber(JumpPowerBox.Text)
 
+        local sr = tonumber(SnapRadiusBox.Text)
+
         if n then SpeedBooster.NormalSpeed = n else normalSpeedBox.Text = tostring(SpeedBooster.NormalSpeed) end
         if s then SpeedBooster.StealSpeed = s else stealSpeedBox.Text = tostring(SpeedBooster.StealSpeed) end
         if j then SpeedBooster.JumpPower = j else JumpPowerBox.Text = tostring(SpeedBooster.JumpPower) end
+        if sr and sr > 0 then PATH_FINAL_SNAP_RADIUS = sr else SnapRadiusBox.Text = tostring(PATH_FINAL_SNAP_RADIUS) end
 
         SaveConfig()
     end)
@@ -3271,7 +3270,7 @@ function createAutoButtons(device)
             stopStealPath()
             AutoLeftButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
             AutoRightButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
-            startStealPath(stealPath2, PATH_LEFT_FINAL_SNAP_RADIUS) -- ✅ LEFT PATH!
+            startStealPath(stealPath2) -- ✅ LEFT PATH!
         end
     end)
 
@@ -3285,7 +3284,7 @@ function createAutoButtons(device)
             stopStealPath()
             AutoLeftButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
             AutoRightButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-            startStealPath(stealPath1, PATH_FINAL_SNAP_RADIUS) -- ✅ RIGHT PATH!
+            startStealPath(stealPath1) -- ✅ RIGHT PATH!
         end
     end)
 end
