@@ -17,6 +17,7 @@
 ]]
 
 repeat task.wait() until game:IsLoaded()
+print("[NATESHUB] Script started loading...")
 
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
@@ -436,7 +437,13 @@ InstaSteal = {
 
 local AnimalsData = {}
 pcall(function()
-    AnimalsData = require(ReplicatedStorage:WaitForChild("Datas"):WaitForChild("Animals"))
+    local datas = ReplicatedStorage:WaitForChild("Datas", 5)
+    if datas then
+        local animals = datas:WaitForChild("Animals", 5)
+        if animals then
+            AnimalsData = require(animals)
+        end
+    end
 end)
 
 local allAnimalsCache = {}
@@ -1307,11 +1314,24 @@ local GUI_SIZES = {
 -- MAIN SCREENGUI
 -- ═══════════════════════════════════════════════════════
 
+-- Destroy old GUI if re-running
+pcall(function()
+    local old = CoreGui:FindFirstChild("tim cheese duels")
+    if old then old:Destroy() end
+end)
+
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "tim cheese duels"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.Parent = CoreGui
+local guiOk = pcall(function() ScreenGui.Parent = CoreGui end)
+if not guiOk then
+    pcall(function()
+        if syn and syn.protect_gui then syn.protect_gui(ScreenGui) end
+        ScreenGui.Parent = player.PlayerGui
+    end)
+end
+print("[NATESHUB] GUI parented:", ScreenGui.Parent and ScreenGui.Parent.Name or "FAILED")
 
 -- Rainbow outline: cycles UIStroke colors across the GUI
 local function startRainbowOutline()
