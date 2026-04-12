@@ -176,11 +176,11 @@ local lastFlatVel = Vector3.zero
 
 local PATH_VELOCITY_SPEED = 59.2
 local PATH_SECOND_SPEED = 29.6
-local PATH_BASE_STOP = 1.35
+local PATH_BASE_STOP = 1.32
 local PATH_MIN_STOP = 0.65
-local PATH_NEXT_POINT_BIAS = 0.45
-local PATH_SMOOTH_FACTOR = 0.12
-local PATH_CHECKPOINT_RADIUS = 6
+local PATH_NEXT_POINT_BIAS = 0.43
+local PATH_SMOOTH_FACTOR = 0.11
+local PATH_CHECKPOINT_RADIUS = 8
 
 local stealPath1 = {
     -- Auto Right (switched spots)
