@@ -18,15 +18,6 @@
 
 repeat task.wait() until game:IsLoaded()
 
--- ✅ CLEANUP: Destroy old GUI if script was already run before
-pcall(function()
-    for _, v in pairs(game:GetService("CoreGui"):GetChildren()) do
-        if v.Name == "tim cheese duels" then
-            v:Destroy()
-        end
-    end
-end)
-
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
