@@ -176,11 +176,13 @@ local lastFlatVel = Vector3.zero
 
 local PATH_VELOCITY_SPEED = 59.2
 local PATH_SECOND_SPEED = 29.6
-local PATH_BASE_STOP = 1.34
-local PATH_MIN_STOP = 0.64
+local PATH_BASE_STOP = 1.35
+local PATH_MIN_STOP = 0.65
 local PATH_NEXT_POINT_BIAS = 0.45
-local PATH_SMOOTH_FACTOR = 0.10
+local PATH_SMOOTH_FACTOR = 0.12
 local PATH_CHECKPOINT_RADIUS = 9
+local PATH_TP_SPAM_COUNT = 8
+local PATH_TP_SPAM_DELAY = 0.03
 
 local stealPath1 = {
     -- Auto Right (switched spots)
@@ -258,7 +260,13 @@ local function runStealPath(path)
 
         if p.teleportHere then
             local offset = p.teleportOffset or Vector3.zero
-            hrpLocal.CFrame = CFrame.new(p.pos + offset)
+            local targetCFrame = CFrame.new(p.pos + offset)
+            for _ = 1, PATH_TP_SPAM_COUNT do
+                if not pathActive then return end
+                hrpLocal.CFrame = targetCFrame
+                hrpLocal.AssemblyLinearVelocity = Vector3.zero
+                task.wait(PATH_TP_SPAM_DELAY)
+            end
             hrpLocal.AssemblyLinearVelocity = Vector3.zero
             return
         end
