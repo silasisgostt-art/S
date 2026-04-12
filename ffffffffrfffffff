@@ -252,7 +252,7 @@ local function runStealPath(path)
     local hrpLocal = (player.Character or player.CharacterAdded:Wait()):WaitForChild("HumanoidRootPart")
     local finalPoint = path[#path] and path[#path].pos
     for i, p in ipairs(path) do
-        if not pathActive then return end
+        if not pathActive then return false end
         
         local speed
         if SpeedBooster.Enabled then
@@ -264,16 +264,22 @@ local function runStealPath(path)
         local nextP = path[i+1] and path[i+1].pos
         local snapped = pathMoveToPoint(hrpLocal, p.pos, nextP, speed, finalPoint)
         if snapped then
-            return
+            return true
         end
     end
+
+    return false
 end
 
 local function startStealPath(path)
     pathActive = true
     task.spawn(function() 
-        while pathActive do 
-            runStealPath(path) 
+        while pathActive do
+            local reachedFinal = runStealPath(path)
+            if reachedFinal then
+                pathActive = false
+                break
+            end
         end 
     end)
 end
