@@ -181,7 +181,6 @@ local PATH_MIN_STOP = 0.65
 local PATH_NEXT_POINT_BIAS = 0.45
 local PATH_SMOOTH_FACTOR = 0.12
 local PATH_CHECKPOINT_RADIUS = 5
-local RETURN_TP_RADIUS = 7
 
 local stealPath1 = {
     -- Auto Right (switched spots)
@@ -260,8 +259,7 @@ local function runStealPath(path)
         if p.teleportHere then
             hrpLocal.CFrame = CFrame.new(p.pos)
             hrpLocal.AssemblyLinearVelocity = Vector3.zero
-            task.wait()
-            continue
+            return
         end
         
         local speed
@@ -273,17 +271,6 @@ local function runStealPath(path)
         
         local nextP = path[i+1] and path[i+1].pos
         pathMoveToPoint(hrpLocal, p, nextP, speed)
-
-        -- On return checkpoint (4th), TP straight to final when within configured radius.
-        if p.returnTpToFinal and path[#path] and path[#path].pos then
-            local radius = p.returnTpRadius or RETURN_TP_RADIUS
-            local distToCheckpoint = (hrpLocal.Position - p.pos).Magnitude
-            if distToCheckpoint <= radius then
-                hrpLocal.CFrame = CFrame.new(path[#path].pos)
-                hrpLocal.AssemblyLinearVelocity = Vector3.zero
-                return
-            end
-        end
 
         task.wait()
     end
