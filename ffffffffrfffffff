@@ -52,7 +52,6 @@ local ConfigData = {
     normalSpeed = 57.9,
     stealSpeed = 29.6,
     jumpPower = 25.8,
-    finalCheckpointRadius = 5,
     stealRadius = 9,
     fovValue = 120,
     fovEnabled = false,
@@ -63,14 +62,12 @@ local ConfigData = {
 }
 
 local buttonsLocked = false
-local PATH_FINAL_SNAP_RADIUS = ConfigData.finalCheckpointRadius or 5
 
 local function SaveConfig()
     ConfigData.speedEnabled = SpeedBooster and SpeedBooster.Enabled or false
     ConfigData.normalSpeed = SpeedBooster and SpeedBooster.NormalSpeed or 57.9
     ConfigData.stealSpeed = SpeedBooster and SpeedBooster.StealSpeed or 29.6
     ConfigData.jumpPower = SpeedBooster and SpeedBooster.JumpPower or 25.8
-    ConfigData.finalCheckpointRadius = PATH_FINAL_SNAP_RADIUS or 5
     ConfigData.stealRadius = InstaSteal and InstaSteal.Radius or 9
     ConfigData.fovValue = fovValue or 70
     ConfigData.fovEnabled = fovEnabled or false
@@ -114,7 +111,6 @@ end
 -- ✅ LOAD CONFIG ON START!
 LoadConfig()
 buttonsLocked = ConfigData.buttonsLocked or false
-PATH_FINAL_SNAP_RADIUS = ConfigData.finalCheckpointRadius or PATH_FINAL_SNAP_RADIUS
 
 -- ═══════════════════════════════════════════════════════
 -- SPEED BOOSTER (EXACT 57.9/29.6/25.8 - CONNECTED!)
@@ -185,6 +181,7 @@ local PATH_BASE_STOP = 1.35
 local PATH_MIN_STOP = 0.65
 local PATH_NEXT_POINT_BIAS = 0.45
 local PATH_SMOOTH_FACTOR = 0.12
+local PATH_FINAL_SNAP_RADIUS = 3
 
 local stealPath1 = {
     {pos=Vector3.new(-473,-7,30)},{pos=Vector3.new(-483,-5,18)},
@@ -1301,9 +1298,9 @@ end
 
 local selectedDevice = nil
 local GUI_SIZES = {
-    PC = {Width = 520, Height = 400},
-    iPad = {Width = 420, Height = 360},
-    iPhone = {Width = 260, Height = 360}
+    PC = {Width = 450, Height = 340},
+    iPad = {Width = 360, Height = 310},
+    iPhone = {Width = 220, Height = 300}
 }
 
 -- ═══════════════════════════════════════════════════════
@@ -1422,8 +1419,8 @@ local SmallGUIInstances = {}
 local function createSmallGUI(name, yPosition, hasGear)
     local SmallGUI = Instance.new("Frame")
     SmallGUI.Name = "Small"..name.."GUI"
-    SmallGUI.Size = UDim2.new(0, 110, 0, 30)
-    SmallGUI.Position = UDim2.new(0.5, -55, 0, yPosition)
+    SmallGUI.Size = UDim2.new(0, 96, 0, 26)
+    SmallGUI.Position = UDim2.new(0.5, -48, 0, yPosition)
     SmallGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
     SmallGUI.BackgroundTransparency = 0.3
     SmallGUI.BorderSizePixel = 0
@@ -1460,7 +1457,7 @@ local function createSmallGUI(name, yPosition, hasGear)
     Label.Text = name
     Label.TextColor3 = Color3.fromRGB(255, 255, 255)
     Label.Font = Enum.Font.GothamBold
-    Label.TextSize = 11
+    Label.TextSize = 10
     Label.TextXAlignment = Enum.TextXAlignment.Left
     Label.Parent = SmallGUI
     
@@ -1487,7 +1484,7 @@ local function createSmallGUI(name, yPosition, hasGear)
     Button.Text = "⚡"
     Button.TextColor3 = Color3.fromRGB(138, 43, 226)
     Button.Font = Enum.Font.GothamBold
-    Button.TextSize = 16
+    Button.TextSize = 14
     Button.ZIndex = 2
     Button.Parent = SmallGUI
     
@@ -1521,8 +1518,8 @@ local function refreshSmallButtonPositions()
 
     local maxButtons = 10
     local columns = 5
-    local buttonWidth = 110
-    local buttonHeight = 30
+    local buttonWidth = 96
+    local buttonHeight = 26
     local gapX = 10
     local gapY = 10
     local startY = 15
@@ -1910,8 +1907,8 @@ end)
 
 local StealBarContainer = Instance.new("Frame")
 StealBarContainer.Name = "StealBarContainer"
-StealBarContainer.Size = UDim2.new(0, 320, 0, 50)
-StealBarContainer.Position = UDim2.new(0.5, -160, 1, -90)
+StealBarContainer.Size = UDim2.new(0, 280, 0, 44)
+StealBarContainer.Position = UDim2.new(0.5, -140, 1, -84)
 StealBarContainer.BackgroundColor3 = Color3.fromRGB(20, 25, 20)
 StealBarContainer.BorderSizePixel = 0
 StealBarContainer.Parent = ScreenGui
@@ -2116,7 +2113,6 @@ local tabButtons = {}
 local contentFrames = {}
 
 local normalSpeedBox, stealSpeedBox
-local finalRadiusBox
 local fovSliderBox
 
 local function createMainGUI(device)
@@ -2400,8 +2396,8 @@ local function createMainGUI(device)
     -- ✅ SPEED SETTINGS POPUP (NEXT TO BUTTON!)
     local SpeedSettingsGUI = Instance.new("Frame")
     SpeedSettingsGUI.Name = "SpeedSettingsGUI"
-    SpeedSettingsGUI.Size = UDim2.new(0, 200, 0, 180)
-    SpeedSettingsGUI.Position = UDim2.new(0.5, -100, 0.5, -90)
+    SpeedSettingsGUI.Size = UDim2.new(0, 200, 0, 150)
+    SpeedSettingsGUI.Position = UDim2.new(0.5, -100, 0.5, -75)
     SpeedSettingsGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
     SpeedSettingsGUI.BackgroundTransparency = 0.1
     SpeedSettingsGUI.BorderSizePixel = 0
@@ -2504,32 +2500,6 @@ local function createMainGUI(device)
     JumpCorner.CornerRadius = UDim.new(0, 6)
     JumpCorner.Parent = JumpPowerBox
 
-    local FinalRadiusLabel = Instance.new("TextLabel")
-    FinalRadiusLabel.Size = UDim2.new(0.6, 0, 0, 25)
-    FinalRadiusLabel.Position = UDim2.new(0, 10, 0, 125)
-    FinalRadiusLabel.BackgroundTransparency = 1
-    FinalRadiusLabel.Text = "Final Radius:"
-    FinalRadiusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    FinalRadiusLabel.Font = Enum.Font.Gotham
-    FinalRadiusLabel.TextSize = 12
-    FinalRadiusLabel.TextXAlignment = Enum.TextXAlignment.Left
-    FinalRadiusLabel.Parent = SpeedSettingsGUI
-
-    finalRadiusBox = Instance.new("TextBox")
-    finalRadiusBox.Size = UDim2.new(0, 60, 0, 25)
-    finalRadiusBox.Position = UDim2.new(1, -70, 0, 125)
-    finalRadiusBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-    finalRadiusBox.Text = tostring(PATH_FINAL_SNAP_RADIUS)
-    finalRadiusBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-    finalRadiusBox.Font = Enum.Font.GothamBold
-    finalRadiusBox.TextSize = 12
-    finalRadiusBox.ClearTextOnFocus = false
-    finalRadiusBox.Parent = SpeedSettingsGUI
-
-    local FinalRadiusCorner = Instance.new("UICorner")
-    FinalRadiusCorner.CornerRadius = UDim.new(0, 6)
-    FinalRadiusCorner.Parent = finalRadiusBox
-
     JumpPowerBox.FocusLost:Connect(function()
         local value = tonumber(JumpPowerBox.Text)
         if value then
@@ -2537,17 +2507,6 @@ local function createMainGUI(device)
             SaveConfig()
         else
             JumpPowerBox.Text = tostring(SpeedBooster.JumpPower)
-        end
-    end)
-
-    finalRadiusBox.FocusLost:Connect(function()
-        local value = tonumber(finalRadiusBox.Text)
-        if value then
-            PATH_FINAL_SNAP_RADIUS = math.clamp(value, 0.1, 100)
-            finalRadiusBox.Text = tostring(PATH_FINAL_SNAP_RADIUS)
-            SaveConfig()
-        else
-            finalRadiusBox.Text = tostring(PATH_FINAL_SNAP_RADIUS)
         end
     end)
 
@@ -2609,17 +2568,10 @@ local function createMainGUI(device)
         local n = tonumber(normalSpeedBox.Text)
         local s = tonumber(stealSpeedBox.Text)
         local j = tonumber(JumpPowerBox.Text)
-        local fr = tonumber(finalRadiusBox.Text)
 
         if n then SpeedBooster.NormalSpeed = n else normalSpeedBox.Text = tostring(SpeedBooster.NormalSpeed) end
         if s then SpeedBooster.StealSpeed = s else stealSpeedBox.Text = tostring(SpeedBooster.StealSpeed) end
         if j then SpeedBooster.JumpPower = j else JumpPowerBox.Text = tostring(SpeedBooster.JumpPower) end
-        if fr then
-            PATH_FINAL_SNAP_RADIUS = math.clamp(fr, 0.1, 100)
-            finalRadiusBox.Text = tostring(PATH_FINAL_SNAP_RADIUS)
-        else
-            finalRadiusBox.Text = tostring(PATH_FINAL_SNAP_RADIUS)
-        end
 
         SaveConfig()
     end)
@@ -3164,7 +3116,7 @@ iPadButton.MouseButton1Click:Connect(function() initializeGUI("iPad") end)
 iPhoneButton.MouseButton1Click:Connect(function() initializeGUI("iPhone") end)
 
 function createOpenButton(device)
-    local buttonSize = device == "iPhone" and 55 or 70
+    local buttonSize = device == "iPhone" and 48 or 60
     local rightMargin = 15
     local gap = 10
     local col1X = -(buttonSize * 2) - gap - rightMargin
@@ -3222,7 +3174,7 @@ end
 local AutoLeftSmallGUI, AutoRightSmallGUI
 
 function createAutoButtons(device)
-    local buttonSize = device == "iPhone" and 55 or 70
+    local buttonSize = device == "iPhone" and 48 or 60
     local rightMargin = 15
     local gap = 10
     local topOffset = buttonSize + 30
@@ -3305,7 +3257,7 @@ end
 -- ═══════════════════════════════════════════════════════
 
 function createRightButtons(device)
-    local buttonSize = device == "iPhone" and 60 or 75
+    local buttonSize = device == "iPhone" and 52 or 64
     local rightMargin = 15
     local gap = 10
     local topOffset = buttonSize * 2 + 40
