@@ -181,7 +181,7 @@ local PATH_BASE_STOP = 1.35
 local PATH_MIN_STOP = 0.65
 local PATH_NEXT_POINT_BIAS = 0.45
 local PATH_SMOOTH_FACTOR = 0.12
-local PATH_FINAL_SNAP_RADIUS = 5
+local PATH_FINAL_SNAP_RADIUS = 3
 
 local stealPath1 = {
     {pos=Vector3.new(-473,-7,30)},{pos=Vector3.new(-483,-5,18)},
@@ -2395,8 +2395,8 @@ local function createMainGUI(device)
     -- ✅ SPEED SETTINGS POPUP (NEXT TO BUTTON!)
     local SpeedSettingsGUI = Instance.new("Frame")
     SpeedSettingsGUI.Name = "SpeedSettingsGUI"
-    SpeedSettingsGUI.Size = UDim2.new(0, 200, 0, 185)
-    SpeedSettingsGUI.Position = UDim2.new(0.5, -100, 0.5, -93)
+    SpeedSettingsGUI.Size = UDim2.new(0, 200, 0, 150)
+    SpeedSettingsGUI.Position = UDim2.new(0.5, -100, 0.5, -75)
     SpeedSettingsGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
     SpeedSettingsGUI.BackgroundTransparency = 0.1
     SpeedSettingsGUI.BorderSizePixel = 0
@@ -2499,41 +2499,6 @@ local function createMainGUI(device)
     JumpCorner.CornerRadius = UDim.new(0, 6)
     JumpCorner.Parent = JumpPowerBox
 
-    local SnapLabel = Instance.new("TextLabel")
-    SnapLabel.Size = UDim2.new(0.6, 0, 0, 25)
-    SnapLabel.Position = UDim2.new(0, 10, 0, 125)
-    SnapLabel.BackgroundTransparency = 1
-    SnapLabel.Text = "Snap Radius:"
-    SnapLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    SnapLabel.Font = Enum.Font.Gotham
-    SnapLabel.TextSize = 12
-    SnapLabel.TextXAlignment = Enum.TextXAlignment.Left
-    SnapLabel.Parent = SpeedSettingsGUI
-
-    local SnapRadiusBox = Instance.new("TextBox")
-    SnapRadiusBox.Size = UDim2.new(0, 60, 0, 25)
-    SnapRadiusBox.Position = UDim2.new(1, -70, 0, 125)
-    SnapRadiusBox.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
-    SnapRadiusBox.Text = tostring(PATH_FINAL_SNAP_RADIUS)
-    SnapRadiusBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-    SnapRadiusBox.Font = Enum.Font.GothamBold
-    SnapRadiusBox.TextSize = 12
-    SnapRadiusBox.ClearTextOnFocus = false
-    SnapRadiusBox.Parent = SpeedSettingsGUI
-
-    local SnapCorner = Instance.new("UICorner")
-    SnapCorner.CornerRadius = UDim.new(0, 6)
-    SnapCorner.Parent = SnapRadiusBox
-
-    SnapRadiusBox.FocusLost:Connect(function()
-        local value = tonumber(SnapRadiusBox.Text)
-        if value and value > 0 then
-            PATH_FINAL_SNAP_RADIUS = value
-        else
-            SnapRadiusBox.Text = tostring(PATH_FINAL_SNAP_RADIUS)
-        end
-    end)
-
     JumpPowerBox.FocusLost:Connect(function()
         local value = tonumber(JumpPowerBox.Text)
         if value then
@@ -2603,12 +2568,9 @@ local function createMainGUI(device)
         local s = tonumber(stealSpeedBox.Text)
         local j = tonumber(JumpPowerBox.Text)
 
-        local sr = tonumber(SnapRadiusBox.Text)
-
         if n then SpeedBooster.NormalSpeed = n else normalSpeedBox.Text = tostring(SpeedBooster.NormalSpeed) end
         if s then SpeedBooster.StealSpeed = s else stealSpeedBox.Text = tostring(SpeedBooster.StealSpeed) end
         if j then SpeedBooster.JumpPower = j else JumpPowerBox.Text = tostring(SpeedBooster.JumpPower) end
-        if sr and sr > 0 then PATH_FINAL_SNAP_RADIUS = sr else SnapRadiusBox.Text = tostring(PATH_FINAL_SNAP_RADIUS) end
 
         SaveConfig()
     end)
