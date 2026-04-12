@@ -17,6 +17,7 @@
 ]]
 
 repeat task.wait() until game:IsLoaded()
+print("[NATESHUB] Script started loading...")
 
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
@@ -181,12 +182,12 @@ local PATH_BASE_STOP = 1.35
 local PATH_MIN_STOP = 0.65
 local PATH_NEXT_POINT_BIAS = 0.45
 local PATH_SMOOTH_FACTOR = 0.12
-local PATH_FINAL_SNAP_RADIUS = 3
+local PATH_FINAL_SNAP_RADIUS = 5
 
 local stealPath1 = {
     {pos=Vector3.new(-473,-7,30)},{pos=Vector3.new(-483,-5,18)},
-    {pos=Vector3.new(-475,-7,26)},{pos=Vector3.new(-470.677,-7.002,92.947)},
-    {pos=Vector3.new(-482.631,-5.103,98.310)}
+    {pos=Vector3.new(-475,-7,26)},{pos=Vector3.new(-472.699,-7.002,95.855)},
+    {pos=Vector3.new(-484.563,-5.103,94.365)},{pos=Vector3.new(-482.631,-5.103,98.310)}
 }
 
 local stealPath2 = {
@@ -436,7 +437,13 @@ InstaSteal = {
 
 local AnimalsData = {}
 pcall(function()
-    AnimalsData = require(ReplicatedStorage:WaitForChild("Datas"):WaitForChild("Animals"))
+    local datas = ReplicatedStorage:WaitForChild("Datas", 5)
+    if datas then
+        local animals = datas:WaitForChild("Animals", 5)
+        if animals then
+            AnimalsData = require(animals)
+        end
+    end
 end)
 
 local allAnimalsCache = {}
@@ -1307,11 +1314,24 @@ local GUI_SIZES = {
 -- MAIN SCREENGUI
 -- ═══════════════════════════════════════════════════════
 
+-- Destroy old GUI if re-running
+pcall(function()
+    local old = CoreGui:FindFirstChild("tim cheese duels")
+    if old then old:Destroy() end
+end)
+
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "tim cheese duels"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.Parent = CoreGui
+local guiOk = pcall(function() ScreenGui.Parent = CoreGui end)
+if not guiOk then
+    pcall(function()
+        if syn and syn.protect_gui then syn.protect_gui(ScreenGui) end
+        ScreenGui.Parent = player.PlayerGui
+    end)
+end
+print("[NATESHUB] GUI parented:", ScreenGui.Parent and ScreenGui.Parent.Name or "FAILED")
 
 -- Rainbow outline: cycles UIStroke colors across the GUI
 local function startRainbowOutline()
