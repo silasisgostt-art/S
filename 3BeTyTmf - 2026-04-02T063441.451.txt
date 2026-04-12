@@ -1,18 +1,13 @@
--- leaked by https://discord.gg/WfTDsBPR9n join for more cheap sources
+-- TIM CHEESE DUELS
 
 --[[
 ══════════════════════════════════════════════════════════════
-          NATESHUB💵👑 V7.0 FINAL COMPLETE
+                TIM CHEESE DUELS
 ══════════════════════════════════════════════════════════════
-✅ Drop Brainrot - EXACT from Kawatan Hub (NEW!)
-✅ Main Tab: Speed, Unwalk, Inf Jump, Ragdoll TP, Drop Brainrot, Anti Ragdoll
-✅ MISC auto-enables: FPS, Optimizer, Hitbox (ON at script start!)
-✅ ALL 9 small GUIs are DRAGGABLE/MOVABLE
-✅ Tutorial under Credits with instructions
-✅ FOV warning about settings requirement
+✅ Speed, Unwalk, Inf Jump, Ragdoll TP, Drop Brainrot
+✅ FPS, Optimizer, Hitbox, auto buttons, right-side controls
+✅ Draggable small GUI buttons
 ✅ Config auto-loads on join
-✅ Anti Ragdoll & Ragdoll TP removed from MISC (in Main now)
-✅ EVERYTHING WORKING PERFECTLY!
 ══════════════════════════════════════════════════════════════
 ]]
 
@@ -27,7 +22,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
 local Lighting = game:GetService("Lighting")
 
-local player = Players.LocalPlayer
+local player = Players.LocalPlayer or Players:GetPlayers()[1] or Players.PlayerAdded:Wait()
+local PlayerGui = player:WaitForChild("PlayerGui")
 local character
 local hrp
 local hum
@@ -45,7 +41,7 @@ player.CharacterAdded:Connect(setupCharacter)
 -- CONFIG SAVE/LOAD SYSTEM (AUTO-LOADS!)
 -- ═══════════════════════════════════════════════════════
 
-local CONFIG_FILE = "nateshub_v6_config.json"
+local CONFIG_FILE = "timcheeseduels_config.json"
 
 local ConfigData = {
     speedEnabled = false,
@@ -62,12 +58,16 @@ local ConfigData = {
 }
 
 local buttonsLocked = false
+local getButtonPositions
+local SmallTPDownGUI, SmallTPDownButton, TPDownDot
+local SmallTPUpGUI, SmallTPUpButton, TPUpDot
 
 local function SaveConfig()
     ConfigData.speedEnabled = SpeedBooster and SpeedBooster.Enabled or false
     ConfigData.normalSpeed = SpeedBooster and SpeedBooster.NormalSpeed or 57.9
     ConfigData.stealSpeed = SpeedBooster and SpeedBooster.StealSpeed or 29.6
     ConfigData.jumpPower = SpeedBooster and SpeedBooster.JumpPower or 25.8
+    ConfigData.tpRadius = SpeedBooster and SpeedBooster.TPRadius or 6
     ConfigData.stealRadius = InstaSteal and InstaSteal.Radius or 9
     ConfigData.fovValue = fovValue or 70
     ConfigData.fovEnabled = fovEnabled or false
@@ -81,14 +81,14 @@ local function SaveConfig()
             writefile(CONFIG_FILE, HttpService:JSONEncode(ConfigData))
         end)
         if success then
-            print("[NATESHUB] ✅ Config saved!")
+            print("[TIM CHEESE DUELS] ✅ Config saved!")
             return true
         else
-            warn("[NATESHUB] ❌ Save failed:", err)
+            warn("[TIM CHEESE DUELS] ❌ Save failed:", err)
             return false
         end
     else
-        warn("[NATESHUB] ⚠️ writefile not available")
+        warn("[TIM CHEESE DUELS] ⚠️ writefile not available")
         return false
     end
 end
@@ -101,7 +101,7 @@ local function LoadConfig()
         if success and data then
             ConfigData = data
             buttonsLocked = ConfigData.buttonsLocked or false
-            print("[NATESHUB] ✅ Config loaded!")
+            print("[TIM CHEESE DUELS] ✅ Config loaded!")
             return true
         end
     end
@@ -121,6 +121,7 @@ SpeedBooster = {
     NormalSpeed = ConfigData.normalSpeed or 57.9,
     StealSpeed = ConfigData.stealSpeed or 29.6,
     JumpPower = ConfigData.jumpPower or 25.8,
+    TPRadius = ConfigData.tpRadius or 6,
     HeartbeatConn = nil,
     JumpConn = nil
 }
@@ -181,18 +182,31 @@ local PATH_BASE_STOP = 1.35
 local PATH_MIN_STOP = 0.65
 local PATH_NEXT_POINT_BIAS = 0.45
 local PATH_SMOOTH_FACTOR = 0.12
+local PATH_CHECKPOINT_RADIUS = 5
 
 local stealPath1 = {
-    {pos=Vector3.new(-470.6,-5.9,34.4)},{pos=Vector3.new(-484.2,-3.9,21.4)},
-    {pos=Vector3.new(-475.6,-5.8,29.3)},{pos=Vector3.new(-473.4,-5.9,111)}
+    {pos=Vector3.new(-470.6,-5.9,34.4)},
+    {pos=Vector3.new(-484.2,-3.9,21.4)},
+    {pos=Vector3.new(-475.6,-5.8,29.3)},
+    {pos=Vector3.new(-473.4,-5.9,111)},
+    -- Added as last 2 checkpoints for Auto Right
+    {pos=Vector3.new(-472.699, -7.002, 95.855), checkpointRadius = PATH_CHECKPOINT_RADIUS},
+    {pos=Vector3.new(-484.563, -5.103, 94.365)}
 }
 
 local stealPath2 = {
-    {pos=Vector3.new(-474.7,-5.9,91.0)},{pos=Vector3.new(-483.4,-3.9,97.3)},
-    {pos=Vector3.new(-474.7,-5.9,91.0)},{pos=Vector3.new(-476.1,-5.5,25.4)}
+    {pos=Vector3.new(-474.7,-5.9,91.0)},
+    {pos=Vector3.new(-483.4,-3.9,97.3)},
+    {pos=Vector3.new(-474.7,-5.9,91.0)},
+    {pos=Vector3.new(-476.1,-5.5,25.4)},
+    -- Added as last 2 checkpoints for Auto Left return
+    {pos=Vector3.new(-472.612, -7.002, 26.491), checkpointRadius = PATH_CHECKPOINT_RADIUS},
+    {pos=Vector3.new(-483.128, -5.037, 26.443)}
 }
 
 local function pathMoveToPoint(hrp, current, nextPoint, speed)
+    local currentPos = current.pos or current
+    local stopRadius = current.checkpointRadius or PATH_BASE_STOP
     local conn
     conn = RunService.Heartbeat:Connect(function()
         if not pathActive then 
@@ -202,11 +216,16 @@ local function pathMoveToPoint(hrp, current, nextPoint, speed)
         end
         
         local pos = hrp.Position
-        local target = Vector3.new(current.X, pos.Y, current.Z)
+        local target = Vector3.new(currentPos.X, pos.Y, currentPos.Z)
         local dir = target - pos
         local dist = dir.Magnitude
         
-        local stopDist = math.clamp(PATH_BASE_STOP - dist*0.04, PATH_MIN_STOP, PATH_BASE_STOP)
+        local stopDist
+        if current.checkpointRadius then
+            stopDist = stopRadius
+        else
+            stopDist = math.clamp(PATH_BASE_STOP - dist*0.04, PATH_MIN_STOP, PATH_BASE_STOP)
+        end
         
         if dist <= stopDist then 
             conn:Disconnect() 
@@ -229,7 +248,7 @@ local function pathMoveToPoint(hrp, current, nextPoint, speed)
         lastFlatVel = Vector3.new(vel.X, 0, vel.Z)
     end)
     
-    while pathActive and (Vector3.new(hrp.Position.X,0,hrp.Position.Z)-Vector3.new(current.X,0,current.Z)).Magnitude > PATH_BASE_STOP do
+    while pathActive and (Vector3.new(hrp.Position.X,0,hrp.Position.Z)-Vector3.new(currentPos.X,0,currentPos.Z)).Magnitude > stopRadius do
         RunService.Heartbeat:Wait()
     end
 end
@@ -247,7 +266,25 @@ local function runStealPath(path)
         end
         
         local nextP = path[i+1] and path[i+1].pos
-        pathMoveToPoint(hrpLocal, p.pos, nextP, speed)
+        local currentPos = p.pos or p
+        
+        -- ✅ CHECK IF THIS IS FINAL CHECKPOINT (index == #path)
+        if i == #path then
+            -- Wait until within TP threshold, then TP
+            local tpThreshold = SpeedBooster.Enabled and SpeedBooster.TPRadius or 6
+            while pathActive and (hrpLocal.Position - currentPos).Magnitude > tpThreshold do
+                local moveDir = (currentPos - hrpLocal.Position).Unit
+                hrpLocal.AssemblyLinearVelocity = Vector3.new(moveDir.X * speed, hrpLocal.AssemblyLinearVelocity.Y, moveDir.Z * speed)
+                task.wait()
+            end
+            -- ✅ TP TO FINAL CHECKPOINT when within TP threshold!
+            if pathActive then
+                hrpLocal.CFrame = CFrame.new(currentPos + Vector3.new(0, 3, 0))
+                hrpLocal.AssemblyLinearVelocity = Vector3.zero
+            end
+        else
+            pathMoveToPoint(hrpLocal, p, nextP, speed)
+        end
         task.wait()
     end
 end
@@ -781,6 +818,7 @@ local function disableHitbox()
 end
 
 local AntiDeathEnabled = false
+local AntiDeath = {Conn = nil}
 
 local AntiRagdollConns = {}
 
@@ -793,7 +831,7 @@ local function enableAntiRagdoll()
     local cam = workspace.CurrentCamera
     local animator = humanoid:WaitForChild("Animator")
     
-    -- ✅ EXACT VALUES FROM YOUR NATESHUB SCRIPT!
+    -- Tuned anti-ragdoll values
     local maxVelocity = 40
     local clampVelocity = 25
     local maxClamp = 15
@@ -880,7 +918,7 @@ local function disableAntiRagdoll()
 end
 
 -- ═══════════════════════════════════════════════════════
--- ✅ RAGDOLL TP (EXACT FROM YOUR SOURCE!)
+-- RAGDOLL TP
 -- ═══════════════════════════════════════════════════════
 
 local RAGDOLL_COORDS = {
@@ -979,7 +1017,7 @@ if player.Character then
 end
 
 -- ═══════════════════════════════════════════════════════
--- ✅ DROP BRAINROT (EXACT FROM KAWATAN HUB!)
+-- DROP BRAINROT
 -- ═══════════════════════════════════════════════════════
 
 local dropBusy = false
@@ -1033,7 +1071,7 @@ local floatJumpConn = nil
 local floatTargetY = nil
 
 -- TP UP state (teleport up on jump when enabled)
-local TPUpEnabled = false
+TPUpEnabled = false
 local TPUpJumpConn = nil
 
 local function startFloat()
@@ -1291,10 +1329,10 @@ local GUI_SIZES = {
 -- ═══════════════════════════════════════════════════════
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "tim cheese duels"
+ScreenGui.Name = "TimCheeseDuelsGUI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.Parent = CoreGui
+ScreenGui.Parent = PlayerGui
 
 -- Rainbow outline: cycles UIStroke colors across the GUI
 local function startRainbowOutline()
@@ -1484,25 +1522,37 @@ local function refreshSmallButtonPositions()
         end
     end
 
-    local maxButtons = 10
     local columns = 5
-    local buttonWidth = 110
-    local gap = 12
-    local startY = 60
+    local buttonHeight = 30
+    local rows = 3
+    local gapX = 8
+    local gapY = 8
+    local topPadding = 8
+    local sidePadding = 10
+    local viewport = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1280, 720)
+    local availableWidth = math.max(400, viewport.X - sidePadding * 2)
+    local buttonWidth = math.floor((availableWidth - gapX * (columns - 1)) / columns)
+    buttonWidth = math.clamp(buttonWidth, 70, 150)
+    local totalWidth = columns * buttonWidth + (columns - 1) * gapX
+    local startX = math.max(sidePadding, math.floor((viewport.X - totalWidth) / 2))
+    local startY = topPadding
 
     for index, frame in ipairs(visibleFrames) do
-        if index > maxButtons then
+        if index > (rows * columns) then
             frame.Visible = false
-        else
-            local posIndex = index
-            local row = math.floor((posIndex - 1) / columns)
-            local col = (posIndex - 1) % columns
-            local rowCount = math.min(#visibleFrames - row * columns, columns)
-            local totalWidth = rowCount * buttonWidth + (rowCount - 1) * gap
-            local xOffset = -totalWidth / 2 + col * (buttonWidth + gap)
-            frame.Position = UDim2.new(0.5, xOffset, 0, startY + row * 40)
-            frame.Visible = true
+            continue
         end
+
+        frame.Size = UDim2.new(0, buttonWidth, 0, buttonHeight)
+        local row = math.floor((index - 1) / columns)
+        local col = (index - 1) % columns
+        frame.Position = UDim2.new(
+            0,
+            startX + col * (buttonWidth + gapX),
+            0,
+            startY + row * (buttonHeight + gapY)
+        )
+        frame.Visible = true
     end
 end
 
@@ -1516,8 +1566,8 @@ local SmallFOVGUI, SmallFOVButton, FOVDot = createSmallGUI("FOV", 325)
 local SmallAntiRagGUI, SmallAntiRagButton, AntiRagDot = createSmallGUI("Anti Ragdoll", 370) -- ✅ Standalone!
 local SmallRagdollTPGUI, SmallRagdollTPButton, RagdollTPDot = createSmallGUI("Ragdoll TP", 415) -- ✅ NEW!
 local SmallDropGUI, SmallDropButton, DropDot = createSmallGUI("Drop Brainrot", 460) -- ✅ NEW!
-local SmallTPDownGUI, SmallTPDownButton, TPDownDot = createSmallGUI("TP Down", 505)
-local SmallTPUpGUI, SmallTPUpButton, TPUpDot = createSmallGUI("TP Up", 550)
+SmallTPDownGUI, SmallTPDownButton, TPDownDot = createSmallGUI("TP Down", 505)
+SmallTPUpGUI, SmallTPUpButton, TPUpDot = createSmallGUI("TP Up", 550)
 
 local function serializeUDim2(value)
     return {
@@ -1533,7 +1583,7 @@ local function deserializeUDim2(data)
     return UDim2.new(data.XScale or 0, data.XOffset or 0, data.YScale or 0, data.YOffset or 0)
 end
 
-local function getButtonPositions()
+getButtonPositions = function()
     return {
         Speed = serializeUDim2(SmallSpeedGUI.Position),
         Unwalk = serializeUDim2(SmallUnwalkGUI.Position),
@@ -1675,7 +1725,379 @@ end)
 
 updateSpinBotScreenState()
 
+-- ═══════════════════════════════════════════════════════
+-- SPEED BOOSTER SETTINGS - ON-SCREEN (with TP Radius!)
+-- ═══════════════════════════════════════════════════════
+
+local SpeedSettingsScreenOnScreen = Instance.new("Frame")
+SpeedSettingsScreenOnScreen.Name = "SpeedSettingsScreenOnScreen"
+SpeedSettingsScreenOnScreen.Size = UDim2.new(0, 280, 0, 200)
+SpeedSettingsScreenOnScreen.Position = UDim2.new(0.5, -140, 0.3, 0)
+SpeedSettingsScreenOnScreen.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+SpeedSettingsScreenOnScreen.BorderSizePixel = 0
+SpeedSettingsScreenOnScreen.Active = true
+SpeedSettingsScreenOnScreen.Draggable = true
+SpeedSettingsScreenOnScreen.Visible = false
+SpeedSettingsScreenOnScreen.Parent = ScreenGui
+
+local SpeedSettingsCorner = Instance.new("UICorner")
+SpeedSettingsCorner.CornerRadius = UDim.new(0, 15)
+SpeedSettingsCorner.Parent = SpeedSettingsScreenOnScreen
+
+local SpeedSettingsTitle = Instance.new("TextLabel")
+SpeedSettingsTitle.Size = UDim2.new(1, -30, 0, 25)
+SpeedSettingsTitle.Position = UDim2.new(0, 10, 0, 5)
+SpeedSettingsTitle.BackgroundTransparency = 1
+SpeedSettingsTitle.Text = "⚙️ Speed Booster"
+SpeedSettingsTitle.TextColor3 = Color3.fromRGB(255, 200, 100)
+SpeedSettingsTitle.Font = Enum.Font.GothamBold
+SpeedSettingsTitle.TextSize = 14
+SpeedSettingsTitle.TextXAlignment = Enum.TextXAlignment.Left
+SpeedSettingsTitle.Parent = SpeedSettingsScreenOnScreen
+
+local SpeedSettingsClose = Instance.new("TextButton")
+SpeedSettingsClose.Size = UDim2.new(0, 20, 0, 20)
+SpeedSettingsClose.Position = UDim2.new(1, -25, 0, 5)
+SpeedSettingsClose.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+SpeedSettingsClose.Text = "X"
+SpeedSettingsClose.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedSettingsClose.Font = Enum.Font.GothamBold
+SpeedSettingsClose.TextSize = 12
+SpeedSettingsClose.Parent = SpeedSettingsScreenOnScreen
+
+local SpeedSettingsCloseCorner = Instance.new("UICorner")
+SpeedSettingsCloseCorner.CornerRadius = UDim.new(0, 6)
+SpeedSettingsCloseCorner.Parent = SpeedSettingsClose
+
+SpeedSettingsClose.MouseButton1Click:Connect(function()
+    SpeedSettingsScreenOnScreen.Visible = false
+end)
+
+-- TP Radius Label & TextBox
+local TPRadiusLabel = Instance.new("TextLabel")
+TPRadiusLabel.Size = UDim2.new(0, 80, 0, 20)
+TPRadiusLabel.Position = UDim2.new(0, 10, 0, 35)
+TPRadiusLabel.BackgroundTransparency = 1
+TPRadiusLabel.Text = "TP Radius:"
+TPRadiusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+TPRadiusLabel.Font = Enum.Font.Gotham
+TPRadiusLabel.TextSize = 11
+TPRadiusLabel.TextXAlignment = Enum.TextXAlignment.Left
+TPRadiusLabel.Parent = SpeedSettingsScreenOnScreen
+
+local TPRadiusBox = Instance.new("TextBox")
+TPRadiusBox.Size = UDim2.new(0, 60, 0, 25)
+TPRadiusBox.Position = UDim2.new(0, 170, 0, 32)
+TPRadiusBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+TPRadiusBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+TPRadiusBox.Font = Enum.Font.GothamBold
+TPRadiusBox.TextSize = 13
+TPRadiusBox.Text = tostring(SpeedBooster.TPRadius)
+TPRadiusBox.BorderSizePixel = 0
+TPRadiusBox.Parent = SpeedSettingsScreenOnScreen
+
+local TPRadiusCorner = Instance.new("UICorner")
+TPRadiusCorner.CornerRadius = UDim.new(0, 8)
+TPRadiusCorner.Parent = TPRadiusBox
+
+TPRadiusBox.FocusLost:Connect(function()
+    local value = tonumber(TPRadiusBox.Text)
+    if value then
+        SpeedBooster.TPRadius = math.clamp(value, 1, 50)
+        TPRadiusBox.Text = tostring(SpeedBooster.TPRadius)
+        SaveConfig()
+    else
+        TPRadiusBox.Text = tostring(SpeedBooster.TPRadius)
+    end
+end)
+
+-- Normal Speed Label & TextBox
+local NormalSpeedLabel = Instance.new("TextLabel")
+NormalSpeedLabel.Size = UDim2.new(0, 80, 0, 20)
+NormalSpeedLabel.Position = UDim2.new(0, 10, 0, 65)
+NormalSpeedLabel.BackgroundTransparency = 1
+NormalSpeedLabel.Text = "Normal Speed:"
+NormalSpeedLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+NormalSpeedLabel.Font = Enum.Font.Gotham
+NormalSpeedLabel.TextSize = 11
+NormalSpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
+NormalSpeedLabel.Parent = SpeedSettingsScreenOnScreen
+
+local NormalSpeedBoxOnScreen = Instance.new("TextBox")
+NormalSpeedBoxOnScreen.Size = UDim2.new(0, 60, 0, 25)
+NormalSpeedBoxOnScreen.Position = UDim2.new(0, 170, 0, 62)
+NormalSpeedBoxOnScreen.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+NormalSpeedBoxOnScreen.TextColor3 = Color3.fromRGB(255, 255, 255)
+NormalSpeedBoxOnScreen.Font = Enum.Font.GothamBold
+NormalSpeedBoxOnScreen.TextSize = 13
+NormalSpeedBoxOnScreen.Text = tostring(math.floor(SpeedBooster.NormalSpeed * 10) / 10)
+NormalSpeedBoxOnScreen.BorderSizePixel = 0
+NormalSpeedBoxOnScreen.Parent = SpeedSettingsScreenOnScreen
+
+local NormalSpeedCorner = Instance.new("UICorner")
+NormalSpeedCorner.CornerRadius = UDim.new(0, 8)
+NormalSpeedCorner.Parent = NormalSpeedBoxOnScreen
+
+NormalSpeedBoxOnScreen.FocusLost:Connect(function()
+    local value = tonumber(NormalSpeedBoxOnScreen.Text)
+    if value then
+        SpeedBooster.NormalSpeed = math.clamp(value, 1, 100)
+        NormalSpeedBoxOnScreen.Text = tostring(math.floor(SpeedBooster.NormalSpeed * 10) / 10)
+        SaveConfig()
+    else
+        NormalSpeedBoxOnScreen.Text = tostring(math.floor(SpeedBooster.NormalSpeed * 10) / 10)
+    end
+end)
+
+-- Steal Speed Label & TextBox
+local StealSpeedLabel = Instance.new("TextLabel")
+StealSpeedLabel.Size = UDim2.new(0, 80, 0, 20)
+StealSpeedLabel.Position = UDim2.new(0, 10, 0, 95)
+StealSpeedLabel.BackgroundTransparency = 1
+StealSpeedLabel.Text = "Steal Speed:"
+StealSpeedLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+StealSpeedLabel.Font = Enum.Font.Gotham
+StealSpeedLabel.TextSize = 11
+StealSpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
+StealSpeedLabel.Parent = SpeedSettingsScreenOnScreen
+
+local StealSpeedBoxOnScreen = Instance.new("TextBox")
+StealSpeedBoxOnScreen.Size = UDim2.new(0, 60, 0, 25)
+StealSpeedBoxOnScreen.Position = UDim2.new(0, 170, 0, 92)
+StealSpeedBoxOnScreen.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+StealSpeedBoxOnScreen.TextColor3 = Color3.fromRGB(255, 255, 255)
+StealSpeedBoxOnScreen.Font = Enum.Font.GothamBold
+StealSpeedBoxOnScreen.TextSize = 13
+StealSpeedBoxOnScreen.Text = tostring(math.floor(SpeedBooster.StealSpeed * 10) / 10)
+StealSpeedBoxOnScreen.BorderSizePixel = 0
+StealSpeedBoxOnScreen.Parent = SpeedSettingsScreenOnScreen
+
+local StealSpeedCorner = Instance.new("UICorner")
+StealSpeedCorner.CornerRadius = UDim.new(0, 8)
+StealSpeedCorner.Parent = StealSpeedBoxOnScreen
+
+StealSpeedBoxOnScreen.FocusLost:Connect(function()
+    local value = tonumber(StealSpeedBoxOnScreen.Text)
+    if value then
+        SpeedBooster.StealSpeed = math.clamp(value, 1, 100)
+        StealSpeedBoxOnScreen.Text = tostring(math.floor(SpeedBooster.StealSpeed * 10) / 10)
+        SaveConfig()
+    else
+        StealSpeedBoxOnScreen.Text = tostring(math.floor(SpeedBooster.StealSpeed * 10) / 10)
+    end
+end)
+
+-- Jump Power Label & TextBox
+local JumpPowerLabel = Instance.new("TextLabel")
+JumpPowerLabel.Size = UDim2.new(0, 80, 0, 20)
+JumpPowerLabel.Position = UDim2.new(0, 10, 0, 125)
+JumpPowerLabel.BackgroundTransparency = 1
+JumpPowerLabel.Text = "Jump Power:"
+JumpPowerLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+JumpPowerLabel.Font = Enum.Font.Gotham
+JumpPowerLabel.TextSize = 11
+JumpPowerLabel.TextXAlignment = Enum.TextXAlignment.Left
+JumpPowerLabel.Parent = SpeedSettingsScreenOnScreen
+
+local JumpPowerBoxOnScreen = Instance.new("TextBox")
+JumpPowerBoxOnScreen.Size = UDim2.new(0, 60, 0, 25)
+JumpPowerBoxOnScreen.Position = UDim2.new(0, 170, 0, 122)
+JumpPowerBoxOnScreen.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+JumpPowerBoxOnScreen.TextColor3 = Color3.fromRGB(255, 255, 255)
+JumpPowerBoxOnScreen.Font = Enum.Font.GothamBold
+JumpPowerBoxOnScreen.TextSize = 13
+JumpPowerBoxOnScreen.Text = tostring(math.floor(SpeedBooster.JumpPower * 10) / 10)
+JumpPowerBoxOnScreen.BorderSizePixel = 0
+JumpPowerBoxOnScreen.Parent = SpeedSettingsScreenOnScreen
+
+local JumpPowerCorner = Instance.new("UICorner")
+JumpPowerCorner.CornerRadius = UDim.new(0, 8)
+JumpPowerCorner.Parent = JumpPowerBoxOnScreen
+
+JumpPowerBoxOnScreen.FocusLost:Connect(function()
+    local value = tonumber(JumpPowerBoxOnScreen.Text)
+    if value then
+        SpeedBooster.JumpPower = math.clamp(value, 1, 100)
+        JumpPowerBoxOnScreen.Text = tostring(math.floor(SpeedBooster.JumpPower * 10) / 10)
+        SaveConfig()
+    else
+        JumpPowerBoxOnScreen.Text = tostring(math.floor(SpeedBooster.JumpPower * 10) / 10)
+    end
+end)
+
+-- ═══════════════════════════════════════════════════════
+-- FOV SETTINGS - ON-SCREEN
+-- ═══════════════════════════════════════════════════════
+
+local FOVSettingsScreenOnScreen = Instance.new("Frame")
+FOVSettingsScreenOnScreen.Name = "FOVSettingsScreenOnScreen"
+FOVSettingsScreenOnScreen.Size = UDim2.new(0, 220, 0, 120)
+FOVSettingsScreenOnScreen.Position = UDim2.new(0.5, -110, 0.5, 0)
+FOVSettingsScreenOnScreen.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+FOVSettingsScreenOnScreen.BorderSizePixel = 0
+FOVSettingsScreenOnScreen.Active = true
+FOVSettingsScreenOnScreen.Draggable = true
+FOVSettingsScreenOnScreen.Visible = false
+FOVSettingsScreenOnScreen.Parent = ScreenGui
+
+local FOVSettingsCorner = Instance.new("UICorner")
+FOVSettingsCorner.CornerRadius = UDim.new(0, 15)
+FOVSettingsCorner.Parent = FOVSettingsScreenOnScreen
+
+local FOVSettingsTitle = Instance.new("TextLabel")
+FOVSettingsTitle.Size = UDim2.new(1, -30, 0, 25)
+FOVSettingsTitle.Position = UDim2.new(0, 10, 0, 5)
+FOVSettingsTitle.BackgroundTransparency = 1
+FOVSettingsTitle.Text = "⚙️ FOV Settings"
+FOVSettingsTitle.TextColor3 = Color3.fromRGB(255, 200, 100)
+FOVSettingsTitle.Font = Enum.Font.GothamBold
+FOVSettingsTitle.TextSize = 14
+FOVSettingsTitle.TextXAlignment = Enum.TextXAlignment.Left
+FOVSettingsTitle.Parent = FOVSettingsScreenOnScreen
+
+local FOVSettingsClose = Instance.new("TextButton")
+FOVSettingsClose.Size = UDim2.new(0, 20, 0, 20)
+FOVSettingsClose.Position = UDim2.new(1, -25, 0, 5)
+FOVSettingsClose.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+FOVSettingsClose.Text = "X"
+FOVSettingsClose.TextColor3 = Color3.fromRGB(255, 255, 255)
+FOVSettingsClose.Font = Enum.Font.GothamBold
+FOVSettingsClose.TextSize = 12
+FOVSettingsClose.Parent = FOVSettingsScreenOnScreen
+
+local FOVSettingsCloseCorner = Instance.new("UICorner")
+FOVSettingsCloseCorner.CornerRadius = UDim.new(0, 6)
+FOVSettingsCloseCorner.Parent = FOVSettingsClose
+
+FOVSettingsClose.MouseButton1Click:Connect(function()
+    FOVSettingsScreenOnScreen.Visible = false
+end)
+
+-- FOV Value Label & TextBox
+local FOVValueLabel = Instance.new("TextLabel")
+FOVValueLabel.Size = UDim2.new(0, 50, 0, 20)
+FOVValueLabel.Position = UDim2.new(0, 10, 0, 40)
+FOVValueLabel.BackgroundTransparency = 1
+FOVValueLabel.Text = "FOV Value:"
+FOVValueLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+FOVValueLabel.Font = Enum.Font.Gotham
+FOVValueLabel.TextSize = 11
+FOVValueLabel.TextXAlignment = Enum.TextXAlignment.Left
+FOVValueLabel.Parent = FOVSettingsScreenOnScreen
+
+local FOVValueBox = Instance.new("TextBox")
+FOVValueBox.Size = UDim2.new(0, 50, 0, 25)
+FOVValueBox.Position = UDim2.new(0, 150, 0, 37)
+FOVValueBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+FOVValueBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+FOVValueBox.Font = Enum.Font.GothamBold
+FOVValueBox.TextSize = 13
+FOVValueBox.Text = tostring(math.floor(fovValue or 70))
+FOVValueBox.BorderSizePixel = 0
+FOVValueBox.Parent = FOVSettingsScreenOnScreen
+
+local FOVValueCorner = Instance.new("UICorner")
+FOVValueCorner.CornerRadius = UDim.new(0, 8)
+FOVValueCorner.Parent = FOVValueBox
+
+FOVValueBox.FocusLost:Connect(function()
+    local value = tonumber(FOVValueBox.Text)
+    if value then
+        fovValue = math.clamp(value, 1, 120)
+        ConfigData.fovValue = fovValue
+        FOVValueBox.Text = tostring(math.floor(fovValue))
+        if fovEnabled then
+            camera.FieldOfView = fovValue
+        end
+        SaveConfig()
+    else
+        FOVValueBox.Text = tostring(math.floor(fovValue or 70))
+    end
+end)
+
+-- FOV Enable/Disable Button
+local FOVToggleButton = Instance.new("TextButton")
+FOVToggleButton.Size = UDim2.new(1, -20, 0, 40)
+FOVToggleButton.Position = UDim2.new(0, 10, 0, 70)
+FOVToggleButton.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+FOVToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+FOVToggleButton.Font = Enum.Font.GothamBold
+FOVToggleButton.TextSize = 14
+FOVToggleButton.Text = fovEnabled and "DISABLE FOV" or "ENABLE FOV"
+FOVToggleButton.BorderSizePixel = 0
+FOVToggleButton.Parent = FOVSettingsScreenOnScreen
+
+local FOVToggleCorner = Instance.new("UICorner")
+FOVToggleCorner.CornerRadius = UDim.new(0, 8)
+FOVToggleCorner.Parent = FOVToggleButton
+
+FOVToggleButton.MouseButton1Click:Connect(function()
+    fovEnabled = not fovEnabled
+    FOVToggleButton.Text = fovEnabled and "DISABLE FOV" or "ENABLE FOV"
+    if fovEnabled then
+        FOVToggleButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        updateFOV()
+        SmallFOVGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        FOVDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+    else
+        FOVToggleButton.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+        camera.FieldOfView = 70
+        if fovConnection then fovConnection:Disconnect() fovConnection = nil end
+        SmallFOVGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+        FOVDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+    end
+    SaveConfig()
+end)
+
 -- ✅ SPEED SMALL GUI TOGGLE
+
+-- Add gear button to Speed small GUI
+local SpeedGearButton = Instance.new("TextButton")
+SpeedGearButton.Size = UDim2.new(0, 22, 1, 0)
+SpeedGearButton.Position = UDim2.new(0, 58, 0, 0)
+SpeedGearButton.BackgroundTransparency = 1
+SpeedGearButton.Text = "⚙️"
+SpeedGearButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+SpeedGearButton.Font = Enum.Font.GothamBold
+SpeedGearButton.TextSize = 14
+SpeedGearButton.ZIndex = 2
+SpeedGearButton.Parent = SmallSpeedGUI
+
+SpeedGearButton.MouseButton1Click:Connect(function()
+    SpeedSettingsScreenOnScreen.Visible = not SpeedSettingsScreenOnScreen.Visible
+end)
+
+-- Add gear button to FOV small GUI
+local FOVGearButton = Instance.new("TextButton")
+FOVGearButton.Size = UDim2.new(0, 22, 1, 0)
+FOVGearButton.Position = UDim2.new(0, 58, 0, 0)
+FOVGearButton.BackgroundTransparency = 1
+FOVGearButton.Text = "⚙️"
+FOVGearButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+FOVGearButton.Font = Enum.Font.GothamBold
+FOVGearButton.TextSize = 14
+FOVGearButton.ZIndex = 2
+FOVGearButton.Parent = SmallFOVGUI
+
+FOVGearButton.MouseButton1Click:Connect(function()
+    FOVSettingsScreenOnScreen.Visible = not FOVSettingsScreenOnScreen.Visible
+end)
+
+-- SpinBot settings already has SpinBotScreen, but let's link the gear button
+local SpinBotGearButton = Instance.new("TextButton")
+SpinBotGearButton.Size = UDim2.new(0, 22, 1, 0)
+SpinBotGearButton.Position = UDim2.new(0, 58, 0, 0)
+SpinBotGearButton.BackgroundTransparency = 1
+SpinBotGearButton.Text = "⚙️"
+SpinBotGearButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+SpinBotGearButton.Font = Enum.Font.GothamBold
+SpinBotGearButton.TextSize = 14
+SpinBotGearButton.ZIndex = 2
+SpinBotGearButton.Parent = SmallSpinBotGUI
+
+SpinBotGearButton.MouseButton1Click:Connect(function()
+    SpinBotScreen.Visible = not SpinBotScreen.Visible
+end)
 SmallSpeedButton.MouseButton1Click:Connect(function()
     SpeedBooster.Enabled = not SpeedBooster.Enabled
     
@@ -2135,7 +2557,7 @@ local function createMainGUI(device)
     TitleLabel.Size = UDim2.new(0, 150, 1, 0)
     TitleLabel.Position = UDim2.new(0, 50, 0, 0)
     TitleLabel.BackgroundTransparency = 1
-    TitleLabel.Text = "tim cheese duels"
+    TitleLabel.Text = "TIM CHEESE DUELS"
     TitleLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
     TitleLabel.Font = Enum.Font.GothamBold
     TitleLabel.TextSize = titleSize
@@ -2218,7 +2640,7 @@ local function createMainGUI(device)
     local MainTab = createTab("🛡️", "Main", 1)
     local MISCTab = createTab("🔧", "MISC", 2)
     local SettingsTab = createTab("⚙️", "Settings", 3)
-    local CreditsTab = createTab("⭐", "Credits", 4)
+    local CreditsTab = createTab("⭐", "Info", 4)
 
     local ContentContainer = Instance.new("Frame")
     ContentContainer.Size = UDim2.new(1, -sidebarWidth - 20, 1, -70)
@@ -2510,6 +2932,172 @@ local function createMainGUI(device)
         SpeedSettingsGUI.Visible = not SpeedSettingsGUI.Visible
     end)
 
+    -- ✅ SPEED BOOSTER SETTINGS GEAR (next to Speed Booster)
+    local SpeedSettingsGearBtn = Instance.new("TextButton")
+    SpeedSettingsGearBtn.Size = UDim2.new(0, 50, 0, 50)
+    SpeedSettingsGearBtn.Position = UDim2.new(1, -50, 0, 0)
+    SpeedSettingsGearBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
+    SpeedSettingsGearBtn.Text = "⚙️"
+    SpeedSettingsGearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SpeedSettingsGearBtn.Font = Enum.Font.GothamBold
+    SpeedSettingsGearBtn.TextSize = device == "iPhone" and 16 or 20
+    SpeedSettingsGearBtn.Parent = SpeedContainer
+
+    local SpeedGearCorner = Instance.new("UICorner")
+    SpeedGearCorner.CornerRadius = UDim.new(0, 10)
+    SpeedGearCorner.Parent = SpeedSettingsGearBtn
+
+    -- ✅ SPEED SETTINGS POPUP (NEXT TO BUTTON!)
+    local SpeedSettingsGUI = Instance.new("Frame")
+    SpeedSettingsGUI.Name = "SpeedSettingsGUI"
+    SpeedSettingsGUI.Size = UDim2.new(0, 200, 0, 150)
+    SpeedSettingsGUI.Position = UDim2.new(0.5, -100, 0.5, -75)
+    SpeedSettingsGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    SpeedSettingsGUI.BackgroundTransparency = 0.1
+    SpeedSettingsGUI.BorderSizePixel = 0
+    SpeedSettingsGUI.Visible = false
+    SpeedSettingsGUI.Active = true
+    SpeedSettingsGUI.Draggable = true
+    SpeedSettingsGUI.Parent = ScreenGui
+
+    local SpeedCorner = Instance.new("UICorner")
+    SpeedCorner.CornerRadius = UDim.new(0, 12)
+    SpeedCorner.Parent = SpeedSettingsGUI
+
+    local SpeedStroke = Instance.new("UIStroke")
+    SpeedStroke.Color = Color3.fromRGB(255, 255, 255)
+    SpeedStroke.Thickness = 2
+    SpeedStroke.Parent = SpeedSettingsGUI
+
+    local SpeedTitle = Instance.new("TextLabel")
+    SpeedTitle.Size = UDim2.new(1, 0, 0, 30)
+    SpeedTitle.BackgroundTransparency = 1
+    SpeedTitle.Text = "SPEED SETTINGS"
+    SpeedTitle.TextColor3 = Color3.fromRGB(255, 200, 100)
+    SpeedTitle.Font = Enum.Font.GothamBold
+    SpeedTitle.TextSize = 14
+    SpeedTitle.Parent = SpeedSettingsGUI
+
+    local NormalLabel = Instance.new("TextLabel")
+    NormalLabel.Size = UDim2.new(0.6, 0, 0, 25)
+    NormalLabel.Position = UDim2.new(0, 10, 0, 35)
+    NormalLabel.BackgroundTransparency = 1
+    NormalLabel.Text = "Normal Speed:"
+    NormalLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    NormalLabel.Font = Enum.Font.Gotham
+    NormalLabel.TextSize = 12
+    NormalLabel.TextXAlignment = Enum.TextXAlignment.Left
+    NormalLabel.Parent = SpeedSettingsGUI
+
+    local normalSpeedBox = Instance.new("TextBox")
+    normalSpeedBox.Size = UDim2.new(0, 60, 0, 25)
+    normalSpeedBox.Position = UDim2.new(1, -70, 0, 35)
+    normalSpeedBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    normalSpeedBox.Text = tostring(SpeedBooster.NormalSpeed)
+    normalSpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    normalSpeedBox.Font = Enum.Font.GothamBold
+    normalSpeedBox.TextSize = 12
+    normalSpeedBox.Parent = SpeedSettingsGUI
+
+    local NormalCorner = Instance.new("UICorner")
+    NormalCorner.CornerRadius = UDim.new(0, 6)
+    NormalCorner.Parent = normalSpeedBox
+
+    local StealLabel = Instance.new("TextLabel")
+    StealLabel.Size = UDim2.new(0.6, 0, 0, 25)
+    StealLabel.Position = UDim2.new(0, 10, 0, 65)
+    StealLabel.BackgroundTransparency = 1
+    StealLabel.Text = "Steal Speed:"
+    StealLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    StealLabel.Font = Enum.Font.Gotham
+    StealLabel.TextSize = 12
+    StealLabel.TextXAlignment = Enum.TextXAlignment.Left
+    StealLabel.Parent = SpeedSettingsGUI
+
+    local stealSpeedBox = Instance.new("TextBox")
+    stealSpeedBox.Size = UDim2.new(0, 60, 0, 25)
+    stealSpeedBox.Position = UDim2.new(1, -70, 0, 65)
+    stealSpeedBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    stealSpeedBox.Text = tostring(SpeedBooster.StealSpeed)
+    stealSpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    stealSpeedBox.Font = Enum.Font.GothamBold
+    stealSpeedBox.TextSize = 12
+    stealSpeedBox.Parent = SpeedSettingsGUI
+
+    local StealCorner = Instance.new("UICorner")
+    StealCorner.CornerRadius = UDim.new(0, 6)
+    StealCorner.Parent = stealSpeedBox
+
+    local JumpLabel = Instance.new("TextLabel")
+    JumpLabel.Size = UDim2.new(0.6, 0, 0, 25)
+    JumpLabel.Position = UDim2.new(0, 10, 0, 95)
+    JumpLabel.BackgroundTransparency = 1
+    JumpLabel.Text = "Jump Power:"
+    JumpLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    JumpLabel.Font = Enum.Font.Gotham
+    JumpLabel.TextSize = 12
+    JumpLabel.TextXAlignment = Enum.TextXAlignment.Left
+    JumpLabel.Parent = SpeedSettingsGUI
+
+    local JumpPowerBox = Instance.new("TextBox")
+    JumpPowerBox.Size = UDim2.new(0, 60, 0, 25)
+    JumpPowerBox.Position = UDim2.new(1, -70, 0, 95)
+    JumpPowerBox.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
+    JumpPowerBox.Text = tostring(SpeedBooster.JumpPower)
+    JumpPowerBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    JumpPowerBox.Font = Enum.Font.GothamBold
+    JumpPowerBox.TextSize = 12
+    JumpPowerBox.ClearTextOnFocus = false
+    JumpPowerBox.Parent = SpeedSettingsGUI
+
+    local JumpCorner = Instance.new("UICorner")
+    JumpCorner.CornerRadius = UDim.new(0, 6)
+    JumpCorner.Parent = JumpPowerBox
+
+    JumpPowerBox.FocusLost:Connect(function()
+        local value = tonumber(JumpPowerBox.Text)
+        if value then
+            SpeedBooster.JumpPower = value
+            SaveConfig()
+        else
+            JumpPowerBox.Text = tostring(SpeedBooster.JumpPower)
+        end
+    end)
+
+    normalSpeedBox.FocusLost:Connect(function()
+        local value = tonumber(normalSpeedBox.Text)
+        if value then
+            SpeedBooster.NormalSpeed = value
+            if SpeedBooster.Enabled then
+                stopSpeedBooster()
+                task.wait(0.1)
+                startSpeedBooster()
+            end
+            SaveConfig()
+        else
+            normalSpeedBox.Text = tostring(SpeedBooster.NormalSpeed)
+        end
+    end)
+
+    stealSpeedBox.FocusLost:Connect(function()
+        local value = tonumber(stealSpeedBox.Text)
+        if value then
+            SpeedBooster.StealSpeed = value
+            if SpeedBooster.Enabled then
+                stopSpeedBooster()
+                task.wait(0.1)
+                startSpeedBooster()
+            end
+            SaveConfig()
+        else
+            stealSpeedBox.Text = tostring(SpeedBooster.StealSpeed)
+        end
+    end)
+
+    SpeedSettingsGearBtn.MouseButton1Click:Connect(function()
+        SpeedSettingsGUI.Visible = not SpeedSettingsGUI.Visible
+    end)
+
     -- ✅ TP DOWN (under Speed)
     local TPDownContainer, TPDownBtn, TPDownLabel = createMainButton("TP Down", 2, function()
         SmallTPDownGUI.Visible = true
@@ -2744,15 +3332,21 @@ local function createMainGUI(device)
         
         -- ✅ FPS Booster
         enableFPSBooster()
-        fpsButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        if fpsButton then
+            fpsButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        end
         
         -- ✅ Optimizer
         enableOptimizer()
-        optimizerButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        if optimizerButton then
+            optimizerButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        end
         
         -- ✅ Hitbox Expander
         enableHitbox()
-        hitboxButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        if hitboxButton then
+            hitboxButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        end
         
         -- ✅ Anti Death
         AntiDeathEnabled = true
@@ -2765,9 +3359,11 @@ local function createMainGUI(device)
                 end
             end)
         end
-        antiDeathButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        if antiDeathButton then
+            antiDeathButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        end
         
-        print("[NATESHUB] ✅ Auto-enabled ALL MISC: FPS Booster, Optimizer, Hitbox, Anti Death")
+        print("[TIM CHEESE DUELS] ✅ Auto-enabled ALL MISC: FPS Booster, Optimizer, Hitbox, Anti Death")
     end)
 
     local function createMISCButton(name, order, callback)
@@ -3007,9 +3603,9 @@ local function initializeGUI(device)
         end
         
         refreshSmallButtonPositions()
-        print("[NATESHUB] ✅ Auto-enabled for "..device..": Speed, Unwalk, Anti Rag, Ragdoll TP")
-        print("[NATESHUB] ✅ Visible Small GUIs: Speed, Unwalk, Anti Rag, Ragdoll TP, Drop (OFF)")
-        print("[NATESHUB] ⚪ Hidden Small GUIs: Inf Jump, Spin Bot, Float, FOV (turn on from Main tab)")
+        print("[TIM CHEESE DUELS] ✅ Auto-enabled for "..device..": Speed, Unwalk, Anti Rag, Ragdoll TP")
+        print("[TIM CHEESE DUELS] ✅ Visible Small GUIs: Speed, Unwalk, Anti Rag, Ragdoll TP, Drop (OFF)")
+        print("[TIM CHEESE DUELS] ⚪ Hidden Small GUIs: Inf Jump, Spin Bot, Float, FOV (turn on from Main tab)")
     end)
 
     createMainGUI(device)
@@ -3254,7 +3850,7 @@ function createRightButtons(device)
 end
 
 print("══════════════════════════════════════════════")
-print("   NATESHUB💵👑 V7.0 FINAL COMPLETE!")
+print("   TIM CHEESE DUELS LOADED")
 print("══════════════════════════════════════════════")
 print("✅ VISIBLE SMALL GUIs (5):")
 print("   Speed (ON), Unwalk (ON), Anti Rag (ON),")
@@ -3271,6 +3867,6 @@ print("════════════════════════�
 game:GetService("Players").PlayerRemoving:Connect(function(plr)
     if plr == player then
         SaveConfig()
-        print("[NATESHUB] ✅ Auto-saved config on leave!")
+        print("[TIM CHEESE DUELS] ✅ Auto-saved config on leave!")
     end
 end)
