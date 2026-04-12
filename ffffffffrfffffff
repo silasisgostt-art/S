@@ -180,7 +180,7 @@ local PATH_BASE_STOP = 1.35
 local PATH_MIN_STOP = 0.65
 local PATH_NEXT_POINT_BIAS = 0.45
 local PATH_SMOOTH_FACTOR = 0.12
-local PATH_CHECKPOINT_RADIUS = 5
+local PATH_CHECKPOINT_RADIUS = 6
 
 local stealPath1 = {
     -- Auto Right (switched spots)
@@ -257,7 +257,8 @@ local function runStealPath(path)
         if not pathActive then return end
 
         if p.teleportHere then
-            hrpLocal.CFrame = CFrame.new(p.pos)
+            local leftOffsetPos = p.pos - (hrpLocal.CFrame.RightVector * 2)
+            hrpLocal.CFrame = CFrame.new(leftOffsetPos, p.pos)
             hrpLocal.AssemblyLinearVelocity = Vector3.zero
             return
         end
