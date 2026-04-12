@@ -263,13 +263,23 @@ local function runStealPath(path)
             speed = i > 2 and PATH_SECOND_SPEED or PATH_VELOCITY_SPEED
         end
         
-        -- ✅ TELEPORT TO FINAL CHECKPOINT (last 2 waypoints)
-        if i > #path - 2 then
-            local currentPos = p.pos or p
-            hrpLocal.CFrame = CFrame.new(currentPos + Vector3.new(0, 3, 0))
-            task.wait(0.1)
+        local nextP = path[i+1] and path[i+1].pos
+        local currentPos = p.pos or p
+        
+        -- ✅ CHECK IF THIS IS FINAL CHECKPOINT (index == #path)
+        if i == #path then
+            -- Wait until 6 studs away, then TP
+            while pathActive and (hrpLocal.Position - currentPos).Magnitude > 6 do
+                local moveDir = (currentPos - hrpLocal.Position).Unit
+                hrpLocal.AssemblyLinearVelocity = Vector3.new(moveDir.X * speed, hrpLocal.AssemblyLinearVelocity.Y, moveDir.Z * speed)
+                task.wait()
+            end
+            -- ✅ TP TO FINAL CHECKPOINT when within 6 studs!
+            if pathActive then
+                hrpLocal.CFrame = CFrame.new(currentPos + Vector3.new(0, 3, 0))
+                hrpLocal.AssemblyLinearVelocity = Vector3.zero
+            end
         else
-            local nextP = path[i+1] and path[i+1].pos
             pathMoveToPoint(hrpLocal, p, nextP, speed)
         end
         task.wait()
@@ -1474,8 +1484,7 @@ local function createSmallGUI(name, yPosition)
     Button.Size = UDim2.new(0, 30, 1, 0)
     Button.Position = UDim2.new(1, -30, 0, 0)
     Button.BackgroundTransparency = 1
-    -- ✅ SPEED BUTTON GETS GEAR, OTHERS GET LIGHTNING
-    Button.Text = (name == "Speed") and "⚙️" or "⚡"
+    Button.Text = "⚡"
     Button.TextColor3 = Color3.fromRGB(138, 43, 226)
     Button.Font = Enum.Font.GothamBold
     Button.TextSize = 16
@@ -2545,6 +2554,172 @@ local function createMainGUI(device)
     end)
 
     SpeedSettingsBtn.MouseButton1Click:Connect(function()
+        SpeedSettingsGUI.Visible = not SpeedSettingsGUI.Visible
+    end)
+
+    -- ✅ SPEED BOOSTER SETTINGS GEAR (next to Speed Booster)
+    local SpeedSettingsGearBtn = Instance.new("TextButton")
+    SpeedSettingsGearBtn.Size = UDim2.new(0, 50, 0, 50)
+    SpeedSettingsGearBtn.Position = UDim2.new(1, -50, 0, 0)
+    SpeedSettingsGearBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
+    SpeedSettingsGearBtn.Text = "⚙️"
+    SpeedSettingsGearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SpeedSettingsGearBtn.Font = Enum.Font.GothamBold
+    SpeedSettingsGearBtn.TextSize = device == "iPhone" and 16 or 20
+    SpeedSettingsGearBtn.Parent = SpeedContainer
+
+    local SpeedGearCorner = Instance.new("UICorner")
+    SpeedGearCorner.CornerRadius = UDim.new(0, 10)
+    SpeedGearCorner.Parent = SpeedSettingsGearBtn
+
+    -- ✅ SPEED SETTINGS POPUP (NEXT TO BUTTON!)
+    local SpeedSettingsGUI = Instance.new("Frame")
+    SpeedSettingsGUI.Name = "SpeedSettingsGUI"
+    SpeedSettingsGUI.Size = UDim2.new(0, 200, 0, 150)
+    SpeedSettingsGUI.Position = UDim2.new(0.5, -100, 0.5, -75)
+    SpeedSettingsGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    SpeedSettingsGUI.BackgroundTransparency = 0.1
+    SpeedSettingsGUI.BorderSizePixel = 0
+    SpeedSettingsGUI.Visible = false
+    SpeedSettingsGUI.Active = true
+    SpeedSettingsGUI.Draggable = true
+    SpeedSettingsGUI.Parent = ScreenGui
+
+    local SpeedCorner = Instance.new("UICorner")
+    SpeedCorner.CornerRadius = UDim.new(0, 12)
+    SpeedCorner.Parent = SpeedSettingsGUI
+
+    local SpeedStroke = Instance.new("UIStroke")
+    SpeedStroke.Color = Color3.fromRGB(255, 255, 255)
+    SpeedStroke.Thickness = 2
+    SpeedStroke.Parent = SpeedSettingsGUI
+
+    local SpeedTitle = Instance.new("TextLabel")
+    SpeedTitle.Size = UDim2.new(1, 0, 0, 30)
+    SpeedTitle.BackgroundTransparency = 1
+    SpeedTitle.Text = "SPEED SETTINGS"
+    SpeedTitle.TextColor3 = Color3.fromRGB(255, 200, 100)
+    SpeedTitle.Font = Enum.Font.GothamBold
+    SpeedTitle.TextSize = 14
+    SpeedTitle.Parent = SpeedSettingsGUI
+
+    local NormalLabel = Instance.new("TextLabel")
+    NormalLabel.Size = UDim2.new(0.6, 0, 0, 25)
+    NormalLabel.Position = UDim2.new(0, 10, 0, 35)
+    NormalLabel.BackgroundTransparency = 1
+    NormalLabel.Text = "Normal Speed:"
+    NormalLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    NormalLabel.Font = Enum.Font.Gotham
+    NormalLabel.TextSize = 12
+    NormalLabel.TextXAlignment = Enum.TextXAlignment.Left
+    NormalLabel.Parent = SpeedSettingsGUI
+
+    local normalSpeedBox = Instance.new("TextBox")
+    normalSpeedBox.Size = UDim2.new(0, 60, 0, 25)
+    normalSpeedBox.Position = UDim2.new(1, -70, 0, 35)
+    normalSpeedBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    normalSpeedBox.Text = tostring(SpeedBooster.NormalSpeed)
+    normalSpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    normalSpeedBox.Font = Enum.Font.GothamBold
+    normalSpeedBox.TextSize = 12
+    normalSpeedBox.Parent = SpeedSettingsGUI
+
+    local NormalCorner = Instance.new("UICorner")
+    NormalCorner.CornerRadius = UDim.new(0, 6)
+    NormalCorner.Parent = normalSpeedBox
+
+    local StealLabel = Instance.new("TextLabel")
+    StealLabel.Size = UDim2.new(0.6, 0, 0, 25)
+    StealLabel.Position = UDim2.new(0, 10, 0, 65)
+    StealLabel.BackgroundTransparency = 1
+    StealLabel.Text = "Steal Speed:"
+    StealLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    StealLabel.Font = Enum.Font.Gotham
+    StealLabel.TextSize = 12
+    StealLabel.TextXAlignment = Enum.TextXAlignment.Left
+    StealLabel.Parent = SpeedSettingsGUI
+
+    local stealSpeedBox = Instance.new("TextBox")
+    stealSpeedBox.Size = UDim2.new(0, 60, 0, 25)
+    stealSpeedBox.Position = UDim2.new(1, -70, 0, 65)
+    stealSpeedBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    stealSpeedBox.Text = tostring(SpeedBooster.StealSpeed)
+    stealSpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    stealSpeedBox.Font = Enum.Font.GothamBold
+    stealSpeedBox.TextSize = 12
+    stealSpeedBox.Parent = SpeedSettingsGUI
+
+    local StealCorner = Instance.new("UICorner")
+    StealCorner.CornerRadius = UDim.new(0, 6)
+    StealCorner.Parent = stealSpeedBox
+
+    local JumpLabel = Instance.new("TextLabel")
+    JumpLabel.Size = UDim2.new(0.6, 0, 0, 25)
+    JumpLabel.Position = UDim2.new(0, 10, 0, 95)
+    JumpLabel.BackgroundTransparency = 1
+    JumpLabel.Text = "Jump Power:"
+    JumpLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    JumpLabel.Font = Enum.Font.Gotham
+    JumpLabel.TextSize = 12
+    JumpLabel.TextXAlignment = Enum.TextXAlignment.Left
+    JumpLabel.Parent = SpeedSettingsGUI
+
+    local JumpPowerBox = Instance.new("TextBox")
+    JumpPowerBox.Size = UDim2.new(0, 60, 0, 25)
+    JumpPowerBox.Position = UDim2.new(1, -70, 0, 95)
+    JumpPowerBox.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
+    JumpPowerBox.Text = tostring(SpeedBooster.JumpPower)
+    JumpPowerBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    JumpPowerBox.Font = Enum.Font.GothamBold
+    JumpPowerBox.TextSize = 12
+    JumpPowerBox.ClearTextOnFocus = false
+    JumpPowerBox.Parent = SpeedSettingsGUI
+
+    local JumpCorner = Instance.new("UICorner")
+    JumpCorner.CornerRadius = UDim.new(0, 6)
+    JumpCorner.Parent = JumpPowerBox
+
+    JumpPowerBox.FocusLost:Connect(function()
+        local value = tonumber(JumpPowerBox.Text)
+        if value then
+            SpeedBooster.JumpPower = value
+            SaveConfig()
+        else
+            JumpPowerBox.Text = tostring(SpeedBooster.JumpPower)
+        end
+    end)
+
+    normalSpeedBox.FocusLost:Connect(function()
+        local value = tonumber(normalSpeedBox.Text)
+        if value then
+            SpeedBooster.NormalSpeed = value
+            if SpeedBooster.Enabled then
+                stopSpeedBooster()
+                task.wait(0.1)
+                startSpeedBooster()
+            end
+            SaveConfig()
+        else
+            normalSpeedBox.Text = tostring(SpeedBooster.NormalSpeed)
+        end
+    end)
+
+    stealSpeedBox.FocusLost:Connect(function()
+        local value = tonumber(stealSpeedBox.Text)
+        if value then
+            SpeedBooster.StealSpeed = value
+            if SpeedBooster.Enabled then
+                stopSpeedBooster()
+                task.wait(0.1)
+                startSpeedBooster()
+            end
+            SaveConfig()
+        else
+            stealSpeedBox.Text = tostring(SpeedBooster.StealSpeed)
+        end
+    end)
+
+    SpeedSettingsGearBtn.MouseButton1Click:Connect(function()
         SpeedSettingsGUI.Visible = not SpeedSettingsGUI.Visible
     end)
 
