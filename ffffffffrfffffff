@@ -17,6 +17,7 @@
 ]]
 
 repeat task.wait() until game:IsLoaded()
+print("[NATESHUB] Script started loading...")
 
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
@@ -181,24 +182,36 @@ local PATH_BASE_STOP = 1.35
 local PATH_MIN_STOP = 0.65
 local PATH_NEXT_POINT_BIAS = 0.45
 local PATH_SMOOTH_FACTOR = 0.12
+local PATH_FINAL_SNAP_RADIUS = 5
 
 local stealPath1 = {
-    {pos=Vector3.new(-470.6,-5.9,34.4)},{pos=Vector3.new(-484.2,-3.9,21.4)},
-    {pos=Vector3.new(-475.6,-5.8,29.3)},{pos=Vector3.new(-473.4,-5.9,111)}
+    {pos=Vector3.new(-473,-7,30)},{pos=Vector3.new(-483,-5,18)},
+    {pos=Vector3.new(-475,-7,26)},{pos=Vector3.new(-470.677,-7.002,92.947)},
+    {pos=Vector3.new(-482.631,-5.103,98.310)}
 }
 
 local stealPath2 = {
-    {pos=Vector3.new(-474.7,-5.9,91.0)},{pos=Vector3.new(-483.4,-3.9,97.3)},
-    {pos=Vector3.new(-474.7,-5.9,91.0)},{pos=Vector3.new(-476.1,-5.5,25.4)}
+    {pos=Vector3.new(-472,-7,90)},{pos=Vector3.new(-484,-5,100)},
+    {pos=Vector3.new(-475,-7,93)},{pos=Vector3.new(-474.971,-7.002,26.771)},
+    {pos=Vector3.new(-486.811,-4.837,27.875)}
 }
 
-local function pathMoveToPoint(hrp, current, nextPoint, speed)
+local function pathMoveToPoint(hrp, current, nextPoint, speed, finalPoint)
     local conn
+    local snappedToFinal = false
     conn = RunService.Heartbeat:Connect(function()
         if not pathActive then 
             conn:Disconnect()
             hrp.AssemblyLinearVelocity = Vector3.zero 
             return 
+        end
+
+        if finalPoint and (hrp.Position - finalPoint).Magnitude <= PATH_FINAL_SNAP_RADIUS then
+            snappedToFinal = true
+            conn:Disconnect()
+            hrp.CFrame = CFrame.new(finalPoint)
+            hrp.AssemblyLinearVelocity = Vector3.zero
+            return
         end
         
         local pos = hrp.Position
@@ -229,13 +242,16 @@ local function pathMoveToPoint(hrp, current, nextPoint, speed)
         lastFlatVel = Vector3.new(vel.X, 0, vel.Z)
     end)
     
-    while pathActive and (Vector3.new(hrp.Position.X,0,hrp.Position.Z)-Vector3.new(current.X,0,current.Z)).Magnitude > PATH_BASE_STOP do
+    while pathActive and not snappedToFinal and (Vector3.new(hrp.Position.X,0,hrp.Position.Z)-Vector3.new(current.X,0,current.Z)).Magnitude > PATH_BASE_STOP do
         RunService.Heartbeat:Wait()
     end
+
+    return snappedToFinal
 end
 
 local function runStealPath(path)
     local hrpLocal = (player.Character or player.CharacterAdded:Wait()):WaitForChild("HumanoidRootPart")
+    local finalPoint = path[#path] and path[#path].pos
     for i, p in ipairs(path) do
         if not pathActive then return end
         
@@ -247,8 +263,10 @@ local function runStealPath(path)
         end
         
         local nextP = path[i+1] and path[i+1].pos
-        pathMoveToPoint(hrpLocal, p.pos, nextP, speed)
-        task.wait()
+        local snapped = pathMoveToPoint(hrpLocal, p.pos, nextP, speed, finalPoint)
+        if snapped then
+            return
+        end
     end
 end
 
@@ -257,7 +275,6 @@ local function startStealPath(path)
     task.spawn(function() 
         while pathActive do 
             runStealPath(path) 
-            task.wait(0.1) 
         end 
     end)
 end
@@ -420,7 +437,13 @@ InstaSteal = {
 
 local AnimalsData = {}
 pcall(function()
-    AnimalsData = require(ReplicatedStorage:WaitForChild("Datas"):WaitForChild("Animals"))
+    local datas = ReplicatedStorage:WaitForChild("Datas", 5)
+    if datas then
+        local animals = datas:WaitForChild("Animals", 5)
+        if animals then
+            AnimalsData = require(animals)
+        end
+    end
 end)
 
 local allAnimalsCache = {}
@@ -673,7 +696,7 @@ local function autoStealLoop()
     end)
 end
 
-initializeScanner()
+task.spawn(initializeScanner)
 autoStealLoop() -- ✅ STARTS IMMEDIATELY!
 
 -- ═══════════════════════════════════════════════════════
@@ -781,6 +804,7 @@ local function disableHitbox()
 end
 
 local AntiDeathEnabled = false
+local AntiDeath = { Conn = nil }
 
 local AntiRagdollConns = {}
 
@@ -1281,20 +1305,33 @@ end
 
 local selectedDevice = nil
 local GUI_SIZES = {
-    PC = {Width = 520, Height = 400},
-    iPad = {Width = 420, Height = 360},
-    iPhone = {Width = 260, Height = 360}
+    PC = {Width = 450, Height = 340},
+    iPad = {Width = 360, Height = 310},
+    iPhone = {Width = 220, Height = 300}
 }
 
 -- ═══════════════════════════════════════════════════════
 -- MAIN SCREENGUI
 -- ═══════════════════════════════════════════════════════
 
+-- Destroy old GUI if re-running
+pcall(function()
+    local old = CoreGui:FindFirstChild("tim cheese duels")
+    if old then old:Destroy() end
+end)
+
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "tim cheese duels"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.Parent = CoreGui
+local guiOk = pcall(function() ScreenGui.Parent = CoreGui end)
+if not guiOk then
+    pcall(function()
+        if syn and syn.protect_gui then syn.protect_gui(ScreenGui) end
+        ScreenGui.Parent = player.PlayerGui
+    end)
+end
+print("[NATESHUB] GUI parented:", ScreenGui.Parent and ScreenGui.Parent.Name or "FAILED")
 
 -- Rainbow outline: cycles UIStroke colors across the GUI
 local function startRainbowOutline()
@@ -1399,11 +1436,11 @@ end)
 
 local SmallGUIInstances = {}
 
-local function createSmallGUI(name, yPosition)
+local function createSmallGUI(name, yPosition, hasGear)
     local SmallGUI = Instance.new("Frame")
     SmallGUI.Name = "Small"..name.."GUI"
-    SmallGUI.Size = UDim2.new(0, 110, 0, 30)
-    SmallGUI.Position = UDim2.new(0.5, -55, 0, yPosition)
+    SmallGUI.Size = UDim2.new(0, 96, 0, 26)
+    SmallGUI.Position = UDim2.new(0.5, -48, 0, yPosition)
     SmallGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
     SmallGUI.BackgroundTransparency = 0.3
     SmallGUI.BorderSizePixel = 0
@@ -1434,31 +1471,46 @@ local function createSmallGUI(name, yPosition)
     DotCorner.Parent = GreenDot
     
     local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(1, -45, 1, 0)
+    Label.Size = hasGear and UDim2.new(1, -70, 1, 0) or UDim2.new(1, -45, 1, 0)
     Label.Position = UDim2.new(0, 25, 0, 0)
     Label.BackgroundTransparency = 1
     Label.Text = name
     Label.TextColor3 = Color3.fromRGB(255, 255, 255)
     Label.Font = Enum.Font.GothamBold
-    Label.TextSize = 11
+    Label.TextSize = 10
     Label.TextXAlignment = Enum.TextXAlignment.Left
     Label.Parent = SmallGUI
     
+    local GearButton = nil
+    if hasGear then
+        GearButton = Instance.new("TextButton")
+        GearButton.Name = "SettingsButton"
+        GearButton.Size = UDim2.new(0, 22, 1, 0)
+        GearButton.Position = UDim2.new(1, -52, 0, 0)
+        GearButton.BackgroundTransparency = 1
+        GearButton.Text = "⚙"
+        GearButton.TextColor3 = Color3.fromRGB(255, 215, 0)
+        GearButton.Font = Enum.Font.GothamBold
+        GearButton.TextSize = 14
+        GearButton.ZIndex = 2
+        GearButton.Parent = SmallGUI
+    end
+
     -- ✅ CLICK BUTTON (smaller, on right side only - doesn't block dragging!)
     local Button = Instance.new("TextButton")
-    Button.Size = UDim2.new(0, 30, 1, 0)
-    Button.Position = UDim2.new(1, -30, 0, 0)
+    Button.Size = hasGear and UDim2.new(0, 26, 1, 0) or UDim2.new(0, 30, 1, 0)
+    Button.Position = hasGear and UDim2.new(1, -28, 0, 0) or UDim2.new(1, -30, 0, 0)
     Button.BackgroundTransparency = 1
     Button.Text = "⚡"
     Button.TextColor3 = Color3.fromRGB(138, 43, 226)
     Button.Font = Enum.Font.GothamBold
-    Button.TextSize = 16
+    Button.TextSize = 14
     Button.ZIndex = 2
     Button.Parent = SmallGUI
     
-    SmallGUIInstances[name] = {Frame = SmallGUI, Label = Label, Button = Button, Dot = GreenDot}
+    SmallGUIInstances[name] = {Frame = SmallGUI, Label = Label, Button = Button, Dot = GreenDot, GearButton = GearButton}
     
-    return SmallGUI, Button, GreenDot
+    return SmallGUI, Button, GreenDot, GearButton
 end
 
 local SmallButtonOrder = {
@@ -1486,28 +1538,30 @@ local function refreshSmallButtonPositions()
 
     local maxButtons = 10
     local columns = 5
-    local buttonWidth = 110
-    local gap = 12
-    local startY = 60
+    local buttonWidth = 96
+    local buttonHeight = 26
+    local gapX = 10
+    local gapY = 10
+    local startY = 15
 
     for index, frame in ipairs(visibleFrames) do
         if index > maxButtons then
             frame.Visible = false
         else
-            local posIndex = index
-            local row = math.floor((posIndex - 1) / columns)
-            local col = (posIndex - 1) % columns
-            local rowCount = math.min(#visibleFrames - row * columns, columns)
-            local totalWidth = rowCount * buttonWidth + (rowCount - 1) * gap
-            local xOffset = -totalWidth / 2 + col * (buttonWidth + gap)
-            frame.Position = UDim2.new(0.5, xOffset, 0, startY + row * 40)
+            local row = math.floor((index - 1) / columns)
+            local col = (index - 1) % columns
+            local rowCount = math.min(columns, maxButtons - row * columns)
+            local totalWidth = rowCount * buttonWidth + (rowCount - 1) * gapX
+            local xOffset = -math.floor(totalWidth / 2) + col * (buttonWidth + gapX)
+
+            frame.Position = UDim2.new(0.5, xOffset, 0, startY + row * (buttonHeight + gapY))
             frame.Visible = true
         end
     end
 end
 
 -- ✅ CREATE ALL SMALL GUIs WITH GREEN DOTS!
-local SmallSpeedGUI, SmallSpeedButton, SpeedDot = createSmallGUI("Speed", 100)
+local SmallSpeedGUI, SmallSpeedButton, SpeedDot, SmallSpeedGear = createSmallGUI("Speed", 100, true)
 local SmallUnwalkGUI, SmallUnwalkButton, UnwalkDot = createSmallGUI("Unwalk", 145)
 local SmallSpinBotGUI, SmallSpinBotButton, SpinDot = createSmallGUI("Spin Bot", 190)
 local SmallInfJumpGUI, SmallInfJumpButton, InfJumpDot = createSmallGUI("Inf Jump", 235)
@@ -1873,8 +1927,8 @@ end)
 
 local StealBarContainer = Instance.new("Frame")
 StealBarContainer.Name = "StealBarContainer"
-StealBarContainer.Size = UDim2.new(0, 320, 0, 50)
-StealBarContainer.Position = UDim2.new(0.5, -160, 1, -90)
+StealBarContainer.Size = UDim2.new(0, 280, 0, 44)
+StealBarContainer.Position = UDim2.new(0.5, -140, 1, -84)
 StealBarContainer.BackgroundColor3 = Color3.fromRGB(20, 25, 20)
 StealBarContainer.BorderSizePixel = 0
 StealBarContainer.Parent = ScreenGui
@@ -2510,6 +2564,38 @@ local function createMainGUI(device)
         SpeedSettingsGUI.Visible = not SpeedSettingsGUI.Visible
     end)
 
+    if SmallSpeedGear then
+        SmallSpeedGear.MouseButton1Click:Connect(function()
+            SpeedSettingsGUI.Visible = not SpeedSettingsGUI.Visible
+        end)
+    end
+
+    local SpeedSaveBtn = Instance.new("TextButton")
+    SpeedSaveBtn.Size = UDim2.new(0, 70, 0, 22)
+    SpeedSaveBtn.Position = UDim2.new(0.5, -35, 1, -26)
+    SpeedSaveBtn.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+    SpeedSaveBtn.Text = "SAVE"
+    SpeedSaveBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SpeedSaveBtn.Font = Enum.Font.GothamBold
+    SpeedSaveBtn.TextSize = 12
+    SpeedSaveBtn.Parent = SpeedSettingsGUI
+
+    local SpeedSaveCorner = Instance.new("UICorner")
+    SpeedSaveCorner.CornerRadius = UDim.new(0, 6)
+    SpeedSaveCorner.Parent = SpeedSaveBtn
+
+    SpeedSaveBtn.MouseButton1Click:Connect(function()
+        local n = tonumber(normalSpeedBox.Text)
+        local s = tonumber(stealSpeedBox.Text)
+        local j = tonumber(JumpPowerBox.Text)
+
+        if n then SpeedBooster.NormalSpeed = n else normalSpeedBox.Text = tostring(SpeedBooster.NormalSpeed) end
+        if s then SpeedBooster.StealSpeed = s else stealSpeedBox.Text = tostring(SpeedBooster.StealSpeed) end
+        if j then SpeedBooster.JumpPower = j else JumpPowerBox.Text = tostring(SpeedBooster.JumpPower) end
+
+        SaveConfig()
+    end)
+
     -- ✅ TP DOWN (under Speed)
     local TPDownContainer, TPDownBtn, TPDownLabel = createMainButton("TP Down", 2, function()
         SmallTPDownGUI.Visible = true
@@ -3050,11 +3136,14 @@ iPadButton.MouseButton1Click:Connect(function() initializeGUI("iPad") end)
 iPhoneButton.MouseButton1Click:Connect(function() initializeGUI("iPhone") end)
 
 function createOpenButton(device)
-    local buttonSize = device == "iPhone" and 55 or 70
+    local buttonSize = device == "iPhone" and 48 or 60
+    local rightMargin = 15
+    local gap = 10
+    local col1X = -(buttonSize * 2) - gap - rightMargin
 
     local OpenButton = Instance.new("TextButton")
     OpenButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    OpenButton.Position = UDim2.new(0, 15, 0.5, -buttonSize/2)
+    OpenButton.Position = UDim2.new(1, col1X, 0, 15)
     OpenButton.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
     OpenButton.BackgroundTransparency = 0.2
     OpenButton.Text = "OPEN"
@@ -3105,13 +3194,17 @@ end
 local AutoLeftSmallGUI, AutoRightSmallGUI
 
 function createAutoButtons(device)
-    local buttonSize = device == "iPhone" and 55 or 70
-    local yOffset = buttonSize + 10
+    local buttonSize = device == "iPhone" and 48 or 60
+    local rightMargin = 15
+    local gap = 10
+    local topOffset = buttonSize + 30
+    local col1X = -(buttonSize * 2) - gap - rightMargin
+    local col2X = -buttonSize - rightMargin
 
     -- ✅ AUTO LEFT Button (GRAY!)
     local AutoLeftButton = Instance.new("TextButton")
     AutoLeftButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    AutoLeftButton.Position = UDim2.new(0, 15, 0.5, -buttonSize/2 + yOffset)
+    AutoLeftButton.Position = UDim2.new(1, col1X, 0, topOffset)
     AutoLeftButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75) -- ✅ GRAY!
     AutoLeftButton.BackgroundTransparency = 0.3
     AutoLeftButton.Text = "AUTO\nLEFT"
@@ -3132,7 +3225,7 @@ function createAutoButtons(device)
     -- ✅ AUTO RIGHT Button (SIDE BY SIDE - GRAY!)
     local AutoRightButton = Instance.new("TextButton")
     AutoRightButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    AutoRightButton.Position = UDim2.new(0, 15 + buttonSize + 10, 0.5, -buttonSize/2 + yOffset)
+    AutoRightButton.Position = UDim2.new(1, col2X, 0, topOffset)
     AutoRightButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75) -- ✅ GRAY!
     AutoRightButton.BackgroundTransparency = 0.3
     AutoRightButton.Text = "AUTO\nRIGHT"
@@ -3184,12 +3277,17 @@ end
 -- ═══════════════════════════════════════════════════════
 
 function createRightButtons(device)
-    local buttonSize = device == "iPhone" and 60 or 75
+    local buttonSize = device == "iPhone" and 52 or 64
+    local rightMargin = 15
+    local gap = 10
+    local topOffset = buttonSize * 2 + 40
+    local col1X = -(buttonSize * 2) - gap - rightMargin
+    local col2X = -buttonSize - rightMargin
 
     -- ✅ TRACK PLAYER Button (RIGHT SIDE - GRAY!)
     local TrackPlayerButton = Instance.new("TextButton")
     TrackPlayerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    TrackPlayerButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize - 10)
+    TrackPlayerButton.Position = UDim2.new(1, col1X, 0, topOffset)
     TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75) -- ✅ GRAY!
     TrackPlayerButton.BackgroundTransparency = 0.3
     TrackPlayerButton.Text = "TRACK\nPLAYER"
@@ -3222,7 +3320,7 @@ function createRightButtons(device)
     -- ✅ HIT CIRCLE Button (UNDER TRACK PLAYER - GRAY!)
     local HitCircleButton = Instance.new("TextButton")
     HitCircleButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    HitCircleButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, 10)
+    HitCircleButton.Position = UDim2.new(1, col2X, 0, topOffset)
     HitCircleButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75) -- ✅ GRAY!
     HitCircleButton.BackgroundTransparency = 0.3
     HitCircleButton.Text = "HIT\nCIRCLE"
