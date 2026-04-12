@@ -181,7 +181,7 @@ local PATH_BASE_STOP = 1.35
 local PATH_MIN_STOP = 0.65
 local PATH_NEXT_POINT_BIAS = 0.45
 local PATH_SMOOTH_FACTOR = 0.12
-local PATH_FINAL_SNAP_RADIUS = 3
+local PATH_FINAL_SNAP_RADIUS = 5
 local PATH_LEFT_FINAL_SNAP_RADIUS = 5
 
 local stealPath1 = {
@@ -1548,7 +1548,7 @@ local SmallSpinBotGUI, SmallSpinBotButton, SpinDot = createSmallGUI("Spin Bot", 
 local SmallInfJumpGUI, SmallInfJumpButton, InfJumpDot = createSmallGUI("Inf Jump", 235)
 local SmallFloatGUI, SmallFloatButton, FloatDot = createSmallGUI("Float Up", 280)
 local SmallFOVGUI, SmallFOVButton, FOVDot = createSmallGUI("FOV", 325)
-local SmallAntiRagGUI, SmallAntiRagButton, AntiRagDot, SmallAntiRagGear = createSmallGUI("Anti Ragdoll", 370, true) -- ✅ With Gear!
+local SmallAntiRagGUI, SmallAntiRagButton, AntiRagDot = createSmallGUI("Anti Ragdoll", 370) -- ✅ Standalone!
 local SmallRagdollTPGUI, SmallRagdollTPButton, RagdollTPDot = createSmallGUI("Ragdoll TP", 415) -- ✅ NEW!
 local SmallDropGUI, SmallDropButton, DropDot = createSmallGUI("Drop Brainrot", 460) -- ✅ NEW!
 local SmallTPDownGUI, SmallTPDownButton, TPDownDot = createSmallGUI("TP Down", 505)
@@ -1848,114 +1848,6 @@ SmallAntiRagButton.MouseButton1Click:Connect(function()
         disableAntiRagdoll()
     end
 end)
-
--- ✅ SNAP RADIUS SETTINGS POPUP (Anti Ragdoll Gear)
-local SnapRadiusGUI = Instance.new("Frame")
-SnapRadiusGUI.Name = "SnapRadiusGUI"
-SnapRadiusGUI.Size = UDim2.new(0, 200, 0, 130)
-SnapRadiusGUI.Position = UDim2.new(0.5, -100, 0.5, -65)
-SnapRadiusGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-SnapRadiusGUI.BackgroundTransparency = 0.1
-SnapRadiusGUI.BorderSizePixel = 0
-SnapRadiusGUI.Visible = false
-SnapRadiusGUI.Active = true
-SnapRadiusGUI.Draggable = true
-SnapRadiusGUI.Parent = ScreenGui
-
-local SnapCorner = Instance.new("UICorner")
-SnapCorner.CornerRadius = UDim.new(0, 12)
-SnapCorner.Parent = SnapRadiusGUI
-
-local SnapStroke = Instance.new("UIStroke")
-SnapStroke.Color = Color3.fromRGB(255, 255, 255)
-SnapStroke.Thickness = 2
-SnapStroke.Parent = SnapRadiusGUI
-
-local SnapTitle = Instance.new("TextLabel")
-SnapTitle.Size = UDim2.new(1, 0, 0, 30)
-SnapTitle.BackgroundTransparency = 1
-SnapTitle.Text = "SNAP RADIUS SETTINGS"
-SnapTitle.TextColor3 = Color3.fromRGB(255, 200, 100)
-SnapTitle.Font = Enum.Font.GothamBold
-SnapTitle.TextSize = 14
-SnapTitle.Parent = SnapRadiusGUI
-
--- Right snap radius
-local RightSnapLabel = Instance.new("TextLabel")
-RightSnapLabel.Size = UDim2.new(0.6, 0, 0, 25)
-RightSnapLabel.Position = UDim2.new(0, 10, 0, 35)
-RightSnapLabel.BackgroundTransparency = 1
-RightSnapLabel.Text = "Right Radius:"
-RightSnapLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-RightSnapLabel.Font = Enum.Font.Gotham
-RightSnapLabel.TextSize = 12
-RightSnapLabel.TextXAlignment = Enum.TextXAlignment.Left
-RightSnapLabel.Parent = SnapRadiusGUI
-
-local RightSnapBox = Instance.new("TextBox")
-RightSnapBox.Size = UDim2.new(0, 60, 0, 25)
-RightSnapBox.Position = UDim2.new(1, -70, 0, 35)
-RightSnapBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-RightSnapBox.Text = tostring(PATH_FINAL_SNAP_RADIUS)
-RightSnapBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-RightSnapBox.Font = Enum.Font.GothamBold
-RightSnapBox.TextSize = 12
-RightSnapBox.Parent = SnapRadiusGUI
-
-local RightSnapCorner = Instance.new("UICorner")
-RightSnapCorner.CornerRadius = UDim.new(0, 6)
-RightSnapCorner.Parent = RightSnapBox
-
-RightSnapBox.FocusLost:Connect(function()
-    local val = tonumber(RightSnapBox.Text)
-    if val and val > 0 then
-        PATH_FINAL_SNAP_RADIUS = val
-    else
-        RightSnapBox.Text = tostring(PATH_FINAL_SNAP_RADIUS)
-    end
-end)
-
--- Left snap radius
-local LeftSnapLabel = Instance.new("TextLabel")
-LeftSnapLabel.Size = UDim2.new(0.6, 0, 0, 25)
-LeftSnapLabel.Position = UDim2.new(0, 10, 0, 65)
-LeftSnapLabel.BackgroundTransparency = 1
-LeftSnapLabel.Text = "Left Radius:"
-LeftSnapLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-LeftSnapLabel.Font = Enum.Font.Gotham
-LeftSnapLabel.TextSize = 12
-LeftSnapLabel.TextXAlignment = Enum.TextXAlignment.Left
-LeftSnapLabel.Parent = SnapRadiusGUI
-
-local LeftSnapBox = Instance.new("TextBox")
-LeftSnapBox.Size = UDim2.new(0, 60, 0, 25)
-LeftSnapBox.Position = UDim2.new(1, -70, 0, 65)
-LeftSnapBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-LeftSnapBox.Text = tostring(PATH_LEFT_FINAL_SNAP_RADIUS)
-LeftSnapBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-LeftSnapBox.Font = Enum.Font.GothamBold
-LeftSnapBox.TextSize = 12
-LeftSnapBox.Parent = SnapRadiusGUI
-
-local LeftSnapCorner = Instance.new("UICorner")
-LeftSnapCorner.CornerRadius = UDim.new(0, 6)
-LeftSnapCorner.Parent = LeftSnapBox
-
-LeftSnapBox.FocusLost:Connect(function()
-    local val = tonumber(LeftSnapBox.Text)
-    if val and val > 0 then
-        PATH_LEFT_FINAL_SNAP_RADIUS = val
-    else
-        LeftSnapBox.Text = tostring(PATH_LEFT_FINAL_SNAP_RADIUS)
-    end
-end)
-
--- Gear button on the small Anti Ragdoll GUI toggles this popup
-if SmallAntiRagGear then
-    SmallAntiRagGear.MouseButton1Click:Connect(function()
-        SnapRadiusGUI.Visible = not SnapRadiusGUI.Visible
-    end)
-end
 
 -- ✅ RAGDOLL TP SMALL GUI TOGGLE (NEW!)
 SmallRagdollTPButton.MouseButton1Click:Connect(function()
@@ -2505,7 +2397,7 @@ local function createMainGUI(device)
     -- ✅ SPEED SETTINGS POPUP (NEXT TO BUTTON!)
     local SpeedSettingsGUI = Instance.new("Frame")
     SpeedSettingsGUI.Name = "SpeedSettingsGUI"
-    SpeedSettingsGUI.Size = UDim2.new(0, 200, 0, 150)
+    SpeedSettingsGUI.Size = UDim2.new(0, 200, 0, 185)
     SpeedSettingsGUI.Position = UDim2.new(0.5, -100, 0.5, -75)
     SpeedSettingsGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
     SpeedSettingsGUI.BackgroundTransparency = 0.1
@@ -2608,6 +2500,43 @@ local function createMainGUI(device)
     local JumpCorner = Instance.new("UICorner")
     JumpCorner.CornerRadius = UDim.new(0, 6)
     JumpCorner.Parent = JumpPowerBox
+
+    local SnapLabel = Instance.new("TextLabel")
+    SnapLabel.Size = UDim2.new(0.6, 0, 0, 25)
+    SnapLabel.Position = UDim2.new(0, 10, 0, 125)
+    SnapLabel.BackgroundTransparency = 1
+    SnapLabel.Text = "Snap Radius:"
+    SnapLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SnapLabel.Font = Enum.Font.Gotham
+    SnapLabel.TextSize = 12
+    SnapLabel.TextXAlignment = Enum.TextXAlignment.Left
+    SnapLabel.Parent = SpeedSettingsGUI
+
+    local SnapRadiusBox = Instance.new("TextBox")
+    SnapRadiusBox.Size = UDim2.new(0, 60, 0, 25)
+    SnapRadiusBox.Position = UDim2.new(1, -70, 0, 125)
+    SnapRadiusBox.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
+    SnapRadiusBox.Text = tostring(PATH_FINAL_SNAP_RADIUS)
+    SnapRadiusBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SnapRadiusBox.Font = Enum.Font.GothamBold
+    SnapRadiusBox.TextSize = 12
+    SnapRadiusBox.ClearTextOnFocus = false
+    SnapRadiusBox.Parent = SpeedSettingsGUI
+
+    local SnapCorner = Instance.new("UICorner")
+    SnapCorner.CornerRadius = UDim.new(0, 6)
+    SnapCorner.Parent = SnapRadiusBox
+
+    SnapRadiusBox.FocusLost:Connect(function()
+        local value = tonumber(SnapRadiusBox.Text)
+        if value and value > 0 then
+            PATH_FINAL_SNAP_RADIUS = value
+            PATH_LEFT_FINAL_SNAP_RADIUS = value
+            SaveConfig()
+        else
+            SnapRadiusBox.Text = tostring(PATH_FINAL_SNAP_RADIUS)
+        end
+    end)
 
     JumpPowerBox.FocusLost:Connect(function()
         local value = tonumber(JumpPowerBox.Text)
@@ -2751,8 +2680,8 @@ local function createMainGUI(device)
         refreshSmallButtonPositions()
     end, true)
     
-    -- ✅ ANTI RAGDOLL (WITH SETTINGS FOR SNAP RADIUS)
-    local AntiRagContainer, AntiRagSettingsBtn, AntiRagBtn, AntiRagLabel = createMainButton("Anti Ragdoll", 7, function()
+    -- ✅ ANTI RAGDOLL (NO SETTINGS)
+    local AntiRagContainer, AntiRagBtn, AntiRagLabel = createMainButton("Anti Ragdoll", 7, function()
         SmallAntiRagGUI.Visible = true
         if AntiRagdollEnabled then
             AntiRagLabel.Text = "Anti Ragdoll"
