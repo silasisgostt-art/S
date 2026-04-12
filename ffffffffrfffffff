@@ -2395,8 +2395,8 @@ local function createMainGUI(device)
     -- ✅ SPEED SETTINGS POPUP (NEXT TO BUTTON!)
     local SpeedSettingsGUI = Instance.new("Frame")
     SpeedSettingsGUI.Name = "SpeedSettingsGUI"
-    SpeedSettingsGUI.Size = UDim2.new(0, 200, 0, 150)
-    SpeedSettingsGUI.Position = UDim2.new(0.5, -100, 0.5, -75)
+    SpeedSettingsGUI.Size = UDim2.new(0, 200, 0, 210)
+    SpeedSettingsGUI.Position = UDim2.new(0.5, -100, 0.5, -105)
     SpeedSettingsGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
     SpeedSettingsGUI.BackgroundTransparency = 0.1
     SpeedSettingsGUI.BorderSizePixel = 0
@@ -2509,6 +2509,31 @@ local function createMainGUI(device)
         end
     end)
 
+    local FinalSnapLabel2 = Instance.new("TextLabel")
+    FinalSnapLabel2.Size = UDim2.new(0.6, 0, 0, 25)
+    FinalSnapLabel2.Position = UDim2.new(0, 10, 0, 125)
+    FinalSnapLabel2.BackgroundTransparency = 1
+    FinalSnapLabel2.Text = "Snap Radius:"
+    FinalSnapLabel2.TextColor3 = Color3.fromRGB(255, 255, 255)
+    FinalSnapLabel2.Font = Enum.Font.Gotham
+    FinalSnapLabel2.TextSize = 12
+    FinalSnapLabel2.TextXAlignment = Enum.TextXAlignment.Left
+    FinalSnapLabel2.Parent = SpeedSettingsGUI
+
+    finalSnapRadiusBox = Instance.new("TextBox")
+    finalSnapRadiusBox.Size = UDim2.new(0, 60, 0, 25)
+    finalSnapRadiusBox.Position = UDim2.new(1, -70, 0, 125)
+    finalSnapRadiusBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    finalSnapRadiusBox.Text = tostring(PATH_FINAL_SNAP_RADIUS)
+    finalSnapRadiusBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    finalSnapRadiusBox.Font = Enum.Font.GothamBold
+    finalSnapRadiusBox.TextSize = 12
+    finalSnapRadiusBox.Parent = SpeedSettingsGUI
+
+    local FinalSnapBoxCorner = Instance.new("UICorner")
+    FinalSnapBoxCorner.CornerRadius = UDim.new(0, 6)
+    FinalSnapBoxCorner.Parent = finalSnapRadiusBox
+
     normalSpeedBox.FocusLost:Connect(function()
         local value = tonumber(normalSpeedBox.Text)
         if value then
@@ -2567,10 +2592,12 @@ local function createMainGUI(device)
         local n = tonumber(normalSpeedBox.Text)
         local s = tonumber(stealSpeedBox.Text)
         local j = tonumber(JumpPowerBox.Text)
+        local f = tonumber(finalSnapRadiusBox.Text)
 
         if n then SpeedBooster.NormalSpeed = n else normalSpeedBox.Text = tostring(SpeedBooster.NormalSpeed) end
         if s then SpeedBooster.StealSpeed = s else stealSpeedBox.Text = tostring(SpeedBooster.StealSpeed) end
         if j then SpeedBooster.JumpPower = j else JumpPowerBox.Text = tostring(SpeedBooster.JumpPower) end
+        if f and f > 0 then PATH_FINAL_SNAP_RADIUS = f else finalSnapRadiusBox.Text = tostring(PATH_FINAL_SNAP_RADIUS) end
 
         SaveConfig()
     end)
