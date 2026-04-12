@@ -183,21 +183,13 @@ local PATH_SMOOTH_FACTOR = 0.12
 local PATH_CHECKPOINT_RADIUS = 5
 
 local stealPath1 = {
-    {pos=Vector3.new(-470.6,-5.9,34.4)},
-    {pos=Vector3.new(-484.2,-3.9,21.4)},
-    {pos=Vector3.new(-475.6,-5.8,29.3)},
-    {pos=Vector3.new(-473.4,-5.9,111)},
-    -- Added as last 2 checkpoints for Auto Right
+    -- Auto Right: checkpoint then final checkpoint
     {pos=Vector3.new(-472.699, -7.002, 95.855), checkpointRadius = PATH_CHECKPOINT_RADIUS},
     {pos=Vector3.new(-484.563, -5.103, 94.365)}
 }
 
 local stealPath2 = {
-    {pos=Vector3.new(-474.7,-5.9,91.0)},
-    {pos=Vector3.new(-483.4,-3.9,97.3)},
-    {pos=Vector3.new(-474.7,-5.9,91.0)},
-    {pos=Vector3.new(-476.1,-5.5,25.4)},
-    -- Added as last 2 checkpoints for Auto Left return
+    -- Auto Left return: checkpoint then final checkpoint
     {pos=Vector3.new(-472.612, -7.002, 26.491), checkpointRadius = PATH_CHECKPOINT_RADIUS},
     {pos=Vector3.new(-483.128, -5.037, 26.443)}
 }
