@@ -187,8 +187,7 @@ local PATH_FINAL_SNAP_RADIUS = 5
 local stealPath1 = {
     {pos=Vector3.new(-473,-7,30)},{pos=Vector3.new(-483,-5,18)},
     {pos=Vector3.new(-475,-7,26)},{pos=Vector3.new(-472.699,-7.002,95.855)},
-    {pos=Vector3.new(-484.563,-5.103,94.365)},
-    {pos=Vector3.new(-482.631,-5.103,98.310)}
+    {pos=Vector3.new(-484.563,-5.103,94.365)},{pos=Vector3.new(-482.631,-5.103,98.310)}
 }
 
 local stealPath2 = {
