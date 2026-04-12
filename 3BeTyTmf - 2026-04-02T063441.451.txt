@@ -176,30 +176,32 @@ local lastFlatVel = Vector3.zero
 
 local PATH_VELOCITY_SPEED = 59.2
 local PATH_SECOND_SPEED = 29.6
-local PATH_BASE_STOP = 0.4
-local PATH_MIN_STOP = 0.05
-local PATH_NEXT_POINT_BIAS = 0.05
-local PATH_SMOOTH_FACTOR = 0.02
-local PATH_CHECKPOINT_RADIUS = 7
+local PATH_BASE_STOP = 1.35
+local PATH_MIN_STOP = 0.65
+local PATH_NEXT_POINT_BIAS = 0.45
+local PATH_SMOOTH_FACTOR = 0.12
+local PATH_CHECKPOINT_RADIUS = 9
+local PATH_TP_STEP_DISTANCE = 2.5
+local PATH_TP_STEP_DELAY = 0.02
 
 local stealPath1 = {
-    {pos=Vector3.new(-470.6,-5.9,34.4)},
-    {pos=Vector3.new(-484.2,-3.9,21.4)},
-    {pos=Vector3.new(-475.6,-5.8,29.3)},
-    {pos=Vector3.new(-473.4,-5.9,111)},
-    -- Added as last 2 checkpoints for Auto Right
-    {pos=Vector3.new(-472.699, -7.002, 95.855), checkpointRadius = PATH_CHECKPOINT_RADIUS},
-    {pos=Vector3.new(-484.563, -5.103, 94.365)}
-}
-
-local stealPath2 = {
+    -- Auto Right (switched spots)
     {pos=Vector3.new(-474.7,-5.9,91.0)},
     {pos=Vector3.new(-483.4,-3.9,97.3)},
     {pos=Vector3.new(-474.7,-5.9,91.0)},
     {pos=Vector3.new(-476.1,-5.5,25.4)},
-    -- Added as last 2 checkpoints for Auto Left return
     {pos=Vector3.new(-472.612, -7.002, 26.491), checkpointRadius = PATH_CHECKPOINT_RADIUS},
-    {pos=Vector3.new(-483.128, -5.037, 26.443)}
+    {pos=Vector3.new(-481.395, -5.037, 25.836), teleportHere = true, teleportOffset = Vector3.new(-5, 0, 0)}
+}
+
+local stealPath2 = {
+    -- Auto Left (switched spots)
+    {pos=Vector3.new(-470.6,-5.9,34.4)},
+    {pos=Vector3.new(-484.2,-3.9,21.4)},
+    {pos=Vector3.new(-475.6,-5.8,29.3)},
+    {pos=Vector3.new(-473.4,-5.9,111)},
+    {pos=Vector3.new(-475.488, -7.002, 95.993), checkpointRadius = PATH_CHECKPOINT_RADIUS},
+    {pos=Vector3.new(-484.563, -5.103, 94.365), teleportHere = true, teleportOffset = Vector3.new(-5, 0, 0)}
 }
 
 local function pathMoveToPoint(hrp, current, nextPoint, speed)
@@ -255,6 +257,24 @@ local function runStealPath(path)
     local hrpLocal = (player.Character or player.CharacterAdded:Wait()):WaitForChild("HumanoidRootPart")
     for i, p in ipairs(path) do
         if not pathActive then return end
+
+        if p.teleportHere then
+            local offset = p.teleportOffset or Vector3.zero
+            local startPos = hrpLocal.Position
+            local targetPos = p.pos + offset
+            local totalDistance = (targetPos - startPos).Magnitude
+            local stepCount = math.max(1, math.ceil(totalDistance / PATH_TP_STEP_DISTANCE))
+
+            for step = 1, stepCount do
+                if not pathActive then return end
+                local alpha = step / stepCount
+                hrpLocal.CFrame = CFrame.new(startPos:Lerp(targetPos, alpha))
+                hrpLocal.AssemblyLinearVelocity = Vector3.zero
+                task.wait(PATH_TP_STEP_DELAY)
+            end
+            hrpLocal.AssemblyLinearVelocity = Vector3.zero
+            return
+        end
         
         local speed
         if SpeedBooster.Enabled then
@@ -265,6 +285,7 @@ local function runStealPath(path)
         
         local nextP = path[i+1] and path[i+1].pos
         pathMoveToPoint(hrpLocal, p, nextP, speed)
+
         task.wait()
     end
 end
@@ -272,10 +293,10 @@ end
 local function startStealPath(path)
     pathActive = true
     task.spawn(function() 
-        while pathActive do 
-            runStealPath(path) 
-            task.wait(0.1) 
-        end 
+        runStealPath(path)
+        pathActive = false
+        local hrpLocal = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+        if hrpLocal then hrpLocal.AssemblyLinearVelocity = Vector3.zero end
     end)
 end
 
