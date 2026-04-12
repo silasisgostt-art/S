@@ -268,8 +268,8 @@ local function runStealPath(path)
         
         -- ✅ CHECK IF THIS IS FINAL CHECKPOINT (index == #path)
         if i == #path then
-            -- Wait until 6 studs away, then TP
-            while pathActive and (hrpLocal.Position - currentPos).Magnitude > 6 do
+            -- Wait until finalTPRadius studs away, then TP
+            while pathActive and (hrpLocal.Position - currentPos).Magnitude > finalTPRadius do
                 local moveDir = (currentPos - hrpLocal.Position).Unit
                 hrpLocal.AssemblyLinearVelocity = Vector3.new(moveDir.X * speed, hrpLocal.AssemblyLinearVelocity.Y, moveDir.Z * speed)
                 task.wait()
@@ -2575,8 +2575,8 @@ local function createMainGUI(device)
     -- ✅ SPEED SETTINGS POPUP (NEXT TO BUTTON!)
     local SpeedSettingsGUI = Instance.new("Frame")
     SpeedSettingsGUI.Name = "SpeedSettingsGUI"
-    SpeedSettingsGUI.Size = UDim2.new(0, 200, 0, 150)
-    SpeedSettingsGUI.Position = UDim2.new(0.5, -100, 0.5, -75)
+    SpeedSettingsGUI.Size = UDim2.new(0, 200, 0, 180)
+    SpeedSettingsGUI.Position = UDim2.new(0.5, -100, 0.5, -90)
     SpeedSettingsGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
     SpeedSettingsGUI.BackgroundTransparency = 0.1
     SpeedSettingsGUI.BorderSizePixel = 0
@@ -2719,6 +2719,43 @@ local function createMainGUI(device)
         end
     end)
 
+    -- ✅ FINAL TP RADIUS TEXT BOX
+    local RadiusLabel = Instance.new("TextLabel")
+    RadiusLabel.Size = UDim2.new(0.6, 0, 0, 25)
+    RadiusLabel.Position = UDim2.new(0, 10, 0, 137)
+    RadiusLabel.BackgroundTransparency = 1
+    RadiusLabel.Text = "TP Radius:"
+    RadiusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    RadiusLabel.Font = Enum.Font.Gotham
+    RadiusLabel.TextSize = 11
+    RadiusLabel.TextXAlignment = Enum.TextXAlignment.Left
+    RadiusLabel.Parent = SpeedSettingsGUI
+
+    local RadiusBox = Instance.new("TextBox")
+    RadiusBox.Size = UDim2.new(0, 55, 0, 25)
+    RadiusBox.Position = UDim2.new(1, -65, 0, 137)
+    RadiusBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    RadiusBox.Text = "6"
+    RadiusBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    RadiusBox.Font = Enum.Font.GothamBold
+    RadiusBox.TextSize = 12
+    RadiusBox.ClearTextOnFocus = false
+    RadiusBox.Parent = SpeedSettingsGUI
+
+    local RadiusCorner = Instance.new("UICorner")
+    RadiusCorner.CornerRadius = UDim.new(0, 6)
+    RadiusCorner.Parent = RadiusBox
+
+    local finalTPRadius = 6
+    RadiusBox.FocusLost:Connect(function()
+        local value = tonumber(RadiusBox.Text)
+        if value and value > 0 then
+            finalTPRadius = value
+        else
+            RadiusBox.Text = tostring(finalTPRadius)
+        end
+    end)
+
     SpeedSettingsGearBtn.MouseButton1Click:Connect(function()
         SpeedSettingsGUI.Visible = not SpeedSettingsGUI.Visible
     end)
@@ -2748,7 +2785,7 @@ local function createMainGUI(device)
         refreshSmallButtonPositions()
     end)
 
-    local SpinContainer, SpinBtn, SpinLabel = createMainButton("Spin Bot", 4, function()
+    local SpinContainer, SpinSettingsBtn, SpinBtn, SpinLabel = createMainButton("Spin Bot", 4, function()
         SmallSpinBotGUI.Visible = true
         if SpinBotEnabled then
             SpinLabel.Text = "Spin Bot"
@@ -2760,7 +2797,7 @@ local function createMainGUI(device)
             SpinDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
         end
         refreshSmallButtonPositions()
-    end)
+    end, true)
 
     local InfContainer, InfBtn, InfLabel = createMainButton("Inf Jump", 5, function()
         SmallInfJumpGUI.Visible = true
@@ -2788,6 +2825,152 @@ local function createMainGUI(device)
         end
         refreshSmallButtonPositions()
     end, true)
+
+    -- ✅ FOV SETTINGS POPUP
+    local FOVSettingsGUI = Instance.new("Frame")
+    FOVSettingsGUI.Name = "FOVSettingsPopup"
+    FOVSettingsGUI.Size = UDim2.new(0, 200, 0, 100)
+    FOVSettingsGUI.Position = UDim2.new(0.5, -100, 0.5, -50)
+    FOVSettingsGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    FOVSettingsGUI.BackgroundTransparency = 0.1
+    FOVSettingsGUI.BorderSizePixel = 0
+    FOVSettingsGUI.Visible = false
+    FOVSettingsGUI.Active = true
+    FOVSettingsGUI.Draggable = true
+    FOVSettingsGUI.Parent = ScreenGui
+
+    local FOVCorner = Instance.new("UICorner")
+    FOVCorner.CornerRadius = UDim.new(0, 12)
+    FOVCorner.Parent = FOVSettingsGUI
+
+    local FOVStroke = Instance.new("UIStroke")
+    FOVStroke.Color = Color3.fromRGB(255, 255, 255)
+    FOVStroke.Thickness = 2
+    FOVStroke.Parent = FOVSettingsGUI
+
+    local FOVTitle = Instance.new("TextLabel")
+    FOVTitle.Size = UDim2.new(1, 0, 0, 30)
+    FOVTitle.BackgroundTransparency = 1
+    FOVTitle.Text = "FOV SETTINGS (MAX 120)"
+    FOVTitle.TextColor3 = Color3.fromRGB(255, 200, 100)
+    FOVTitle.Font = Enum.Font.GothamBold
+    FOVTitle.TextSize = 14
+    FOVTitle.Parent = FOVSettingsGUI
+
+    local FOVLabel = Instance.new("TextLabel")
+    FOVLabel.Size = UDim2.new(0.5, 0, 0, 25)
+    FOVLabel.Position = UDim2.new(0, 10, 0, 35)
+    FOVLabel.BackgroundTransparency = 1
+    FOVLabel.Text = "FOV Value:"
+    FOVLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    FOVLabel.Font = Enum.Font.Gotham
+    FOVLabel.TextSize = 12
+    FOVLabel.TextXAlignment = Enum.TextXAlignment.Left
+    FOVLabel.Parent = FOVSettingsGUI
+
+    local fovSliderBox = Instance.new("TextBox")
+    fovSliderBox.Size = UDim2.new(0, 60, 0, 25)
+    fovSliderBox.Position = UDim2.new(1, -70, 0, 35)
+    fovSliderBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    fovSliderBox.Text = tostring(fovValue)
+    fovSliderBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    fovSliderBox.Font = Enum.Font.GothamBold
+    fovSliderBox.TextSize = 12
+    fovSliderBox.Parent = FOVSettingsGUI
+
+    local FOVBoxCorner = Instance.new("UICorner")
+    FOVBoxCorner.CornerRadius = UDim.new(0, 6)
+    FOVBoxCorner.Parent = fovSliderBox
+
+    fovSliderBox.FocusLost:Connect(function()
+        local val = tonumber(fovSliderBox.Text)
+        if val then
+            fovValue = math.clamp(val, 1, 120)
+            fovSliderBox.Text = tostring(fovValue)
+            if fovEnabled then
+                updateFOV()
+            end
+            SaveConfig()
+        else
+            fovSliderBox.Text = tostring(fovValue)
+        end
+    end)
+
+    FOVSettingsBtn.MouseButton1Click:Connect(function()
+        FOVSettingsGUI.Visible = not FOVSettingsGUI.Visible
+    end)
+
+    -- ✅ SPIN BOT SETTINGS POPUP
+    local SpinSettingsGUI = Instance.new("Frame")
+    SpinSettingsGUI.Name = "SpinBotSettingsPopup"
+    SpinSettingsGUI.Size = UDim2.new(0, 200, 0, 100)
+    SpinSettingsGUI.Position = UDim2.new(0.5, -100, 0.5, -50)
+    SpinSettingsGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    SpinSettingsGUI.BackgroundTransparency = 0.1
+    SpinSettingsGUI.BorderSizePixel = 0
+    SpinSettingsGUI.Visible = false
+    SpinSettingsGUI.Active = true
+    SpinSettingsGUI.Draggable = true
+    SpinSettingsGUI.Parent = ScreenGui
+
+    local SpinSettingsCorner = Instance.new("UICorner")
+    SpinSettingsCorner.CornerRadius = UDim.new(0, 12)
+    SpinSettingsCorner.Parent = SpinSettingsGUI
+
+    local SpinSettingsStroke = Instance.new("UIStroke")
+    SpinSettingsStroke.Color = Color3.fromRGB(255, 255, 255)
+    SpinSettingsStroke.Thickness = 2
+    SpinSettingsStroke.Parent = SpinSettingsGUI
+
+    local SpinSettingsTitle = Instance.new("TextLabel")
+    SpinSettingsTitle.Size = UDim2.new(1, 0, 0, 30)
+    SpinSettingsTitle.BackgroundTransparency = 1
+    SpinSettingsTitle.Text = "SPIN BOT SETTINGS"
+    SpinSettingsTitle.TextColor3 = Color3.fromRGB(255, 200, 100)
+    SpinSettingsTitle.Font = Enum.Font.GothamBold
+    SpinSettingsTitle.TextSize = 14
+    SpinSettingsTitle.Parent = SpinSettingsGUI
+
+    local SpinSpeedLabel = Instance.new("TextLabel")
+    SpinSpeedLabel.Size = UDim2.new(0.5, 0, 0, 25)
+    SpinSpeedLabel.Position = UDim2.new(0, 10, 0, 35)
+    SpinSpeedLabel.BackgroundTransparency = 1
+    SpinSpeedLabel.Text = "Spin Speed:"
+    SpinSpeedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SpinSpeedLabel.Font = Enum.Font.Gotham
+    SpinSpeedLabel.TextSize = 12
+    SpinSpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
+    SpinSpeedLabel.Parent = SpinSettingsGUI
+
+    local spinSpeedBox = Instance.new("TextBox")
+    spinSpeedBox.Size = UDim2.new(0, 60, 0, 25)
+    spinSpeedBox.Position = UDim2.new(1, -70, 0, 35)
+    spinSpeedBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    spinSpeedBox.Text = "10"
+    spinSpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    spinSpeedBox.Font = Enum.Font.GothamBold
+    spinSpeedBox.TextSize = 12
+    spinSpeedBox.Parent = SpinSettingsGUI
+
+    local SpinSpeedCorner = Instance.new("UICorner")
+    SpinSpeedCorner.CornerRadius = UDim.new(0, 6)
+    SpinSpeedCorner.Parent = spinSpeedBox
+
+    spinSpeedBox.FocusLost:Connect(function()
+        local val = tonumber(spinSpeedBox.Text)
+        if val and val > 0 then
+            SPIN_SPEED = val
+            if SpinBotEnabled and spinBAV then
+                spinBAV.AngularVelocity = Vector3.new(0, SPIN_SPEED, 0)
+            end
+        else
+            spinSpeedBox.Text = "10"
+        end
+    end)
+
+    SpinSettingsBtn.MouseButton1Click:Connect(function()
+        SpinSettingsGUI.Visible = not SpinSettingsGUI.Visible
+    end)
     
     -- ✅ ANTI RAGDOLL (NO SETTINGS)
     local AntiRagContainer, AntiRagBtn, AntiRagLabel = createMainButton("Anti Ragdoll", 7, function()
