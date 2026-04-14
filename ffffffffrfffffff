@@ -55,6 +55,11 @@ local ConfigData = {
     buttonPositions = nil,
     tpUpEnabled = false,
     tpDownVisible = false,
+    -- New performance/bypass settings
+    bypassMode = false,       -- allow higher client-side speeds (may trigger server-side anti-cheat)
+    useWalkSpeed = false,     -- use Humanoid.WalkSpeed instead of setting AssemblyLinearVelocity
+    smoothing = 0.12,         -- smoothing factor for velocity interpolation (0-1)
+    aggressiveFPS = false,    -- more aggressive FPS optimization pass
 }
 
 local buttonsLocked = false
@@ -74,6 +79,10 @@ local function SaveConfig()
     ConfigData.tpUpEnabled = TPUpEnabled or false
     ConfigData.tpDownVisible = (SmallTPDownGUI and SmallTPDownGUI.Visible) or false
     ConfigData.buttonPositions = getButtonPositions()
+    ConfigData.bypassMode = SpeedBooster and SpeedBooster.BypassMode or false
+    ConfigData.useWalkSpeed = SpeedBooster and SpeedBooster.UseWalkSpeed or false
+    ConfigData.smoothing = SpeedBooster and SpeedBooster.Smoothing or 0.12
+    ConfigData.aggressiveFPS = ConfigData.aggressiveFPS or false
 
     if writefile then
         local success, err = pcall(function()
@@ -100,6 +109,11 @@ local function LoadConfig()
         if success and data then
             ConfigData = data
             buttonsLocked = ConfigData.buttonsLocked or false
+            -- Ensure fields exist when loading older configs
+            ConfigData.bypassMode = ConfigData.bypassMode or false
+            ConfigData.useWalkSpeed = ConfigData.useWalkSpeed or false
+            ConfigData.smoothing = ConfigData.smoothing or 0.12
+            ConfigData.aggressiveFPS = ConfigData.aggressiveFPS or false
             print("[TIM CHEESE DUELS] ✅ Config loaded!")
             return true
         end
@@ -121,7 +135,11 @@ SpeedBooster = {
     StealSpeed = ConfigData.stealSpeed or 29.6,
     JumpPower = ConfigData.jumpPower or 25.8,
     HeartbeatConn = nil,
-    JumpConn = nil
+    JumpConn = nil,
+    -- smoothing and bypass options
+    Smoothing = ConfigData.smoothing or 0.12,
+    UseWalkSpeed = ConfigData.useWalkSpeed or false,
+    BypassMode = ConfigData.bypassMode or false,
 }
 
 local function startSpeedBooster()
@@ -148,7 +166,27 @@ local function startSpeedBooster()
         
         if h.MoveDirection.Magnitude > 0 then
             local vel = carry and SpeedBooster.StealSpeed or SpeedBooster.NormalSpeed
-            r.AssemblyLinearVelocity = Vector3.new(h.MoveDirection.X * vel, r.AssemblyLinearVelocity.Y, h.MoveDirection.Z * vel)
+            if SpeedBooster.BypassMode then
+                vel = vel * 1.7 -- stronger client-side speed when bypass enabled (may trigger server checks)
+            end
+
+            if SpeedBooster.UseWalkSpeed then
+                -- rely on humanoid movement for smoother server reconciliation
+                pcall(function() h.WalkSpeed = vel end)
+            else
+                -- smooth assembly velocity changes to reduce sudden spikes that cause rubberbanding
+                local desiredX = h.MoveDirection.X * vel
+                local desiredZ = h.MoveDirection.Z * vel
+                local cur = r.AssemblyLinearVelocity
+                local s = math.clamp(SpeedBooster.Smoothing or 0.12, 0, 1)
+                local newX = cur.X * (1 - s) + desiredX * s
+                local newZ = cur.Z * (1 - s) + desiredZ * s
+                r.AssemblyLinearVelocity = Vector3.new(newX, cur.Y, newZ)
+            end
+        else
+            -- if not moving, optionally decay velocity gently
+            local cur = r.AssemblyLinearVelocity
+            r.AssemblyLinearVelocity = Vector3.new(cur.X * 0.6, cur.Y, cur.Z * 0.6)
         end
     end)
     
@@ -165,6 +203,13 @@ end
 local function stopSpeedBooster()
     if SpeedBooster.HeartbeatConn then SpeedBooster.HeartbeatConn:Disconnect() SpeedBooster.HeartbeatConn = nil end
     if SpeedBooster.JumpConn then SpeedBooster.JumpConn:Disconnect() SpeedBooster.JumpConn = nil end
+    -- restore humanoid WalkSpeed if we used it
+    if player.Character then
+        local h = player.Character:FindFirstChildOfClass("Humanoid")
+        if h and SpeedBooster.UseWalkSpeed then
+            pcall(function() h.WalkSpeed = 16 end)
+        end
+    end
 end
 
 -- ═══════════════════════════════════════════════════════
@@ -775,6 +820,42 @@ local function enableFPSBooster()
     end)
     
     task.wait(3)
+    -- Aggressive pass if requested in config
+    if ConfigData and ConfigData.aggressiveFPS then
+        task.spawn(function()
+            pcall(function()
+                workspace:SetAttribute("__fps_boost_aggressive", true)
+            end)
+
+            for _, obj in pairs(workspace:GetDescendants()) do
+                pcall(function()
+                    if obj:IsA("Decal") or obj:IsA("Texture") or obj:IsA("SurfaceAppearance") then
+                        obj.Transparency = 1
+                        if obj:IsA("Decal") then pcall(function() obj.Texture = "" end) end
+                    elseif obj:IsA("SpecialMesh") or obj:IsA("MeshPart") then
+                        if obj:IsA("SpecialMesh") then obj:Destroy() end
+                        if obj:IsA("MeshPart") then obj.Material = Enum.Material.Plastic obj.CastShadow = false end
+                    elseif obj:IsA("BasePart") then
+                        obj.Material = Enum.Material.Plastic
+                        obj.CastShadow = false
+                        if obj:IsA("UnionOperation") then pcall(function() obj:Destroy() end) end
+                    elseif obj:IsA("ParticleEmitter") then
+                        pcall(function() obj.EmissionRate = 0 obj.Enabled = false end)
+                    end
+                end)
+            end
+
+            pcall(function()
+                if workspace:FindFirstChildOfClass("Terrain") then
+                    workspace.Terrain.WaterWaveSize = 0
+                    workspace.Terrain.WaterWaveSpeed = 0
+                    workspace.Terrain.WaterReflectance = 0
+                    workspace.Terrain.WaterTransparency = 1
+                end
+            end)
+        end)
+    end
+
     fpsBoosterActive = false
 end
 
