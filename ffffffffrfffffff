@@ -27,62 +27,6 @@ local PlayerGui = player:WaitForChild("PlayerGui")
 local character
 local hrp
 local hum
-local OWNER_USERNAME = "jasongod2k"
-
-local function isOwnerPlayer(plr)
-    return plr and string.lower(plr.Name) == OWNER_USERNAME
-end
-
-local function applyOwnerTitle(plr, char)
-    if not isOwnerPlayer(plr) or not char then return end
-    local head = char:FindFirstChild("Head") or char:WaitForChild("Head", 5)
-    if not head then return end
-
-    local existing = head:FindFirstChild("OwnerTitle")
-    if existing then
-        existing:Destroy()
-    end
-
-    local billboard = Instance.new("BillboardGui")
-    billboard.Name = "OwnerTitle"
-    billboard.Size = UDim2.new(0, 120, 0, 28)
-    billboard.StudsOffset = Vector3.new(0, 3.2, 0)
-    billboard.AlwaysOnTop = true
-    billboard.MaxDistance = 200
-    billboard.Parent = head
-
-    local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, 0, 1, 0)
-    title.BackgroundTransparency = 1
-    title.Text = "OWNER"
-    title.TextColor3 = Color3.fromRGB(255, 220, 60)
-    title.TextStrokeTransparency = 0.2
-    title.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-    title.Font = Enum.Font.GothamBlack
-    title.TextScaled = true
-    title.Parent = billboard
-end
-
-local function setupOwnerTitleSystem()
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if isOwnerPlayer(plr) then
-            if plr.Character then
-                applyOwnerTitle(plr, plr.Character)
-            end
-            plr.CharacterAdded:Connect(function(char)
-                applyOwnerTitle(plr, char)
-            end)
-        end
-    end
-
-    Players.PlayerAdded:Connect(function(plr)
-        if isOwnerPlayer(plr) then
-            plr.CharacterAdded:Connect(function(char)
-                applyOwnerTitle(plr, char)
-            end)
-        end
-    end)
-end
 
 local function setupCharacter(char)
     character = char
@@ -92,7 +36,6 @@ end
 
 if player.Character then setupCharacter(player.Character) end
 player.CharacterAdded:Connect(setupCharacter)
-setupOwnerTitleSystem()
 
 -- ═══════════════════════════════════════════════════════
 -- CONFIG SAVE/LOAD SYSTEM (AUTO-LOADS!)
@@ -237,7 +180,7 @@ local PATH_BASE_STOP = 1.32
 local PATH_MIN_STOP = 0.60
 local PATH_NEXT_POINT_BIAS = 0.45
 local PATH_SMOOTH_FACTOR = 0.10
-local PATH_CHECKPOINT_RADIUS = 12
+local PATH_CHECKPOINT_RADIUS = 14
 local PATH_TP_STEP_DISTANCE = 2.5
 local PATH_TP_STEP_DELAY = 0.03
 
@@ -537,27 +480,21 @@ end
 
 -- TP Down function (uses existing player/getHRP)
 local function tpDownToGround()
-    local root = getHRP()
-    if not root then return end
+    local hrp = getHRP()
+    if not hrp then return end
 
-    local origin = root.Position + Vector3.new(0, 2, 0)
+    local origin = hrp.Position
     local params = RaycastParams.new()
     params.FilterDescendantsInstances = {player.Character}
     params.FilterType = Enum.RaycastFilterType.Blacklist
-    params.IgnoreWater = false
 
     local ray = workspace:Raycast(origin, Vector3.new(0, -5000, 0), params)
     if ray and ray.Position then
         local groundY = ray.Position.Y
         -- put player a bit above ground to avoid clipping
         local target = Vector3.new(origin.X, groundY + 3, origin.Z)
-        root.CFrame = CFrame.new(target)
-    else
-        -- fallback when no ground is detected (void maps)
-        local fallbackY = math.max((workspace.FallenPartsDestroyHeight or -500) + 10, -500)
-        root.CFrame = CFrame.new(root.Position.X, fallbackY, root.Position.Z)
+        hrp.CFrame = CFrame.new(target)
     end
-    root.AssemblyLinearVelocity = Vector3.zero
 end
 
 local function isMyBase(plotName)
