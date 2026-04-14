@@ -3422,6 +3422,328 @@ game:GetService("Players").PlayerRemoving:Connect(function(plr)
 end)
 
 -- =========================
+-- EXTERNAL SPEED BYPASS (from user) - adapted and wired
+-- Adds a compact GUI to apply raw AssemblyLinearVelocity and optional lag hold
+-- Unique variable names used to avoid collisions with existing code
+-- =========================
+
+do
+    local Players_by = game:GetService("Players")
+    local RunService_by = game:GetService("RunService")
+    local UIS_by = game:GetService("UserInputService")
+
+    local player_by = Players_by.LocalPlayer
+
+    -- GUI
+    local gui_by = Instance.new("ScreenGui", game.CoreGui)
+    gui_by.Name = "5ue7_gui"
+    gui_by.ResetOnSpawn = false
+
+    local main_by = Instance.new("Frame", gui_by)
+    main_by.Size = UDim2.fromOffset(260,170)
+    main_by.Position = UDim2.fromScale(0.5,0.5)
+    main_by.AnchorPoint = Vector2.new(0.5,0.5)
+    main_by.BackgroundColor3 = Color3.fromRGB(0,0,0)
+    main_by.BorderSizePixel = 0
+    Instance.new("UICorner", main_by).CornerRadius = UDim.new(0,12)
+
+    local stroke_by = Instance.new("UIStroke", main_by)
+    stroke_by.Color = Color3.fromRGB(255,255,255)
+
+    -- Title
+    local title_by = Instance.new("TextLabel", main_by)
+    title_by.Size = UDim2.new(1,0,0,30)
+    title_by.BackgroundTransparency = 1
+    title_by.Text = "@ 5ue7 "
+    title_by.Font = Enum.Font.GothamBold
+    title_by.TextSize = 18
+    title_by.TextColor3 = Color3.new(1,1,1)
+
+    -- TOGGLES
+    local isLagOn_by = false
+    local isSpeedOn_by = false
+
+    local function createButton_by(text, x)
+        local btn = Instance.new("TextButton", main_by)
+        btn.Size = UDim2.fromOffset(110,26)
+        btn.Position = UDim2.new(x,0,0,35)
+        btn.BackgroundColor3 = Color3.fromRGB(30,30,30)
+        btn.TextColor3 = Color3.new(1,1,1)
+        btn.Font = Enum.Font.GothamBold
+        btn.TextSize = 13
+        btn.Text = text
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(1,0)
+        return btn
+    end
+
+    local lagBtn_by = createButton_by("LAG: OFF", 0.05)
+    local speedBtn_by = createButton_by("SPEED: OFF", 0.55)
+
+    -- connection for bypass RenderStepped
+    local bypassRenderConn = nil
+
+    local function enableExternalSpeed()
+        -- ensure we don't fight the built-in booster
+        if SpeedBooster and SpeedBooster.Enabled then
+            stopSpeedBooster()
+        end
+        if bypassRenderConn then return end
+        bypassRenderConn = RunService_by.RenderStepped:Connect(function()
+            local char = player_by.Character
+            if char and isSpeedOn_by then
+                local root = char:FindFirstChild("HumanoidRootPart")
+                local hum = char:FindFirstChildOfClass("Humanoid")
+                if root and hum and hum.MoveDirection.Magnitude > 0 then
+                    local direction = hum.MoveDirection.Unit
+                    local currentY = root.AssemblyLinearVelocity.Y
+                    root.AssemblyLinearVelocity = Vector3.new(
+                        direction.X * speedAmount_by,
+                        currentY,
+                        direction.Z * speedAmount_by
+                    )
+                end
+            end
+        end)
+    end
+
+    local function disableExternalSpeed()
+        if bypassRenderConn then
+            bypassRenderConn:Disconnect()
+            bypassRenderConn = nil
+        end
+        -- restore built-in booster if user had it enabled in config
+        if ConfigData and ConfigData.speedEnabled then
+            SpeedBooster.Enabled = true
+            startSpeedBooster()
+        end
+    end
+
+    lagBtn_by.MouseButton1Click:Connect(function()
+        isLagOn_by = not isLagOn_by
+        lagBtn_by.Text = isLagOn_by and "LAG: ON" or "LAG: OFF"
+    end)
+
+    speedBtn_by.MouseButton1Click:Connect(function()
+        isSpeedOn_by = not isSpeedOn_by
+        speedBtn_by.Text = isSpeedOn_by and "SPEED: ON" or "SPEED: OFF"
+        if isSpeedOn_by then
+            enableExternalSpeed()
+        else
+            disableExternalSpeed()
+        end
+    end)
+
+    -- SLIDER CREATOR (adapted names)
+    local function createSlider_by(y, text)
+        local holder = Instance.new("Frame", main_by)
+        holder.Size = UDim2.fromOffset(220,40)
+        holder.Position = UDim2.new(0.5,-110,0,y)
+        holder.BackgroundTransparency = 1
+
+        local label = Instance.new("TextLabel", holder)
+        label.Size = UDim2.new(1,0,0,16)
+        label.BackgroundTransparency = 1
+        label.Text = text
+        label.Font = Enum.Font.Gotham
+        label.TextSize = 12
+        label.TextColor3 = Color3.new(1,1,1)
+
+        local bar = Instance.new("Frame", holder)
+        bar.Size = UDim2.fromOffset(220,6)
+        bar.Position = UDim2.fromOffset(0,22)
+        bar.BackgroundColor3 = Color3.fromRGB(50,50,50)
+        bar.BorderSizePixel = 0
+        Instance.new("UICorner", bar).CornerRadius = UDim.new(1,0)
+
+        local fill = Instance.new("Frame", bar)
+        fill.Size = UDim2.fromScale(0,1)
+        fill.BackgroundColor3 = Color3.fromRGB(255,255,255)
+        fill.BorderSizePixel = 0
+        Instance.new("UICorner", fill).CornerRadius = UDim.new(1,0)
+
+        local knob = Instance.new("Frame", bar)
+        knob.Size = UDim2.fromOffset(12,12)
+        knob.AnchorPoint = Vector2.new(0.5,0.5)
+        knob.Position = UDim2.new(0,0,0.5,0)
+        knob.BackgroundColor3 = Color3.fromRGB(255,255,255)
+        Instance.new("UICorner", knob).CornerRadius = UDim.new(1,0)
+
+        return holder, bar, fill, knob, label
+    end
+
+    -- SLIDERS
+    local lagHolder_by, lagBar_by, lagFill_by, lagKnob_by, lagLabel_by = createSlider_by(75, "Lag: 0%")
+    local speedHolder_by, speedBar_by, speedFill_by, speedKnob_by, speedLabel_by = createSlider_by(120, "Speed: 16")
+
+    local lagAmount_by = 0
+    local speedAmount_by = 16
+
+    -- STATE
+    local draggingUI_by = false
+    local draggingSlider_by = nil
+    local dragStart_by, startPos_by
+
+    -- UPDATE SLIDER
+    local function updateSlider_by(bar, fill, knob, x)
+        local rel = math.clamp((x - bar.AbsolutePosition.X)/bar.AbsoluteSize.X, 0, 1)
+        fill.Size = UDim2.fromScale(rel,1)
+        knob.Position = UDim2.new(rel,0,0.5,0)
+        return rel
+    end
+
+    -- SLIDER INPUT
+    local function hookSlider_by(holder, bar, fill, knob, tp)
+        local function start(input)
+            draggingSlider_by = {bar, fill, knob, tp}
+        end
+
+        bar.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                start(input)
+            end
+        end)
+
+        knob.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                start(input)
+            end
+        end)
+
+        holder.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                draggingUI_by = false
+            end
+        end)
+    end
+
+    hookSlider_by(lagHolder_by, lagBar_by, lagFill_by, lagKnob_by, "lag")
+    hookSlider_by(speedHolder_by, speedBar_by, speedFill_by, speedKnob_by, "speed")
+
+    -- GLOBAL INPUT
+    UIS_by.InputChanged:Connect(function(input)
+        if draggingSlider_by and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local rel = updateSlider_by(draggingSlider_by[1], draggingSlider_by[2], draggingSlider_by[3], input.Position.X)
+
+            if draggingSlider_by[4] == "lag" then
+                lagAmount_by = rel
+                lagLabel_by.Text = "Lag: "..math.floor(rel*100).."%"
+            else
+                speedAmount_by = math.floor(16 + rel*84)
+                speedLabel_by.Text = "Speed: "..speedAmount_by
+            end
+        end
+
+        if draggingUI_by and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart_by
+            main_by.Position = UDim2.new(
+                startPos_by.X.Scale,
+                startPos_by.X.Offset + delta.X,
+                startPos_by.Y.Scale,
+                startPos_by.Y.Offset + delta.Y
+            )
+        end
+    end)
+
+    UIS_by.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            draggingSlider_by = nil
+            draggingUI_by = false
+        end
+    end)
+
+    -- UI DRAG (ANYWHERE except sliders)
+    main_by.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            if not draggingSlider_by then
+                draggingUI_by = true
+                dragStart_by = input.Position
+                startPos_by = main_by.Position
+            end
+        end
+    end)
+
+    -- APPLY SPEED (external bypass)
+    local lagConn_by = nil
+    RunService_by.RenderStepped:Connect(function()
+        if isLagOn_by and lagAmount_by > 0 then
+            local t = tick()
+            local blockTime = lagAmount_by * 0.1
+            while tick() - t < blockTime do end
+        end
+    end)
+
+    -- Ensure the external slider speed is used by the bypass loop
+    -- Keep a small mapping variable used by the bypass renderer
+    _G._external_bypass_speed = speedAmount_by
+
+    -- Update mapping every 0.2s to keep reference current
+    task.spawn(function()
+        while task.wait(0.2) do
+            _G._external_bypass_speed = speedAmount_by
+        end
+    end)
+
+    -- Use the bypass speed variable inside the bypass renderer
+    -- Adjust enableExternalSpeed to read the up-to-date value
+    if bypassRenderConn then bypassRenderConn:Disconnect() bypassRenderConn = nil end
+    bypassRenderConn = nil
+
+    local function start_bypass_renderer()
+        if bypassRenderConn then return end
+        bypassRenderConn = RunService_by.RenderStepped:Connect(function()
+            local char = player_by.Character
+            if char and isSpeedOn_by then
+                local root = char:FindFirstChild("HumanoidRootPart")
+                local hum = char:FindFirstChildOfClass("Humanoid")
+                if root and hum and hum.MoveDirection.Magnitude > 0 then
+                    local direction = hum.MoveDirection.Unit
+                    local currentY = root.AssemblyLinearVelocity.Y
+                    root.AssemblyLinearVelocity = Vector3.new(
+                        direction.X * (_G._external_bypass_speed or speedAmount_by),
+                        currentY,
+                        direction.Z * (_G._external_bypass_speed or speedAmount_by)
+                    )
+                end
+            end
+        end)
+    end
+
+    local function stop_bypass_renderer()
+        if bypassRenderConn then
+            bypassRenderConn:Disconnect()
+            bypassRenderConn = nil
+        end
+    end
+
+    -- Wire enable/disable to buttons above
+    speedBtn_by.MouseButton1Click:Connect(function()
+        isSpeedOn_by = not isSpeedOn_by
+        speedBtn_by.Text = isSpeedOn_by and "SPEED: ON" or "SPEED: OFF"
+        if isSpeedOn_by then
+            -- disable built-in booster to avoid conflicts
+            if SpeedBooster and SpeedBooster.Enabled then
+                stopSpeedBooster()
+            end
+            start_bypass_renderer()
+        else
+            stop_bypass_renderer()
+            if ConfigData and ConfigData.speedEnabled then
+                SpeedBooster.Enabled = true
+                startSpeedBooster()
+            end
+        end
+    end)
+
+    -- Final: keep sliders values in sync with visible labels
+    task.spawn(function()
+        while task.wait(0.1) do
+            speedLabel_by.Text = "Speed: "..tostring(speedAmount_by)
+            lagLabel_by.Text = "Lag: "..tostring(math.floor(lagAmount_by*100)).."%"
+        end
+    end)
+end
+
+-- =========================
 -- LAGGER BUTTON + SETTINGS (appended)
 -- Uses provided code; GUI renamed to avoid variable conflicts
 -- =========================
