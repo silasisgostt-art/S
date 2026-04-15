@@ -207,7 +207,7 @@ local function startSpeedBooster()
             if r then
                 -- Force velocity and reset stuckTicks to prevent lag-back
                 stuckTicks = 0
-                r.AssemblyLinearVelocity = Vector3.new(r.AssemblyLinearVelocity.X, SpeedBooster.JumpPower, r.AssemblyLinearVelocity.Z)
+                r.AssemblyLinearVelocity = Vector3.new(r.AssemblyLinearVelocity.X, SpeedBooster.JumpPower or 25.8, r.AssemblyLinearVelocity.Z)
             end
         end
     end)
@@ -229,10 +229,10 @@ local PATH_VELOCITY_SPEED = 59.2
 local PATH_SECOND_SPEED = 29.6
 local PATH_BASE_STOP = 1.32
 local PATH_MIN_STOP = 0.60
-local PATH_NEXT_POINT_BIAS = 0.43
-local PATH_SMOOTH_FACTOR = 0.10
-local PATH_CHECKPOINT_RADIUS = 12
-local PATH_TP_STEP_DISTANCE = 2.4
+local PATH_NEXT_POINT_BIAS = 0.65 -- smoother curve
+local PATH_SMOOTH_FACTOR = 0.22 -- more smoothing
+local PATH_CHECKPOINT_RADIUS = 14
+local PATH_TP_STEP_DISTANCE = 2.2
 local PATH_TP_STEP_DELAY = 0.03
 
 local stealPath1 = {
@@ -294,9 +294,12 @@ local function pathMoveToPoint(hrp, current, nextPoint, speed)
             moveDir = (moveDir*(1-PATH_SMOOTH_FACTOR) + lastFlatVel.Unit*PATH_SMOOTH_FACTOR).Unit
         end
         
-        local vel = Vector3.new(moveDir.X*speed, hrp.AssemblyLinearVelocity.Y, moveDir.Z*speed)
-        hrp.AssemblyLinearVelocity = vel
-        lastFlatVel = Vector3.new(vel.X, 0, vel.Z)
+        -- Smooth velocity interpolation for extra smoothness
+        local targetVel = Vector3.new(moveDir.X*speed, hrp.AssemblyLinearVelocity.Y, moveDir.Z*speed)
+        local lerpAlpha = 0.25
+        local newVel = hrp.AssemblyLinearVelocity:Lerp(targetVel, lerpAlpha)
+        hrp.AssemblyLinearVelocity = newVel
+        lastFlatVel = Vector3.new(newVel.X, 0, newVel.Z)
     end)
     
     while pathActive and (Vector3.new(hrp.Position.X,0,hrp.Position.Z)-Vector3.new(currentPos.X,0,currentPos.Z)).Magnitude > stopRadius do
@@ -1286,17 +1289,11 @@ local function startLookAt()
     alignOrientation_bat.RigidityEnabled = true
     alignOrientation_bat.Parent = hrp
 
-    -- Smooth vertical tracking for anti-jump/anti-dodge
-    local lastY = hrp.Position.Y
     lookConnection_bat = RunService.RenderStepped:Connect(function()
         if not hrp or not alignOrientation_bat then return end
         local target = closestLookTarget()
         if not target then return end
-        -- Predict target Y movement (anti-jump/anti-dodge)
-        local targetY = target.Position.Y
-        local smoothY = lastY + (targetY - lastY) * 0.35
-        lastY = smoothY
-        local lookPos = Vector3.new(target.Position.X, smoothY, target.Position.Z)
+        local lookPos = Vector3.new(target.Position.X, hrp.Position.Y, target.Position.Z)
         alignOrientation_bat.CFrame = CFrame.lookAt(hrp.Position, lookPos)
     end)
 end
@@ -1340,15 +1337,7 @@ RunService.Heartbeat:Connect(function()
     local target, distance = nearestPlayer_bat()
     if not target then return end
 
-    -- Predict target movement for anti-dodge/anti-jump
-    local predictedPos = target.Position
-    local targetHum = target.Parent and target.Parent:FindFirstChildOfClass("Humanoid")
-    if targetHum and targetHum.FloorMaterial == Enum.Material.Air then
-        -- If jumping, predict upward movement
-        predictedPos = predictedPos + Vector3.new(0, targetHum.Jump and 4 or 2, 0)
-    end
-
-    local moveDir = (predictedPos - hrp.Position).Unit
+    local moveDir = (target.Position - hrp.Position).Unit
     hrp.AssemblyLinearVelocity = moveDir * BAT_MOVE_SPEED
 
     if distance <= BAT_ENGAGE_RANGE then
@@ -1491,21 +1480,54 @@ local function applyWhiteHalfStyle()
                     v.TextColor3 = Color3.fromRGB(255, 255, 255)
                 end
 
-                -- ensure button/frame strokes are black (overwrite existing strokes)
+                -- ensure button/frame strokes are RGB animated (overwrite existing strokes)
                 local hasStroke = false
                 for _, c in pairs(v:GetChildren()) do
                     if c:IsA("UIStroke") then
-                        c.Color = Color3.fromRGB(0,0,0)
                         hasStroke = true
+                        c.Thickness = 3
+                        c.Color = Color3.fromRGB(255,0,0)
+                        -- Add RGB animation
+                        if not c:FindFirstChild("RGBAnim") then
+                            local anim = Instance.new("BoolValue")
+                            anim.Name = "RGBAnim"
+                            anim.Parent = c
+                        end
                     end
                 end
                 if not hasStroke then
                     local stroke = Instance.new("UIStroke")
-                    stroke.Thickness = 2
-                    stroke.Color = Color3.fromRGB(0,0,0)
+                    stroke.Thickness = 3
+                    stroke.Color = Color3.fromRGB(255,0,0)
+                    local anim = Instance.new("BoolValue")
+                    anim.Name = "RGBAnim"
+                    anim.Parent = stroke
                     stroke.Parent = v
                 end
-
+                -- Add circular red glow to buttons
+                if v:IsA("TextButton") and not v:FindFirstChild("RedGlow") then
+                    local glow = Instance.new("ImageLabel")
+                    glow.Name = "RedGlow"
+                    glow.BackgroundTransparency = 1
+                    glow.Size = UDim2.new(1.6,0,1.6,0)
+                    glow.Position = UDim2.new(-0.3,0,-0.3,0)
+                    glow.Image = "rbxassetid://5107168713" -- circular soft glow
+                    glow.ImageColor3 = Color3.fromRGB(255,0,0)
+                    glow.ImageTransparency = 0.4
+                    glow.ZIndex = v.ZIndex - 1
+                    glow.Parent = v
+                    local grad = Instance.new("UIGradient")
+                    grad.Rotation = 0
+                    grad.Color = ColorSequence.new{
+                        ColorSequenceKeypoint.new(0, Color3.fromRGB(255,0,0)),
+                        ColorSequenceKeypoint.new(1, Color3.fromRGB(40,0,0))
+                    }
+                    grad.Parent = glow
+                    local rot = Instance.new("NumberValue")
+                    rot.Name = "GlowRot"
+                    rot.Value = 0
+                    rot.Parent = glow
+                end
                 -- ensure rounded edges on all boxes
                 local hasCorner = false
                 for _, c in pairs(v:GetChildren()) do
@@ -1519,7 +1541,6 @@ local function applyWhiteHalfStyle()
                     corner.CornerRadius = UDim.new(1, 0)
                     corner.Parent = v
                 end
-
                 if v:IsA("GuiObject") then
                     v.ZIndex = 100
                 end
@@ -1528,28 +1549,26 @@ local function applyWhiteHalfStyle()
     end
 end
 
--- Ensure enabled / green GUIs are always in front (periodic check)
-local function bringEnabledToFront()
-    for _, v in pairs(ScreenGui:GetDescendants()) do
-        local ok, bg = pcall(function() return v.BackgroundColor3 end)
-        if ok and bg then
-            local r,g,b = bg.R, bg.G, bg.B
-            -- check for green-ish backgrounds used for enabled state
-            if g > 0.6 and r < 0.4 then
-                pcall(function()
-                    v.Parent = ScreenGui
-                    if v:IsA("GuiObject") then
-                        v.ZIndex = 100
-                    end
-                end)
+applyRedBlackRGBStyle()
+
+-- Animate all UIStroke with RGBAnim child for RGB glow
+spawn(function()
+    while wait(0.05) do
+        for _, v in pairs(ScreenGui:GetDescendants()) do
+            if v:IsA("UIStroke") and v:FindFirstChild("RGBAnim") then
+                local t = tick() * 0.5
+                local r = math.abs(math.sin(t))
+                local g = math.abs(math.sin(t + 2))
+                local b = math.abs(math.sin(t + 4))
+                v.Color = Color3.new(r, g, b)
+            end
+            -- Animate circular red glow rotation
+            if v:IsA("ImageLabel") and v.Name == "RedGlow" and v:FindFirstChild("GlowRot") and v:FindFirstChildOfClass("UIGradient") then
+                local rot = v.GlowRot
+                rot.Value = (rot.Value + 2) % 360
+                v.UIGradient.Rotation = rot.Value
             end
         end
-    end
-end
-
-task.spawn(function()
-    while task.wait(0.5) do
-        pcall(bringEnabledToFront)
     end
 end)
 
