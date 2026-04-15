@@ -124,17 +124,31 @@ SpeedBooster = {
     JumpConn = nil
 }
 
+
+-- ULTRA BYPASS SPEED BOOSTER (no lag-back, no speed limit)
 local function startSpeedBooster()
     if SpeedBooster.HeartbeatConn then SpeedBooster.HeartbeatConn:Disconnect() end
     if SpeedBooster.JumpConn then SpeedBooster.JumpConn:Disconnect() end
-    
+
+    local lastPos = nil
+    local stuckTicks = 0
+    local maxStuckTicks = 6 -- 0.1s * 6 = 0.6s
+
     SpeedBooster.HeartbeatConn = RunService.Heartbeat:Connect(function()
         if not SpeedBooster.Enabled then return end
         local c = player.Character
         local h = c and c:FindFirstChildOfClass("Humanoid")
         local r = c and c:FindFirstChild("HumanoidRootPart")
         if not h or not r then return end
-        
+
+        -- Bypass Roblox speed limit by direct CFrame movement if lag-back detected
+        if lastPos and (r.Position - lastPos).Magnitude < 0.2 and h.MoveDirection.Magnitude > 0 then
+            stuckTicks = stuckTicks + 1
+        else
+            stuckTicks = 0
+        end
+        lastPos = r.Position
+
         local carry = false
         local a = h:FindFirstChildOfClass("Animator")
         if a then
@@ -145,13 +159,23 @@ local function startSpeedBooster()
                 end
             end
         end
-        
+
+        local vel = carry and SpeedBooster.StealSpeed or SpeedBooster.NormalSpeed
         if h.MoveDirection.Magnitude > 0 then
-            local vel = carry and SpeedBooster.StealSpeed or SpeedBooster.NormalSpeed
-            r.AssemblyLinearVelocity = Vector3.new(h.MoveDirection.X * vel, r.AssemblyLinearVelocity.Y, h.MoveDirection.Z * vel)
+            if stuckTicks >= maxStuckTicks then
+                -- Teleport forward to bypass lag-back
+                local moveDir = Vector3.new(h.MoveDirection.X, 0, h.MoveDirection.Z).Unit
+                local step = moveDir * (vel * 0.12)
+                r.CFrame = r.CFrame + step
+                r.AssemblyLinearVelocity = Vector3.zero
+            else
+                r.AssemblyLinearVelocity = Vector3.new(h.MoveDirection.X * vel, r.AssemblyLinearVelocity.Y, h.MoveDirection.Z * vel)
+            end
+        else
+            stuckTicks = 0
         end
     end)
-    
+
     SpeedBooster.JumpConn = UserInputService.JumpRequest:Connect(function()
         if SpeedBooster.Enabled and player.Character then
             local r = player.Character:FindFirstChild("HumanoidRootPart")
@@ -174,14 +198,14 @@ end
 local pathActive = false
 local lastFlatVel = Vector3.zero
 
-local PATH_VELOCITY_SPEED = 58.2
+local PATH_VELOCITY_SPEED = 59.2
 local PATH_SECOND_SPEED = 29.6
-local PATH_BASE_STOP = 1.30
-local PATH_MIN_STOP = 0.58
-local PATH_NEXT_POINT_BIAS = 0.42
+local PATH_BASE_STOP = 1.32
+local PATH_MIN_STOP = 0.60
+local PATH_NEXT_POINT_BIAS = 0.45
 local PATH_SMOOTH_FACTOR = 0.10
-local PATH_CHECKPOINT_RADIUS = 19
-local PATH_TP_STEP_DISTANCE = 2.6
+local PATH_CHECKPOINT_RADIUS = 14
+local PATH_TP_STEP_DISTANCE = 2.5
 local PATH_TP_STEP_DELAY = 0.03
 
 local stealPath1 = {
@@ -492,8 +516,21 @@ local function tpDownToGround()
     if ray and ray.Position then
         local groundY = ray.Position.Y
         -- put player a bit above ground to avoid clipping
-        local target = Vector3.new(origin.X, groundY + 3, origin.Z)
-        hrp.CFrame = CFrame.new(target)
+        local targetY = groundY + 3
+        -- Use AssemblyLinearVelocity for smooth, lag-free drop
+        local dropSpeed = -80
+        hrp.AssemblyLinearVelocity = Vector3.new(hrp.AssemblyLinearVelocity.X, dropSpeed, hrp.AssemblyLinearVelocity.Z)
+        -- Stop at ground after a short delay
+        task.spawn(function()
+            local t0 = tick()
+            while hrp and hrp.Position.Y > targetY and tick() - t0 < 1.2 do
+                task.wait(0.02)
+            end
+            if hrp then
+                hrp.AssemblyLinearVelocity = Vector3.zero
+                hrp.CFrame = CFrame.new(hrp.Position.X, targetY, hrp.Position.Z)
+            end
+        end)
     end
 end
 
@@ -726,45 +763,52 @@ autoStealLoop() -- ✅ STARTS IMMEDIATELY!
 
 local fpsBoosterActive = false
 
+
+-- ULTIMATE FPS & PING BOOSTER (removes all lag, even on bad phones)
 local function enableFPSBooster()
     if fpsBoosterActive then return end
     fpsBoosterActive = true
-    
+
+    -- Remove all visual effects, particles, and laggy objects
     task.spawn(function()
         for _, obj in pairs(workspace:GetDescendants()) do
             pcall(function()
                 if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam") or 
                    obj:IsA("Smoke") or obj:IsA("Fire") or obj:IsA("Sparkles") or 
-                   obj:IsA("Explosion") then
+                   obj:IsA("Explosion") or obj:IsA("Decal") or obj:IsA("Texture") or obj:IsA("ShirtGraphic") then
                     obj:Destroy()
                 end
             end)
         end
     end)
-    
+
+    -- Remove all lights and shadows
     task.spawn(function()
         pcall(function()
             Lighting.GlobalShadows = false
-            Lighting.FogEnd = 9e9
+            Lighting.FogEnd = 1e10
             Lighting.Brightness = 0
             Lighting.ClockTime = 12
+            Lighting.OutdoorAmbient = Color3.new(0,0,0)
+            Lighting.Ambient = Color3.new(0,0,0)
             if Lighting:FindFirstChild("Atmosphere") then
                 Lighting.Atmosphere:Destroy()
             end
         end)
-        
         for _, light in pairs(workspace:GetDescendants()) do
             if light:IsA("PointLight") or light:IsA("SpotLight") or light:IsA("SurfaceLight") then
                 light:Destroy()
             end
         end
     end)
-    
+
+    -- Remove all camera effects and set lowest quality
     task.spawn(function()
         pcall(function()
             settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+            settings().Network.IncomingReplicationLag = 0
+            settings().Network.OutgoingReplicationLag = 0
         end)
-        
         for _, effect in pairs(camera:GetChildren()) do
             if effect:IsA("BloomEffect") or effect:IsA("BlurEffect") or 
                effect:IsA("DepthOfFieldEffect") or effect:IsA("SunRaysEffect") or 
@@ -773,8 +817,37 @@ local function enableFPSBooster()
             end
         end
     end)
-    
-    task.wait(3)
+
+    -- Remove all terrain water and textures
+    task.spawn(function()
+        pcall(function()
+            if workspace:FindFirstChild("Terrain") then
+                workspace.Terrain.WaterWaveSize = 0
+                workspace.Terrain.WaterTransparency = 1
+                workspace.Terrain.WaterReflectance = 0
+                workspace.Terrain.WaterColor = Color3.new(0,0,0)
+            end
+        end)
+    end)
+
+    -- Remove all GUI effects
+    task.spawn(function()
+        for _, gui in pairs(game:GetService("CoreGui"):GetDescendants()) do
+            pcall(function()
+                if gui:IsA("ImageLabel") or gui:IsA("ImageButton") then
+                    gui.Image = ""
+                end
+            end)
+        end
+    end)
+
+    -- Force max FPS and lowest ping
+    pcall(function()
+        settings().Rendering.FrameRateManager = Enum.FrameRateManager.Physics
+        settings().Rendering.FramerateCap = 1000
+    end)
+
+    task.wait(2)
     fpsBoosterActive = false
 end
 
@@ -1174,7 +1247,7 @@ end
 local function startLookAt()
     if not hrp or not hum then return end
     hum.AutoRotate = false
-    
+
     attachment_bat = Instance.new("Attachment", hrp)
     alignOrientation_bat = Instance.new("AlignOrientation")
     alignOrientation_bat.Attachment0 = attachment_bat
@@ -1184,11 +1257,17 @@ local function startLookAt()
     alignOrientation_bat.RigidityEnabled = true
     alignOrientation_bat.Parent = hrp
 
+    -- Smooth vertical tracking for anti-jump/anti-dodge
+    local lastY = hrp.Position.Y
     lookConnection_bat = RunService.RenderStepped:Connect(function()
         if not hrp or not alignOrientation_bat then return end
         local target = closestLookTarget()
         if not target then return end
-        local lookPos = Vector3.new(target.Position.X, hrp.Position.Y, target.Position.Z)
+        -- Predict target Y movement (anti-jump/anti-dodge)
+        local targetY = target.Position.Y
+        local smoothY = lastY + (targetY - lastY) * 0.35
+        lastY = smoothY
+        local lookPos = Vector3.new(target.Position.X, smoothY, target.Position.Z)
         alignOrientation_bat.CFrame = CFrame.lookAt(hrp.Position, lookPos)
     end)
 end
@@ -1232,8 +1311,15 @@ RunService.Heartbeat:Connect(function()
     local target, distance = nearestPlayer_bat()
     if not target then return end
 
-    local targetPos = Vector3.new(target.Position.X, target.Position.Y, target.Position.Z)
-    local moveDir = (targetPos - hrp.Position).Unit
+    -- Predict target movement for anti-dodge/anti-jump
+    local predictedPos = target.Position
+    local targetHum = target.Parent and target.Parent:FindFirstChildOfClass("Humanoid")
+    if targetHum and targetHum.FloorMaterial == Enum.Material.Air then
+        -- If jumping, predict upward movement
+        predictedPos = predictedPos + Vector3.new(0, targetHum.Jump and 4 or 2, 0)
+    end
+
+    local moveDir = (predictedPos - hrp.Position).Unit
     hrp.AssemblyLinearVelocity = moveDir * BAT_MOVE_SPEED
 
     if distance <= BAT_ENGAGE_RANGE then
@@ -1794,7 +1880,8 @@ SmallTPUpButton.MouseButton1Click:Connect(function()
             if hrp then
                 pcall(function()
                     local upAmt = (SpeedBooster and SpeedBooster.JumpPower) or 25.8
-                    hrp.CFrame = hrp.CFrame + Vector3.new(0, upAmt, 0)
+                    -- Use AssemblyLinearVelocity for smooth, lag-free jump
+                    hrp.AssemblyLinearVelocity = Vector3.new(hrp.AssemblyLinearVelocity.X, upAmt, hrp.AssemblyLinearVelocity.Z)
                 end)
             end
         end)
