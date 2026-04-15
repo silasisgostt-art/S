@@ -1,31 +1,232 @@
-print ("leaked by @bu8f on discord")
+-- leaked by script haven https://discord.gg/xfwA9fNFMe
 
-local plr = game.Players.LocalPlayer
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
 
-local function activateAntiDie()
-    local char = plr.Character or plr.CharacterAdded:Wait()
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    if not hum then return end
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
 
-    hum.BreakJointsOnDeath = false
-    hum:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "AutoTPDownGUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
 
-    hum:GetPropertyChangedSignal("Health"):Connect(function()
-        if hum.Health <= 0 then
-            hum.Health = hum.MaxHealth
-        end
-    end)
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 145, 0, 52)
+mainFrame.Position = UDim2.new(0.5, -72, 0.6, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(6, 14, 10)
+mainFrame.BackgroundTransparency = 0.35
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = screenGui
 
-    hum.Died:Connect(function()
-        task.wait()
-        local newHum = Instance.new("Humanoid")
-        newHum.Name = "ReplacedHumanoid"
-        newHum.Parent = char
-        workspace.CurrentCamera.CameraSubject = newHum
-        hum:Destroy()
-    end)
+Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 10)
+
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(0, 140, 80)
+stroke.Thickness = 1.2
+stroke.Parent = mainFrame
+
+local arrowButton = Instance.new("TextButton")
+arrowButton.Size = UDim2.new(0, 12, 0, 12)
+arrowButton.Position = UDim2.new(0, 4, 0, 4)
+arrowButton.BackgroundTransparency = 1
+arrowButton.Text = "▲"
+arrowButton.TextColor3 = Color3.fromRGB(0, 160, 90)
+arrowButton.TextScaled = true
+arrowButton.Font = Enum.Font.GothamBold
+arrowButton.Parent = mainFrame
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -50, 0, 14)
+title.Position = UDim2.new(0, 22, 0, 3)
+title.BackgroundTransparency = 1
+title.Text = "Auto TP"
+title.TextColor3 = Color3.fromRGB(0, 160, 90)
+title.TextScaled = true
+title.Font = Enum.Font.GothamBold
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = mainFrame
+
+local onButton = Instance.new("TextButton")
+onButton.Size = UDim2.new(0.9, 0, 0, 18)
+onButton.Position = UDim2.new(0.05, 0, 0, 22)
+onButton.BackgroundColor3 = Color3.fromRGB(0, 120, 70)
+onButton.Text = "ON"
+onButton.TextColor3 = Color3.new(1, 1, 1)
+onButton.TextScaled = true
+onButton.Font = Enum.Font.GothamBold
+onButton.Parent = mainFrame
+
+Instance.new("UICorner", onButton).CornerRadius = UDim.new(0, 5)
+
+local bottomFrame = Instance.new("Frame")
+bottomFrame.Size = UDim2.new(0.92, 0, 0, 16)
+bottomFrame.Position = UDim2.new(0.04, 0, 1, -18)
+bottomFrame.BackgroundTransparency = 1
+bottomFrame.Parent = mainFrame
+bottomFrame.Visible = false
+
+local yLabel = Instance.new("TextLabel")
+yLabel.Size = UDim2.new(0.5, 0, 1, 0)
+yLabel.BackgroundTransparency = 1
+yLabel.Text = "y-axis"
+yLabel.TextColor3 = Color3.new(1, 1, 1)
+yLabel.TextScaled = true
+yLabel.Font = Enum.Font.Gotham
+yLabel.Parent = bottomFrame
+
+local yInput = Instance.new("TextBox")
+yInput.Size = UDim2.new(0.45, 0, 1, 0)
+yInput.Position = UDim2.new(0.55, 0, 0, 0)
+yInput.BackgroundColor3 = Color3.fromRGB(10, 18, 14)
+yInput.BackgroundTransparency = 0.2
+yInput.Text = "20"
+yInput.TextColor3 = Color3.new(1, 1, 1)
+yInput.TextScaled = true
+yInput.Font = Enum.Font.Gotham
+yInput.ClearTextOnFocus = false
+yInput.Parent = bottomFrame
+
+Instance.new("UICorner", yInput).CornerRadius = UDim.new(0, 4)
+
+local char
+local hrp
+
+local function setChar(c)
+	char = c
+	hrp = char:WaitForChild("HumanoidRootPart")
 end
 
-activateAntiDie()
+setChar(player.Character or player.CharacterAdded:Wait())
 
-print ("leaked by @bu8f on discord")
+player.CharacterAdded:Connect(function(c)
+	task.wait(0.5)
+	setChar(c)
+end)
+
+local isOn = true
+local yValue = -20
+local minimized = true
+
+local function loadConfig()
+	local data = player:GetAttribute("AutoTPDown_Config")
+	if data then
+		local saved = string.split(data, ",")
+		if #saved >= 2 then
+			isOn = saved[1] == "true"
+			local num = tonumber(saved[2]) or 20
+			yValue = -math.abs(num)
+			yInput.Text = tostring(num)
+		end
+	end
+	onButton.Text = isOn and "ON" or "OFF"
+	onButton.BackgroundColor3 = isOn and Color3.fromRGB(0, 120, 70) or Color3.fromRGB(60, 70, 60)
+end
+
+local function saveConfig()
+	pcall(function()
+		player:SetAttribute("AutoTPDown_Config", tostring(isOn) .. "," .. tostring(math.abs(yValue)))
+	end)
+end
+
+loadConfig()
+
+arrowButton.MouseButton1Click:Connect(function()
+	minimized = not minimized
+	bottomFrame.Visible = not minimized
+	mainFrame.Size = minimized and UDim2.new(0, 145, 0, 52) or UDim2.new(0, 145, 0, 68)
+	arrowButton.Text = minimized and "▲" or "▼"
+end)
+
+onButton.MouseButton1Click:Connect(function()
+	isOn = not isOn
+	onButton.Text = isOn and "ON" or "OFF"
+	onButton.BackgroundColor3 = isOn and Color3.fromRGB(0, 120, 70) or Color3.fromRGB(60, 70, 60)
+end)
+
+yInput.FocusLost:Connect(function()
+	local num = tonumber(yInput.Text)
+	if num then
+		yValue = -math.abs(math.floor(num))
+		yInput.Text = tostring(math.abs(yValue))
+	else
+		yInput.Text = tostring(math.abs(yValue))
+	end
+end)
+
+yInput:GetPropertyChangedSignal("Text"):Connect(function()
+	local new = yInput.Text:gsub("%D", "")
+	if yInput.Text ~= new then
+		yInput.Text = new
+	end
+end)
+
+local dragging = false
+local dragStart
+local startPos
+local dragInput
+local dragThreshold = 8
+local moved = false
+
+mainFrame.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		local pos = input.Position
+		local objs = playerGui:GetGuiObjectsAtPosition(pos.X, pos.Y)
+		for _, obj in pairs(objs) do
+			if obj ~= mainFrame and obj:IsDescendantOf(mainFrame) then
+				if obj:IsA("TextButton") or obj:IsA("TextBox") then
+					return
+				end
+			end
+		end
+		dragging = true
+		moved = false
+		dragStart = input.Position
+		startPos = mainFrame.Position
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+mainFrame.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+		dragInput = input
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if dragging and input == dragInput then
+		local delta = input.Position - dragStart
+		if not moved and delta.Magnitude < dragThreshold then
+			return
+		end
+		moved = true
+		mainFrame.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+
+task.spawn(function()
+	while true do
+		task.wait(0.1)
+		if isOn and hrp and hrp.Parent then
+			if hrp.Position.Y >= math.abs(yValue) then
+				hrp.CFrame = CFrame.new(hrp.Position.X, -8.80, hrp.Position.Z)
+			end
+		end
+	end
+end)
+
+task.spawn(function()
+	while true do
+		task.wait(4)
+		saveConfig()
+	end
+end)
