@@ -22,6 +22,30 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
 local Lighting = game:GetService("Lighting")
 
+-- Make sky brighter and galaxy themed
+pcall(function()
+    Lighting.Brightness = 4
+    Lighting.ClockTime = 12
+    Lighting.OutdoorAmbient = Color3.new(0.7, 0.7, 1)
+    Lighting.Ambient = Color3.new(0.6, 0.6, 1)
+    Lighting.FogEnd = 100000
+    Lighting.FogColor = Color3.fromRGB(80, 80, 120)
+    Lighting.GlobalShadows = true
+    -- Remove old sky
+    for _, v in pairs(Lighting:GetChildren()) do if v:IsA("Sky") then v:Destroy() end end
+    -- Add galaxy sky
+    local sky = Instance.new("Sky")
+    sky.SkyboxBk = "rbxassetid://159454299"
+    sky.SkyboxDn = "rbxassetid://159454296"
+    sky.SkyboxFt = "rbxassetid://159454293"
+    sky.SkyboxLf = "rbxassetid://159454286"
+    sky.SkyboxRt = "rbxassetid://159454300"
+    sky.SkyboxUp = "rbxassetid://159454288"
+    sky.StarCount = 5000
+    sky.CelestialBodiesShown = true
+    sky.Parent = Lighting
+end)
+
 local player = Players.LocalPlayer or Players:GetPlayers()[1] or Players.PlayerAdded:Wait()
 local PlayerGui = player:WaitForChild("PlayerGui")
 local character
@@ -180,6 +204,8 @@ local function startSpeedBooster()
         if SpeedBooster.Enabled and player.Character then
             local r = player.Character:FindFirstChild("HumanoidRootPart")
             if r then
+                -- Force velocity and reset stuckTicks to prevent lag-back
+                stuckTicks = 0
                 r.AssemblyLinearVelocity = Vector3.new(r.AssemblyLinearVelocity.X, SpeedBooster.JumpPower, r.AssemblyLinearVelocity.Z)
             end
         end
@@ -872,7 +898,7 @@ local function enableHitbox()
         for _, Player in pairs(Players:GetPlayers()) do
             if Player ~= player and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
                 local RootPart = Player.Character.HumanoidRootPart
-                RootPart.Size = Vector3.new(10, 10, 10)
+                RootPart.Size = Vector3.new(4, 4, 2) -- Smaller BSR for auto grab
                 RootPart.Transparency = 0.5
                 RootPart.CanCollide = false
             end
