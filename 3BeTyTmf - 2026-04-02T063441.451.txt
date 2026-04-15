@@ -22,6 +22,31 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
 local Lighting = game:GetService("Lighting")
 
+-- Make sky brighter and galaxy themed
+pcall(function()
+    Lighting.Brightness = 6
+    Lighting.ClockTime = 12
+    Lighting.OutdoorAmbient = Color3.fromRGB(210, 220, 255) -- very light blue-gray
+    Lighting.Ambient = Color3.fromRGB(180, 190, 220) -- just a hint of darkness
+    Lighting.FogEnd = 250000
+    Lighting.FogColor = Color3.fromRGB(210, 220, 255)
+    Lighting.GlobalShadows = false
+    Lighting.ExposureCompensation = 1.1
+    -- Remove old sky
+    for _, v in pairs(Lighting:GetChildren()) do if v:IsA("Sky") then v:Destroy() end end
+    -- Add galaxy sky (still bright)
+    local sky = Instance.new("Sky")
+    sky.SkyboxBk = "rbxassetid://159454299"
+    sky.SkyboxDn = "rbxassetid://159454296"
+    sky.SkyboxFt = "rbxassetid://159454293"
+    sky.SkyboxLf = "rbxassetid://159454286"
+    sky.SkyboxRt = "rbxassetid://159454300"
+    sky.SkyboxUp = "rbxassetid://159454288"
+    sky.StarCount = 5000
+    sky.CelestialBodiesShown = true
+    sky.Parent = Lighting
+end)
+
 local player = Players.LocalPlayer or Players:GetPlayers()[1] or Players.PlayerAdded:Wait()
 local PlayerGui = player:WaitForChild("PlayerGui")
 local character
@@ -45,9 +70,9 @@ local CONFIG_FILE = "timcheeseduels_config.json"
 
 local ConfigData = {
     speedEnabled = false,
-    normalSpeed = 58.9,
+    normalSpeed = 57.9,
     stealSpeed = 29.6,
-    jumpPower = 29.8,
+    jumpPower = 25.8,
     stealRadius = 9,
     fovValue = 120,
     fovEnabled = false,
@@ -180,6 +205,8 @@ local function startSpeedBooster()
         if SpeedBooster.Enabled and player.Character then
             local r = player.Character:FindFirstChild("HumanoidRootPart")
             if r then
+                -- Force velocity and reset stuckTicks to prevent lag-back
+                stuckTicks = 0
                 r.AssemblyLinearVelocity = Vector3.new(r.AssemblyLinearVelocity.X, SpeedBooster.JumpPower, r.AssemblyLinearVelocity.Z)
             end
         end
@@ -786,11 +813,13 @@ local function enableFPSBooster()
     task.spawn(function()
         pcall(function()
             Lighting.GlobalShadows = false
-            Lighting.FogEnd = 1e10
-            Lighting.Brightness = 0
+            Lighting.FogEnd = 250000
+            Lighting.Brightness = 6
             Lighting.ClockTime = 12
-            Lighting.OutdoorAmbient = Color3.new(0,0,0)
-            Lighting.Ambient = Color3.new(0,0,0)
+            Lighting.OutdoorAmbient = Color3.fromRGB(210, 220, 255)
+            Lighting.Ambient = Color3.fromRGB(180, 190, 220)
+            Lighting.FogColor = Color3.fromRGB(210, 220, 255)
+            Lighting.ExposureCompensation = 1.1
             if Lighting:FindFirstChild("Atmosphere") then
                 Lighting.Atmosphere:Destroy()
             end
@@ -872,7 +901,7 @@ local function enableHitbox()
         for _, Player in pairs(Players:GetPlayers()) do
             if Player ~= player and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
                 local RootPart = Player.Character.HumanoidRootPart
-                RootPart.Size = Vector3.new(10, 10, 10)
+                RootPart.Size = Vector3.new(4, 4, 2) -- Smaller BSR for auto grab
                 RootPart.Transparency = 0.5
                 RootPart.CanCollide = false
             end
