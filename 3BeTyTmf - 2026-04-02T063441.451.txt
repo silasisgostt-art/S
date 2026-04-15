@@ -182,7 +182,7 @@ local PATH_NEXT_POINT_BIAS = 0.42
 local PATH_SMOOTH_FACTOR = 0.10
 local PATH_CHECKPOINT_RADIUS = 19
 local PATH_TP_STEP_DISTANCE = 2.7
-local PATH_TP_STEP_DELAY = 0.03
+local PATH_TP_STEP_DELAY = 0.01
 
 local stealPath1 = {
     -- Auto Right (switched spots)
