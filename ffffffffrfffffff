@@ -24,14 +24,14 @@ local Lighting = game:GetService("Lighting")
 
 -- Make sky brighter and galaxy themed
 pcall(function()
-    Lighting.Brightness = 6
+    Lighting.Brightness = 8
     Lighting.ClockTime = 12
-    Lighting.OutdoorAmbient = Color3.fromRGB(210, 220, 255) -- very light blue-gray
-    Lighting.Ambient = Color3.fromRGB(180, 190, 220) -- just a hint of darkness
-    Lighting.FogEnd = 250000
-    Lighting.FogColor = Color3.fromRGB(210, 220, 255)
+    Lighting.OutdoorAmbient = Color3.new(1, 1, 1)
+    Lighting.Ambient = Color3.new(1, 1, 1)
+    Lighting.FogEnd = 200000
+    Lighting.FogColor = Color3.fromRGB(200, 220, 255)
     Lighting.GlobalShadows = false
-    Lighting.ExposureCompensation = 1.1
+    Lighting.ExposureCompensation = 1.5
     -- Remove old sky
     for _, v in pairs(Lighting:GetChildren()) do if v:IsA("Sky") then v:Destroy() end end
     -- Add galaxy sky (still bright)
@@ -816,13 +816,13 @@ local function enableFPSBooster()
     task.spawn(function()
         pcall(function()
             Lighting.GlobalShadows = false
-            Lighting.FogEnd = 250000
-            Lighting.Brightness = 6
+            Lighting.FogEnd = 200000
+            Lighting.Brightness = 8
             Lighting.ClockTime = 12
-            Lighting.OutdoorAmbient = Color3.fromRGB(210, 220, 255)
-            Lighting.Ambient = Color3.fromRGB(180, 190, 220)
-            Lighting.FogColor = Color3.fromRGB(210, 220, 255)
-            Lighting.ExposureCompensation = 1.1
+            Lighting.OutdoorAmbient = Color3.new(1,1,1)
+            Lighting.Ambient = Color3.new(1,1,1)
+            Lighting.FogColor = Color3.fromRGB(200, 220, 255)
+            Lighting.ExposureCompensation = 1.5
             if Lighting:FindFirstChild("Atmosphere") then
                 Lighting.Atmosphere:Destroy()
             end
@@ -1510,85 +1510,88 @@ local function applyWhiteHalfStyle()
                     end
                 end
                 if not hasStroke then
-                    local function applyRedBlackRGBStyle()
-                        for _, v in pairs(ScreenGui:GetDescendants()) do
-                            local ok, name = pcall(function() return v.Name end)
-                            if not ok then name = "" end
-
-                            if v:IsA("TextButton") or v:IsA("TextBox") or (v:IsA("Frame") and (name == "MainFrame" or name:match("GUI$") or name:match("^Small"))) or name == "StealBarContainer" then
-                                pcall(function()
-                                    v.BackgroundColor3 = Color3.fromRGB(20, 0, 0)
-                                    v.BackgroundTransparency = 0.15
-                                    if v:IsA("TextBox") or v:IsA("TextButton") then
-                                        v.TextColor3 = Color3.fromRGB(255, 40, 40)
-                                        v.Font = Enum.Font.GothamBold
-                                    end
-
-                                    -- ensure button/frame strokes are RGB animated (overwrite existing strokes)
-                                    local hasStroke = false
-                                    for _, c in pairs(v:GetChildren()) do
-                                        if c:IsA("UIStroke") then
-                                            hasStroke = true
-                                            c.Thickness = 4
-                                            c.Color = Color3.fromRGB(255,0,0)
-                                            -- Add RGB animation
-                                            if not c:FindFirstChild("RGBAnim") then
-                                                local anim = Instance.new("BoolValue")
-                                                anim.Name = "RGBAnim"
-                                                anim.Parent = c
-                                            end
-                                        end
-                                    end
-                                    if not hasStroke then
-                                        local stroke = Instance.new("UIStroke")
-                                        stroke.Thickness = 4
-                                        stroke.Color = Color3.fromRGB(255,0,0)
-                                        local anim = Instance.new("BoolValue")
-                                        anim.Name = "RGBAnim"
-                                        anim.Parent = stroke
-                                        stroke.Parent = v
-                                    end
-                                    -- Add circular red glow to buttons
-                                    if v:IsA("TextButton") and not v:FindFirstChild("RedGlow") then
-                                        local glow = Instance.new("ImageLabel")
-                                        glow.Name = "RedGlow"
-                                        glow.BackgroundTransparency = 1
-                                        glow.Size = UDim2.new(1.7,0,1.7,0)
-                                        glow.Position = UDim2.new(-0.35,0,-0.35,0)
-                                        glow.Image = "rbxassetid://5107168713" -- circular soft glow
-                                        glow.ImageColor3 = Color3.fromRGB(255,0,0)
-                                        glow.ImageTransparency = 0.25
-                                        glow.ZIndex = v.ZIndex - 1
-                                        glow.Parent = v
-                                        local grad = Instance.new("UIGradient")
-                                        grad.Rotation = 0
-                                        grad.Color = ColorSequence.new{
-                                            ColorSequenceKeypoint.new(0, Color3.fromRGB(255,0,0)),
-                                            ColorSequenceKeypoint.new(1, Color3.fromRGB(40,0,0))
-                                        }
-                                        grad.Parent = glow
-                                    end
-                                    -- ensure rounded edges on all boxes
-                                    local hasCorner = false
-                                    for _, c in pairs(v:GetChildren()) do
-                                        if c:IsA("UICorner") then
-                                            c.CornerRadius = UDim.new(1, 0)
-                                            hasCorner = true
-                                        end
-                                    end
-                                    if not hasCorner then
-                                        local corner = Instance.new("UICorner")
-                                        corner.CornerRadius = UDim.new(1, 0)
-                                        corner.Parent = v
-                                    end
-
-                                    if v:IsA("GuiObject") then
-                                        v.ZIndex = 100
-                                    end
-                                end)
-                            end
-                        end
+                    local stroke = Instance.new("UIStroke")
+                    stroke.Thickness = 3
+                    stroke.Color = Color3.fromRGB(255,0,0)
+                    local anim = Instance.new("BoolValue")
+                    anim.Name = "RGBAnim"
+                    anim.Parent = stroke
+                    stroke.Parent = v
+                end
+                -- Add circular red glow to buttons
+                if v:IsA("TextButton") and not v:FindFirstChild("RedGlow") then
+                    local glow = Instance.new("ImageLabel")
+                    glow.Name = "RedGlow"
+                    glow.BackgroundTransparency = 1
+                    glow.Size = UDim2.new(1.6,0,1.6,0)
+                    glow.Position = UDim2.new(-0.3,0,-0.3,0)
+                    glow.Image = "rbxassetid://5107168713" -- circular soft glow
+                    glow.ImageColor3 = Color3.fromRGB(255,0,0)
+                    glow.ImageTransparency = 0.4
+                    glow.ZIndex = v.ZIndex - 1
+                    glow.Parent = v
+                    local grad = Instance.new("UIGradient")
+                    grad.Rotation = 0
+                    grad.Color = ColorSequence.new{
+                        ColorSequenceKeypoint.new(0, Color3.fromRGB(255,0,0)),
+                        ColorSequenceKeypoint.new(1, Color3.fromRGB(40,0,0))
+                    }
+                    grad.Parent = glow
+                    local rot = Instance.new("NumberValue")
+                    rot.Name = "GlowRot"
+                    rot.Value = 0
+                    rot.Parent = glow
+                end
+                -- ensure rounded edges on all boxes
+                local hasCorner = false
+                for _, c in pairs(v:GetChildren()) do
+                    if c:IsA("UICorner") then
+                        c.CornerRadius = UDim.new(1, 0)
+                        hasCorner = true
                     end
+                end
+                if not hasCorner then
+                    local corner = Instance.new("UICorner")
+                    corner.CornerRadius = UDim.new(1, 0)
+                    corner.Parent = v
+                end
+                if v:IsA("GuiObject") then
+                    v.ZIndex = 100
+                end
+            end)
+        end
+    end
+end
+
+applyRedBlackRGBStyle()
+
+-- Animate all UIStroke with RGBAnim child for RGB glow
+spawn(function()
+    while wait(0.05) do
+        for _, v in pairs(ScreenGui:GetDescendants()) do
+            if v:IsA("UIStroke") and v:FindFirstChild("RGBAnim") then
+                local t = tick() * 0.5
+                local r = math.abs(math.sin(t))
+                local g = math.abs(math.sin(t + 2))
+                local b = math.abs(math.sin(t + 4))
+                v.Color = Color3.new(r, g, b)
+            end
+            -- Animate circular red glow rotation
+            if v:IsA("ImageLabel") and v.Name == "RedGlow" and v:FindFirstChild("GlowRot") and v:FindFirstChildOfClass("UIGradient") then
+                local rot = v.GlowRot
+                rot.Value = (rot.Value + 2) % 360
+                v.UIGradient.Rotation = rot.Value
+            end
+        end
+    end
+end)
+
+-- ═══════════════════════════════════════════════════════
+-- ✅ SMALL GUI CREATOR WITH GREEN DOT!
+-- ═══════════════════════════════════════════════════════
+
+local SmallGUIInstances = {}
+
 local function createSmallGUI(name, yPosition)
     local SmallGUI = Instance.new("Frame")
     SmallGUI.Name = "Small"..name.."GUI"
@@ -3236,7 +3239,7 @@ local function initializeGUI(device)
     createRightButtons(device)
 
     -- Apply dark semi-transparent style and rounded corners to all UI
-    applyRedBlackRGBStyle()
+    applyWhiteHalfStyle()
 
     -- ✅ AUTO-LOAD CONFIG ON START!
     if ConfigData.speedEnabled then
