@@ -22,31 +22,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
 local Lighting = game:GetService("Lighting")
 
--- Make sky brighter and galaxy themed
-pcall(function()
-    Lighting.Brightness = 6
-    Lighting.ClockTime = 12
-    Lighting.OutdoorAmbient = Color3.fromRGB(210, 220, 255) -- very light blue-gray
-    Lighting.Ambient = Color3.fromRGB(180, 190, 220) -- just a hint of darkness
-    Lighting.FogEnd = 250000
-    Lighting.FogColor = Color3.fromRGB(210, 220, 255)
-    Lighting.GlobalShadows = false
-    Lighting.ExposureCompensation = 1.1
-    -- Remove old sky
-    for _, v in pairs(Lighting:GetChildren()) do if v:IsA("Sky") then v:Destroy() end end
-    -- Add galaxy sky (still bright)
-    local sky = Instance.new("Sky")
-    sky.SkyboxBk = "rbxassetid://159454299"
-    sky.SkyboxDn = "rbxassetid://159454296"
-    sky.SkyboxFt = "rbxassetid://159454293"
-    sky.SkyboxLf = "rbxassetid://159454286"
-    sky.SkyboxRt = "rbxassetid://159454300"
-    sky.SkyboxUp = "rbxassetid://159454288"
-    sky.StarCount = 5000
-    sky.CelestialBodiesShown = true
-    sky.Parent = Lighting
-end)
-
 local player = Players.LocalPlayer or Players:GetPlayers()[1] or Players.PlayerAdded:Wait()
 local PlayerGui = player:WaitForChild("PlayerGui")
 local character
@@ -149,31 +124,17 @@ SpeedBooster = {
     JumpConn = nil
 }
 
-
--- ULTRA BYPASS SPEED BOOSTER (no lag-back, no speed limit)
 local function startSpeedBooster()
     if SpeedBooster.HeartbeatConn then SpeedBooster.HeartbeatConn:Disconnect() end
     if SpeedBooster.JumpConn then SpeedBooster.JumpConn:Disconnect() end
-
-    local lastPos = nil
-    local stuckTicks = 0
-    local maxStuckTicks = 6 -- 0.1s * 6 = 0.6s
-
+    
     SpeedBooster.HeartbeatConn = RunService.Heartbeat:Connect(function()
         if not SpeedBooster.Enabled then return end
         local c = player.Character
         local h = c and c:FindFirstChildOfClass("Humanoid")
         local r = c and c:FindFirstChild("HumanoidRootPart")
         if not h or not r then return end
-
-        -- Bypass Roblox speed limit by direct CFrame movement if lag-back detected
-        if lastPos and (r.Position - lastPos).Magnitude < 0.2 and h.MoveDirection.Magnitude > 0 then
-            stuckTicks = stuckTicks + 1
-        else
-            stuckTicks = 0
-        end
-        lastPos = r.Position
-
+        
         local carry = false
         local a = h:FindFirstChildOfClass("Animator")
         if a then
@@ -184,30 +145,18 @@ local function startSpeedBooster()
                 end
             end
         end
-
-        local vel = carry and SpeedBooster.StealSpeed or SpeedBooster.NormalSpeed
+        
         if h.MoveDirection.Magnitude > 0 then
-            if stuckTicks >= maxStuckTicks then
-                -- Teleport forward to bypass lag-back
-                local moveDir = Vector3.new(h.MoveDirection.X, 0, h.MoveDirection.Z).Unit
-                local step = moveDir * (vel * 0.12)
-                r.CFrame = r.CFrame + step
-                r.AssemblyLinearVelocity = Vector3.zero
-            else
-                r.AssemblyLinearVelocity = Vector3.new(h.MoveDirection.X * vel, r.AssemblyLinearVelocity.Y, h.MoveDirection.Z * vel)
-            end
-        else
-            stuckTicks = 0
+            local vel = carry and SpeedBooster.StealSpeed or SpeedBooster.NormalSpeed
+            r.AssemblyLinearVelocity = Vector3.new(h.MoveDirection.X * vel, r.AssemblyLinearVelocity.Y, h.MoveDirection.Z * vel)
         end
     end)
-
+    
     SpeedBooster.JumpConn = UserInputService.JumpRequest:Connect(function()
         if SpeedBooster.Enabled and player.Character then
             local r = player.Character:FindFirstChild("HumanoidRootPart")
             if r then
-                -- Force velocity and reset stuckTicks to prevent lag-back
-                stuckTicks = 0
-                r.AssemblyLinearVelocity = Vector3.new(r.AssemblyLinearVelocity.X, SpeedBooster.JumpPower or 25.8, r.AssemblyLinearVelocity.Z)
+                r.AssemblyLinearVelocity = Vector3.new(r.AssemblyLinearVelocity.X, SpeedBooster.JumpPower, r.AssemblyLinearVelocity.Z)
             end
         end
     end)
@@ -229,10 +178,10 @@ local PATH_VELOCITY_SPEED = 59.2
 local PATH_SECOND_SPEED = 29.6
 local PATH_BASE_STOP = 1.32
 local PATH_MIN_STOP = 0.60
-local PATH_NEXT_POINT_BIAS = 0.65 -- smoother curve
-local PATH_SMOOTH_FACTOR = 0.22 -- more smoothing
+local PATH_NEXT_POINT_BIAS = 0.45
+local PATH_SMOOTH_FACTOR = 0.10
 local PATH_CHECKPOINT_RADIUS = 14
-local PATH_TP_STEP_DISTANCE = 2.2
+local PATH_TP_STEP_DISTANCE = 2.5
 local PATH_TP_STEP_DELAY = 0.03
 
 local stealPath1 = {
@@ -294,12 +243,9 @@ local function pathMoveToPoint(hrp, current, nextPoint, speed)
             moveDir = (moveDir*(1-PATH_SMOOTH_FACTOR) + lastFlatVel.Unit*PATH_SMOOTH_FACTOR).Unit
         end
         
-        -- Smooth velocity interpolation for extra smoothness
-        local targetVel = Vector3.new(moveDir.X*speed, hrp.AssemblyLinearVelocity.Y, moveDir.Z*speed)
-        local lerpAlpha = 0.25
-        local newVel = hrp.AssemblyLinearVelocity:Lerp(targetVel, lerpAlpha)
-        hrp.AssemblyLinearVelocity = newVel
-        lastFlatVel = Vector3.new(newVel.X, 0, newVel.Z)
+        local vel = Vector3.new(moveDir.X*speed, hrp.AssemblyLinearVelocity.Y, moveDir.Z*speed)
+        hrp.AssemblyLinearVelocity = vel
+        lastFlatVel = Vector3.new(vel.X, 0, vel.Z)
     end)
     
     while pathActive and (Vector3.new(hrp.Position.X,0,hrp.Position.Z)-Vector3.new(currentPos.X,0,currentPos.Z)).Magnitude > stopRadius do
@@ -546,21 +492,8 @@ local function tpDownToGround()
     if ray and ray.Position then
         local groundY = ray.Position.Y
         -- put player a bit above ground to avoid clipping
-        local targetY = groundY + 3
-        -- Use AssemblyLinearVelocity for smooth, lag-free drop
-        local dropSpeed = -80
-        hrp.AssemblyLinearVelocity = Vector3.new(hrp.AssemblyLinearVelocity.X, dropSpeed, hrp.AssemblyLinearVelocity.Z)
-        -- Stop at ground after a short delay
-        task.spawn(function()
-            local t0 = tick()
-            while hrp and hrp.Position.Y > targetY and tick() - t0 < 1.2 do
-                task.wait(0.02)
-            end
-            if hrp then
-                hrp.AssemblyLinearVelocity = Vector3.zero
-                hrp.CFrame = CFrame.new(hrp.Position.X, targetY, hrp.Position.Z)
-            end
-        end)
+        local target = Vector3.new(origin.X, groundY + 3, origin.Z)
+        hrp.CFrame = CFrame.new(target)
     end
 end
 
@@ -793,54 +726,45 @@ autoStealLoop() -- ✅ STARTS IMMEDIATELY!
 
 local fpsBoosterActive = false
 
-
--- ULTIMATE FPS & PING BOOSTER (removes all lag, even on bad phones)
 local function enableFPSBooster()
     if fpsBoosterActive then return end
     fpsBoosterActive = true
-
-    -- Remove all visual effects, particles, and laggy objects
+    
     task.spawn(function()
         for _, obj in pairs(workspace:GetDescendants()) do
             pcall(function()
                 if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam") or 
                    obj:IsA("Smoke") or obj:IsA("Fire") or obj:IsA("Sparkles") or 
-                   obj:IsA("Explosion") or obj:IsA("Decal") or obj:IsA("Texture") or obj:IsA("ShirtGraphic") then
+                   obj:IsA("Explosion") then
                     obj:Destroy()
                 end
             end)
         end
     end)
-
-    -- Remove all lights and shadows
+    
     task.spawn(function()
         pcall(function()
             Lighting.GlobalShadows = false
-            Lighting.FogEnd = 250000
-            Lighting.Brightness = 6
+            Lighting.FogEnd = 9e9
+            Lighting.Brightness = 0
             Lighting.ClockTime = 12
-            Lighting.OutdoorAmbient = Color3.fromRGB(210, 220, 255)
-            Lighting.Ambient = Color3.fromRGB(180, 190, 220)
-            Lighting.FogColor = Color3.fromRGB(210, 220, 255)
-            Lighting.ExposureCompensation = 1.1
             if Lighting:FindFirstChild("Atmosphere") then
                 Lighting.Atmosphere:Destroy()
             end
         end)
+        
         for _, light in pairs(workspace:GetDescendants()) do
             if light:IsA("PointLight") or light:IsA("SpotLight") or light:IsA("SurfaceLight") then
                 light:Destroy()
             end
         end
     end)
-
-    -- Remove all camera effects and set lowest quality
+    
     task.spawn(function()
         pcall(function()
             settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
-            settings().Network.IncomingReplicationLag = 0
-            settings().Network.OutgoingReplicationLag = 0
         end)
+        
         for _, effect in pairs(camera:GetChildren()) do
             if effect:IsA("BloomEffect") or effect:IsA("BlurEffect") or 
                effect:IsA("DepthOfFieldEffect") or effect:IsA("SunRaysEffect") or 
@@ -849,37 +773,8 @@ local function enableFPSBooster()
             end
         end
     end)
-
-    -- Remove all terrain water and textures
-    task.spawn(function()
-        pcall(function()
-            if workspace:FindFirstChild("Terrain") then
-                workspace.Terrain.WaterWaveSize = 0
-                workspace.Terrain.WaterTransparency = 1
-                workspace.Terrain.WaterReflectance = 0
-                workspace.Terrain.WaterColor = Color3.new(0,0,0)
-            end
-        end)
-    end)
-
-    -- Remove all GUI effects
-    task.spawn(function()
-        for _, gui in pairs(game:GetService("CoreGui"):GetDescendants()) do
-            pcall(function()
-                if gui:IsA("ImageLabel") or gui:IsA("ImageButton") then
-                    gui.Image = ""
-                end
-            end)
-        end
-    end)
-
-    -- Force max FPS and lowest ping
-    pcall(function()
-        settings().Rendering.FrameRateManager = Enum.FrameRateManager.Physics
-        settings().Rendering.FramerateCap = 1000
-    end)
-
-    task.wait(2)
+    
+    task.wait(3)
     fpsBoosterActive = false
 end
 
@@ -904,7 +799,7 @@ local function enableHitbox()
         for _, Player in pairs(Players:GetPlayers()) do
             if Player ~= player and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
                 local RootPart = Player.Character.HumanoidRootPart
-                RootPart.Size = Vector3.new(4, 4, 2) -- Smaller BSR for auto grab
+                RootPart.Size = Vector3.new(10, 10, 10)
                 RootPart.Transparency = 0.5
                 RootPart.CanCollide = false
             end
@@ -1279,7 +1174,7 @@ end
 local function startLookAt()
     if not hrp or not hum then return end
     hum.AutoRotate = false
-
+    
     attachment_bat = Instance.new("Attachment", hrp)
     alignOrientation_bat = Instance.new("AlignOrientation")
     alignOrientation_bat.Attachment0 = attachment_bat
@@ -1289,17 +1184,11 @@ local function startLookAt()
     alignOrientation_bat.RigidityEnabled = true
     alignOrientation_bat.Parent = hrp
 
-    -- Smooth vertical tracking for anti-jump/anti-dodge
-    local lastY = hrp.Position.Y
     lookConnection_bat = RunService.RenderStepped:Connect(function()
         if not hrp or not alignOrientation_bat then return end
         local target = closestLookTarget()
         if not target then return end
-        -- Predict target Y movement (anti-jump/anti-dodge)
-        local targetY = target.Position.Y
-        local smoothY = lastY + (targetY - lastY) * 0.35
-        lastY = smoothY
-        local lookPos = Vector3.new(target.Position.X, smoothY, target.Position.Z)
+        local lookPos = Vector3.new(target.Position.X, hrp.Position.Y, target.Position.Z)
         alignOrientation_bat.CFrame = CFrame.lookAt(hrp.Position, lookPos)
     end)
 end
@@ -1343,15 +1232,8 @@ RunService.Heartbeat:Connect(function()
     local target, distance = nearestPlayer_bat()
     if not target then return end
 
-    -- Predict target movement for anti-dodge/anti-jump
-    local predictedPos = target.Position
-    local targetHum = target.Parent and target.Parent:FindFirstChildOfClass("Humanoid")
-    if targetHum and targetHum.FloorMaterial == Enum.Material.Air then
-        -- If jumping, predict upward movement
-        predictedPos = predictedPos + Vector3.new(0, targetHum.Jump and 4 or 2, 0)
-    end
-
-    local moveDir = (predictedPos - hrp.Position).Unit
+    local targetPos = Vector3.new(target.Position.X, target.Position.Y, target.Position.Z)
+    local moveDir = (targetPos - hrp.Position).Unit
     hrp.AssemblyLinearVelocity = moveDir * BAT_MOVE_SPEED
 
     if distance <= BAT_ENGAGE_RANGE then
@@ -1494,54 +1376,21 @@ local function applyWhiteHalfStyle()
                     v.TextColor3 = Color3.fromRGB(255, 255, 255)
                 end
 
-                -- ensure button/frame strokes are RGB animated (overwrite existing strokes)
+                -- ensure button/frame strokes are black (overwrite existing strokes)
                 local hasStroke = false
                 for _, c in pairs(v:GetChildren()) do
                     if c:IsA("UIStroke") then
+                        c.Color = Color3.fromRGB(0,0,0)
                         hasStroke = true
-                        c.Thickness = 3
-                        c.Color = Color3.fromRGB(255,0,0)
-                        -- Add RGB animation
-                        if not c:FindFirstChild("RGBAnim") then
-                            local anim = Instance.new("BoolValue")
-                            anim.Name = "RGBAnim"
-                            anim.Parent = c
-                        end
                     end
                 end
                 if not hasStroke then
                     local stroke = Instance.new("UIStroke")
-                    stroke.Thickness = 3
-                    stroke.Color = Color3.fromRGB(255,0,0)
-                    local anim = Instance.new("BoolValue")
-                    anim.Name = "RGBAnim"
-                    anim.Parent = stroke
+                    stroke.Thickness = 2
+                    stroke.Color = Color3.fromRGB(0,0,0)
                     stroke.Parent = v
                 end
-                -- Add circular red glow to buttons
-                if v:IsA("TextButton") and not v:FindFirstChild("RedGlow") then
-                    local glow = Instance.new("ImageLabel")
-                    glow.Name = "RedGlow"
-                    glow.BackgroundTransparency = 1
-                    glow.Size = UDim2.new(1.6,0,1.6,0)
-                    glow.Position = UDim2.new(-0.3,0,-0.3,0)
-                    glow.Image = "rbxassetid://5107168713" -- circular soft glow
-                    glow.ImageColor3 = Color3.fromRGB(255,0,0)
-                    glow.ImageTransparency = 0.4
-                    glow.ZIndex = v.ZIndex - 1
-                    glow.Parent = v
-                    local grad = Instance.new("UIGradient")
-                    grad.Rotation = 0
-                    grad.Color = ColorSequence.new{
-                        ColorSequenceKeypoint.new(0, Color3.fromRGB(255,0,0)),
-                        ColorSequenceKeypoint.new(1, Color3.fromRGB(40,0,0))
-                    }
-                    grad.Parent = glow
-                    local rot = Instance.new("NumberValue")
-                    rot.Name = "GlowRot"
-                    rot.Value = 0
-                    rot.Parent = glow
-                end
+
                 -- ensure rounded edges on all boxes
                 local hasCorner = false
                 for _, c in pairs(v:GetChildren()) do
@@ -1555,6 +1404,7 @@ local function applyWhiteHalfStyle()
                     corner.CornerRadius = UDim.new(1, 0)
                     corner.Parent = v
                 end
+
                 if v:IsA("GuiObject") then
                     v.ZIndex = 100
                 end
@@ -1563,26 +1413,28 @@ local function applyWhiteHalfStyle()
     end
 end
 
-applyRedBlackRGBStyle()
-
--- Animate all UIStroke with RGBAnim child for RGB glow
-spawn(function()
-    while wait(0.05) do
-        for _, v in pairs(ScreenGui:GetDescendants()) do
-            if v:IsA("UIStroke") and v:FindFirstChild("RGBAnim") then
-                local t = tick() * 0.5
-                local r = math.abs(math.sin(t))
-                local g = math.abs(math.sin(t + 2))
-                local b = math.abs(math.sin(t + 4))
-                v.Color = Color3.new(r, g, b)
-            end
-            -- Animate circular red glow rotation
-            if v:IsA("ImageLabel") and v.Name == "RedGlow" and v:FindFirstChild("GlowRot") and v:FindFirstChildOfClass("UIGradient") then
-                local rot = v.GlowRot
-                rot.Value = (rot.Value + 2) % 360
-                v.UIGradient.Rotation = rot.Value
+-- Ensure enabled / green GUIs are always in front (periodic check)
+local function bringEnabledToFront()
+    for _, v in pairs(ScreenGui:GetDescendants()) do
+        local ok, bg = pcall(function() return v.BackgroundColor3 end)
+        if ok and bg then
+            local r,g,b = bg.R, bg.G, bg.B
+            -- check for green-ish backgrounds used for enabled state
+            if g > 0.6 and r < 0.4 then
+                pcall(function()
+                    v.Parent = ScreenGui
+                    if v:IsA("GuiObject") then
+                        v.ZIndex = 100
+                    end
+                end)
             end
         end
+    end
+end
+
+task.spawn(function()
+    while task.wait(0.5) do
+        pcall(bringEnabledToFront)
     end
 end)
 
@@ -1942,8 +1794,7 @@ SmallTPUpButton.MouseButton1Click:Connect(function()
             if hrp then
                 pcall(function()
                     local upAmt = (SpeedBooster and SpeedBooster.JumpPower) or 25.8
-                    -- Use AssemblyLinearVelocity for smooth, lag-free jump
-                    hrp.AssemblyLinearVelocity = Vector3.new(hrp.AssemblyLinearVelocity.X, upAmt, hrp.AssemblyLinearVelocity.Z)
+                    hrp.CFrame = hrp.CFrame + Vector3.new(0, upAmt, 0)
                 end)
             end
         end)
