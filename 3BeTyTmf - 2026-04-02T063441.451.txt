@@ -45,9 +45,9 @@ local CONFIG_FILE = "timcheeseduels_config.json"
 
 local ConfigData = {
     speedEnabled = false,
-    normalSpeed = 57.9,
+    normalSpeed = 58.9,
     stealSpeed = 29.6,
-    jumpPower = 25.8,
+    jumpPower = 29.8,
     stealRadius = 9,
     fovValue = 120,
     fovEnabled = false,
