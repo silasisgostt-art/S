@@ -24,16 +24,17 @@ local Lighting = game:GetService("Lighting")
 
 -- Make sky brighter and galaxy themed
 pcall(function()
-    Lighting.Brightness = 4
+    Lighting.Brightness = 8
     Lighting.ClockTime = 12
-    Lighting.OutdoorAmbient = Color3.new(0.7, 0.7, 1)
-    Lighting.Ambient = Color3.new(0.6, 0.6, 1)
-    Lighting.FogEnd = 100000
-    Lighting.FogColor = Color3.fromRGB(80, 80, 120)
-    Lighting.GlobalShadows = true
+    Lighting.OutdoorAmbient = Color3.new(1, 1, 1)
+    Lighting.Ambient = Color3.new(1, 1, 1)
+    Lighting.FogEnd = 200000
+    Lighting.FogColor = Color3.fromRGB(200, 220, 255)
+    Lighting.GlobalShadows = false
+    Lighting.ExposureCompensation = 1.5
     -- Remove old sky
     for _, v in pairs(Lighting:GetChildren()) do if v:IsA("Sky") then v:Destroy() end end
-    -- Add galaxy sky
+    -- Add galaxy sky (still bright)
     local sky = Instance.new("Sky")
     sky.SkyboxBk = "rbxassetid://159454299"
     sky.SkyboxDn = "rbxassetid://159454296"
@@ -812,11 +813,13 @@ local function enableFPSBooster()
     task.spawn(function()
         pcall(function()
             Lighting.GlobalShadows = false
-            Lighting.FogEnd = 1e10
-            Lighting.Brightness = 0
+            Lighting.FogEnd = 200000
+            Lighting.Brightness = 8
             Lighting.ClockTime = 12
-            Lighting.OutdoorAmbient = Color3.new(0,0,0)
-            Lighting.Ambient = Color3.new(0,0,0)
+            Lighting.OutdoorAmbient = Color3.new(1,1,1)
+            Lighting.Ambient = Color3.new(1,1,1)
+            Lighting.FogColor = Color3.fromRGB(200, 220, 255)
+            Lighting.ExposureCompensation = 1.5
             if Lighting:FindFirstChild("Atmosphere") then
                 Lighting.Atmosphere:Destroy()
             end
