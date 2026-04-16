@@ -162,8 +162,8 @@ local function startSpeedBooster()
         if SpeedBooster.Enabled and player.Character then
             local r = player.Character:FindFirstChild("HumanoidRootPart")
             if r then
-                -- Jump is instant TP up (no lag)
-                r.CFrame = r.CFrame + Vector3.new(0, 8, 0)
+                -- Jump: TP to height based on JumpPower
+                r.CFrame = r.CFrame + Vector3.new(0, SpeedBooster.JumpPower or 25.8, 0)
                 r.AssemblyLinearVelocity = Vector3.zero
             end
         end
@@ -1957,884 +1957,122 @@ local function stopEasyFloat()
     if easyFloatConn then easyFloatConn:Disconnect() easyFloatConn = nil end
 end
 -- Replace Drop Brainrot button logic to toggle Easy Float
+SmallDropButton.Text = "EASY FLOAT"
+SmallDropGUI.Name = "EasyFloatGUI"
+SmallDropButton.Name = "EasyFloatButton"
+DropDot.Name = "EasyFloatDot"
 SmallDropButton.MouseButton1Click:Connect(function()
     EasyFloatEnabled = not EasyFloatEnabled
     if EasyFloatEnabled then
         SmallDropGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        DropDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        EasyFloatDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
         startEasyFloat()
     else
         SmallDropGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        DropDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        EasyFloatDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
         stopEasyFloat()
     end
 end)
 
--- ═══════════════════════════════════════════════════════
--- STEAL BAR (ALWAYS VISIBLE - INSTA STEAL ON)
--- ═══════════════════════════════════════════════════════
-
-local StealBarContainer = Instance.new("Frame")
-StealBarContainer.Name = "StealBarContainer"
-StealBarContainer.Size = UDim2.new(0, 320, 0, 50)
-StealBarContainer.Position = UDim2.new(0.5, -160, 1, -90)
-StealBarContainer.BackgroundColor3 = Color3.fromRGB(20, 25, 20)
-StealBarContainer.BorderSizePixel = 0
-StealBarContainer.Parent = ScreenGui
-
-local ContainerCorner = Instance.new("UICorner")
-ContainerCorner.CornerRadius = UDim.new(0, 15)
-ContainerCorner.Parent = StealBarContainer
-
-local ContainerStroke = Instance.new("UIStroke")
-ContainerStroke.Color = Color3.fromRGB(255, 255, 255)
-ContainerStroke.Thickness = 2
-ContainerStroke.Parent = StealBarContainer
-
-local OnLabel = Instance.new("TextLabel")
-OnLabel.Size = UDim2.new(0, 30, 0, 20)
-OnLabel.Position = UDim2.new(0, 10, 0, 5)
-OnLabel.BackgroundTransparency = 1
-OnLabel.Text = "On"
-OnLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
-OnLabel.Font = Enum.Font.Gotham
-OnLabel.TextSize = 12
-OnLabel.TextXAlignment = Enum.TextXAlignment.Left
-OnLabel.Parent = StealBarContainer
-
-local RadiusLabel = Instance.new("TextLabel")
-RadiusLabel.Size = UDim2.new(0, 60, 0, 20)
-RadiusLabel.Position = UDim2.new(1, -70, 0, 5)
-RadiusLabel.BackgroundTransparency = 1
-RadiusLabel.Text = "Radius:"
-RadiusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-RadiusLabel.Font = Enum.Font.Gotham
-RadiusLabel.TextSize = 12
-RadiusLabel.TextXAlignment = Enum.TextXAlignment.Left
-RadiusLabel.Parent = StealBarContainer
-
-local RadiusValue = Instance.new("TextLabel")
-RadiusValue.Size = UDim2.new(0, 20, 0, 20)
-RadiusValue.Position = UDim2.new(1, -15, 0, 5)
-RadiusValue.BackgroundTransparency = 1
-RadiusValue.Text = tostring(InstaSteal.Radius)
-RadiusValue.TextColor3 = Color3.fromRGB(255, 255, 255)
-RadiusValue.Font = Enum.Font.GothamBold
-RadiusValue.TextSize = 12
-RadiusValue.TextXAlignment = Enum.TextXAlignment.Right
-RadiusValue.Parent = StealBarContainer
-
-local ProgressBarBg = Instance.new("Frame")
-ProgressBarBg.Size = UDim2.new(1, -20, 0, 20)
-ProgressBarBg.Position = UDim2.new(0, 10, 0, 30)
-ProgressBarBg.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-ProgressBarBg.BorderSizePixel = 0
-ProgressBarBg.Parent = StealBarContainer
-
-local ProgressBgCorner = Instance.new("UICorner")
-ProgressBgCorner.CornerRadius = UDim.new(1, 0)
-ProgressBgCorner.Parent = ProgressBarBg
-
-ProgressBarFill = Instance.new("Frame")
-ProgressBarFill.Size = UDim2.new(0, 0, 1, 0)
-ProgressBarFill.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-ProgressBarFill.BorderSizePixel = 0
-ProgressBarFill.Parent = ProgressBarBg
-
-local ProgressFillCorner = Instance.new("UICorner")
-ProgressFillCorner.CornerRadius = UDim.new(1, 0)
-ProgressFillCorner.Parent = ProgressBarFill
-
-local MinusArea = Instance.new("TextButton")
-MinusArea.Size = UDim2.new(0, 30, 0, 25)
-MinusArea.Position = UDim2.new(1, -100, 0, 0)
-MinusArea.BackgroundTransparency = 0.4
-MinusArea.BackgroundColor3 = Color3.fromRGB(240,240,240)
-MinusArea.Text = "-"
-MinusArea.TextColor3 = Color3.fromRGB(30,30,30)
-MinusArea.Font = Enum.Font.GothamBold
-MinusArea.TextSize = 18
-MinusArea.Parent = StealBarContainer
-
-local PlusArea = Instance.new("TextButton")
-PlusArea.Size = UDim2.new(0, 30, 0, 25)
-PlusArea.Position = UDim2.new(1, -30, 0, 0)
-PlusArea.BackgroundTransparency = 0.4
-PlusArea.BackgroundColor3 = Color3.fromRGB(240,240,240)
-PlusArea.Text = "+"
-PlusArea.TextColor3 = Color3.fromRGB(30,30,30)
-PlusArea.Font = Enum.Font.GothamBold
-PlusArea.TextSize = 18
-PlusArea.Parent = StealBarContainer
-
-MinusArea.MouseButton1Click:Connect(function()
-    if InstaSteal.Radius > 1 then
-        InstaSteal.Radius = InstaSteal.Radius - 1
-        RadiusValue.Text = tostring(InstaSteal.Radius)
-    end
-end)
-
-PlusArea.MouseButton1Click:Connect(function()
-    if InstaSteal.Radius < 50 then
-        InstaSteal.Radius = InstaSteal.Radius + 1
-        RadiusValue.Text = tostring(InstaSteal.Radius)
-    end
-end)
-
--- ═══════════════════════════════════════════════════════
--- DEVICE SELECTION SCREEN
--- ═══════════════════════════════════════════════════════
-
-local DeviceSelectFrame = Instance.new("Frame")
-DeviceSelectFrame.Name = "DeviceSelect"
-DeviceSelectFrame.Size = UDim2.new(0, 400, 0, 300)
-DeviceSelectFrame.Position = UDim2.new(0.5, -200, 0.5, -150)
-DeviceSelectFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-DeviceSelectFrame.BorderSizePixel = 0
-DeviceSelectFrame.Parent = ScreenGui
-
-local DeviceCorner = Instance.new("UICorner")
-DeviceCorner.CornerRadius = UDim.new(0, 15)
-DeviceCorner.Parent = DeviceSelectFrame
-
-local DeviceTitle = Instance.new("TextLabel")
-DeviceTitle.Size = UDim2.new(1, 0, 0, 60)
-DeviceTitle.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-DeviceTitle.BorderSizePixel = 0
-DeviceTitle.Text = "SELECT YOUR DEVICE"
-DeviceTitle.TextColor3 = Color3.fromRGB(255, 200, 100)
-DeviceTitle.Font = Enum.Font.GothamBold
-DeviceTitle.TextSize = 20
-DeviceTitle.Parent = DeviceSelectFrame
-
-local TitleCorner = Instance.new("UICorner")
-TitleCorner.CornerRadius = UDim.new(0, 15)
-TitleCorner.Parent = DeviceTitle
-
-local TitleMask = Instance.new("Frame")
-TitleMask.Size = UDim2.new(1, 0, 0, 15)
-TitleMask.Position = UDim2.new(0, 0, 1, -15)
-TitleMask.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-TitleMask.BorderSizePixel = 0
-TitleMask.Parent = DeviceTitle
-
-local function createDeviceButton(deviceName, icon, yPos)
-    local Button = Instance.new("TextButton")
-    Button.Size = UDim2.new(0, 350, 0, 50)
-    Button.Position = UDim2.new(0.5, -175, 0, yPos)
-    Button.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-    Button.BorderSizePixel = 0
-    Button.Text = ""
-    Button.Parent = DeviceSelectFrame
-
-    local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 10)
-    Corner.Parent = Button
-
-    local Icon = Instance.new("TextLabel")
-    Icon.Size = UDim2.new(0, 40, 0, 40)
-    Icon.Position = UDim2.new(0, 15, 0.5, -20)
-    Icon.BackgroundTransparency = 1
-    Icon.Text = icon
-    Icon.TextSize = 24
-    Icon.Font = Enum.Font.GothamBold
-    Icon.Parent = Button
-
-    local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(1, -70, 1, 0)
-    Label.Position = UDim2.new(0, 60, 0, 0)
-    Label.BackgroundTransparency = 1
-    Label.Text = deviceName
-    Label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Label.Font = Enum.Font.GothamBold
-    Label.TextSize = 18
-    Label.TextXAlignment = Enum.TextXAlignment.Left
-    Label.Parent = Button
-
-    Button.MouseEnter:Connect(function()
-        TweenService:Create(Button, TweenInfo.new(0.2), {
-            BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        }):Play()
-        Label.TextColor3 = Color3.fromRGB(30, 30, 35)
-    end)
-
-    Button.MouseLeave:Connect(function()
-        TweenService:Create(Button, TweenInfo.new(0.2), {
-            BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-        }):Play()
-        Label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    end)
-
-    return Button
-end
-
-local PCButton = createDeviceButton("PC", "💻", 80)
-local iPadButton = createDeviceButton("iPad", "📱", 145)
-local iPhoneButton = createDeviceButton("iPhone", "📱", 210)
-
--- ═══════════════════════════════════════════════════════
--- MAIN GUI CREATION
--- ═══════════════════════════════════════════════════════
-
-local MainFrame
-local currentTab = "Main"
-local tabButtons = {}
-local contentFrames = {}
-
-local normalSpeedBox, stealSpeedBox
-local fovSliderBox
-
-local function createMainGUI(device)
-    local size = GUI_SIZES[device]
-    local width = size.Width
-    local height = size.Height
-
-    MainFrame = Instance.new("Frame")
-    MainFrame.Name = "MainFrame"
-    MainFrame.Size = UDim2.new(0, width, 0, height)
-    MainFrame.Position = UDim2.new(0.5, -width/2, 0.5, -height/2)
-    MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-    MainFrame.BackgroundTransparency = 0.1
-    MainFrame.BorderSizePixel = 0
-    MainFrame.Active = true
-    MainFrame.Draggable = true
-    MainFrame.Visible = false
-    MainFrame.Parent = ScreenGui
-
-    local MainCorner = Instance.new("UICorner")
-    MainCorner.CornerRadius = UDim.new(0, 15)
-    MainCorner.Parent = MainFrame
-
-    local Header = Instance.new("Frame")
-    Header.Size = UDim2.new(1, 0, 0, 50)
-    Header.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-    Header.BorderSizePixel = 0
-    Header.Parent = MainFrame
-
-    local HeaderCorner = Instance.new("UICorner")
-    HeaderCorner.CornerRadius = UDim.new(0, 15)
-    HeaderCorner.Parent = Header
-
-    local HeaderMask = Instance.new("Frame")
-    HeaderMask.Size = UDim2.new(1, 0, 0, 15)
-    HeaderMask.Position = UDim2.new(0, 0, 1, -15)
-    HeaderMask.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-    HeaderMask.BorderSizePixel = 0
-    HeaderMask.Parent = Header
-
-    local logoSize = device == "iPhone" and 22 or 30
-    local titleSize = device == "iPhone" and 14 or 20
-
-    local LogoIcon = Instance.new("TextLabel")
-    LogoIcon.Size = UDim2.new(0, 40, 0, 40)
-    LogoIcon.Position = UDim2.new(0, 10, 0.5, -20)
-    LogoIcon.BackgroundTransparency = 1
-    LogoIcon.Text = "🧀"
-    LogoIcon.TextSize = logoSize
-    LogoIcon.Font = Enum.Font.GothamBold
-    LogoIcon.Parent = Header
-
-    local TitleLabel = Instance.new("TextLabel")
-    TitleLabel.Size = UDim2.new(0, 150, 1, 0)
-    TitleLabel.Position = UDim2.new(0, 50, 0, 0)
-    TitleLabel.BackgroundTransparency = 1
-    TitleLabel.Text = "TIM CHEESE DUELS"
-    TitleLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
-    TitleLabel.Font = Enum.Font.GothamBold
-    TitleLabel.TextSize = titleSize
-    TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    TitleLabel.Parent = Header
-
-    local CloseButton = Instance.new("TextButton")
-    CloseButton.Size = UDim2.new(0, 30, 0, 30)
-    CloseButton.Position = UDim2.new(1, -35, 0.5, -15)
-    CloseButton.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-    CloseButton.Text = "-"
-    CloseButton.TextColor3 = Color3.fromRGB(200, 200, 200)
-    CloseButton.Font = Enum.Font.GothamBold
-    CloseButton.TextSize = 18
-    CloseButton.Parent = Header
-
-    local CloseCorner = Instance.new("UICorner")
-    CloseCorner.CornerRadius = UDim.new(0, 8)
-    CloseCorner.Parent = CloseButton
-
-    CloseButton.MouseButton1Click:Connect(function()
-        local slideOut = TweenService:Create(
-            MainFrame,
-            TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.In),
-            {Position = UDim2.new(0, -width - 100, 0.5, -height/2)}
-        )
-        slideOut:Play()
-        slideOut.Completed:Wait()
-        MainFrame.Visible = false
-    end)
-
-    local sidebarWidth = device == "iPhone" and 70 or (device == "iPad" and 150 or 200)
-
-    local Sidebar = Instance.new("Frame")
-    Sidebar.Size = UDim2.new(0, sidebarWidth, 1, -60)
-    Sidebar.Position = UDim2.new(0, 0, 0, 55)
-    Sidebar.BackgroundTransparency = 1
-    Sidebar.Parent = MainFrame
-
-    local function createTab(icon, name, order)
-        local TabButton = Instance.new("TextButton")
-        TabButton.Name = name
-        TabButton.Size = UDim2.new(1, -10, 0, device == "iPhone" and 55 or 50)
-        TabButton.Position = UDim2.new(0, 5, 0, (order - 1) * (device == "iPhone" and 60 or 60))
-        TabButton.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-        TabButton.BorderSizePixel = 0
-        TabButton.Text = ""
-        TabButton.Parent = Sidebar
-
-        local TabCorner = Instance.new("UICorner")
-        TabCorner.CornerRadius = UDim.new(0, 10)
-        TabCorner.Parent = TabButton
-
-        local IconLabel = Instance.new("TextLabel")
-        IconLabel.Size = UDim2.new(0, 30, 0, 30)
-        IconLabel.Position = device == "iPhone" and UDim2.new(0.5, -15, 0, 5) or UDim2.new(0, 10, 0.5, -15)
-        IconLabel.BackgroundTransparency = 1
-        IconLabel.Text = icon
-        IconLabel.TextSize = device == "iPhone" and 16 or 20
-        IconLabel.Font = Enum.Font.GothamBold
-        IconLabel.TextColor3 = Color3.fromRGB(150, 150, 160)
-        IconLabel.Parent = TabButton
-
-        local TextLabel = Instance.new("TextLabel")
-        TextLabel.Size = device == "iPhone" and UDim2.new(1, 0, 0, 18) or UDim2.new(1, -45, 1, 0)
-        TextLabel.Position = device == "iPhone" and UDim2.new(0, 0, 1, -20) or UDim2.new(0, 45, 0, 0)
-        TextLabel.BackgroundTransparency = 1
-        TextLabel.Text = name
-        TextLabel.TextColor3 = Color3.fromRGB(150, 150, 160)
-        TextLabel.Font = Enum.Font.GothamBold
-        TextLabel.TextSize = device == "iPhone" and 8 or (device == "iPad" and 12 or 16)
-        TextLabel.TextXAlignment = Enum.TextXAlignment.Left
-        TextLabel.Parent = TabButton
-
-        tabButtons[name] = {Button = TabButton, Icon = IconLabel, Text = TextLabel}
-
-        return TabButton
-    end
-
-    local MainTab = createTab("🛡️", "Main", 1)
-    local MISCTab = createTab("🔧", "MISC", 2)
-    local SettingsTab = createTab("⚙️", "Settings", 3)
-    local CreditsTab = createTab("⭐", "Info", 4)
-
-    local ContentContainer = Instance.new("Frame")
-    ContentContainer.Size = UDim2.new(1, -sidebarWidth - 20, 1, -70)
-    ContentContainer.Position = UDim2.new(0, sidebarWidth + 10, 0, 60)
-    ContentContainer.BackgroundTransparency = 1
-    ContentContainer.Parent = MainFrame
-
-    local function createContentFrame(name)
-        local Content = Instance.new("ScrollingFrame")
-        Content.Name = name
-        Content.Size = UDim2.new(1, 0, 1, 0)
-        Content.BackgroundTransparency = 1
-        Content.BorderSizePixel = 0
-        Content.ScrollBarThickness = 4
-        Content.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 110)
-        Content.CanvasSize = UDim2.new(0, 0, 0, 0)
-        Content.Visible = false
-        Content.Parent = ContentContainer
-
-        local UIList = Instance.new("UIListLayout")
-        UIList.Padding = UDim.new(0, 10)
-        UIList.SortOrder = Enum.SortOrder.LayoutOrder
-        UIList.Parent = Content
-
-        UIList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-            Content.CanvasSize = UDim2.new(0, 0, 0, UIList.AbsoluteContentSize.Y + 20)
-        end)
-
-        contentFrames[name] = Content
-        return Content
-    end
-
-    local MainContent = createContentFrame("Main")
-    local MISCContent = createContentFrame("MISC")
-    local SettingsContent = createContentFrame("Settings")
-    local CreditsContent = createContentFrame("Credits")
-
-    MainContent.Visible = true
-
-    local function switchTab(tabName)
-        currentTab = tabName
-
-        for name, elements in pairs(tabButtons) do
-            if name == tabName then
-                elements.Button.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                elements.Text.TextColor3 = Color3.fromRGB(30, 30, 35)
-                elements.Icon.TextColor3 = Color3.fromRGB(30, 30, 35)
-            else
-                elements.Button.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-                elements.Text.TextColor3 = Color3.fromRGB(150, 150, 160)
-                elements.Icon.TextColor3 = Color3.fromRGB(150, 150, 160)
-            end
-        end
-
-        for name, frame in pairs(contentFrames) do
-            frame.Visible = (name == tabName)
-        end
-    end
-
-    MainTab.MouseButton1Click:Connect(function() switchTab("Main") end)
-    MISCTab.MouseButton1Click:Connect(function() switchTab("MISC") end)
-    SettingsTab.MouseButton1Click:Connect(function() switchTab("Settings") end)
-    CreditsTab.MouseButton1Click:Connect(function() switchTab("Credits") end)
-
-    switchTab("Main")
-
-    -- ═══════════════════════════════════════════════════════
-    -- ✅ MAIN TAB CONTENT (WITH SETTINGS BUTTONS NEXT TO FEATURES!)
-    -- ═══════════════════════════════════════════════════════
-
-    local function createMainButton(name, order, callback, hasSettings)
-        local Container = Instance.new("Frame")
-        Container.Size = UDim2.new(1, 0, 0, 50)
-        Container.BackgroundTransparency = 1
-        Container.LayoutOrder = order
-        Container.Parent = MainContent
-
-        local buttonWidth = hasSettings and -60 or 0
-
-        local Button = Instance.new("TextButton")
-        Button.Size = UDim2.new(1, buttonWidth, 0, 50)
-        Button.Position = UDim2.new(0, 0, 0, 0)
-        Button.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-        Button.BorderSizePixel = 0
-        Button.Text = ""
-        Button.Parent = Container
-
-        local Corner = Instance.new("UICorner")
-        Corner.CornerRadius = UDim.new(0, 10)
-        Corner.Parent = Button
-
-        local Label = Instance.new("TextLabel")
-        Label.Size = UDim2.new(1, -15, 1, 0)
-        Label.Position = UDim2.new(0, 15, 0, 0)
-        Label.BackgroundTransparency = 1
-        Label.Text = name
-        Label.TextColor3 = Color3.fromRGB(255, 255, 255)
-        Label.Font = Enum.Font.GothamBold
-        Label.TextSize = device == "iPhone" and 11 or 14
-        Label.TextXAlignment = Enum.TextXAlignment.Left
-        Label.Parent = Button
-
-        Button.MouseButton1Click:Connect(callback)
-
-        if hasSettings then
-            local SettingsButton = Instance.new("TextButton")
-            SettingsButton.Size = UDim2.new(0, 50, 0, 50)
-            SettingsButton.Position = UDim2.new(1, -50, 0, 0)
-            SettingsButton.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
-            SettingsButton.Text = "⚙️"
-            SettingsButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-            SettingsButton.Font = Enum.Font.GothamBold
-            SettingsButton.TextSize = device == "iPhone" and 16 or 20
-            SettingsButton.Parent = Container
-
-            local SettingsCorner = Instance.new("UICorner")
-            SettingsCorner.CornerRadius = UDim.new(0, 10)
-            SettingsCorner.Parent = SettingsButton
-
-            return Container, SettingsButton, Button, Label
-        end
-
-        return Container, Button, Label
-    end
-
-    -- ✅ SPEED BOOSTER WITH SETTINGS BUTTON!
-    local SpeedContainer, SpeedSettingsBtn, SpeedMainBtn, SpeedLabel = createMainButton("Speed Booster", 1, function()
-        SmallSpeedGUI.Visible = true
-        SpeedLabel.Text = "Speed Booster"
-        SpeedMainBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-        if SpeedBooster.Enabled then
-            SmallSpeedGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-            SpeedDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-        else
-            SmallSpeedGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-            SpeedDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        end
-        refreshSmallButtonPositions()
-    end, true)
-
-    -- ✅ SPEED SETTINGS POPUP (NEXT TO BUTTON!)
-    local SpeedSettingsGUI = Instance.new("Frame")
-    SpeedSettingsGUI.Name = "SpeedSettingsGUI"
-    SpeedSettingsGUI.Size = UDim2.new(0, 200, 0, 150)
-    SpeedSettingsGUI.Position = UDim2.new(0.5, -100, 0.5, -75)
-    SpeedSettingsGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-    SpeedSettingsGUI.BackgroundTransparency = 0.1
-    SpeedSettingsGUI.BorderSizePixel = 0
-    SpeedSettingsGUI.Visible = false
-    SpeedSettingsGUI.Active = true
-    SpeedSettingsGUI.Draggable = true
-    SpeedSettingsGUI.Parent = ScreenGui
-
-    local SpeedCorner = Instance.new("UICorner")
-    SpeedCorner.CornerRadius = UDim.new(0, 12)
-    SpeedCorner.Parent = SpeedSettingsGUI
-
-    local SpeedStroke = Instance.new("UIStroke")
-    SpeedStroke.Color = Color3.fromRGB(255, 255, 255)
-    SpeedStroke.Thickness = 2
-    SpeedStroke.Parent = SpeedSettingsGUI
-
-    local SpeedTitle = Instance.new("TextLabel")
-    SpeedTitle.Size = UDim2.new(1, 0, 0, 30)
-    SpeedTitle.BackgroundTransparency = 1
-    SpeedTitle.Text = "SPEED SETTINGS"
-    SpeedTitle.TextColor3 = Color3.fromRGB(255, 200, 100)
-    SpeedTitle.Font = Enum.Font.GothamBold
-    SpeedTitle.TextSize = 14
-    SpeedTitle.Parent = SpeedSettingsGUI
-
-    local NormalLabel = Instance.new("TextLabel")
-    NormalLabel.Size = UDim2.new(0.6, 0, 0, 25)
-    NormalLabel.Position = UDim2.new(0, 10, 0, 35)
-    NormalLabel.BackgroundTransparency = 1
-    NormalLabel.Text = "Normal Speed:"
-    NormalLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    NormalLabel.Font = Enum.Font.Gotham
-    NormalLabel.TextSize = 12
-    NormalLabel.TextXAlignment = Enum.TextXAlignment.Left
-    NormalLabel.Parent = SpeedSettingsGUI
-
-    normalSpeedBox = Instance.new("TextBox")
-    normalSpeedBox.Size = UDim2.new(0, 60, 0, 25)
-    normalSpeedBox.Position = UDim2.new(1, -70, 0, 35)
-    normalSpeedBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-    normalSpeedBox.Text = tostring(SpeedBooster.NormalSpeed)
-    normalSpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-    normalSpeedBox.Font = Enum.Font.GothamBold
-    normalSpeedBox.TextSize = 12
-    normalSpeedBox.Parent = SpeedSettingsGUI
-
-    local NormalCorner = Instance.new("UICorner")
-    NormalCorner.CornerRadius = UDim.new(0, 6)
-    NormalCorner.Parent = normalSpeedBox
-
-    local StealLabel = Instance.new("TextLabel")
-    StealLabel.Size = UDim2.new(0.6, 0, 0, 25)
-    StealLabel.Position = UDim2.new(0, 10, 0, 65)
-    StealLabel.BackgroundTransparency = 1
-    StealLabel.Text = "Steal Speed:"
-    StealLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    StealLabel.Font = Enum.Font.Gotham
-    StealLabel.TextSize = 12
-    StealLabel.TextXAlignment = Enum.TextXAlignment.Left
-    StealLabel.Parent = SpeedSettingsGUI
-
-    stealSpeedBox = Instance.new("TextBox")
-    stealSpeedBox.Size = UDim2.new(0, 60, 0, 25)
-    stealSpeedBox.Position = UDim2.new(1, -70, 0, 65)
-    stealSpeedBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-    stealSpeedBox.Text = tostring(SpeedBooster.StealSpeed)
-    stealSpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-    stealSpeedBox.Font = Enum.Font.GothamBold
-    stealSpeedBox.TextSize = 12
-    stealSpeedBox.Parent = SpeedSettingsGUI
-
-    local StealCorner = Instance.new("UICorner")
-    StealCorner.CornerRadius = UDim.new(0, 6)
-    StealCorner.Parent = stealSpeedBox
-
-    local JumpLabel = Instance.new("TextLabel")
-    JumpLabel.Size = UDim2.new(0.6, 0, 0, 25)
-    JumpLabel.Position = UDim2.new(0, 10, 0, 95)
-    JumpLabel.BackgroundTransparency = 1
-    JumpLabel.Text = "Jump Power:"
-    JumpLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    JumpLabel.Font = Enum.Font.Gotham
-    JumpLabel.TextSize = 12
-    JumpLabel.TextXAlignment = Enum.TextXAlignment.Left
-    JumpLabel.Parent = SpeedSettingsGUI
-
-    local JumpPowerBox = Instance.new("TextBox")
-    JumpPowerBox.Size = UDim2.new(0, 60, 0, 25)
-    JumpPowerBox.Position = UDim2.new(1, -70, 0, 95)
-    JumpPowerBox.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
-    JumpPowerBox.Text = tostring(SpeedBooster.JumpPower)
-    JumpPowerBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-    JumpPowerBox.Font = Enum.Font.GothamBold
-    JumpPowerBox.TextSize = 12
-    JumpPowerBox.ClearTextOnFocus = false
-    JumpPowerBox.Parent = SpeedSettingsGUI
-
-    local JumpCorner = Instance.new("UICorner")
-    JumpCorner.CornerRadius = UDim.new(0, 6)
-    JumpCorner.Parent = JumpPowerBox
-
-    JumpPowerBox.FocusLost:Connect(function()
-        local value = tonumber(JumpPowerBox.Text)
-        if value then
-            SpeedBooster.JumpPower = value
-            SaveConfig()
-        else
-            JumpPowerBox.Text = tostring(SpeedBooster.JumpPower)
-        end
-    end)
-
-    normalSpeedBox.FocusLost:Connect(function()
-        local value = tonumber(normalSpeedBox.Text)
-        if value then
-            SpeedBooster.NormalSpeed = value
-            if SpeedBooster.Enabled then
-                stopSpeedBooster()
-                task.wait(0.1)
-                startSpeedBooster()
-            end
-            SaveConfig()
-        else
-            normalSpeedBox.Text = tostring(SpeedBooster.NormalSpeed)
-        end
-    end)
-
-    stealSpeedBox.FocusLost:Connect(function()
-        local value = tonumber(stealSpeedBox.Text)
-        if value then
-            SpeedBooster.StealSpeed = value
-            if SpeedBooster.Enabled then
-                stopSpeedBooster()
-                task.wait(0.1)
-                startSpeedBooster()
-            end
-            SaveConfig()
-        else
-            stealSpeedBox.Text = tostring(SpeedBooster.StealSpeed)
-        end
-    end)
-
-    SpeedSettingsBtn.MouseButton1Click:Connect(function()
-        SpeedSettingsGUI.Visible = not SpeedSettingsGUI.Visible
-    end)
-
-    -- ✅ TP DOWN (under Speed)
-    local TPDownContainer, TPDownBtn, TPDownLabel = createMainButton("TP Down", 2, function()
-        SmallTPDownGUI.Visible = true
-        SmallTPDownGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        TPDownDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        TPDownBtn.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        if TPDownLabel then TPDownLabel.Text = "TP Down" end
-        refreshSmallButtonPositions()
-    end)
-
-    -- ✅ UNWALK, SPIN, INF JUMP (NO SETTINGS)
-    local UnwalkContainer, UnwalkBtn, UnwalkLabel = createMainButton("Unwalk", 3, function()
-        SmallUnwalkGUI.Visible = true
-        if UnwalkEnabled then
-            UnwalkLabel.Text = "Unwalk"
-            SmallUnwalkGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-            UnwalkDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-        else
-            UnwalkLabel.Text = "Unwalk"
-            SmallUnwalkGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-            UnwalkDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        end
-        refreshSmallButtonPositions()
-    end)
-
-    local SpinContainer, SpinBtn, SpinLabel = createMainButton("Spin Bot", 4, function()
-        SmallSpinBotGUI.Visible = true
-        if SpinBotEnabled then
-            SpinLabel.Text = "Spin Bot"
-            SmallSpinBotGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-            SpinDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-        else
-            SpinLabel.Text = "Spin Bot"
-            SmallSpinBotGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-            SpinDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        end
-        refreshSmallButtonPositions()
-    end)
-
-    local InfContainer, InfBtn, InfLabel = createMainButton("Inf Jump", 5, function()
-        SmallInfJumpGUI.Visible = true
-        if InfJumpEnabled then
-            InfLabel.Text = "Inf Jump"
-            InfJumpDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-        else
-            InfLabel.Text = "Inf Jump"
-            InfJumpDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        end
-        refreshSmallButtonPositions()
-    end)
-
-    -- ✅ FOV WITH SETTINGS BUTTON!
-    local FOVContainer, FOVSettingsBtn, FOVBtn, FOVLabel = createMainButton("FOV Changer", 6, function()
-        SmallFOVGUI.Visible = true
-        if fovEnabled then
-            FOVLabel.Text = "FOV Changer"
-            SmallFOVGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-            FOVDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-        else
-            FOVLabel.Text = "FOV Changer"
-            SmallFOVGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-            FOVDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        end
-        refreshSmallButtonPositions()
-    end, true)
-    
-    -- ✅ ANTI RAGDOLL (NO SETTINGS)
-    local AntiRagContainer, AntiRagBtn, AntiRagLabel = createMainButton("Anti Ragdoll", 7, function()
-        SmallAntiRagGUI.Visible = true
-        if AntiRagdollEnabled then
-            AntiRagLabel.Text = "Anti Ragdoll"
-            SmallAntiRagGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-            AntiRagDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-        else
-            AntiRagLabel.Text = "Anti Ragdoll"
-            SmallAntiRagGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-            AntiRagDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        end
-        refreshSmallButtonPositions()
-    end)
-    
-    -- ✅ RAGDOLL TP (NO SETTINGS)
-    local RagdollTPContainer, RagdollTPBtn, RagdollTPLabel = createMainButton("Ragdoll TP", 8, function()
-        SmallRagdollTPGUI.Visible = true
-        if RagdollTP.enabled then
-            RagdollTPLabel.Text = "Ragdoll TP"
-            SmallRagdollTPGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-            RagdollTPDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-        else
-            RagdollTPLabel.Text = "Ragdoll TP"
-            SmallRagdollTPGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-            RagdollTPDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        end
-        refreshSmallButtonPositions()
-    end)
-    
-    -- ✅ DROP BRAINROT (REPLACED WITH EASY FLOAT)
-    local EasyFloatEnabled = false
-    local easyFloatConn = nil
-    local function startEasyFloat()
-        if easyFloatConn then return end
-        EasyFloatEnabled = true
-        easyFloatConn = RunService.Heartbeat:Connect(function()
-            if not EasyFloatEnabled or not hrp then return end
-            -- TP up to Y=8, then down to ground
-            if hrp.Position.Y < 7.5 then
-                hrp.CFrame = CFrame.new(hrp.Position.X, 8, hrp.Position.Z)
-            else
-                -- TP down to ground
-                local ray = workspace:Raycast(hrp.Position, Vector3.new(0, -500, 0))
-                if ray and ray.Position and hrp.Position.Y > ray.Position.Y + 2 then
-                    hrp.CFrame = CFrame.new(hrp.Position.X, ray.Position.Y + 2, hrp.Position.Z)
+-- ✅ TP UP (teleport up on jump) main button
+local TPUpContainer, TPUpBtn, TPUpLabel = createMainButton("TP Up", 10, function()
+    SmallTPUpGUI.Visible = true
+    TPUpBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    if TPUpEnabled then
+        SmallTPUpGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        TPUpDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        if TPUpJumpConn then TPUpJumpConn:Disconnect() TPUpJumpConn = nil end
+        TPUpJumpConn = UserInputService.JumpRequest:Connect(function()
+            if hrp then
+                -- Smooth fly up to Y=8
+                if hrp.Position.Y < 8 then
+                    hrp.AssemblyLinearVelocity = Vector3.new(hrp.AssemblyLinearVelocity.X, 30, hrp.AssemblyLinearVelocity.Z)
                 end
             end
         end)
+    else
+        SmallTPUpGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+        TPUpDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        if TPUpJumpConn then TPUpJumpConn:Disconnect() TPUpJumpConn = nil end
     end
-    local function stopEasyFloat()
-        EasyFloatEnabled = false
-        if easyFloatConn then easyFloatConn:Disconnect() easyFloatConn = nil end
+    SaveConfig()
+    refreshSmallButtonPositions()
+end)
+
+-- ✅ FOV SETTINGS POPUP (NEXT TO BUTTON!)
+local FOVSettingsGUI = Instance.new("Frame")
+FOVSettingsGUI.Name = "FOVSettingsGUI"
+FOVSettingsGUI.Size = UDim2.new(0, 200, 0, 100)
+FOVSettingsGUI.Position = UDim2.new(0.5, -100, 0.5, -50)
+FOVSettingsGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+FOVSettingsGUI.BackgroundTransparency = 0.1
+FOVSettingsGUI.BorderSizePixel = 0
+FOVSettingsGUI.Visible = false
+FOVSettingsGUI.Active = true
+FOVSettingsGUI.Draggable = true
+FOVSettingsGUI.Parent = ScreenGui
+
+local FOVCorner = Instance.new("UICorner")
+FOVCorner.CornerRadius = UDim.new(0, 12)
+FOVCorner.Parent = FOVSettingsGUI
+
+local FOVStroke = Instance.new("UIStroke")
+FOVStroke.Color = Color3.fromRGB(255, 255, 255)
+FOVStroke.Thickness = 2
+FOVStroke.Parent = FOVSettingsGUI
+
+local FOVTitle = Instance.new("TextLabel")
+FOVTitle.Size = UDim2.new(1, 0, 0, 30)
+FOVTitle.BackgroundTransparency = 1
+FOVTitle.Text = "FOV SETTINGS (MAX 120)"
+FOVTitle.TextColor3 = Color3.fromRGB(255, 200, 100)
+FOVTitle.Font = Enum.Font.GothamBold
+FOVTitle.TextSize = 14
+FOVTitle.Parent = FOVSettingsGUI
+
+local FOVLabel = Instance.new("TextLabel")
+FOVLabel.Size = UDim2.new(0.5, 0, 0, 25)
+FOVLabel.Position = UDim2.new(0, 10, 0, 35)
+FOVLabel.BackgroundTransparency = 1
+FOVLabel.Text = "FOV Value:"
+FOVLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+FOVLabel.Font = Enum.Font.Gotham
+FOVLabel.TextSize = 12
+FOVLabel.TextXAlignment = Enum.TextXAlignment.Left
+FOVLabel.Parent = FOVSettingsGUI
+
+fovSliderBox = Instance.new("TextBox")
+fovSliderBox.Size = UDim2.new(0, 60, 0, 25)
+fovSliderBox.Position = UDim2.new(1, -70, 0, 35)
+fovSliderBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+fovSliderBox.Text = tostring(fovValue)
+fovSliderBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+fovSliderBox.Font = Enum.Font.GothamBold
+fovSliderBox.TextSize = 12
+fovSliderBox.Parent = FOVSettingsGUI
+
+local FOVBoxCorner = Instance.new("UICorner")
+FOVBoxCorner.CornerRadius = UDim.new(0, 6)
+FOVBoxCorner.Parent = fovSliderBox
+
+-- ✅ FOV ACTUALLY UPDATES!
+fovSliderBox.FocusLost:Connect(function()
+    local val = tonumber(fovSliderBox.Text)
+    if val then
+        fovValue = math.clamp(val, 1, 120) -- MAX 120!
+        fovSliderBox.Text = tostring(fovValue)
+        if fovEnabled then
+            updateFOV()
+        end
+        SaveConfig()
+    else
+        fovSliderBox.Text = tostring(fovValue)
     end
-    -- Replace Drop Brainrot button logic to toggle Easy Float
-    SmallDropButton.MouseButton1Click:Connect(function()
-        EasyFloatEnabled = not EasyFloatEnabled
-        if EasyFloatEnabled then
-            SmallDropGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-            DropDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-            startEasyFloat()
-        else
-            SmallDropGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-            DropDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-            stopEasyFloat()
-        end
-    end)
+end)
 
-    -- ✅ TP UP (teleport up on jump) main button
-    local TPUpContainer, TPUpBtn, TPUpLabel = createMainButton("TP Up", 10, function()
-        SmallTPUpGUI.Visible = true
-        TPUpBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-        if TPUpEnabled then
-            SmallTPUpGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-            TPUpDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-        else
-            SmallTPUpGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-            TPUpDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        end
-        refreshSmallButtonPositions()
-    end)
-
-    -- ✅ FOV SETTINGS POPUP (NEXT TO BUTTON!)
-    local FOVSettingsGUI = Instance.new("Frame")
-    FOVSettingsGUI.Name = "FOVSettingsGUI"
-    FOVSettingsGUI.Size = UDim2.new(0, 200, 0, 100)
-    FOVSettingsGUI.Position = UDim2.new(0.5, -100, 0.5, -50)
-    FOVSettingsGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-    FOVSettingsGUI.BackgroundTransparency = 0.1
-    FOVSettingsGUI.BorderSizePixel = 0
-    FOVSettingsGUI.Visible = false
-    FOVSettingsGUI.Active = true
-    FOVSettingsGUI.Draggable = true
-    FOVSettingsGUI.Parent = ScreenGui
-
-    local FOVCorner = Instance.new("UICorner")
-    FOVCorner.CornerRadius = UDim.new(0, 12)
-    FOVCorner.Parent = FOVSettingsGUI
-
-    local FOVStroke = Instance.new("UIStroke")
-    FOVStroke.Color = Color3.fromRGB(255, 255, 255)
-    FOVStroke.Thickness = 2
-    FOVStroke.Parent = FOVSettingsGUI
-
-    local FOVTitle = Instance.new("TextLabel")
-    FOVTitle.Size = UDim2.new(1, 0, 0, 30)
-    FOVTitle.BackgroundTransparency = 1
-    FOVTitle.Text = "FOV SETTINGS (MAX 120)"
-    FOVTitle.TextColor3 = Color3.fromRGB(255, 200, 100)
-    FOVTitle.Font = Enum.Font.GothamBold
-    FOVTitle.TextSize = 14
-    FOVTitle.Parent = FOVSettingsGUI
-
-    local FOVLabel = Instance.new("TextLabel")
-    FOVLabel.Size = UDim2.new(0.5, 0, 0, 25)
-    FOVLabel.Position = UDim2.new(0, 10, 0, 35)
-    FOVLabel.BackgroundTransparency = 1
-    FOVLabel.Text = "FOV Value:"
-    FOVLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    FOVLabel.Font = Enum.Font.Gotham
-    FOVLabel.TextSize = 12
-    FOVLabel.TextXAlignment = Enum.TextXAlignment.Left
-    FOVLabel.Parent = FOVSettingsGUI
-
-    fovSliderBox = Instance.new("TextBox")
-    fovSliderBox.Size = UDim2.new(0, 60, 0, 25)
-    fovSliderBox.Position = UDim2.new(1, -70, 0, 35)
-    fovSliderBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-    fovSliderBox.Text = tostring(fovValue)
-    fovSliderBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-    fovSliderBox.Font = Enum.Font.GothamBold
-    fovSliderBox.TextSize = 12
-    fovSliderBox.Parent = FOVSettingsGUI
-
-    local FOVBoxCorner = Instance.new("UICorner")
-    FOVBoxCorner.CornerRadius = UDim.new(0, 6)
-    FOVBoxCorner.Parent = fovSliderBox
-
-    -- ✅ FOV ACTUALLY UPDATES!
-    fovSliderBox.FocusLost:Connect(function()
-        local val = tonumber(fovSliderBox.Text)
-        if val then
-            fovValue = math.clamp(val, 1, 120) -- MAX 120!
-            fovSliderBox.Text = tostring(fovValue)
-            if fovEnabled then
-                updateFOV()
-            end
-            SaveConfig()
-        else
-            fovSliderBox.Text = tostring(fovValue)
-        end
-    end)
-
-    FOVSettingsBtn.MouseButton1Click:Connect(function()
-        FOVSettingsGUI.Visible = not FOVSettingsGUI.Visible
-    end)
+FOVSettingsBtn.MouseButton1Click:Connect(function()
+    FOVSettingsGUI.Visible = not FOVSettingsGUI.Visible
+end)
     
     -- ⚠️ FOV WARNING LABEL
     local FOVWarning = Instance.new("Frame")
