@@ -127,32 +127,31 @@ SpeedBooster = {
 local function startSpeedBooster()
     if SpeedBooster.HeartbeatConn then SpeedBooster.HeartbeatConn:Disconnect() end
     if SpeedBooster.JumpConn then SpeedBooster.JumpConn:Disconnect() end
-
-    -- Improved Speed Bypass: Real velocity speed logic
-    SpeedBooster.HeartbeatConn = RunService.RenderStepped:Connect(function()
+    
+    SpeedBooster.HeartbeatConn = RunService.Heartbeat:Connect(function()
         if not SpeedBooster.Enabled then return end
-        local char = player.Character
-        if char then
-            local root = char:FindFirstChild("HumanoidRootPart")
-            local hum = char:FindFirstChildOfClass("Humanoid")
-            if root and hum and hum.MoveDirection.Magnitude > 0 then
-                local direction = hum.MoveDirection.Unit
-                local currentY = root.AssemblyLinearVelocity.Y
-                local vel = SpeedBooster.NormalSpeed or 57.9
-                if hum:FindFirstChildOfClass("Animator") then
-                    for _, t in pairs(hum:FindFirstChildOfClass("Animator"):GetPlayingAnimationTracks()) do
-                        if string.find(t.Animation.AnimationId, "71186871415348") then
-                            vel = SpeedBooster.StealSpeed or 29.6
-                            break
-                        end
-                    end
+        local c = player.Character
+        local h = c and c:FindFirstChildOfClass("Humanoid")
+        local r = c and c:FindFirstChild("HumanoidRootPart")
+        if not h or not r then return end
+        local carry = false
+        local a = h:FindFirstChildOfClass("Animator")
+        if a then
+            for _, t in pairs(a:GetPlayingAnimationTracks()) do
+                if string.find(t.Animation.AnimationId, "71186871415348") then
+                    carry = true
+                    break
                 end
-                root.AssemblyLinearVelocity = Vector3.new(
-                    direction.X * vel,
-                    currentY,
-                    direction.Z * vel
-                )
             end
+        end
+        if h.MoveDirection.Magnitude > 0 then
+            local vel = carry and SpeedBooster.StealSpeed or SpeedBooster.NormalSpeed
+            -- Pure velocity-based speed bypass (no CFrame TP)
+            r.AssemblyLinearVelocity = Vector3.new(
+                h.MoveDirection.X * vel,
+                r.AssemblyLinearVelocity.Y,
+                h.MoveDirection.Z * vel
+            )
         end
     end)
     
