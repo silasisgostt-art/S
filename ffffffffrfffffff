@@ -156,7 +156,7 @@ local function startSpeedBooster()
         if SpeedBooster.Enabled and player.Character then
             local r = player.Character:FindFirstChild("HumanoidRootPart")
             if r then
-                r.AssemblyLinearVelocity = Vector3.new(r.AssemblyLinearVelocity.X, SpeedBooster.JumpPower, r.AssemblyLinearVelocity.Z)
+                r.AssemblyLinearVelocity = Vector3.new(r.AssemblyLinearVelocity.X, SpeedBooster.JumpPower or 25.8, r.AssemblyLinearVelocity.Z)
             end
         end
     end)
@@ -1125,6 +1125,7 @@ end
 -- TRACK PLAYER (BAT AIMBOT)
 -- ═══════════════════════════════════════════════════════
 
+-- ADVANCED BAT AIMBOT (anti-dodge/jump prediction)
 local batAimbotToggled = false
 local BAT_MOVE_SPEED = 56.5
 local BAT_ENGAGE_RANGE = 20
@@ -1174,7 +1175,7 @@ end
 local function startLookAt()
     if not hrp or not hum then return end
     hum.AutoRotate = false
-    
+
     attachment_bat = Instance.new("Attachment", hrp)
     alignOrientation_bat = Instance.new("AlignOrientation")
     alignOrientation_bat.Attachment0 = attachment_bat
@@ -1184,11 +1185,17 @@ local function startLookAt()
     alignOrientation_bat.RigidityEnabled = true
     alignOrientation_bat.Parent = hrp
 
+    -- Smooth vertical tracking for anti-jump/anti-dodge
+    local lastY = hrp.Position.Y
     lookConnection_bat = RunService.RenderStepped:Connect(function()
         if not hrp or not alignOrientation_bat then return end
         local target = closestLookTarget()
         if not target then return end
-        local lookPos = Vector3.new(target.Position.X, hrp.Position.Y, target.Position.Z)
+        -- Predict target Y movement (anti-jump/anti-dodge)
+        local targetY = target.Position.Y
+        local smoothY = lastY + (targetY - lastY) * 0.35
+        lastY = smoothY
+        local lookPos = Vector3.new(target.Position.X, smoothY, target.Position.Z)
         alignOrientation_bat.CFrame = CFrame.lookAt(hrp.Position, lookPos)
     end)
 end
@@ -1232,8 +1239,15 @@ RunService.Heartbeat:Connect(function()
     local target, distance = nearestPlayer_bat()
     if not target then return end
 
-    local targetPos = Vector3.new(target.Position.X, target.Position.Y, target.Position.Z)
-    local moveDir = (targetPos - hrp.Position).Unit
+    -- Predict target movement for anti-dodge/anti-jump
+    local predictedPos = target.Position
+    local targetHum = target.Parent and target.Parent:FindFirstChildOfClass("Humanoid")
+    if targetHum and targetHum.FloorMaterial == Enum.Material.Air then
+        -- If jumping, predict upward movement
+        predictedPos = predictedPos + Vector3.new(0, targetHum.Jump and 4 or 2, 0)
+    end
+
+    local moveDir = (predictedPos - hrp.Position).Unit
     hrp.AssemblyLinearVelocity = moveDir * BAT_MOVE_SPEED
 
     if distance <= BAT_ENGAGE_RANGE then
@@ -1848,7 +1862,7 @@ SmallFOVButton.MouseButton1Click:Connect(function()
     else
         SmallFOVGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
         FOVDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        camera.FieldOfView = 70
+        camera.FieldOfView = 70 -- Reset to default
         if fovConnection then fovConnection:Disconnect() fovConnection = nil end
     end
     SaveConfig()
