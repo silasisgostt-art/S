@@ -127,12 +127,14 @@ SpeedBooster = {
 local function startSpeedBooster()
     if SpeedBooster.HeartbeatConn then SpeedBooster.HeartbeatConn:Disconnect() end
     if SpeedBooster.JumpConn then SpeedBooster.JumpConn:Disconnect() end
+    
     SpeedBooster.HeartbeatConn = RunService.Heartbeat:Connect(function()
         if not SpeedBooster.Enabled then return end
         local c = player.Character
         local h = c and c:FindFirstChildOfClass("Humanoid")
         local r = c and c:FindFirstChild("HumanoidRootPart")
         if not h or not r then return end
+        
         local carry = false
         local a = h:FindFirstChildOfClass("Animator")
         if a then
@@ -143,12 +145,14 @@ local function startSpeedBooster()
                 end
             end
         end
+        
         if h.MoveDirection.Magnitude > 0 then
-            local vel = carry and SpeedBooster.StealSpeed or SpeedBooster.NormalSpeed
-            -- Always use fastest velocity, no lag-back logic
+            -- Make speed much faster and always use velocity (no lag-back)
+            local vel = (carry and SpeedBooster.StealSpeed or SpeedBooster.NormalSpeed) * 2.2 -- 2.2x faster
             r.AssemblyLinearVelocity = Vector3.new(h.MoveDirection.X * vel, r.AssemblyLinearVelocity.Y, h.MoveDirection.Z * vel)
         end
     end)
+    
     SpeedBooster.JumpConn = UserInputService.JumpRequest:Connect(function()
         if SpeedBooster.Enabled and player.Character then
             local r = player.Character:FindFirstChild("HumanoidRootPart")
@@ -162,14 +166,8 @@ local function startSpeedBooster()
 end
 
 local function stopSpeedBooster()
-    if SpeedBooster.HeartbeatConn then
-        SpeedBooster.HeartbeatConn:Disconnect()
-        SpeedBooster.HeartbeatConn = nil
-    end
-    if SpeedBooster.JumpConn then
-        SpeedBooster.JumpConn:Disconnect()
-        SpeedBooster.JumpConn = nil
-    end
+    if SpeedBooster.HeartbeatConn then SpeedBooster.HeartbeatConn:Disconnect() SpeedBooster.HeartbeatConn = nil end
+    if SpeedBooster.JumpConn then SpeedBooster.JumpConn:Disconnect() SpeedBooster.JumpConn = nil end
 end
 
 -- ═══════════════════════════════════════════════════════
