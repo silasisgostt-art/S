@@ -1150,19 +1150,17 @@ end
 -- TRACK PLAYER (BAT AIMBOT)
 -- ═══════════════════════════════════════════════════════
 
--- ADVANCED BAT AIMBOT (anti-dodge/jump prediction, high acceleration, always follows)
+-- IMPROVED BAT AIMBOT (restored original follow, better TP up/down prediction)
 local batAimbotToggled = false
 local BAT_MOVE_SPEED = 56.5
 local BAT_ENGAGE_RANGE = 20
-local BAT_LOOP_TIME = 0.2 -- faster reaction
+local BAT_LOOP_TIME = 0.3
 local lastEquipTick_bat = 0
 local lastUseTick_bat = 0
 local lookConnection_bat = nil
 local attachment_bat = nil
 local alignOrientation_bat = nil
 local BAT_LOOK_DISTANCE = 50
-local aimbotLastTargetPos = nil
-local aimbotLastVel = Vector3.zero
 
 local function nearestPlayer_bat()
     if not hrp then return nil, math.huge end
@@ -1202,24 +1200,31 @@ end
 local function startLookAt()
     if not hrp or not hum then return end
     hum.AutoRotate = false
+
     attachment_bat = Instance.new("Attachment", hrp)
     alignOrientation_bat = Instance.new("AlignOrientation")
     alignOrientation_bat.Attachment0 = attachment_bat
     alignOrientation_bat.Mode = Enum.OrientationAlignmentMode.OneAttachment
     alignOrientation_bat.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-    alignOrientation_bat.Responsiveness = 2000
+    alignOrientation_bat.Responsiveness = 1000
     alignOrientation_bat.RigidityEnabled = true
     alignOrientation_bat.Parent = hrp
-    local lastY = hrp.Position.Y
+    -- Restore original follow/lock logic, but add vertical prediction for TP up/down
+    local lastTargetPos = nil
     lookConnection_bat = RunService.RenderStepped:Connect(function()
         if not hrp or not alignOrientation_bat then return end
         local target = closestLookTarget()
         if not target then return end
-        -- Predict target Y movement (anti-jump/anti-dodge/anti-tp)
-        local targetY = target.Position.Y
-        local smoothY = lastY + (targetY - lastY) * 0.55
-        lastY = smoothY
-        local lookPos = Vector3.new(target.Position.X, smoothY, target.Position.Z)
+        local predictY = target.Position.Y
+        -- If target is moving up/down fast (TP), predict further in that direction
+        if lastTargetPos then
+            local dy = target.Position.Y - lastTargetPos.Y
+            if math.abs(dy) > 2 then
+                predictY = target.Position.Y + dy * 0.7
+            end
+        end
+        lastTargetPos = target.Position
+        local lookPos = Vector3.new(target.Position.X, predictY, target.Position.Z)
         alignOrientation_bat.CFrame = CFrame.lookAt(hrp.Position, lookPos)
     end)
 end
@@ -1257,25 +1262,23 @@ end
 
 RunService.Heartbeat:Connect(function()
     if not batAimbotToggled or not character or not hrp or not hum then return end
+
     hrp.CanCollide = false
+
     local target, distance = nearestPlayer_bat()
     if not target then return end
-    -- Predict target movement for anti-dodge/anti-jump/anti-tp
+
+    -- Predict target movement for anti-dodge/anti-jump
     local predictedPos = target.Position
-    if aimbotLastTargetPos then
-        local vel = (target.Position - aimbotLastTargetPos) / math.max(RunService.Heartbeat:Wait(), 0.016)
-        aimbotLastVel = aimbotLastVel:Lerp(vel, 0.5)
-        predictedPos = target.Position + aimbotLastVel * 0.18
+    local targetHum = target.Parent and target.Parent:FindFirstChildOfClass("Humanoid")
+    if targetHum and targetHum.FloorMaterial == Enum.Material.Air then
+        -- If jumping, predict upward movement
+        predictedPos = predictedPos + Vector3.new(0, targetHum.Jump and 4 or 2, 0)
     end
-    aimbotLastTargetPos = target.Position
-    -- If player is moving vertically fast (TP up/down), accelerate more
-    if math.abs(aimbotLastVel.Y) > 10 then
-        predictedPos = predictedPos + Vector3.new(0, aimbotLastVel.Y * 0.25, 0)
-    end
+
     local moveDir = (predictedPos - hrp.Position).Unit
-    -- High acceleration for laggy/teleporting targets
-    local accel = 1.5 + math.clamp(math.abs(aimbotLastVel.Y), 0, 2)
-    hrp.AssemblyLinearVelocity = moveDir * BAT_MOVE_SPEED * accel
+    hrp.AssemblyLinearVelocity = moveDir * BAT_MOVE_SPEED
+
     if distance <= BAT_ENGAGE_RANGE then
         if tick() - lastEquipTick_bat >= BAT_LOOP_TIME then
             equipBat_target()
@@ -3149,30 +3152,6 @@ local function initializeGUI(device)
         updateFOV()
     end
 end
-
--- Set sky to low, dark galaxy
-pcall(function()
-    if not workspace:FindFirstChild("GalaxySky") then
-        local sky = Instance.new("Sky")
-        sky.Name = "GalaxySky"
-        sky.SkyboxBk = "rbxassetid://159454299"
-        sky.SkyboxDn = "rbxassetid://159454296"
-        sky.SkyboxFt = "rbxassetid://159454293"
-        sky.SkyboxLf = "rbxassetid://159454286"
-        sky.SkyboxRt = "rbxassetid://159454300"
-        sky.SkyboxUp = "rbxassetid://159454288"
-        sky.StarCount = 5000
-        sky.CelestialBodiesShown = true
-        sky.SunAngularSize = 0
-        sky.MoonAngularSize = 0
-        sky.Parent = Lighting
-    end
-    Lighting.Brightness = 0.1
-    Lighting.OutdoorAmbient = Color3.fromRGB(10,10,20)
-    Lighting.Ambient = Color3.fromRGB(10,10,20)
-    Lighting.FogEnd = 300
-    Lighting.FogColor = Color3.fromRGB(10,10,20)
-end)
 
 PCButton.MouseButton1Click:Connect(function() initializeGUI("PC") end)
 iPadButton.MouseButton1Click:Connect(function() initializeGUI("iPad") end)
