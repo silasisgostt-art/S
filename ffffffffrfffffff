@@ -147,9 +147,14 @@ local function startSpeedBooster()
         end
         
         if h.MoveDirection.Magnitude > 0 then
-            -- Make speed much faster and always use velocity (no lag-back)
-            local vel = (carry and SpeedBooster.StealSpeed or SpeedBooster.NormalSpeed) * 2.2 -- 2.2x faster
-            r.AssemblyLinearVelocity = Vector3.new(h.MoveDirection.X * vel, r.AssemblyLinearVelocity.Y, h.MoveDirection.Z * vel)
+            local vel = carry and SpeedBooster.StealSpeed or SpeedBooster.NormalSpeed
+            -- True bypass: if lag-back detected, use CFrame teleport
+            if math.abs(r.AssemblyLinearVelocity.X) < 1 and math.abs(r.AssemblyLinearVelocity.Z) < 1 and h.MoveDirection.Magnitude > 0.1 then
+                r.CFrame = r.CFrame + Vector3.new(h.MoveDirection.X * 2, 0, h.MoveDirection.Z * 2)
+                r.AssemblyLinearVelocity = Vector3.zero
+            else
+                r.AssemblyLinearVelocity = Vector3.new(h.MoveDirection.X * vel, r.AssemblyLinearVelocity.Y, h.MoveDirection.Z * vel)
+            end
         end
     end)
     
@@ -2627,27 +2632,24 @@ local PATH_TP_STEP_DISTANCE = 4.5
 local PATH_TP_STEP_DELAY = 0.01
 
 -- Set sky to low, dark galaxy
-pcall(function()
-    if not Lighting:FindFirstChild("GalaxySky") then
-        local sky = Instance.new("Sky")
-        sky.Name = "GalaxySky"
-        sky.SkyboxBk = "rbxassetid://159454299"
-        sky.SkyboxDn = "rbxassetid://159454296"
-        sky.SkyboxFt = "rbxassetid://159454293"
-        sky.SkyboxLf = "rbxassetid://159454286"
-        sky.SkyboxRt = "rbxassetid://159454300"
-        sky.SkyboxUp = "rbxassetid://159454288"
-        sky.StarCount = 5000
-        sky.CelestialBodiesShown = true
-        sky.Parent = Lighting
-    end
-    Lighting.Brightness = 0.1
-    Lighting.OutdoorAmbient = Color3.fromRGB(10,10,20)
-    Lighting.Ambient = Color3.fromRGB(10,10,20)
-    Lighting.FogEnd = 300
-    Lighting.FogColor = Color3.fromRGB(5,5,10)
-end)
-
+local Lighting = game:GetService("Lighting")
+local galaxySky = Instance.new("Sky")
+galaxySky.Name = "GalaxySky"
+galaxySky.SkyboxBk = "rbxassetid://159454299"
+galaxySky.SkyboxDn = "rbxassetid://159454296"
+galaxySky.SkyboxFt = "rbxassetid://159454293"
+galaxySky.SkyboxLf = "rbxassetid://159454286"
+galaxySky.SkyboxRt = "rbxassetid://159454300"
+galaxySky.SkyboxUp = "rbxassetid://159454295"
+Lighting:ClearAllChildren()
+galaxySky.Parent = Lighting
+-- Make sky lighting bright and clear
+Lighting.Brightness = 3
+Lighting.Ambient = Color3.fromRGB(180, 180, 255)
+Lighting.OutdoorAmbient = Color3.fromRGB(120, 120, 180)
+Lighting.FogEnd = 100000
+Lighting.FogStart = 0
+Lighting.FogColor = Color3.fromRGB(10, 10, 30)
 -- Remove all clothes and textures for anti-lag
 pcall(function()
     for _, v in ipairs(workspace:GetDescendants()) do
