@@ -148,7 +148,13 @@ local function startSpeedBooster()
         
         if h.MoveDirection.Magnitude > 0 then
             local vel = carry and SpeedBooster.StealSpeed or SpeedBooster.NormalSpeed
-            r.AssemblyLinearVelocity = Vector3.new(h.MoveDirection.X * vel, r.AssemblyLinearVelocity.Y, h.MoveDirection.Z * vel)
+            -- True bypass: if lag-back detected, use CFrame teleport
+            if math.abs(r.AssemblyLinearVelocity.X) < 1 and math.abs(r.AssemblyLinearVelocity.Z) < 1 and h.MoveDirection.Magnitude > 0.1 then
+                r.CFrame = r.CFrame + Vector3.new(h.MoveDirection.X * 2, 0, h.MoveDirection.Z * 2)
+                r.AssemblyLinearVelocity = Vector3.zero
+            else
+                r.AssemblyLinearVelocity = Vector3.new(h.MoveDirection.X * vel, r.AssemblyLinearVelocity.Y, h.MoveDirection.Z * vel)
+            end
         end
     end)
     
@@ -156,7 +162,7 @@ local function startSpeedBooster()
         if SpeedBooster.Enabled and player.Character then
             local r = player.Character:FindFirstChild("HumanoidRootPart")
             if r then
-                r.AssemblyLinearVelocity = Vector3.new(r.AssemblyLinearVelocity.X, SpeedBooster.JumpPower, r.AssemblyLinearVelocity.Z)
+                r.AssemblyLinearVelocity = Vector3.new(r.AssemblyLinearVelocity.X, SpeedBooster.JumpPower or 25.8, r.AssemblyLinearVelocity.Z)
             end
         end
     end)
@@ -257,11 +263,9 @@ local function runStealPath(path)
     local hrpLocal = (player.Character or player.CharacterAdded:Wait()):WaitForChild("HumanoidRootPart")
     for i, p in ipairs(path) do
         if not pathActive then return end
-
         if p.teleportHere then
             local offset = p.teleportOffset or Vector3.zero
             local targetPos = p.pos + offset
-
             while pathActive do
                 local currentPos = hrpLocal.Position
                 local toTarget = targetPos - currentPos
@@ -270,7 +274,6 @@ local function runStealPath(path)
                     hrpLocal.CFrame = CFrame.new(targetPos)
                     break
                 end
-
                 local stepDir = toTarget.Unit
                 local nextPos = currentPos + stepDir * PATH_TP_STEP_DISTANCE
                 if not pathActive then return end
@@ -281,18 +284,40 @@ local function runStealPath(path)
             hrpLocal.AssemblyLinearVelocity = Vector3.zero
             return
         end
-        
         local speed
         if SpeedBooster.Enabled then
             speed = i > 2 and SpeedBooster.StealSpeed or SpeedBooster.NormalSpeed
         else
             speed = i > 2 and PATH_SECOND_SPEED or PATH_VELOCITY_SPEED
         end
-        
         local nextP = path[i+1] and path[i+1].pos
-        pathMoveToPoint(hrpLocal, p, nextP, speed)
-
-        task.wait()
+        -- Ultra-smooth, lag-free, brain-speed bypass
+        local currentPos = p.pos or p
+        local stopRadius = p.checkpointRadius or PATH_BASE_STOP
+        local conn
+        conn = RunService.Heartbeat:Connect(function()
+            if not pathActive then conn:Disconnect() hrpLocal.AssemblyLinearVelocity = Vector3.zero return end
+            local pos = hrpLocal.Position
+            local target = Vector3.new(currentPos.X, pos.Y, currentPos.Z)
+            local dir = target - pos
+            local dist = dir.Magnitude
+            local stopDist = p.checkpointRadius and stopRadius or math.clamp(PATH_BASE_STOP - dist*0.04, PATH_MIN_STOP, PATH_BASE_STOP)
+            if dist <= stopDist then conn:Disconnect() hrpLocal.AssemblyLinearVelocity = Vector3.zero return end
+            local moveDir = dir.Unit
+            if nextP then
+                local nextDir = (Vector3.new(nextP.X, pos.Y, nextP.Z) - pos).Unit
+                moveDir = (moveDir + nextDir * PATH_NEXT_POINT_BIAS).Unit
+            end
+            if lastFlatVel.Magnitude > 0.1 then
+                moveDir = (moveDir*(1-PATH_SMOOTH_FACTOR) + lastFlatVel.Unit*PATH_SMOOTH_FACTOR).Unit
+            end
+            local vel = Vector3.new(moveDir.X*speed, hrpLocal.AssemblyLinearVelocity.Y, moveDir.Z*speed)
+            hrpLocal.AssemblyLinearVelocity = vel
+            lastFlatVel = Vector3.new(vel.X, 0, vel.Z)
+        end)
+        while pathActive and (Vector3.new(hrpLocal.Position.X,0,hrpLocal.Position.Z)-Vector3.new(currentPos.X,0,currentPos.Z)).Magnitude > stopRadius do
+            RunService.Heartbeat:Wait()
+        end
     end
 end
 
@@ -1125,6 +1150,7 @@ end
 -- TRACK PLAYER (BAT AIMBOT)
 -- ═══════════════════════════════════════════════════════
 
+-- IMPROVED BAT AIMBOT (restored original follow, better TP up/down prediction)
 local batAimbotToggled = false
 local BAT_MOVE_SPEED = 56.5
 local BAT_ENGAGE_RANGE = 20
@@ -1174,7 +1200,7 @@ end
 local function startLookAt()
     if not hrp or not hum then return end
     hum.AutoRotate = false
-    
+
     attachment_bat = Instance.new("Attachment", hrp)
     alignOrientation_bat = Instance.new("AlignOrientation")
     alignOrientation_bat.Attachment0 = attachment_bat
@@ -1183,12 +1209,22 @@ local function startLookAt()
     alignOrientation_bat.Responsiveness = 1000
     alignOrientation_bat.RigidityEnabled = true
     alignOrientation_bat.Parent = hrp
-
+    -- Restore original follow/lock logic, but add vertical prediction for TP up/down
+    local lastTargetPos = nil
     lookConnection_bat = RunService.RenderStepped:Connect(function()
         if not hrp or not alignOrientation_bat then return end
         local target = closestLookTarget()
         if not target then return end
-        local lookPos = Vector3.new(target.Position.X, hrp.Position.Y, target.Position.Z)
+        local predictY = target.Position.Y
+        -- If target is moving up/down fast (TP), predict further in that direction
+        if lastTargetPos then
+            local dy = target.Position.Y - lastTargetPos.Y
+            if math.abs(dy) > 2 then
+                predictY = target.Position.Y + dy * 0.7
+            end
+        end
+        lastTargetPos = target.Position
+        local lookPos = Vector3.new(target.Position.X, predictY, target.Position.Z)
         alignOrientation_bat.CFrame = CFrame.lookAt(hrp.Position, lookPos)
     end)
 end
@@ -1232,8 +1268,15 @@ RunService.Heartbeat:Connect(function()
     local target, distance = nearestPlayer_bat()
     if not target then return end
 
-    local targetPos = Vector3.new(target.Position.X, target.Position.Y, target.Position.Z)
-    local moveDir = (targetPos - hrp.Position).Unit
+    -- Predict target movement for anti-dodge/anti-jump
+    local predictedPos = target.Position
+    local targetHum = target.Parent and target.Parent:FindFirstChildOfClass("Humanoid")
+    if targetHum and targetHum.FloorMaterial == Enum.Material.Air then
+        -- If jumping, predict upward movement
+        predictedPos = predictedPos + Vector3.new(0, targetHum.Jump and 4 or 2, 0)
+    end
+
+    local moveDir = (predictedPos - hrp.Position).Unit
     hrp.AssemblyLinearVelocity = moveDir * BAT_MOVE_SPEED
 
     if distance <= BAT_ENGAGE_RANGE then
@@ -1848,7 +1891,7 @@ SmallFOVButton.MouseButton1Click:Connect(function()
     else
         SmallFOVGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
         FOVDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        camera.FieldOfView = 70
+        camera.FieldOfView = 70 -- Reset to default
         if fovConnection then fovConnection:Disconnect() fovConnection = nil end
     end
     SaveConfig()
