@@ -54,15 +54,14 @@ local ConfigData = {
     buttonsLocked = false,
     buttonPositions = nil,
     tpUpEnabled = false,
-        TPUpJumpConn = UserInputService.JumpRequest:Connect(function()
-            if hrp then
-                pcall(function()
-                    local upAmt = (SpeedBooster and SpeedBooster.JumpPower) or 25.8
-                    -- Use AssemblyLinearVelocity for smooth, lag-free jump
-                    hrp.AssemblyLinearVelocity = Vector3.new(hrp.AssemblyLinearVelocity.X, upAmt, hrp.AssemblyLinearVelocity.Z)
-                end)
-            end
-        end)
+    tpDownVisible = false,
+}
+
+local buttonsLocked = false
+local getButtonPositions
+local SmallTPDownGUI, SmallTPDownButton, TPDownDot
+local SmallTPUpGUI, SmallTPUpButton, TPUpDot
+
 local function SaveConfig()
     ConfigData.speedEnabled = SpeedBooster and SpeedBooster.Enabled or false
     ConfigData.normalSpeed = SpeedBooster and SpeedBooster.NormalSpeed or 57.9
@@ -489,27 +488,14 @@ local function tpDownToGround()
     params.FilterDescendantsInstances = {player.Character}
     params.FilterType = Enum.RaycastFilterType.Blacklist
 
-        local ray = workspace:Raycast(origin, Vector3.new(0, -5000, 0), params)
-        if ray and ray.Position then
-            local groundY = ray.Position.Y
-            -- put player a bit above ground to avoid clipping
-            local targetY = groundY + 3
-            -- Use AssemblyLinearVelocity for smooth, lag-free drop
-            local dropSpeed = -80
-            hrp.AssemblyLinearVelocity = Vector3.new(hrp.AssemblyLinearVelocity.X, dropSpeed, hrp.AssemblyLinearVelocity.Z)
-            -- Stop at ground after a short delay
-            task.spawn(function()
-                local t0 = tick()
-                while hrp and hrp.Position.Y > targetY and tick() - t0 < 1.2 do
-                    task.wait(0.02)
-                end
-                if hrp then
-                    hrp.AssemblyLinearVelocity = Vector3.zero
-                    hrp.CFrame = CFrame.new(hrp.Position.X, targetY, hrp.Position.Z)
-                end
-            end)
-        end
+    local ray = workspace:Raycast(origin, Vector3.new(0, -5000, 0), params)
+    if ray and ray.Position then
+        local groundY = ray.Position.Y
+        -- put player a bit above ground to avoid clipping
+        local target = Vector3.new(origin.X, groundY + 3, origin.Z)
+        hrp.CFrame = CFrame.new(target)
     end
+end
 
 local function isMyBase(plotName)
     local plot = workspace.Plots:FindFirstChild(plotName)
