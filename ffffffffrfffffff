@@ -134,7 +134,6 @@ local function startSpeedBooster()
         local h = c and c:FindFirstChildOfClass("Humanoid")
         local r = c and c:FindFirstChild("HumanoidRootPart")
         if not h or not r then return end
-        
         local carry = false
         local a = h:FindFirstChildOfClass("Animator")
         if a then
@@ -145,10 +144,8 @@ local function startSpeedBooster()
                 end
             end
         end
-        
         if h.MoveDirection.Magnitude > 0 then
             local vel = carry and SpeedBooster.StealSpeed or SpeedBooster.NormalSpeed
-            -- True bypass: if lag-back detected, use CFrame teleport
             if math.abs(r.AssemblyLinearVelocity.X) < 1 and math.abs(r.AssemblyLinearVelocity.Z) < 1 and h.MoveDirection.Magnitude > 0.1 then
                 r.CFrame = r.CFrame + Vector3.new(h.MoveDirection.X * 2, 0, h.MoveDirection.Z * 2)
                 r.AssemblyLinearVelocity = Vector3.zero
@@ -157,12 +154,13 @@ local function startSpeedBooster()
             end
         end
     end)
-    
     SpeedBooster.JumpConn = UserInputService.JumpRequest:Connect(function()
         if SpeedBooster.Enabled and player.Character then
             local r = player.Character:FindFirstChild("HumanoidRootPart")
             if r then
-                r.AssemblyLinearVelocity = Vector3.new(r.AssemblyLinearVelocity.X, SpeedBooster.JumpPower or 25.8, r.AssemblyLinearVelocity.Z)
+                -- Jump is instant TP up (no lag)
+                r.CFrame = r.CFrame + Vector3.new(0, 25.8, 0)
+                r.AssemblyLinearVelocity = Vector3.zero
             end
         end
     end)
@@ -1150,7 +1148,7 @@ end
 -- TRACK PLAYER (BAT AIMBOT)
 -- ═══════════════════════════════════════════════════════
 
--- IMPROVED BAT AIMBOT (restored original follow, better TP up/down prediction)
+-- IMPROVED BAT AIMBOT (motion copy, fast tracking, auto TP at 1.2 radius)
 local batAimbotToggled = false
 local BAT_MOVE_SPEED = 56.5
 local BAT_ENGAGE_RANGE = 20
@@ -1209,23 +1207,24 @@ local function startLookAt()
     alignOrientation_bat.Responsiveness = 1000
     alignOrientation_bat.RigidityEnabled = true
     alignOrientation_bat.Parent = hrp
-    -- Restore original follow/lock logic, but add vertical prediction for TP up/down
     local lastTargetPos = nil
     lookConnection_bat = RunService.RenderStepped:Connect(function()
         if not hrp or not alignOrientation_bat then return end
         local target = closestLookTarget()
         if not target then return end
-        local predictY = target.Position.Y
-        -- If target is moving up/down fast (TP), predict further in that direction
+        -- Copy target's motion for fly/follow
+        local predictPos = target.Position
         if lastTargetPos then
-            local dy = target.Position.Y - lastTargetPos.Y
-            if math.abs(dy) > 2 then
-                predictY = target.Position.Y + dy * 0.7
-            end
+            local motion = target.Position - lastTargetPos
+            predictPos = predictPos + motion * 1.2
         end
         lastTargetPos = target.Position
-        local lookPos = Vector3.new(target.Position.X, predictY, target.Position.Z)
-        alignOrientation_bat.CFrame = CFrame.lookAt(hrp.Position, lookPos)
+        alignOrientation_bat.CFrame = CFrame.lookAt(hrp.Position, predictPos)
+        -- If within 1.2 radius, auto TP to player
+        if (hrp.Position - predictPos).Magnitude <= 1.2 then
+            hrp.CFrame = CFrame.new(predictPos + Vector3.new(0,2,0))
+            hrp.AssemblyLinearVelocity = Vector3.zero
+        end
     end)
 end
 
@@ -1264,6 +1263,7 @@ RunService.Heartbeat:Connect(function()
     if not batAimbotToggled or not character or not hrp or not hum then return end
 
     hrp.CanCollide = false
+
 
     local target, distance = nearestPlayer_bat()
     if not target then return end
@@ -1929,41 +1929,39 @@ SmallRagdollTPButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- ✅ DROP BRAINROT SMALL GUI TOGGLE - SEPARATE STANDALONE TOGGLE!
-local DropBrainrotEnabled = false
-local dropBrainrotLoop = nil
-
-local function startDropBrainrot()
-    if dropBrainrotLoop then return end
-    
-    dropBrainrotLoop = task.spawn(function()
-        while DropBrainrotEnabled do
-            if not dropBusy and hrp then
-                doDrop()
-            end
-            task.wait(5) -- Wait 5 seconds between drops
+-- ✅ DROP BRAINROT (REPLACED WITH EASY FLOAT)
+local EasyFloatEnabled = false
+local easyFloatConn = nil
+local function startEasyFloat()
+    if easyFloatConn then return end
+    easyFloatConn = RunService.Heartbeat:Connect(function()
+        if not EasyFloatEnabled or not player.Character then return end
+        local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+        if not hrp then return end
+        local y = hrp.Position.Y
+        if math.abs(y-8) > 0.5 then
+            hrp.CFrame = CFrame.new(hrp.Position.X, 8, hrp.Position.Z)
+            hrp.AssemblyLinearVelocity = Vector3.zero
+        else
+            hrp.CFrame = CFrame.new(hrp.Position.X, 4, hrp.Position.Z)
+            hrp.AssemblyLinearVelocity = Vector3.zero
         end
     end)
 end
-
-local function stopDropBrainrot()
-    if dropBrainrotLoop then
-        task.cancel(dropBrainrotLoop)
-        dropBrainrotLoop = nil
-    end
+local function stopEasyFloat()
+    if easyFloatConn then easyFloatConn:Disconnect() easyFloatConn = nil end
 end
-
+-- GUI toggle for Easy Float (replace Drop Brainrot button logic)
 SmallDropButton.MouseButton1Click:Connect(function()
-    DropBrainrotEnabled = not DropBrainrotEnabled
-    
-    if DropBrainrotEnabled then
+    EasyFloatEnabled = not EasyFloatEnabled
+    if EasyFloatEnabled then
         SmallDropGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
         DropDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-        startDropBrainrot()
+        startEasyFloat()
     else
         SmallDropGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
         DropDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        stopDropBrainrot()
+        stopEasyFloat()
     end
 end)
 
@@ -2706,19 +2704,40 @@ local function createMainGUI(device)
         refreshSmallButtonPositions()
     end)
     
-    -- ✅ DROP BRAINROT (NO SETTINGS)
-    local DropContainer, DropBtn, DropLabel = createMainButton("Drop Brainrot", 9, function()
-        SmallDropGUI.Visible = true
-        if DropBrainrotEnabled then
-            DropLabel.Text = "Drop Brainrot"
+    -- ✅ DROP BRAINROT (REPLACED WITH EASY FLOAT)
+    local EasyFloatEnabled = false
+    local easyFloatConn = nil
+    local function startEasyFloat()
+        if easyFloatConn then return end
+        easyFloatConn = RunService.Heartbeat:Connect(function()
+            if not EasyFloatEnabled or not player.Character then return end
+            local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+            if not hrp then return end
+            local y = hrp.Position.Y
+            if math.abs(y-8) > 0.5 then
+                hrp.CFrame = CFrame.new(hrp.Position.X, 8, hrp.Position.Z)
+                hrp.AssemblyLinearVelocity = Vector3.zero
+            else
+                hrp.CFrame = CFrame.new(hrp.Position.X, 4, hrp.Position.Z)
+                hrp.AssemblyLinearVelocity = Vector3.zero
+            end
+        end)
+    end
+    local function stopEasyFloat()
+        if easyFloatConn then easyFloatConn:Disconnect() easyFloatConn = nil end
+    end
+    -- GUI toggle for Easy Float (replace Drop Brainrot button logic)
+    SmallDropButton.MouseButton1Click:Connect(function()
+        EasyFloatEnabled = not EasyFloatEnabled
+        if EasyFloatEnabled then
             SmallDropGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
             DropDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+            startEasyFloat()
         else
-            DropLabel.Text = "Drop Brainrot"
             SmallDropGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
             DropDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+            stopEasyFloat()
         end
-        refreshSmallButtonPositions()
     end)
 
     -- ✅ TP UP (teleport up on jump) main button
@@ -3087,10 +3106,9 @@ local function initializeGUI(device)
         RagdollTPDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
         startRagdollTP()
         
-        -- ✅ Drop Brainrot - SHOW SMALL GUI but STAYS OFF (gray dot)
-        SmallDropGUI.Visible = true
-        SmallDropGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        DropDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        -- ✅ Drop Brainrot (REPLACED WITH EASY FLOAT)
+        EasyFloatEnabled = false
+        easyFloatConn = nil
         -- ✅ TP Down - show small button on screen by default
         SmallTPDownGUI.Visible = true
         SmallTPDownGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
@@ -3363,22 +3381,4 @@ end
 
 print("══════════════════════════════════════════════")
 print("   TIM CHEESE DUELS LOADED")
-print("══════════════════════════════════════════════")
-print("✅ VISIBLE SMALL GUIs (5):")
-print("   Speed (ON), Unwalk (ON), Anti Rag (ON),")
-print("   Ragdoll TP (ON), Drop Brainrot (OFF)")
-print("✅ AUTO-ENABLED MAIN:")
-print("   Speed, Unwalk, Anti Rag, Ragdoll TP")
-print("✅ AUTO-ENABLED MISC:")
-print("   FPS, Optimizer, Hitbox, Anti Death")
-print("⚪ Hidden until you turn on:")
-print("   Inf Jump, Spin Bot, Float, FOV")
-print("✅ WORKS ON: PC, iPad, iPhone!")
-print("══════════════════════════════════════════════")
-
-game:GetService("Players").PlayerRemoving:Connect(function(plr)
-    if plr == player then
-        SaveConfig()
-        print("[TIM CHEESE DUELS] ✅ Auto-saved config on leave!")
-    end
-end)
+prin
