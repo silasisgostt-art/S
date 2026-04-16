@@ -162,9 +162,11 @@ local function startSpeedBooster()
         if SpeedBooster.Enabled and player.Character then
             local r = player.Character:FindFirstChild("HumanoidRootPart")
             if r then
-                -- Jump: TP to height based on JumpPower
-                r.CFrame = r.CFrame + Vector3.new(0, SpeedBooster.JumpPower or 25.8, 0)
-                r.AssemblyLinearVelocity = Vector3.zero
+                -- Restore normal jump (no TP, no lag)
+                local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+                if humanoid then
+                    humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+                end
             end
         end
     end)
@@ -1935,22 +1937,20 @@ end)
 -- ✅ DROP BRAINROT (REPLACED WITH EASY FLOAT)
 local EasyFloatEnabled = false
 local easyFloatConn = nil
-local floatDirection = 1
-local floatYMin = 2
-local floatYMax = 8
-local floatSpeed = 2
 local function startEasyFloat()
     if easyFloatConn then return end
     EasyFloatEnabled = true
-    easyFloatConn = RunService.Heartbeat:Connect(function(dt)
+    easyFloatConn = RunService.Heartbeat:Connect(function()
         if not EasyFloatEnabled or not hrp then return end
-        local y = hrp.Position.Y
-        if floatDirection == 1 and y < floatYMax then
-            hrp.AssemblyLinearVelocity = Vector3.new(0, floatSpeed * 10, 0)
-        elseif floatDirection == -1 and y > floatYMin then
-            hrp.AssemblyLinearVelocity = Vector3.new(0, -floatSpeed * 10, 0)
+        -- TP up to Y=8, then down to ground
+        if hrp.Position.Y < 7.5 then
+            hrp.CFrame = CFrame.new(hrp.Position.X, 8, hrp.Position.Z)
         else
-            floatDirection = -floatDirection
+            -- TP down to ground
+            local ray = workspace:Raycast(hrp.Position, Vector3.new(0, -500, 0))
+            if ray and ray.Position and hrp.Position.Y > ray.Position.Y + 2 then
+                hrp.CFrame = CFrame.new(hrp.Position.X, ray.Position.Y + 2, hrp.Position.Z)
+            end
         end
     end)
 end
@@ -1958,7 +1958,7 @@ local function stopEasyFloat()
     EasyFloatEnabled = false
     if easyFloatConn then easyFloatConn:Disconnect() easyFloatConn = nil end
 end
--- Easy Float button logic
+-- Replace Drop Brainrot button logic to toggle Easy Float
 SmallDropButton.Text = "EASY FLOAT"
 SmallDropGUI.Name = "EasyFloatGUI"
 SmallDropButton.Name = "EasyFloatButton"
@@ -1976,27 +1976,7 @@ SmallDropButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- Make jump use Easy Float's float up (no TP, just float up to normal jump height)
-if SpeedBooster.JumpConn then SpeedBooster.JumpConn:Disconnect() end
-SpeedBooster.JumpConn = UserInputService.JumpRequest:Connect(function()
-    if SpeedBooster.Enabled and player.Character then
-        local r = player.Character:FindFirstChild("HumanoidRootPart")
-        if r then
-            -- Float up to normal jump height
-            local targetY = r.Position.Y + (SpeedBooster.JumpPower or 25.8)
-            coroutine.wrap(function()
-                while r.Position.Y < targetY and SpeedBooster.Enabled do
-                    r.AssemblyLinearVelocity = Vector3.new(0, 30, 0)
-                    RunService.Heartbeat:Wait()
-                end
-                r.AssemblyLinearVelocity = Vector3.zero
-            end)()
-        end
-    end
-end)
-
--- ═══════════════════════════════════════════════════════
--- TP UP (teleport up on jump) main button
+-- ✅ TP UP (teleport up on jump) main button
 local TPUpContainer, TPUpBtn, TPUpLabel = createMainButton("TP Up", 10, function()
     SmallTPUpGUI.Visible = true
     TPUpBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
