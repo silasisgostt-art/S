@@ -3362,36 +3362,49 @@ function createRightButtons(device)
 end
 
 -- Add Desync button above Track Player
+local DesyncEnabled = false
 local DesyncButton = Instance.new("TextButton")
 DesyncButton.Name = "DesyncButton"
-DesyncButton.Text = "Desync"
+DesyncButton.Text = "DESYNC"
 DesyncButton.Size = UDim2.new(0, 120, 0, 32)
-DesyncButton.Position = UDim2.new(0, 0, 0, 0) -- Adjust Y as needed to be above Track Player
+DesyncButton.Position = UDim2.new(0, 10, 0, 10) -- Adjust as needed to be above Track Player
 DesyncButton.BackgroundColor3 = Color3.fromRGB(120, 60, 255)
 DesyncButton.TextColor3 = Color3.new(1,1,1)
 DesyncButton.Font = Enum.Font.GothamBold
 DesyncButton.TextSize = 16
-DesyncButton.Parent = MainButtonFrame or MainFrame or Main -- Attach to your main button frame
+DesyncButton.Parent = MainFrame -- or the main UI frame containing Track Player
 Instance.new("UICorner", DesyncButton).CornerRadius = UDim.new(0, 8)
 
+local DesyncDot = Instance.new("Frame", DesyncButton)
+DesyncDot.Size = UDim2.new(0, 10, 0, 10)
+DesyncDot.Position = UDim2.new(1, -18, 0.5, -5)
+DesyncDot.BackgroundColor3 = Color3.fromRGB(60, 255, 120)
+Instance.new("UICorner", DesyncDot).CornerRadius = UDim.new(1, 0)
+
+local animConnection = nil
+local function getHumanoid()
+    local char = player.Character or player.CharacterAdded:Wait()
+    return char:WaitForChild("Humanoid")
+end
+local function stopAnims(hum)
+    for _, track in pairs(hum:GetPlayingAnimationTracks()) do track:Stop() end
+end
 DesyncButton.MouseButton1Click:Connect(function()
-    -- Desync logic (no UI)
-    local player = game.Players.LocalPlayer
-    local UIS = game:GetService("UserInputService")
-    local function getHumanoid()
-        local char = player.Character or player.CharacterAdded:Wait()
-        return char:WaitForChild("Humanoid")
-    end
+    DesyncEnabled = not DesyncEnabled
     local humanoid = getHumanoid()
-    local enabled = true
-    local animConnection
-    local function stopAnims(hum)
-        for _, track in pairs(hum:GetPlayingAnimationTracks()) do track:Stop() end
+    if DesyncEnabled then
+        DesyncButton.BackgroundColor3 = Color3.fromRGB(120, 60, 255)
+        DesyncDot.BackgroundColor3 = Color3.fromRGB(60, 255, 120)
+        stopAnims(humanoid)
+        if animConnection then animConnection:Disconnect() end
+        animConnection = humanoid.AnimationPlayed:Connect(function(t) t:Stop() end)
+        if raknet and raknet.desync then raknet.desync(true) end
+    else
+        DesyncButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        DesyncDot.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+        if animConnection then animConnection:Disconnect() animConnection = nil end
+        if raknet and raknet.desync then raknet.desync(false) end
     end
-    stopAnims(humanoid)
-    animConnection = humanoid.AnimationPlayed:Connect(function(t) t:Stop() end)
-    if raknet and raknet.desync then raknet.desync(true) end
-    print("leak by Lacsy on dc\nLeak Royals desync by Lacsy")
 end)
 
 print("══════════════════════════════════════════════")
