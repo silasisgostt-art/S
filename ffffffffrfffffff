@@ -3292,54 +3292,6 @@ end
 -- ═══════════════════════════════════════════════════════
 
 function createRightButtons(device)
-        -- ✅ LAGGER Button (TOP)
-        local LaggerButton = Instance.new("TextButton")
-        LaggerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-        LaggerButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize*3 - 30)
-        LaggerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
-        LaggerButton.BackgroundTransparency = 0.3
-        LaggerButton.Text = "LAGGER"
-        LaggerButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-        LaggerButton.Font = Enum.Font.GothamBold
-        LaggerButton.TextSize = device == "iPhone" and 9 or 12
-        LaggerButton.Parent = ScreenGui
-
-        local LaggerCorner = Instance.new("UICorner")
-        LaggerCorner.CornerRadius = UDim.new(0, 15)
-        LaggerCorner.Parent = LaggerButton
-
-        local LaggerStroke = Instance.new("UIStroke")
-        LaggerStroke.Color = Color3.fromRGB(255, 255, 255)
-        LaggerStroke.Thickness = 2
-        LaggerStroke.Parent = LaggerButton
-
-        local laggerEnabled = false
-        local prevOtherSpeeds = {}
-        LaggerButton.MouseButton1Click:Connect(function()
-            laggerEnabled = not laggerEnabled
-            if laggerEnabled then
-                LaggerButton.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
-                -- Lag all other players (set WalkSpeed low and desync)
-                for _, plr in ipairs(Players:GetPlayers()) do
-                    if plr ~= player and plr.Character and plr.Character:FindFirstChild("Humanoid") then
-                        local hum = plr.Character:FindFirstChild("Humanoid")
-                        prevOtherSpeeds[plr] = hum.WalkSpeed
-                        hum.WalkSpeed = 2
-                        if raknet and raknet.desync then pcall(function() raknet.desync(true, plr) end) end
-                    end
-                end
-            else
-                LaggerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
-                -- Restore all other players' WalkSpeed and desync
-                for plr, speed in pairs(prevOtherSpeeds) do
-                    if plr.Character and plr.Character:FindFirstChild("Humanoid") then
-                        plr.Character.Humanoid.WalkSpeed = speed or 16
-                        if raknet and raknet.desync then pcall(function() raknet.desync(false, plr) end) end
-                    end
-                end
-                prevOtherSpeeds = {}
-            end
-        end)
     local buttonSize = device == "iPhone" and 60 or 75
 
     -- ✅ DESYNC Button (ABOVE TRACK PLAYER)
@@ -3367,6 +3319,11 @@ function createRightButtons(device)
     local desyncEnabled = false
     local animConnection
     local prevSpeed, prevJump, prevBypass, prevSpin, prevPath, prevAimbot
+    local function getStealSpeed()
+        if SpeedBooster and SpeedBooster.StealSpeed then return SpeedBooster.StealSpeed end
+        if ConfigData and ConfigData.stealSpeed then return ConfigData.stealSpeed end
+        return 29.6
+    end
     local function getHumanoid()
         local char = player.Character or player.CharacterAdded:Wait()
         return char:WaitForChild("Humanoid")
@@ -3393,13 +3350,12 @@ function createRightButtons(device)
             prevSpin = SpinBotEnabled
             prevPath = StealPathEnabled
             prevAimbot = batAimbotToggled
-            -- Set to steal speed
+            -- Set to StealSpeed walk
             if SpeedBooster then SpeedBooster.Enabled = false end
             if SpinBotEnabled then SpinBotEnabled = false end
             if StealPathEnabled then StealPathEnabled = false end
             if batAimbotToggled then batAimbotToggled = false end
-            local stealSpeed = (SpeedBooster and SpeedBooster.StealSpeed) or (ConfigData and ConfigData.stealSpeed) or 29.6
-            humanoid.WalkSpeed = stealSpeed
+            humanoid.WalkSpeed = getStealSpeed()
             humanoid.JumpPower = 50
             stopAnims(humanoid)
             if animConnection then animConnection:Disconnect() animConnection = nil end
@@ -3418,6 +3374,53 @@ function createRightButtons(device)
             if animConnection then animConnection:Disconnect() animConnection = nil end
             if raknet and raknet.desync then raknet.desync(false) end
             setOtherPlayersDesync(false)
+        end
+    end)
+
+    -- ✅ LAGGER Button (ABOVE DESYNC)
+    local LaggerButton = Instance.new("TextButton")
+    LaggerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
+    LaggerButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize*3 - 30)
+    LaggerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+    LaggerButton.BackgroundTransparency = 0.3
+    LaggerButton.Text = "LAGGER"
+    LaggerButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    LaggerButton.Font = Enum.Font.GothamBold
+    LaggerButton.TextSize = device == "iPhone" and 9 or 12
+    LaggerButton.Parent = ScreenGui
+
+    local LaggerCorner = Instance.new("UICorner")
+    LaggerCorner.CornerRadius = UDim.new(0, 15)
+    LaggerCorner.Parent = LaggerButton
+
+    local LaggerStroke = Instance.new("UIStroke")
+    LaggerStroke.Color = Color3.fromRGB(255, 255, 255)
+    LaggerStroke.Thickness = 2
+    LaggerStroke.Parent = LaggerButton
+
+    local laggerEnabled = false
+    LaggerButton.MouseButton1Click:Connect(function()
+        laggerEnabled = not laggerEnabled
+        if laggerEnabled then
+            LaggerButton.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+            -- Desync/lag all other players (set their speed to 1, block their movement)
+            for _, plr in ipairs(Players:GetPlayers()) do
+                if plr ~= player and plr.Character and plr.Character:FindFirstChild("Humanoid") then
+                    local hum = plr.Character:FindFirstChild("Humanoid")
+                    hum.WalkSpeed = 1
+                    if raknet and raknet.desync then pcall(function() raknet.desync(true, plr) end) end
+                end
+            end
+        else
+            LaggerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+            -- Restore all other players (set speed to 16, remove desync)
+            for _, plr in ipairs(Players:GetPlayers()) do
+                if plr ~= player and plr.Character and plr.Character:FindFirstChild("Humanoid") then
+                    local hum = plr.Character:FindFirstChild("Humanoid")
+                    hum.WalkSpeed = 16
+                    if raknet and raknet.desync then pcall(function() raknet.desync(false, plr) end) end
+                end
+            end
         end
     end)
 
