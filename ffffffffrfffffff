@@ -261,7 +261,9 @@ end
 
 local function runStealPath(path)
     local hrpLocal = (player.Character or player.CharacterAdded:Wait()):WaitForChild("HumanoidRootPart")
-    for i, p in ipairs(path) do
+    local i = 1
+    while i <= #path do
+        local p = path[i]
         if not pathActive then return end
         if p.teleportHere then
             local offset = p.teleportOffset or Vector3.zero
@@ -318,6 +320,13 @@ local function runStealPath(path)
         while pathActive and (Vector3.new(hrpLocal.Position.X,0,hrpLocal.Position.Z)-Vector3.new(currentPos.X,0,currentPos.Z)).Magnitude > stopRadius do
             RunService.Heartbeat:Wait()
         end
+        -- If at 4th checkpoint, skip to final
+        if i == 4 then
+            i = #path - 1
+        else
+            i = i + 1
+        end
+    end
     end
 end
 
