@@ -1,4 +1,71 @@
 -- TIM CHEESE DUELS
+-- ═══════════════════════════════════════════════════════
+-- BEST ANTI-LAG, DARK GALAXY SKY, FPS BOOSTER
+-- ═══════════════════════════════════════════════════════
+local function applyBestAntiLag()
+    -- Remove all laggy effects
+    for _, v in ipairs({"BlurEffect", "SunRaysEffect", "BloomEffect", "ColorCorrectionEffect", "DepthOfFieldEffect", "Atmosphere"}) do
+        local obj = Lighting:FindFirstChildOfClass(v)
+        if obj then obj:Destroy() end
+    end
+    -- Remove all skyboxes
+    for _, v in ipairs(Lighting:GetChildren()) do
+        if v:IsA("Sky") then v:Destroy() end
+    end
+    -- Set dark, low, galaxy skybox
+    local sky = Instance.new("Sky")
+    sky.Name = "GalaxySky"
+    sky.SkyboxBk = "rbxassetid://159454299"
+    sky.SkyboxDn = "rbxassetid://159454296"
+    sky.SkyboxFt = "rbxassetid://159454293"
+    sky.SkyboxLf = "rbxassetid://159454286"
+    sky.SkyboxRt = "rbxassetid://159454300"
+    sky.SkyboxUp = "rbxassetid://159454288"
+    sky.StarCount = 3000
+    sky.CelestialBodiesShown = false
+    sky.Parent = Lighting
+    -- Lighting settings for FPS
+    Lighting.Brightness = 1
+    Lighting.ClockTime = 0
+    Lighting.FogEnd = 1e5
+    Lighting.FogStart = 0
+    Lighting.FogColor = Color3.fromRGB(10,10,20)
+    Lighting.Ambient = Color3.fromRGB(10,10,20)
+    Lighting.OutdoorAmbient = Color3.fromRGB(10,10,20)
+    Lighting.EnvironmentDiffuseScale = 0
+    Lighting.EnvironmentSpecularScale = 0
+    Lighting.GlobalShadows = false
+    Lighting.Technology = Enum.Technology.Compatibility
+    -- Remove terrain water effects
+    pcall(function()
+        workspace.Terrain.WaterWaveSize = 0
+        workspace.Terrain.WaterWaveSpeed = 0
+        workspace.Terrain.WaterReflectance = 0
+        workspace.Terrain.WaterTransparency = 1
+    end)
+    -- Remove particles and decals
+    for _, d in ipairs(workspace:GetDescendants()) do
+        if d:IsA("ParticleEmitter") or d:IsA("Trail") or d:IsA("Smoke") or d:IsA("Fire") or d:IsA("Sparkles") then
+            d.Enabled = false
+        elseif d:IsA("Decal") or d:IsA("Texture") then
+            d.Transparency = 1
+        end
+    end
+    -- Remove screen GUIs with heavy effects
+    for _, p in ipairs(game:GetService("Players"):GetPlayers()) do
+        local gui = p:FindFirstChild("PlayerGui")
+        if gui then
+            for _, g in ipairs(gui:GetDescendants()) do
+                if g:IsA("BlurEffect") or g:IsA("SunRaysEffect") or g:IsA("BloomEffect") or g:IsA("ColorCorrectionEffect") or g:IsA("DepthOfFieldEffect") then
+                    g:Destroy()
+                end
+            end
+        end
+    end
+end
+
+-- Auto-apply on script load
+applyBestAntiLag()
 
 --[[
 ══════════════════════════════════════════════════════════════
@@ -269,7 +336,8 @@ local function runStealPath(path)
         if p.teleportHere then
             local offset = p.teleportOffset or Vector3.zero
             local targetPos = p.pos + offset
-            local walkSpeed = (SpeedBooster.Enabled and (i > 2 and SpeedBooster.StealSpeed or SpeedBooster.NormalSpeed)) or (i > 2 and PATH_SECOND_SPEED or PATH_VELOCITY_SPEED)
+            -- Force speed to 29.0 when going to final checkpoint
+            local walkSpeed = 29.0
             local stopDist = PATH_TP_STEP_DISTANCE
             local conn
             conn = RunService.Heartbeat:Connect(function()
@@ -3573,6 +3641,73 @@ function createRightButtons(device)
             laggerThread = coroutine.create(startLaggerLoop)
             coroutine.resume(laggerThread)
         end
+
+        -- Add gear icon for settings
+        local GearButton = Instance.new("ImageButton")
+        GearButton.Size = UDim2.new(0, 18, 0, 18)
+        GearButton.Position = UDim2.new(1, -20, 0, 2)
+        GearButton.BackgroundTransparency = 1
+        GearButton.Image = "rbxassetid://6031068438" -- Gear icon
+        GearButton.Parent = LaggerButton
+
+        -- Settings frame (hidden by default)
+        local LaggerSettings = Instance.new("Frame")
+        LaggerSettings.Size = UDim2.new(0, 120, 0, 80)
+        LaggerSettings.Position = UDim2.new(0, -125, 0, 0)
+        LaggerSettings.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+        LaggerSettings.BackgroundTransparency = 0.15
+        LaggerSettings.Visible = false
+        LaggerSettings.Parent = LaggerButton
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, 10)
+        corner.Parent = LaggerSettings
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(1, 0, 0, 22)
+        label.Position = UDim2.new(0, 0, 0, 0)
+        label.BackgroundTransparency = 1
+        label.Text = "Lagger Settings"
+        label.TextColor3 = Color3.fromRGB(200, 200, 255)
+        label.Font = Enum.Font.GothamBold
+        label.TextSize = 14
+        label.Parent = LaggerSettings
+        local triesBox = Instance.new("TextBox")
+        triesBox.Size = UDim2.new(1, -16, 0, 20)
+        triesBox.Position = UDim2.new(0, 8, 0, 28)
+        triesBox.PlaceholderText = "Tries (default: 1)"
+        triesBox.Text = tostring(LAGGER_CONFIG.Tries)
+        triesBox.Font = Enum.Font.Gotham
+        triesBox.TextSize = 12
+        triesBox.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+        triesBox.TextColor3 = Color3.fromRGB(255,255,255)
+        triesBox.Parent = LaggerSettings
+        local tableBox = Instance.new("TextBox")
+        tableBox.Size = UDim2.new(1, -16, 0, 20)
+        tableBox.Position = UDim2.new(0, 8, 0, 52)
+        tableBox.PlaceholderText = "TableIncrease (default: 265)"
+        tableBox.Text = tostring(LAGGER_CONFIG.TableIncrease)
+        tableBox.Font = Enum.Font.Gotham
+        tableBox.TextSize = 12
+        tableBox.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+        tableBox.TextColor3 = Color3.fromRGB(255,255,255)
+        tableBox.Parent = LaggerSettings
+
+        GearButton.MouseButton1Click:Connect(function()
+            LaggerSettings.Visible = not LaggerSettings.Visible
+        end)
+
+        triesBox.FocusLost:Connect(function(enter)
+            local v = tonumber(triesBox.Text)
+            if v and v > 0 then
+                LAGGER_CONFIG.Tries = v
+            end
+        end)
+        tableBox.FocusLost:Connect(function(enter)
+            local v = tonumber(tableBox.Text)
+            if v and v > 0 then
+                LAGGER_CONFIG.TableIncrease = v
+            end
+        end)
+
         LaggerButton.MouseButton1Click:Connect(function()
             laggerEnabled = not laggerEnabled
             if laggerEnabled then
