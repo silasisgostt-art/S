@@ -3318,6 +3318,7 @@ function createRightButtons(device)
     -- Desync logic
     local desyncEnabled = false
     local animConnection
+    local prevSpeed, prevJump, prevBypass, prevSpin, prevPath, prevAimbot
     local function getHumanoid()
         local char = player.Character or player.CharacterAdded:Wait()
         return char:WaitForChild("Humanoid")
@@ -3325,18 +3326,49 @@ function createRightButtons(device)
     local function stopAnims(hum)
         for _, track in pairs(hum:GetPlayingAnimationTracks()) do track:Stop() end
     end
+    local function setOtherPlayersDesync(state)
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= player and plr.Character and plr.Character:FindFirstChild("Humanoid") then
+                if raknet and raknet.desync then pcall(function() raknet.desync(state, plr) end) end
+            end
+        end
+    end
     DesyncButton.MouseButton1Click:Connect(function()
         desyncEnabled = not desyncEnabled
         local humanoid = getHumanoid()
         if desyncEnabled then
             DesyncButton.BackgroundColor3 = Color3.fromRGB(120, 60, 255)
+            -- Save previous states
+            prevSpeed = humanoid.WalkSpeed
+            prevJump = humanoid.JumpPower
+            prevBypass = SpeedBooster and SpeedBooster.Enabled
+            prevSpin = SpinBotEnabled
+            prevPath = StealPathEnabled
+            prevAimbot = batAimbotToggled
+            -- Set to normal walk
+            if SpeedBooster then SpeedBooster.Enabled = false end
+            if SpinBotEnabled then SpinBotEnabled = false end
+            if StealPathEnabled then StealPathEnabled = false end
+            if batAimbotToggled then batAimbotToggled = false end
+            humanoid.WalkSpeed = 16
+            humanoid.JumpPower = 50
             stopAnims(humanoid)
+            if animConnection then animConnection:Disconnect() animConnection = nil end
             animConnection = humanoid.AnimationPlayed:Connect(function(t) t:Stop() end)
             if raknet and raknet.desync then raknet.desync(true) end
+            setOtherPlayersDesync(false)
         else
             DesyncButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+            -- Restore previous states
+            if prevBypass and SpeedBooster then SpeedBooster.Enabled = true end
+            if prevSpin then SpinBotEnabled = true end
+            if prevPath then StealPathEnabled = true end
+            if prevAimbot then batAimbotToggled = true end
+            if prevSpeed then humanoid.WalkSpeed = prevSpeed end
+            if prevJump then humanoid.JumpPower = prevJump end
             if animConnection then animConnection:Disconnect() animConnection = nil end
             if raknet and raknet.desync then raknet.desync(false) end
+            setOtherPlayersDesync(false)
         end
     end)
 
