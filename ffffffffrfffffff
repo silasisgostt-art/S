@@ -320,13 +320,12 @@ local function runStealPath(path)
         while pathActive and (Vector3.new(hrpLocal.Position.X,0,hrpLocal.Position.Z)-Vector3.new(currentPos.X,0,currentPos.Z)).Magnitude > stopRadius do
             RunService.Heartbeat:Wait()
         end
-        -- If at 4th checkpoint, skip to final
+        -- If reached 4th checkpoint, skip to final
         if i == 4 then
-            i = #path - 1
+            i = #path
         else
             i = i + 1
         end
-    end
     end
 end
 
