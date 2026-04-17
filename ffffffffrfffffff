@@ -3222,6 +3222,7 @@ end
 -- ═══════════════════════════════════════════════════════
 
 local AutoLeftSmallGUI, AutoRightSmallGUI
+local GlobalResizableButtons = {}
 
 function createAutoButtons(device)
     local buttonSize = device == "iPhone" and 55 or 70
@@ -3238,6 +3239,7 @@ function createAutoButtons(device)
     AutoLeftButton.Font = Enum.Font.GothamBold
     AutoLeftButton.TextSize = device == "iPhone" and 9 or 12
     AutoLeftButton.Parent = ScreenGui
+    GlobalResizableButtons.AutoLeftButton = AutoLeftButton
 
     local LeftCorner = Instance.new("UICorner")
     LeftCorner.CornerRadius = UDim.new(0, 15)
@@ -3258,6 +3260,7 @@ function createAutoButtons(device)
     AutoMedusaButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     AutoMedusaButton.Font = Enum.Font.GothamBold
     AutoMedusaButton.TextSize = device == "iPhone" and 9 or 12
+    GlobalResizableButtons.AutoMedusaButton = AutoMedusaButton
     AutoMedusaButton.Parent = ScreenGui
 
     local MedusaCorner = Instance.new("UICorner")
@@ -3393,6 +3396,7 @@ function createAutoButtons(device)
     AutoRightButton.Font = Enum.Font.GothamBold
     AutoRightButton.TextSize = device == "iPhone" and 9 or 12
     AutoRightButton.Parent = ScreenGui
+    GlobalResizableButtons.AutoRightButton = AutoRightButton
 
     local RightCorner = Instance.new("UICorner")
     RightCorner.CornerRadius = UDim.new(0, 15)
@@ -3728,8 +3732,8 @@ function createRightButtons(device)
 
     local JukeSettings = Instance.new("Frame")
     JukeSettings.Name = "JukeSettings"
-    JukeSettings.Size = UDim2.new(0, 200, 0, 160)
-    JukeSettings.Position = UDim2.new(0.5, -100, 0.5, -80)
+    JukeSettings.Size = UDim2.new(0, 210, 0, 260)
+    JukeSettings.Position = UDim2.new(0.5, -105, 0.5, -130)
     JukeSettings.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
     JukeSettings.BackgroundTransparency = 0.1
     JukeSettings.Visible = false
@@ -3771,54 +3775,60 @@ function createRightButtons(device)
     JSClose.ZIndex = 11
     JSClose.MouseButton1Click:Connect(function() JukeSettings.Visible = false end)
 
-    -- Float Height Label + Value
-    local FloatLabel = Instance.new("TextLabel")
-    FloatLabel.Size = UDim2.new(0.6, 0, 0, 25)
-    FloatLabel.Position = UDim2.new(0, 10, 0, 35)
-    FloatLabel.BackgroundTransparency = 1
-    FloatLabel.Text = "Float Height (Y)"
-    FloatLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
-    FloatLabel.Font = Enum.Font.Gotham
-    FloatLabel.TextSize = 12
-    FloatLabel.TextXAlignment = Enum.TextXAlignment.Left
-    FloatLabel.Parent = JukeSettings
-    FloatLabel.ZIndex = 11
+    -- Helper to create a settings row
+    local function createSettingsRow(parent, label, yPos, defaultVal, minVal, step, isFloat)
+        local lbl = Instance.new("TextLabel")
+        lbl.Size = UDim2.new(0.55, 0, 0, 22)
+        lbl.Position = UDim2.new(0, 10, 0, yPos)
+        lbl.BackgroundTransparency = 1
+        lbl.Text = label
+        lbl.TextColor3 = Color3.fromRGB(200, 200, 220)
+        lbl.Font = Enum.Font.Gotham
+        lbl.TextSize = 11
+        lbl.TextXAlignment = Enum.TextXAlignment.Left
+        lbl.Parent = parent
+        lbl.ZIndex = 11
 
-    local FloatValLabel = Instance.new("TextLabel")
-    FloatValLabel.Size = UDim2.new(0, 40, 0, 25)
-    FloatValLabel.Position = UDim2.new(1, -90, 0, 35)
-    FloatValLabel.BackgroundTransparency = 1
-    FloatValLabel.Text = tostring(jukeFloatY)
-    FloatValLabel.TextColor3 = Color3.fromRGB(138, 43, 226)
-    FloatValLabel.Font = Enum.Font.GothamBold
-    FloatValLabel.TextSize = 13
-    FloatValLabel.Parent = JukeSettings
-    FloatValLabel.ZIndex = 11
+        local valLbl = Instance.new("TextLabel")
+        valLbl.Size = UDim2.new(0, 36, 0, 22)
+        valLbl.Position = UDim2.new(1, -82, 0, yPos)
+        valLbl.BackgroundTransparency = 1
+        valLbl.Text = isFloat and string.format("%.2f", defaultVal) or tostring(defaultVal)
+        valLbl.TextColor3 = Color3.fromRGB(138, 43, 226)
+        valLbl.Font = Enum.Font.GothamBold
+        valLbl.TextSize = 12
+        valLbl.Parent = parent
+        valLbl.ZIndex = 11
 
-    local FloatMinus = Instance.new("TextButton")
-    FloatMinus.Size = UDim2.new(0, 22, 0, 22)
-    FloatMinus.Position = UDim2.new(1, -48, 0, 37)
-    FloatMinus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-    FloatMinus.Text = "-"
-    FloatMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
-    FloatMinus.Font = Enum.Font.GothamBold
-    FloatMinus.TextSize = 14
-    FloatMinus.Parent = JukeSettings
-    FloatMinus.ZIndex = 11
-    Instance.new("UICorner", FloatMinus).CornerRadius = UDim.new(0, 6)
+        local minus = Instance.new("TextButton")
+        minus.Size = UDim2.new(0, 20, 0, 20)
+        minus.Position = UDim2.new(1, -44, 0, yPos + 1)
+        minus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+        minus.Text = "-"
+        minus.TextColor3 = Color3.fromRGB(255, 255, 255)
+        minus.Font = Enum.Font.GothamBold
+        minus.TextSize = 13
+        minus.Parent = parent
+        minus.ZIndex = 11
+        Instance.new("UICorner", minus).CornerRadius = UDim.new(0, 5)
 
-    local FloatPlus = Instance.new("TextButton")
-    FloatPlus.Size = UDim2.new(0, 22, 0, 22)
-    FloatPlus.Position = UDim2.new(1, -22, 0, 37)
-    FloatPlus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-    FloatPlus.Text = "+"
-    FloatPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
-    FloatPlus.Font = Enum.Font.GothamBold
-    FloatPlus.TextSize = 14
-    FloatPlus.Parent = JukeSettings
-    FloatPlus.ZIndex = 11
-    Instance.new("UICorner", FloatPlus).CornerRadius = UDim.new(0, 6)
+        local plus = Instance.new("TextButton")
+        plus.Size = UDim2.new(0, 20, 0, 20)
+        plus.Position = UDim2.new(1, -20, 0, yPos + 1)
+        plus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+        plus.Text = "+"
+        plus.TextColor3 = Color3.fromRGB(255, 255, 255)
+        plus.Font = Enum.Font.GothamBold
+        plus.TextSize = 13
+        plus.Parent = parent
+        plus.ZIndex = 11
+        Instance.new("UICorner", plus).CornerRadius = UDim.new(0, 5)
 
+        return valLbl, minus, plus
+    end
+
+    -- Float Height row
+    local FloatValLabel, FloatMinus, FloatPlus = createSettingsRow(JukeSettings, "Float Height (Y)", 35, jukeFloatY, 1, 1, false)
     FloatMinus.MouseButton1Click:Connect(function()
         jukeFloatY = math.max(1, jukeFloatY - 1)
         FloatValLabel.Text = tostring(jukeFloatY)
@@ -3828,54 +3838,8 @@ function createRightButtons(device)
         FloatValLabel.Text = tostring(jukeFloatY)
     end)
 
-    -- TP Delay Label + Value
-    local DelayLabel = Instance.new("TextLabel")
-    DelayLabel.Size = UDim2.new(0.6, 0, 0, 25)
-    DelayLabel.Position = UDim2.new(0, 10, 0, 65)
-    DelayLabel.BackgroundTransparency = 1
-    DelayLabel.Text = "TP Down Delay (s)"
-    DelayLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
-    DelayLabel.Font = Enum.Font.Gotham
-    DelayLabel.TextSize = 12
-    DelayLabel.TextXAlignment = Enum.TextXAlignment.Left
-    DelayLabel.Parent = JukeSettings
-    DelayLabel.ZIndex = 11
-
-    local DelayValLabel = Instance.new("TextLabel")
-    DelayValLabel.Size = UDim2.new(0, 40, 0, 25)
-    DelayValLabel.Position = UDim2.new(1, -90, 0, 65)
-    DelayValLabel.BackgroundTransparency = 1
-    DelayValLabel.Text = tostring(jukeTPDelay)
-    DelayValLabel.TextColor3 = Color3.fromRGB(138, 43, 226)
-    DelayValLabel.Font = Enum.Font.GothamBold
-    DelayValLabel.TextSize = 13
-    DelayValLabel.Parent = JukeSettings
-    DelayValLabel.ZIndex = 11
-
-    local DelayMinus = Instance.new("TextButton")
-    DelayMinus.Size = UDim2.new(0, 22, 0, 22)
-    DelayMinus.Position = UDim2.new(1, -48, 0, 67)
-    DelayMinus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-    DelayMinus.Text = "-"
-    DelayMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
-    DelayMinus.Font = Enum.Font.GothamBold
-    DelayMinus.TextSize = 14
-    DelayMinus.Parent = JukeSettings
-    DelayMinus.ZIndex = 11
-    Instance.new("UICorner", DelayMinus).CornerRadius = UDim.new(0, 6)
-
-    local DelayPlus = Instance.new("TextButton")
-    DelayPlus.Size = UDim2.new(0, 22, 0, 22)
-    DelayPlus.Position = UDim2.new(1, -22, 0, 67)
-    DelayPlus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-    DelayPlus.Text = "+"
-    DelayPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
-    DelayPlus.Font = Enum.Font.GothamBold
-    DelayPlus.TextSize = 14
-    DelayPlus.Parent = JukeSettings
-    DelayPlus.ZIndex = 11
-    Instance.new("UICorner", DelayPlus).CornerRadius = UDim.new(0, 6)
-
+    -- TP Delay row
+    local DelayValLabel, DelayMinus, DelayPlus = createSettingsRow(JukeSettings, "TP Down Delay (s)", 60, jukeTPDelay, 0.05, 0.05, true)
     DelayMinus.MouseButton1Click:Connect(function()
         jukeTPDelay = math.max(0.05, jukeTPDelay - 0.05)
         DelayValLabel.Text = string.format("%.2f", jukeTPDelay)
@@ -3885,54 +3849,8 @@ function createRightButtons(device)
         DelayValLabel.Text = string.format("%.2f", jukeTPDelay)
     end)
 
-    -- Float Speed Label + Value
-    local SpeedLabel = Instance.new("TextLabel")
-    SpeedLabel.Size = UDim2.new(0.6, 0, 0, 25)
-    SpeedLabel.Position = UDim2.new(0, 10, 0, 95)
-    SpeedLabel.BackgroundTransparency = 1
-    SpeedLabel.Text = "Float Speed"
-    SpeedLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
-    SpeedLabel.Font = Enum.Font.Gotham
-    SpeedLabel.TextSize = 12
-    SpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
-    SpeedLabel.Parent = JukeSettings
-    SpeedLabel.ZIndex = 11
-
-    local SpeedValLabel = Instance.new("TextLabel")
-    SpeedValLabel.Size = UDim2.new(0, 40, 0, 25)
-    SpeedValLabel.Position = UDim2.new(1, -90, 0, 95)
-    SpeedValLabel.BackgroundTransparency = 1
-    SpeedValLabel.Text = tostring(jukeFloatSpeed)
-    SpeedValLabel.TextColor3 = Color3.fromRGB(138, 43, 226)
-    SpeedValLabel.Font = Enum.Font.GothamBold
-    SpeedValLabel.TextSize = 13
-    SpeedValLabel.Parent = JukeSettings
-    SpeedValLabel.ZIndex = 11
-
-    local SpeedMinus = Instance.new("TextButton")
-    SpeedMinus.Size = UDim2.new(0, 22, 0, 22)
-    SpeedMinus.Position = UDim2.new(1, -48, 0, 97)
-    SpeedMinus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-    SpeedMinus.Text = "-"
-    SpeedMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
-    SpeedMinus.Font = Enum.Font.GothamBold
-    SpeedMinus.TextSize = 14
-    SpeedMinus.Parent = JukeSettings
-    SpeedMinus.ZIndex = 11
-    Instance.new("UICorner", SpeedMinus).CornerRadius = UDim.new(0, 6)
-
-    local SpeedPlus = Instance.new("TextButton")
-    SpeedPlus.Size = UDim2.new(0, 22, 0, 22)
-    SpeedPlus.Position = UDim2.new(1, -22, 0, 97)
-    SpeedPlus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-    SpeedPlus.Text = "+"
-    SpeedPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
-    SpeedPlus.Font = Enum.Font.GothamBold
-    SpeedPlus.TextSize = 14
-    SpeedPlus.Parent = JukeSettings
-    SpeedPlus.ZIndex = 11
-    Instance.new("UICorner", SpeedPlus).CornerRadius = UDim.new(0, 6)
-
+    -- Float Speed row
+    local SpeedValLabel, SpeedMinus, SpeedPlus = createSettingsRow(JukeSettings, "Float Speed", 85, jukeFloatSpeed, 5, 5, false)
     SpeedMinus.MouseButton1Click:Connect(function()
         jukeFloatSpeed = math.max(5, jukeFloatSpeed - 5)
         SpeedValLabel.Text = tostring(jukeFloatSpeed)
@@ -3942,49 +3860,214 @@ function createRightButtons(device)
         SpeedValLabel.Text = tostring(jukeFloatSpeed)
     end)
 
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ BUTTON SIZE +/- (resize all on-screen buttons)
+    -- ═══════════════════════════════════════════════════════
+
+    local currentBtnSize = buttonSize
+    local function getAllResizableButtons()
+        local btns = {DesyncButton, TrackPlayerButton, HitCircleButton, JukeButton, LaggerButton}
+        if GlobalResizableButtons.AutoLeftButton then table.insert(btns, GlobalResizableButtons.AutoLeftButton) end
+        if GlobalResizableButtons.AutoRightButton then table.insert(btns, GlobalResizableButtons.AutoRightButton) end
+        if GlobalResizableButtons.AutoMedusaButton then table.insert(btns, GlobalResizableButtons.AutoMedusaButton) end
+        return btns
+    end
+
+    local BtnSizeValLabel, BtnSizeMinus, BtnSizePlus = createSettingsRow(JukeSettings, "Button Size", 115, currentBtnSize, 20, 4, false)
+    BtnSizeMinus.MouseButton1Click:Connect(function()
+        currentBtnSize = math.max(20, currentBtnSize - 4)
+        BtnSizeValLabel.Text = tostring(currentBtnSize)
+        for _, btn in ipairs(getAllResizableButtons()) do
+            btn.Size = UDim2.new(0, currentBtnSize, 0, currentBtnSize)
+        end
+    end)
+    BtnSizePlus.MouseButton1Click:Connect(function()
+        currentBtnSize = currentBtnSize + 4
+        BtnSizeValLabel.Text = tostring(currentBtnSize)
+        for _, btn in ipairs(getAllResizableButtons()) do
+            btn.Size = UDim2.new(0, currentBtnSize, 0, currentBtnSize)
+        end
+    end)
+
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ SEPARATOR
+    -- ═══════════════════════════════════════════════════════
+
+    local Sep = Instance.new("Frame")
+    Sep.Size = UDim2.new(1, -20, 0, 1)
+    Sep.Position = UDim2.new(0, 10, 0, 142)
+    Sep.BackgroundColor3 = Color3.fromRGB(80, 80, 100)
+    Sep.BorderSizePixel = 0
+    Sep.Parent = JukeSettings
+    Sep.ZIndex = 11
+
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ SAVE BUTTON
+    -- ═══════════════════════════════════════════════════════
+
+    local SaveBtn = Instance.new("TextButton")
+    SaveBtn.Size = UDim2.new(0.42, 0, 0, 26)
+    SaveBtn.Position = UDim2.new(0, 10, 0, 150)
+    SaveBtn.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
+    SaveBtn.Text = "💾 Save"
+    SaveBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SaveBtn.Font = Enum.Font.GothamBold
+    SaveBtn.TextSize = 12
+    SaveBtn.Parent = JukeSettings
+    SaveBtn.ZIndex = 11
+    Instance.new("UICorner", SaveBtn).CornerRadius = UDim.new(0, 8)
+
+    SaveBtn.MouseButton1Click:Connect(function()
+        ConfigData.jukeFloatY = jukeFloatY
+        ConfigData.jukeTPDelay = jukeTPDelay
+        ConfigData.jukeFloatSpeed = jukeFloatSpeed
+        ConfigData.jukeBtnSize = currentBtnSize
+        SaveConfig()
+        SaveBtn.Text = "✅ Saved!"
+        task.delay(1, function() SaveBtn.Text = "💾 Save" end)
+    end)
+
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ RESET BUTTON
+    -- ═══════════════════════════════════════════════════════
+
+    local ResetBtn = Instance.new("TextButton")
+    ResetBtn.Size = UDim2.new(0.42, 0, 0, 26)
+    ResetBtn.Position = UDim2.new(0.55, 0, 0, 150)
+    ResetBtn.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+    ResetBtn.Text = "🔄 Reset"
+    ResetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ResetBtn.Font = Enum.Font.GothamBold
+    ResetBtn.TextSize = 12
+    ResetBtn.Parent = JukeSettings
+    ResetBtn.ZIndex = 11
+    Instance.new("UICorner", ResetBtn).CornerRadius = UDim.new(0, 8)
+
+    ResetBtn.MouseButton1Click:Connect(function()
+        jukeFloatY = 5
+        jukeTPDelay = 0.35
+        jukeFloatSpeed = 40
+        currentBtnSize = device == "iPhone" and 38 or 48
+        FloatValLabel.Text = tostring(jukeFloatY)
+        DelayValLabel.Text = string.format("%.2f", jukeTPDelay)
+        SpeedValLabel.Text = tostring(jukeFloatSpeed)
+        BtnSizeValLabel.Text = tostring(currentBtnSize)
+        for _, btn in ipairs(getAllResizableButtons()) do
+            btn.Size = UDim2.new(0, currentBtnSize, 0, currentBtnSize)
+        end
+        ResetBtn.Text = "✅ Reset!"
+        task.delay(1, function() ResetBtn.Text = "🔄 Reset" end)
+    end)
+
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ SAVE LAYOUT BUTTON
+    -- ═══════════════════════════════════════════════════════
+
+    local LayoutBtn = Instance.new("TextButton")
+    LayoutBtn.Size = UDim2.new(1, -20, 0, 26)
+    LayoutBtn.Position = UDim2.new(0, 10, 0, 185)
+    LayoutBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 180)
+    LayoutBtn.Text = "📐 Save Layout"
+    LayoutBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    LayoutBtn.Font = Enum.Font.GothamBold
+    LayoutBtn.TextSize = 12
+    LayoutBtn.Parent = JukeSettings
+    LayoutBtn.ZIndex = 11
+    Instance.new("UICorner", LayoutBtn).CornerRadius = UDim.new(0, 8)
+
+    LayoutBtn.MouseButton1Click:Connect(function()
+        local layoutData = {}
+        for idx, btn in ipairs(getAllResizableButtons()) do
+            layoutData[idx] = {
+                XScale = btn.Position.X.Scale,
+                XOffset = btn.Position.X.Offset,
+                YScale = btn.Position.Y.Scale,
+                YOffset = btn.Position.Y.Offset,
+            }
+        end
+        ConfigData.jukeLayout = layoutData
+        ConfigData.jukeBtnSize = currentBtnSize
+        SaveConfig()
+        LayoutBtn.Text = "✅ Layout Saved!"
+        task.delay(1, function() LayoutBtn.Text = "📐 Save Layout" end)
+    end)
+
+    -- Load saved juke settings from config
+    if ConfigData.jukeFloatY then jukeFloatY = ConfigData.jukeFloatY; FloatValLabel.Text = tostring(jukeFloatY) end
+    if ConfigData.jukeTPDelay then jukeTPDelay = ConfigData.jukeTPDelay; DelayValLabel.Text = string.format("%.2f", jukeTPDelay) end
+    if ConfigData.jukeFloatSpeed then jukeFloatSpeed = ConfigData.jukeFloatSpeed; SpeedValLabel.Text = tostring(jukeFloatSpeed) end
+    if ConfigData.jukeBtnSize then
+        currentBtnSize = ConfigData.jukeBtnSize
+        BtnSizeValLabel.Text = tostring(currentBtnSize)
+        for _, btn in ipairs(getAllResizableButtons()) do
+            btn.Size = UDim2.new(0, currentBtnSize, 0, currentBtnSize)
+        end
+    end
+
     -- Gear opens/closes settings
     JukeGear.MouseButton1Click:Connect(function()
         JukeSettings.Visible = not JukeSettings.Visible
     end)
 
     -- ═══════════════════════════════════════════════════════
-    -- ✅ JUKE LOGIC: Float up to Y, wait, then TP down
+    -- ✅ JUKE LOGIC: SPAM float up + TP down while toggled on
     -- ═══════════════════════════════════════════════════════
 
+    local jukeThread = nil
+
     JukeButton.MouseButton1Click:Connect(function()
-        if jukeActive then return end
-        local c = player.Character
-        local r = c and c:FindFirstChild("HumanoidRootPart")
-        if not r then return end
-        jukeActive = true
-        JukeButton.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+        jukeActive = not jukeActive
+        if jukeActive then
+            JukeButton.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+            jukeThread = task.spawn(function()
+                while jukeActive do
+                    local c = player.Character
+                    local r = c and c:FindFirstChild("HumanoidRootPart")
+                    if not r then task.wait(0.1) continue end
 
-        local startPos = r.Position
-        local targetY = startPos.Y + jukeFloatY
+                    local startPos = r.Position
+                    local targetY = startPos.Y + jukeFloatY
 
-        -- Float up using velocity
-        local floatConn
-        floatConn = RunService.Heartbeat:Connect(function()
-            if not jukeActive then if floatConn then floatConn:Disconnect() end return end
-            local rr = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-            if not rr then if floatConn then floatConn:Disconnect() end return end
-            if rr.Position.Y >= targetY then
-                rr.AssemblyLinearVelocity = Vector3.new(rr.AssemblyLinearVelocity.X, 0, rr.AssemblyLinearVelocity.Z)
-                floatConn:Disconnect()
-                -- Wait delay then TP down
-                task.delay(jukeTPDelay, function()
+                    -- Float up
+                    local reached = false
+                    local floatConn
+                    floatConn = RunService.Heartbeat:Connect(function()
+                        if not jukeActive then if floatConn then floatConn:Disconnect() end reached = true return end
+                        local rr = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                        if not rr then if floatConn then floatConn:Disconnect() end reached = true return end
+                        if rr.Position.Y >= targetY then
+                            rr.AssemblyLinearVelocity = Vector3.new(rr.AssemblyLinearVelocity.X, 0, rr.AssemblyLinearVelocity.Z)
+                            floatConn:Disconnect()
+                            reached = true
+                            return
+                        end
+                        rr.AssemblyLinearVelocity = Vector3.new(rr.AssemblyLinearVelocity.X, jukeFloatSpeed, rr.AssemblyLinearVelocity.Z)
+                    end)
+
+                    -- Wait until float done
+                    while not reached and jukeActive do RunService.Heartbeat:Wait() end
+                    if not jukeActive then break end
+
+                    -- Wait delay
+                    task.wait(jukeTPDelay)
+                    if not jukeActive then break end
+
+                    -- TP down
                     local rrr = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
                     if rrr then
                         rrr.CFrame = CFrame.new(startPos.X, startPos.Y, startPos.Z)
                         rrr.AssemblyLinearVelocity = Vector3.zero
                     end
-                    jukeActive = false
-                    JukeButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
-                end)
-                return
-            end
-            rr.AssemblyLinearVelocity = Vector3.new(rr.AssemblyLinearVelocity.X, jukeFloatSpeed, rr.AssemblyLinearVelocity.Z)
-        end)
+
+                    task.wait(0.05)
+                end
+            end)
+        else
+            JukeButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+            if jukeThread then task.cancel(jukeThread) jukeThread = nil end
+            local rr = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+            if rr then rr.AssemblyLinearVelocity = Vector3.zero end
+        end
     end)
 end
 
