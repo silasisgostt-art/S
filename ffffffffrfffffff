@@ -3294,6 +3294,52 @@ end
 function createRightButtons(device)
     local buttonSize = device == "iPhone" and 60 or 75
 
+    -- ✅ DESYNC Button (ABOVE TRACK PLAYER)
+    local DesyncButton = Instance.new("TextButton")
+    DesyncButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
+    DesyncButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize*2 - 20)
+    DesyncButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+    DesyncButton.BackgroundTransparency = 0.3
+    DesyncButton.Text = "DESYNC"
+    DesyncButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    DesyncButton.Font = Enum.Font.GothamBold
+    DesyncButton.TextSize = device == "iPhone" and 9 or 12
+    DesyncButton.Parent = ScreenGui
+
+    local DesyncCorner = Instance.new("UICorner")
+    DesyncCorner.CornerRadius = UDim.new(0, 15)
+    DesyncCorner.Parent = DesyncButton
+
+    local DesyncStroke = Instance.new("UIStroke")
+    DesyncStroke.Color = Color3.fromRGB(255, 255, 255)
+    DesyncStroke.Thickness = 2
+    DesyncStroke.Parent = DesyncButton
+
+    -- Desync logic
+    local desyncEnabled = false
+    local animConnection
+    local function getHumanoid()
+        local char = player.Character or player.CharacterAdded:Wait()
+        return char:WaitForChild("Humanoid")
+    end
+    local function stopAnims(hum)
+        for _, track in pairs(hum:GetPlayingAnimationTracks()) do track:Stop() end
+    end
+    DesyncButton.MouseButton1Click:Connect(function()
+        desyncEnabled = not desyncEnabled
+        local humanoid = getHumanoid()
+        if desyncEnabled then
+            DesyncButton.BackgroundColor3 = Color3.fromRGB(120, 60, 255)
+            stopAnims(humanoid)
+            animConnection = humanoid.AnimationPlayed:Connect(function(t) t:Stop() end)
+            if raknet and raknet.desync then raknet.desync(true) end
+        else
+            DesyncButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+            if animConnection then animConnection:Disconnect() animConnection = nil end
+            if raknet and raknet.desync then raknet.desync(false) end
+        end
+    end)
+
     -- ✅ TRACK PLAYER Button (RIGHT SIDE - GRAY!)
     local TrackPlayerButton = Instance.new("TextButton")
     TrackPlayerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
@@ -3360,52 +3406,6 @@ function createRightButtons(device)
         end
     end)
 end
-
--- Add Desync button above Track Player
-local DesyncEnabled = false
-local DesyncButton = Instance.new("TextButton")
-DesyncButton.Name = "DesyncButton"
-DesyncButton.Text = "DESYNC"
-DesyncButton.Size = UDim2.new(0, 120, 0, 32)
-DesyncButton.Position = UDim2.new(0, 10, 0, 10) -- Adjust as needed to be above Track Player
-DesyncButton.BackgroundColor3 = Color3.fromRGB(120, 60, 255)
-DesyncButton.TextColor3 = Color3.new(1,1,1)
-DesyncButton.Font = Enum.Font.GothamBold
-DesyncButton.TextSize = 16
-DesyncButton.Parent = MainFrame -- or the main UI frame containing Track Player
-Instance.new("UICorner", DesyncButton).CornerRadius = UDim.new(0, 8)
-
-local DesyncDot = Instance.new("Frame", DesyncButton)
-DesyncDot.Size = UDim2.new(0, 10, 0, 10)
-DesyncDot.Position = UDim2.new(1, -18, 0.5, -5)
-DesyncDot.BackgroundColor3 = Color3.fromRGB(60, 255, 120)
-Instance.new("UICorner", DesyncDot).CornerRadius = UDim.new(1, 0)
-
-local animConnection = nil
-local function getHumanoid()
-    local char = player.Character or player.CharacterAdded:Wait()
-    return char:WaitForChild("Humanoid")
-end
-local function stopAnims(hum)
-    for _, track in pairs(hum:GetPlayingAnimationTracks()) do track:Stop() end
-end
-DesyncButton.MouseButton1Click:Connect(function()
-    DesyncEnabled = not DesyncEnabled
-    local humanoid = getHumanoid()
-    if DesyncEnabled then
-        DesyncButton.BackgroundColor3 = Color3.fromRGB(120, 60, 255)
-        DesyncDot.BackgroundColor3 = Color3.fromRGB(60, 255, 120)
-        stopAnims(humanoid)
-        if animConnection then animConnection:Disconnect() end
-        animConnection = humanoid.AnimationPlayed:Connect(function(t) t:Stop() end)
-        if raknet and raknet.desync then raknet.desync(true) end
-    else
-        DesyncButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-        DesyncDot.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-        if animConnection then animConnection:Disconnect() animConnection = nil end
-        if raknet and raknet.desync then raknet.desync(false) end
-    end
-end)
 
 print("══════════════════════════════════════════════")
 print("   TIM CHEESE DUELS LOADED")
