@@ -3246,6 +3246,141 @@ function createAutoButtons(device)
     LeftStroke.Parent = AutoLeftButton
 
     -- ✅ AUTO RIGHT Button (SIDE BY SIDE - GRAY!)
+        -- ✅ AUTO MEDUSA Button (above Auto Right)
+        local AutoMedusaButton = Instance.new("TextButton")
+        AutoMedusaButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
+        AutoMedusaButton.Position = UDim2.new(0, 15 + buttonSize + 10, 0.5, -buttonSize*1.5 + yOffset - 8)
+        AutoMedusaButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+        AutoMedusaButton.BackgroundTransparency = 0.3
+        AutoMedusaButton.Text = "AUTO\nMEDUSA"
+        AutoMedusaButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        AutoMedusaButton.Font = Enum.Font.GothamBold
+        AutoMedusaButton.TextSize = device == "iPhone" and 9 or 12
+        AutoMedusaButton.Parent = ScreenGui
+
+        local MedusaCorner = Instance.new("UICorner")
+        MedusaCorner.CornerRadius = UDim.new(0, 15)
+        MedusaCorner.Parent = AutoMedusaButton
+
+        local MedusaStroke = Instance.new("UIStroke")
+        MedusaStroke.Color = Color3.fromRGB(255, 255, 255)
+        MedusaStroke.Thickness = 2
+        MedusaStroke.Parent = AutoMedusaButton
+
+        -- Auto Medusa logic (no extra GUI, just logic)
+        local MEDUSA_RANGE = 9.5
+        local MEDUSA_COOLDOWN = 0.12
+        local autoMedusaEnabled = false
+        local autoMedusaConn = nil
+        local medusaCircle = nil
+        local medusaAttacking = false
+        local function findMedusaTool()
+            local char = player.Character
+            local backpack = player:FindFirstChildOfClass("Backpack")
+            local keywords = {"medusa", "Medusa's Head", "medusa's head"}
+            local function search(container)
+                if not container then return nil end
+                for _, tool in ipairs(container:GetChildren()) do
+                    if tool:IsA("Tool") then
+                        local nameLower = tool.Name:lower()
+                        for _, kw in ipairs(keywords) do
+                            if nameLower:find(kw:lower()) then
+                                return tool
+                            end
+                        end
+                    end
+                end
+                return nil
+            end
+            return search(char) or search(backpack)
+        end
+        local function unequipMedusa()
+            local char = player.Character
+            local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+            if not humanoid then return end
+            local medusa = findMedusaTool()
+            if medusa and medusa.Parent == char then
+                pcall(function() humanoid:UnequipTools() end)
+            end
+        end
+        local function enemyInRange()
+            local char = player.Character
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+            if not root then return false end
+            for _, other in ipairs(Players:GetPlayers()) do
+                if other ~= player and other.Character then
+                    local otherRoot = other.Character:FindFirstChild("HumanoidRootPart")
+                    local otherHum = other.Character:FindFirstChildOfClass("Humanoid")
+                    if otherRoot and otherHum and otherHum.Health > 0 then
+                        local distance = (root.Position - otherRoot.Position).Magnitude
+                        if distance <= MEDUSA_RANGE then
+                            return true
+                        end
+                    end
+                end
+            end
+            return false
+        end
+        local function createMedusaCircle()
+            if medusaCircle then medusaCircle:Destroy() end
+            medusaCircle = Instance.new("Part")
+            medusaCircle.Name = "AutoMedusaRange"
+            medusaCircle.Shape = Enum.PartType.Cylinder
+            medusaCircle.Size = Vector3.new(0.2, MEDUSA_RANGE * 2, MEDUSA_RANGE * 2)
+            medusaCircle.Color = Color3.fromRGB(255, 0, 0)
+            medusaCircle.Material = Enum.Material.Neon
+            medusaCircle.Transparency = 0.35
+            medusaCircle.Anchored = true
+            medusaCircle.CanCollide = false
+            medusaCircle.Parent = workspace
+        end
+        local function updateMedusaCircle()
+            local char = player.Character
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+            if medusaCircle and root then
+                medusaCircle.CFrame = CFrame.new(root.Position - Vector3.new(0, 2.6, 0)) * CFrame.Angles(0, 0, math.rad(90))
+            end
+        end
+        local function startAutoMedusa()
+            if autoMedusaConn then autoMedusaConn:Disconnect() end
+            createMedusaCircle()
+            autoMedusaConn = RunService.Heartbeat:Connect(function()
+                if not autoMedusaEnabled then return end
+                updateMedusaCircle()
+                if not enemyInRange() then
+                    unequipMedusa()
+                    return
+                end
+                local medusa = findMedusaTool()
+                if not medusa then return end
+                local char = player.Character
+                local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+                if humanoid and medusa.Parent ~= char then
+                    pcall(function() humanoid:EquipTool(medusa) end)
+                end
+                local heldTool = char and char:FindFirstChildOfClass("Tool")
+                if not heldTool or medusaAttacking then return end
+                medusaAttacking = true
+                heldTool:Activate()
+                task.delay(MEDUSA_COOLDOWN, function() medusaAttacking = false end)
+            end)
+        end
+        local function stopAutoMedusa()
+            if autoMedusaConn then autoMedusaConn:Disconnect(); autoMedusaConn = nil end
+            if medusaCircle then medusaCircle:Destroy(); medusaCircle = nil end
+            medusaAttacking = false
+            unequipMedusa()
+        end
+        AutoMedusaButton.MouseButton1Click:Connect(function()
+            autoMedusaEnabled = not autoMedusaEnabled
+            if autoMedusaEnabled then
+                AutoMedusaButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+                startAutoMedusa()
+            else
+                AutoMedusaButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+                stopAutoMedusa()
+            end
+        end)
     local AutoRightButton = Instance.new("TextButton")
     AutoRightButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     AutoRightButton.Position = UDim2.new(0, 15 + buttonSize + 10, 0.5, -buttonSize/2 + yOffset)
