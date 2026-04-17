@@ -3294,6 +3294,52 @@ end
 function createRightButtons(device)
     local buttonSize = device == "iPhone" and 60 or 75
 
+    -- ✅ DESYNC Button (ABOVE TRACK PLAYER)
+    local DesyncButton = Instance.new("TextButton")
+    DesyncButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
+    DesyncButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize*2 - 20)
+    DesyncButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+    DesyncButton.BackgroundTransparency = 0.3
+    DesyncButton.Text = "DESYNC"
+    DesyncButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    DesyncButton.Font = Enum.Font.GothamBold
+    DesyncButton.TextSize = device == "iPhone" and 9 or 12
+    DesyncButton.Parent = ScreenGui
+
+    local DesyncCorner = Instance.new("UICorner")
+    DesyncCorner.CornerRadius = UDim.new(0, 15)
+    DesyncCorner.Parent = DesyncButton
+
+    local DesyncStroke = Instance.new("UIStroke")
+    DesyncStroke.Color = Color3.fromRGB(255, 255, 255)
+    DesyncStroke.Thickness = 2
+    DesyncStroke.Parent = DesyncButton
+
+    -- Desync logic
+    local desyncEnabled = false
+    local animConnection
+    local function getHumanoid()
+        local char = player.Character or player.CharacterAdded:Wait()
+        return char:WaitForChild("Humanoid")
+    end
+    local function stopAnims(hum)
+        for _, track in pairs(hum:GetPlayingAnimationTracks()) do track:Stop() end
+    end
+    DesyncButton.MouseButton1Click:Connect(function()
+        desyncEnabled = not desyncEnabled
+        local humanoid = getHumanoid()
+        if desyncEnabled then
+            DesyncButton.BackgroundColor3 = Color3.fromRGB(120, 60, 255)
+            stopAnims(humanoid)
+            animConnection = humanoid.AnimationPlayed:Connect(function(t) t:Stop() end)
+            if raknet and raknet.desync then raknet.desync(true) end
+        else
+            DesyncButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+            if animConnection then animConnection:Disconnect() animConnection = nil end
+            if raknet and raknet.desync then raknet.desync(false) end
+        end
+    end)
+
     -- ✅ TRACK PLAYER Button (RIGHT SIDE - GRAY!)
     local TrackPlayerButton = Instance.new("TextButton")
     TrackPlayerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
