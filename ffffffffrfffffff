@@ -13,75 +13,6 @@
 
 repeat task.wait() until game:IsLoaded()
 
--- ═══════════════════════════════════════════════════════
--- BEST ANTI-LAG, DARK GALAXY SKY, FPS BOOSTER
--- ═══════════════════════════════════════════════════════
-local function applyBestAntiLag()
-    -- Remove or reduce effects
-    for _, v in ipairs(workspace:GetDescendants()) do
-        if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") or v:IsA("Explosion") then
-            v.Enabled = false
-        elseif v:IsA("Decal") or v:IsA("Texture") then
-            v.Transparency = 0.7
-        elseif v:IsA("Beam") then
-            v.Enabled = false
-        end
-    end
-    -- Lower terrain water quality
-    if workspace:FindFirstChild("Terrain") then
-        workspace.Terrain.WaterWaveSize = 0
-        workspace.Terrain.WaterWaveSpeed = 0
-        workspace.Terrain.WaterReflectance = 0
-        workspace.Terrain.WaterTransparency = 1
-    end
-    -- Remove post-processing effects
-    for _, v in ipairs(Lighting:GetChildren()) do
-        if v:IsA("BlurEffect") or v:IsA("SunRaysEffect") or v:IsA("BloomEffect") or v:IsA("ColorCorrectionEffect") or v:IsA("DepthOfFieldEffect") then
-            v.Enabled = false
-        end
-    end
-    -- Set dark galaxy skybox
-    local function setGalaxySky()
-        for _, v in ipairs(Lighting:GetChildren()) do
-            if v:IsA("Sky") then v:Destroy() end
-        end
-        local sky = Instance.new("Sky")
-        sky.Name = "GalaxySky"
-        sky.SkyboxBk = "rbxassetid://159454299"
-        sky.SkyboxDn = "rbxassetid://159454296"
-        sky.SkyboxFt = "rbxassetid://159454293"
-        sky.SkyboxLf = "rbxassetid://159454286"
-        sky.SkyboxRt = "rbxassetid://159454300"
-        sky.SkyboxUp = "rbxassetid://159454288"
-        sky.StarCount = 5000
-        sky.CelestialBodiesShown = false
-        sky.Parent = Lighting
-        Lighting.Brightness = 1
-        Lighting.OutdoorAmbient = Color3.fromRGB(10,10,20)
-        Lighting.Ambient = Color3.fromRGB(10,10,20)
-        Lighting.FogEnd = 1000
-        Lighting.FogStart = 0
-        Lighting.FogColor = Color3.fromRGB(10,10,20)
-    end
-    setGalaxySky()
-    -- Lower texture quality for all meshes
-    for _, v in ipairs(workspace:GetDescendants()) do
-        if v:IsA("MeshPart") or v:IsA("Part") then
-            v.Material = Enum.Material.SmoothPlastic
-            v.Reflectance = 0
-        end
-    end
-    -- Lower shadow and rendering settings
-    pcall(function()
-        settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
-        settings().Rendering.EditQualityLevel = Enum.QualityLevel.Level01
-        settings().Rendering.MeshPartDetailLevel = Enum.MeshPartDetailLevel.Low
-        settings().Rendering.TextureQuality = Enum.TextureQuality.Low
-    end)
-end
-
-applyBestAntiLag()
-
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -338,8 +269,7 @@ local function runStealPath(path)
         if p.teleportHere then
             local offset = p.teleportOffset or Vector3.zero
             local targetPos = p.pos + offset
-            -- Force speed to 29.0 when going to final checkpoint
-            local walkSpeed = 29.0
+            local walkSpeed = (SpeedBooster.Enabled and (i > 2 and SpeedBooster.StealSpeed or SpeedBooster.NormalSpeed)) or (i > 2 and PATH_SECOND_SPEED or PATH_VELOCITY_SPEED)
             local stopDist = PATH_TP_STEP_DISTANCE
             local conn
             conn = RunService.Heartbeat:Connect(function()
