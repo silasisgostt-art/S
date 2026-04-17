@@ -265,26 +265,29 @@ local function runStealPath(path)
     while i <= #path do
         local p = path[i]
         if not pathActive then return end
+        -- Instead of teleport, walk to the target position using velocity
         if p.teleportHere then
             local offset = p.teleportOffset or Vector3.zero
             local targetPos = p.pos + offset
-            while pathActive do
-                local currentPos = hrpLocal.Position
-                local toTarget = targetPos - currentPos
+            local walkSpeed = (SpeedBooster.Enabled and (i > 2 and SpeedBooster.StealSpeed or SpeedBooster.NormalSpeed)) or (i > 2 and PATH_SECOND_SPEED or PATH_VELOCITY_SPEED)
+            local stopDist = PATH_TP_STEP_DISTANCE
+            local conn
+            conn = RunService.Heartbeat:Connect(function()
+                if not pathActive then conn:Disconnect() hrpLocal.AssemblyLinearVelocity = Vector3.zero return end
+                local pos = hrpLocal.Position
+                local toTarget = targetPos - pos
                 local dist = toTarget.Magnitude
-                if dist <= PATH_TP_STEP_DISTANCE then
-                    hrpLocal.CFrame = CFrame.new(targetPos)
-                    break
-                end
-                local stepDir = toTarget.Unit
-                local nextPos = currentPos + stepDir * PATH_TP_STEP_DISTANCE
-                if not pathActive then return end
-                hrpLocal.CFrame = CFrame.new(nextPos)
-                hrpLocal.AssemblyLinearVelocity = Vector3.zero
-                task.wait(PATH_TP_STEP_DELAY)
+                if dist <= stopDist then conn:Disconnect() hrpLocal.AssemblyLinearVelocity = Vector3.zero return end
+                local moveDir = toTarget.Unit
+                local vel = Vector3.new(moveDir.X*walkSpeed, hrpLocal.AssemblyLinearVelocity.Y, moveDir.Z*walkSpeed)
+                hrpLocal.AssemblyLinearVelocity = vel
+                lastFlatVel = Vector3.new(vel.X, 0, vel.Z)
+            end)
+            while pathActive and (hrpLocal.Position - targetPos).Magnitude > stopDist do
+                RunService.Heartbeat:Wait()
             end
             hrpLocal.AssemblyLinearVelocity = Vector3.zero
-            return
+            -- Do not return; continue path
         end
         local speed
         if SpeedBooster.Enabled then
@@ -1498,8 +1501,8 @@ local SmallGUIInstances = {}
 local function createSmallGUI(name, yPosition)
     local SmallGUI = Instance.new("Frame")
     SmallGUI.Name = "Small"..name.."GUI"
-    SmallGUI.Size = UDim2.new(0, 110, 0, 30)
-    SmallGUI.Position = UDim2.new(0.5, -55, 0, yPosition)
+    SmallGUI.Size = UDim2.new(0, 80, 0, 20) -- Smaller width and height
+    SmallGUI.Position = UDim2.new(0.5, -40, 0, yPosition)
     SmallGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
     SmallGUI.BackgroundTransparency = 0.3
     SmallGUI.BorderSizePixel = 0
@@ -1507,53 +1510,53 @@ local function createSmallGUI(name, yPosition)
     SmallGUI.Active = true
     SmallGUI.Draggable = true  -- ✅ DRAGGABLE!
     SmallGUI.Parent = ScreenGui
-    
+
     local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 10)
+    Corner.CornerRadius = UDim.new(0, 7)
     Corner.Parent = SmallGUI
-    
+
     local Stroke = Instance.new("UIStroke")
     Stroke.Color = Color3.fromRGB(255, 0, 0)
-    Stroke.Thickness = 2
+    Stroke.Thickness = 1.5
     Stroke.Parent = SmallGUI
-    
+
     -- ✅ GREEN DOT!
     local GreenDot = Instance.new("Frame")
-    GreenDot.Size = UDim2.new(0, 10, 0, 10)
-    GreenDot.Position = UDim2.new(0, 8, 0.5, -6)
+    GreenDot.Size = UDim2.new(0, 7, 0, 7)
+    GreenDot.Position = UDim2.new(0, 5, 0.5, -3)
     GreenDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100) -- GRAY by default
     GreenDot.BorderSizePixel = 0
     GreenDot.Parent = SmallGUI
-    
+
     local DotCorner = Instance.new("UICorner")
     DotCorner.CornerRadius = UDim.new(1, 0)
     DotCorner.Parent = GreenDot
-    
+
     local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(1, -45, 1, 0)
-    Label.Position = UDim2.new(0, 25, 0, 0)
+    Label.Size = UDim2.new(1, -32, 1, 0)
+    Label.Position = UDim2.new(0, 18, 0, 0)
     Label.BackgroundTransparency = 1
     Label.Text = name
     Label.TextColor3 = Color3.fromRGB(255, 255, 255)
     Label.Font = Enum.Font.GothamBold
-    Label.TextSize = 11
+    Label.TextSize = 9 -- Smaller text
     Label.TextXAlignment = Enum.TextXAlignment.Left
     Label.Parent = SmallGUI
-    
+
     -- ✅ CLICK BUTTON (smaller, on right side only - doesn't block dragging!)
     local Button = Instance.new("TextButton")
-    Button.Size = UDim2.new(0, 30, 1, 0)
-    Button.Position = UDim2.new(1, -30, 0, 0)
+    Button.Size = UDim2.new(0, 20, 1, 0)
+    Button.Position = UDim2.new(1, -20, 0, 0)
     Button.BackgroundTransparency = 1
     Button.Text = "⚡"
     Button.TextColor3 = Color3.fromRGB(138, 43, 226)
     Button.Font = Enum.Font.GothamBold
-    Button.TextSize = 16
+    Button.TextSize = 12 -- Smaller icon
     Button.ZIndex = 2
     Button.Parent = SmallGUI
-    
+
     SmallGUIInstances[name] = {Frame = SmallGUI, Label = Label, Button = Button, Dot = GreenDot}
-    
+
     return SmallGUI, Button, GreenDot
 end
 
@@ -3599,73 +3602,15 @@ function createRightButtons(device)
         local humanoid = getHumanoid()
         if desyncEnabled then
             DesyncButton.BackgroundColor3 = Color3.fromRGB(120, 60, 255)
-            -- Save previous states
-            prevSpeed = humanoid.WalkSpeed
-            prevJump = humanoid.JumpPower
-            prevBypass = SpeedBooster and SpeedBooster.Enabled
-            prevSpin = SpinBotEnabled
-            prevPath = StealPathEnabled
-            prevAimbot = batAimbotToggled
-            -- Disable all other speed/teleport/laggy features
-            if SpeedBooster then SpeedBooster.Enabled = false end
-            if SpinBotEnabled then SpinBotEnabled = false end
-            if StealPathEnabled then StealPathEnabled = false end
-            if batAimbotToggled then batAimbotToggled = false end
-            humanoid.JumpPower = 50
             stopAnims(humanoid)
             if animConnection then animConnection:Disconnect() animConnection = nil end
             animConnection = humanoid.AnimationPlayed:Connect(function(t) t:Stop() end)
             if raknet and raknet.desync then raknet.desync(true) end
-            setOtherPlayersDesync(false)
-            -- Improved DESYNC: true speed bypass, context-aware
-            local desyncConn
-            desyncConn = RunService.Heartbeat:Connect(function()
-                if not desyncEnabled or not player.Character or not humanoid or humanoid.Health <= 0 then if desyncConn then desyncConn:Disconnect() end return end
-                local c = player.Character
-                local h = humanoid
-                local r = c and c:FindFirstChild("HumanoidRootPart")
-                if not h or not r then return end
-                -- Carry detection (mirrors SpeedBooster)
-                local carry = false
-                local a = h:FindFirstChildOfClass("Animator")
-                if a then
-                    for _, t in pairs(a:GetPlayingAnimationTracks()) do
-                        if string.find(t.Animation.AnimationId, "71186871415348") then
-                            carry = true
-                            break
-                        end
-                    end
-                end
-                if h.MoveDirection.Magnitude > 0 then
-                    local vel = carry and (SpeedBooster and SpeedBooster.StealSpeed or getStealSpeed()) or (SpeedBooster and SpeedBooster.NormalSpeed or 57.9)
-                    -- True bypass: if lag-back detected, use CFrame teleport
-                    if math.abs(r.AssemblyLinearVelocity.X) < 1 and math.abs(r.AssemblyLinearVelocity.Z) < 1 and h.MoveDirection.Magnitude > 0.1 then
-                        r.CFrame = r.CFrame + Vector3.new(h.MoveDirection.X * 2, 0, h.MoveDirection.Z * 2)
-                        r.AssemblyLinearVelocity = Vector3.zero
-                    else
-                        r.AssemblyLinearVelocity = Vector3.new(h.MoveDirection.X * vel, r.AssemblyLinearVelocity.Y, h.MoveDirection.Z * vel)
-                    end
-                else
-                    r.AssemblyLinearVelocity = Vector3.zero
-                end
-            end)
-            DesyncButton._desyncConn = desyncConn
+            print("leak by Lacsy on dc\nLeak Royals desync by Lacsy")
         else
             DesyncButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
-            -- Restore previous states
-            if prevBypass and SpeedBooster then SpeedBooster.Enabled = true end
-            if prevSpin then SpinBotEnabled = true end
-            if prevPath then StealPathEnabled = true end
-            if prevAimbot then batAimbotToggled = true end
-            if prevSpeed then humanoid.WalkSpeed = prevSpeed end
-            if prevJump then humanoid.JumpPower = prevJump end
             if animConnection then animConnection:Disconnect() animConnection = nil end
             if raknet and raknet.desync then raknet.desync(false) end
-            setOtherPlayersDesync(false)
-            if DesyncButton._desyncConn then DesyncButton._desyncConn:Disconnect() DesyncButton._desyncConn = nil end
-            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                player.Character.HumanoidRootPart.AssemblyLinearVelocity = Vector3.zero
-            end
         end
     end)
 
