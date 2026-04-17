@@ -3300,7 +3300,7 @@ end
 -- ═══════════════════════════════════════════════════════
 
 function createRightButtons(device)
-        -- LAGGER SETTINGS UI
+        -- LAGGER SETTINGS PANEL
         local laggerSettingsVisible = false
         local laggerSettingsFrame = Instance.new("Frame")
         laggerSettingsFrame.Size = UDim2.new(0, 180, 0, 120)
@@ -3312,92 +3312,78 @@ function createRightButtons(device)
         local laggerSettingsCorner = Instance.new("UICorner")
         laggerSettingsCorner.CornerRadius = UDim.new(0, 12)
         laggerSettingsCorner.Parent = laggerSettingsFrame
-        local laggerSettingsTitle = Instance.new("TextLabel")
-        laggerSettingsTitle.Text = "Lagger Settings"
-        laggerSettingsTitle.Size = UDim2.new(1, 0, 0, 24)
-        laggerSettingsTitle.Position = UDim2.new(0, 0, 0, 0)
-        laggerSettingsTitle.BackgroundTransparency = 1
-        laggerSettingsTitle.TextColor3 = Color3.fromRGB(180, 255, 180)
-        laggerSettingsTitle.Font = Enum.Font.GothamBold
-        laggerSettingsTitle.TextSize = 16
-        laggerSettingsTitle.Parent = laggerSettingsFrame
-        -- TableIncrease
-        local tableIncLabel = Instance.new("TextLabel")
-        tableIncLabel.Text = "TableIncrease:"
-        tableIncLabel.Size = UDim2.new(0, 100, 0, 20)
-        tableIncLabel.Position = UDim2.new(0, 10, 0, 30)
-        tableIncLabel.BackgroundTransparency = 1
-        tableIncLabel.TextColor3 = Color3.fromRGB(200, 200, 255)
-        tableIncLabel.Font = Enum.Font.Gotham
-        tableIncLabel.TextSize = 13
-        tableIncLabel.Parent = laggerSettingsFrame
-        local tableIncBox = Instance.new("TextBox")
-        tableIncBox.Text = tostring(LAGGER_CONFIG.TableIncrease)
-        tableIncBox.Size = UDim2.new(0, 50, 0, 20)
-        tableIncBox.Position = UDim2.new(0, 120, 0, 30)
-        tableIncBox.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
-        tableIncBox.TextColor3 = Color3.fromRGB(255,255,255)
-        tableIncBox.Font = Enum.Font.Gotham
-        tableIncBox.TextSize = 13
-        tableIncBox.Parent = laggerSettingsFrame
-        -- Tries
-        local triesLabel = Instance.new("TextLabel")
-        triesLabel.Text = "Tries:"
-        triesLabel.Size = UDim2.new(0, 100, 0, 20)
-        triesLabel.Position = UDim2.new(0, 10, 0, 55)
-        triesLabel.BackgroundTransparency = 1
-        triesLabel.TextColor3 = Color3.fromRGB(200, 200, 255)
-        triesLabel.Font = Enum.Font.Gotham
-        triesLabel.TextSize = 13
-        triesLabel.Parent = laggerSettingsFrame
-        local triesBox = Instance.new("TextBox")
-        triesBox.Text = tostring(LAGGER_CONFIG.Tries)
-        triesBox.Size = UDim2.new(0, 50, 0, 20)
-        triesBox.Position = UDim2.new(0, 120, 0, 55)
-        triesBox.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
-        triesBox.TextColor3 = Color3.fromRGB(255,255,255)
-        triesBox.Font = Enum.Font.Gotham
-        triesBox.TextSize = 13
-        triesBox.Parent = laggerSettingsFrame
-        -- LoopWaitTime
-        local loopWaitLabel = Instance.new("TextLabel")
-        loopWaitLabel.Text = "LoopWaitTime:"
-        loopWaitLabel.Size = UDim2.new(0, 100, 0, 20)
-        loopWaitLabel.Position = UDim2.new(0, 10, 0, 80)
-        loopWaitLabel.BackgroundTransparency = 1
-        loopWaitLabel.TextColor3 = Color3.fromRGB(200, 200, 255)
-        loopWaitLabel.Font = Enum.Font.Gotham
-        loopWaitLabel.TextSize = 13
-        loopWaitLabel.Parent = laggerSettingsFrame
-        local loopWaitBox = Instance.new("TextBox")
-        loopWaitBox.Text = tostring(LAGGER_CONFIG.LoopWaitTime)
-        loopWaitBox.Size = UDim2.new(0, 50, 0, 20)
-        loopWaitBox.Position = UDim2.new(0, 120, 0, 80)
-        loopWaitBox.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
-        loopWaitBox.TextColor3 = Color3.fromRGB(255,255,255)
-        loopWaitBox.Font = Enum.Font.Gotham
-        loopWaitBox.TextSize = 13
-        loopWaitBox.Parent = laggerSettingsFrame
-        -- Apply changes on focus lost
-        local function applyLaggerSettings()
-            local ti = tonumber(tableIncBox.Text)
-            local tr = tonumber(triesBox.Text)
-            local lw = tonumber(loopWaitBox.Text)
-            if ti then LAGGER_CONFIG.TableIncrease = ti end
-            if tr then LAGGER_CONFIG.Tries = tr end
-            if lw then LAGGER_CONFIG.LoopWaitTime = lw end
+        local laggerSettingsStroke = Instance.new("UIStroke")
+        laggerSettingsStroke.Color = Color3.fromRGB(255, 255, 255)
+        laggerSettingsStroke.Thickness = 1
+        laggerSettingsStroke.Parent = laggerSettingsFrame
+        local function makeLabel(text, y)
+            local lbl = Instance.new("TextLabel")
+            lbl.Text = text
+            lbl.Size = UDim2.new(1, -20, 0, 18)
+            lbl.Position = UDim2.new(0, 10, 0, y)
+            lbl.BackgroundTransparency = 1
+            lbl.TextColor3 = Color3.fromRGB(200, 255, 200)
+            lbl.Font = Enum.Font.Gotham
+            lbl.TextSize = 13
+            lbl.TextXAlignment = Enum.TextXAlignment.Left
+            lbl.Parent = laggerSettingsFrame
+            return lbl
         end
-        tableIncBox.FocusLost:Connect(applyLaggerSettings)
-        triesBox.FocusLost:Connect(applyLaggerSettings)
-        loopWaitBox.FocusLost:Connect(applyLaggerSettings)
-        -- Gear button on LaggerButton
-        local GearBtn = Instance.new("ImageButton")
-        GearBtn.Size = UDim2.new(0, 18, 0, 18)
-        GearBtn.Position = UDim2.new(1, -22, 0, 4)
-        GearBtn.BackgroundTransparency = 1
-        GearBtn.Image = "rbxassetid://6031091002" -- gear icon
-        GearBtn.Parent = LaggerButton
-        GearBtn.MouseButton1Click:Connect(function()
+        local function makeBox(default, y, callback)
+            local box = Instance.new("TextBox")
+            box.Text = tostring(default)
+            box.Size = UDim2.new(0, 60, 0, 20)
+            box.Position = UDim2.new(0, 110, 0, y)
+            box.BackgroundColor3 = Color3.fromRGB(40, 60, 40)
+            box.TextColor3 = Color3.fromRGB(255,255,255)
+            box.Font = Enum.Font.Gotham
+            box.TextSize = 13
+            box.ClearTextOnFocus = false
+            box.Parent = laggerSettingsFrame
+            box.FocusLost:Connect(function(enter)
+                if enter then callback(box.Text) end
+            end)
+            return box
+        end
+        makeLabel("TableIncrease", 10)
+        local box1 = makeBox(LAGGER_CONFIG.TableIncrease, 10, function(val)
+            local n = tonumber(val) if n then LAGGER_CONFIG.TableIncrease = n end
+        end)
+        makeLabel("Tries", 40)
+        local box2 = makeBox(LAGGER_CONFIG.Tries, 40, function(val)
+            local n = tonumber(val) if n then LAGGER_CONFIG.Tries = n end
+        end)
+        makeLabel("LoopWaitTime", 70)
+        local box3 = makeBox(LAGGER_CONFIG.LoopWaitTime, 70, function(val)
+            local n = tonumber(val) if n then LAGGER_CONFIG.LoopWaitTime = n end
+        end)
+        local closeBtn = Instance.new("TextButton")
+        closeBtn.Text = "✕"
+        closeBtn.Size = UDim2.new(0, 24, 0, 24)
+        closeBtn.Position = UDim2.new(1, -28, 0, 4)
+        closeBtn.BackgroundColor3 = Color3.fromRGB(60, 40, 40)
+        closeBtn.TextColor3 = Color3.fromRGB(255, 200, 200)
+        closeBtn.Font = Enum.Font.GothamBold
+        closeBtn.TextSize = 14
+        closeBtn.Parent = laggerSettingsFrame
+        closeBtn.MouseButton1Click:Connect(function()
+            laggerSettingsFrame.Visible = false
+            laggerSettingsVisible = false
+        end)
+        -- GEAR BUTTON
+        local GearButton = Instance.new("TextButton")
+        GearButton.Size = UDim2.new(0, 24, 0, 24)
+        GearButton.Position = UDim2.new(1, -buttonSize - 45, 0.5, -buttonSize*3 - 30)
+        GearButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+        GearButton.Text = "⚙"
+        GearButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        GearButton.Font = Enum.Font.GothamBold
+        GearButton.TextSize = 16
+        GearButton.Parent = ScreenGui
+        local GearCorner = Instance.new("UICorner")
+        GearCorner.CornerRadius = UDim.new(1,0)
+        GearCorner.Parent = GearButton
+        GearButton.MouseButton1Click:Connect(function()
             laggerSettingsVisible = not laggerSettingsVisible
             laggerSettingsFrame.Visible = laggerSettingsVisible
         end)
