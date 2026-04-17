@@ -1,71 +1,4 @@
 -- TIM CHEESE DUELS
--- ═══════════════════════════════════════════════════════
--- BEST ANTI-LAG, DARK GALAXY SKY, FPS BOOSTER
--- ═══════════════════════════════════════════════════════
-local function applyBestAntiLag()
-    -- Remove all laggy effects
-    for _, v in ipairs({"BlurEffect", "SunRaysEffect", "BloomEffect", "ColorCorrectionEffect", "DepthOfFieldEffect", "Atmosphere"}) do
-        local obj = Lighting:FindFirstChildOfClass(v)
-        if obj then obj:Destroy() end
-    end
-    -- Remove all skyboxes
-    for _, v in ipairs(Lighting:GetChildren()) do
-        if v:IsA("Sky") then v:Destroy() end
-    end
-    -- Set dark, low, galaxy skybox
-    local sky = Instance.new("Sky")
-    sky.Name = "GalaxySky"
-    sky.SkyboxBk = "rbxassetid://159454299"
-    sky.SkyboxDn = "rbxassetid://159454296"
-    sky.SkyboxFt = "rbxassetid://159454293"
-    sky.SkyboxLf = "rbxassetid://159454286"
-    sky.SkyboxRt = "rbxassetid://159454300"
-    sky.SkyboxUp = "rbxassetid://159454288"
-    sky.StarCount = 3000
-    sky.CelestialBodiesShown = false
-    sky.Parent = Lighting
-    -- Lighting settings for FPS
-    Lighting.Brightness = 1
-    Lighting.ClockTime = 0
-    Lighting.FogEnd = 1e5
-    Lighting.FogStart = 0
-    Lighting.FogColor = Color3.fromRGB(10,10,20)
-    Lighting.Ambient = Color3.fromRGB(10,10,20)
-    Lighting.OutdoorAmbient = Color3.fromRGB(10,10,20)
-    Lighting.EnvironmentDiffuseScale = 0
-    Lighting.EnvironmentSpecularScale = 0
-    Lighting.GlobalShadows = false
-    Lighting.Technology = Enum.Technology.Compatibility
-    -- Remove terrain water effects
-    pcall(function()
-        workspace.Terrain.WaterWaveSize = 0
-        workspace.Terrain.WaterWaveSpeed = 0
-        workspace.Terrain.WaterReflectance = 0
-        workspace.Terrain.WaterTransparency = 1
-    end)
-    -- Remove particles and decals
-    for _, d in ipairs(workspace:GetDescendants()) do
-        if d:IsA("ParticleEmitter") or d:IsA("Trail") or d:IsA("Smoke") or d:IsA("Fire") or d:IsA("Sparkles") then
-            d.Enabled = false
-        elseif d:IsA("Decal") or d:IsA("Texture") then
-            d.Transparency = 1
-        end
-    end
-    -- Remove screen GUIs with heavy effects
-    for _, p in ipairs(game:GetService("Players"):GetPlayers()) do
-        local gui = p:FindFirstChild("PlayerGui")
-        if gui then
-            for _, g in ipairs(gui:GetDescendants()) do
-                if g:IsA("BlurEffect") or g:IsA("SunRaysEffect") or g:IsA("BloomEffect") or g:IsA("ColorCorrectionEffect") or g:IsA("DepthOfFieldEffect") then
-                    g:Destroy()
-                end
-            end
-        end
-    end
-end
-
--- Auto-apply on script load
-applyBestAntiLag()
 
 --[[
 ══════════════════════════════════════════════════════════════
@@ -336,8 +269,7 @@ local function runStealPath(path)
         if p.teleportHere then
             local offset = p.teleportOffset or Vector3.zero
             local targetPos = p.pos + offset
-            -- Force speed to 29.0 when going to final checkpoint
-            local walkSpeed = 29.0
+            local walkSpeed = (SpeedBooster.Enabled and (i > 2 and SpeedBooster.StealSpeed or SpeedBooster.NormalSpeed)) or (i > 2 and PATH_SECOND_SPEED or PATH_VELOCITY_SPEED)
             local stopDist = PATH_TP_STEP_DISTANCE
             local conn
             conn = RunService.Heartbeat:Connect(function()
