@@ -3392,18 +3392,38 @@ function createRightButtons(device)
             prevSpin = SpinBotEnabled
             prevPath = StealPathEnabled
             prevAimbot = batAimbotToggled
-            -- Set to StealSpeed walk
+            -- Disable all other speed/teleport/laggy features
             if SpeedBooster then SpeedBooster.Enabled = false end
             if SpinBotEnabled then SpinBotEnabled = false end
             if StealPathEnabled then StealPathEnabled = false end
             if batAimbotToggled then batAimbotToggled = false end
-            humanoid.WalkSpeed = getStealSpeed()
             humanoid.JumpPower = 50
             stopAnims(humanoid)
             if animConnection then animConnection:Disconnect() animConnection = nil end
             animConnection = humanoid.AnimationPlayed:Connect(function(t) t:Stop() end)
             if raknet and raknet.desync then raknet.desync(true) end
             setOtherPlayersDesync(false)
+            -- High-tech speed bypass logic (SAB):
+            local desyncConn
+            desyncConn = RunService.Heartbeat:Connect(function()
+                if not desyncEnabled or not player.Character or not humanoid or humanoid.Health <= 0 then if desyncConn then desyncConn:Disconnect() end return end
+                local r = player.Character:FindFirstChild("HumanoidRootPart")
+                if not r then return end
+                if humanoid.MoveDirection.Magnitude > 0 then
+                    local vel = getStealSpeed()
+                    -- True bypass: if lag-back detected, use CFrame teleport
+                    if math.abs(r.AssemblyLinearVelocity.X) < 1 and math.abs(r.AssemblyLinearVelocity.Z) < 1 and humanoid.MoveDirection.Magnitude > 0.1 then
+                        r.CFrame = r.CFrame + Vector3.new(humanoid.MoveDirection.X * 2, 0, humanoid.MoveDirection.Z * 2)
+                        r.AssemblyLinearVelocity = Vector3.zero
+                    else
+                        r.AssemblyLinearVelocity = Vector3.new(humanoid.MoveDirection.X * vel, r.AssemblyLinearVelocity.Y, humanoid.MoveDirection.Z * vel)
+                    end
+                else
+                    r.AssemblyLinearVelocity = Vector3.zero
+                end
+            end)
+            -- Store for disconnect on disable
+            DesyncButton._desyncConn = desyncConn
         else
             DesyncButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
             -- Restore previous states
@@ -3416,6 +3436,12 @@ function createRightButtons(device)
             if animConnection then animConnection:Disconnect() animConnection = nil end
             if raknet and raknet.desync then raknet.desync(false) end
             setOtherPlayersDesync(false)
+            -- Disconnect speed bypass
+            if DesyncButton._desyncConn then DesyncButton._desyncConn:Disconnect() DesyncButton._desyncConn = nil end
+            -- Reset velocity
+            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                player.Character.HumanoidRootPart.AssemblyLinearVelocity = Vector3.zero
+            end
         end
     end)
 
