@@ -1,4 +1,35 @@
 -- TIM CHEESE DUELS
+-- ═══════════════════════════════════════════════════════
+-- JUKE BUTTON LOADER (PURPLE BUTTON)
+-- ═══════════════════════════════════════════════════════
+local function createJukeLoader()
+    local pgui = PlayerGui
+    if pgui:FindFirstChild("JukeLoaderUI") then pgui.JukeLoaderUI:Destroy() end
+    if pgui:FindFirstChild("JukeDelayUI") then pgui.JukeDelayUI:Destroy() end
+    local loaderGui = Instance.new("ScreenGui")
+    loaderGui.Name = "JukeLoaderUI"
+    loaderGui.ResetOnSpawn = false
+    loaderGui.Parent = pgui
+    local loadBtn = Instance.new("TextButton")
+    loadBtn.Size = UDim2.new(0, 120, 0, 40)
+    loadBtn.Position = UDim2.new(0.5, -60, 0.1, 0)
+    loadBtn.BackgroundColor3 = Color3.fromRGB(90, 0, 130)
+    loadBtn.Text = "LOAD JUKER"
+    loadBtn.Font = Enum.Font.GothamBlack
+    loadBtn.TextColor3 = Color3.new(1, 1, 1)
+    loadBtn.TextSize = 14
+    loadBtn.Parent = loaderGui
+    Instance.new("UICorner", loadBtn).CornerRadius = UDim.new(0, 10)
+    local loaderStroke = Instance.new("UIStroke", loadBtn)
+    loaderStroke.Color = Color3.fromRGB(180, 80, 255)
+    loaderStroke.Thickness = 2
+    loadBtn.MouseButton1Click:Connect(function()
+        -- Insert the full Juke system code here if needed
+        print("Juke system loaded! (implement full logic here)")
+        loaderGui:Destroy()
+    end)
+end
+createJukeLoader()
 
 --[[
 ══════════════════════════════════════════════════════════════
@@ -12,6 +43,75 @@
 ]]
 
 repeat task.wait() until game:IsLoaded()
+
+-- ═══════════════════════════════════════════════════════
+-- BEST ANTI-LAG, DARK GALAXY SKY, FPS BOOSTER
+-- ═══════════════════════════════════════════════════════
+local function applyBestAntiLag()
+    -- Remove or reduce effects
+    for _, v in ipairs(workspace:GetDescendants()) do
+        if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") or v:IsA("Explosion") then
+            v.Enabled = false
+        elseif v:IsA("Decal") or v:IsA("Texture") then
+            v.Transparency = 0.7
+        elseif v:IsA("Beam") then
+            v.Enabled = false
+        end
+    end
+    -- Lower terrain water quality
+    if workspace:FindFirstChild("Terrain") then
+        workspace.Terrain.WaterWaveSize = 0
+        workspace.Terrain.WaterWaveSpeed = 0
+        workspace.Terrain.WaterReflectance = 0
+        workspace.Terrain.WaterTransparency = 1
+    end
+    -- Remove post-processing effects
+    for _, v in ipairs(Lighting:GetChildren()) do
+        if v:IsA("BlurEffect") or v:IsA("SunRaysEffect") or v:IsA("BloomEffect") or v:IsA("ColorCorrectionEffect") or v:IsA("DepthOfFieldEffect") then
+            v.Enabled = false
+        end
+    end
+    -- Set dark galaxy skybox
+    local function setGalaxySky()
+        for _, v in ipairs(Lighting:GetChildren()) do
+            if v:IsA("Sky") then v:Destroy() end
+        end
+        local sky = Instance.new("Sky")
+        sky.Name = "GalaxySky"
+        sky.SkyboxBk = "rbxassetid://159454299"
+        sky.SkyboxDn = "rbxassetid://159454296"
+        sky.SkyboxFt = "rbxassetid://159454293"
+        sky.SkyboxLf = "rbxassetid://159454286"
+        sky.SkyboxRt = "rbxassetid://159454300"
+        sky.SkyboxUp = "rbxassetid://159454288"
+        sky.StarCount = 5000
+        sky.CelestialBodiesShown = false
+        sky.Parent = Lighting
+        Lighting.Brightness = 1
+        Lighting.OutdoorAmbient = Color3.fromRGB(10,10,20)
+        Lighting.Ambient = Color3.fromRGB(10,10,20)
+        Lighting.FogEnd = 1000
+        Lighting.FogStart = 0
+        Lighting.FogColor = Color3.fromRGB(10,10,20)
+    end
+    setGalaxySky()
+    -- Lower texture quality for all meshes
+    for _, v in ipairs(workspace:GetDescendants()) do
+        if v:IsA("MeshPart") or v:IsA("Part") then
+            v.Material = Enum.Material.SmoothPlastic
+            v.Reflectance = 0
+        end
+    end
+    -- Lower shadow and rendering settings
+    pcall(function()
+        settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+        settings().Rendering.EditQualityLevel = Enum.QualityLevel.Level01
+        settings().Rendering.MeshPartDetailLevel = Enum.MeshPartDetailLevel.Low
+        settings().Rendering.TextureQuality = Enum.TextureQuality.Low
+    end)
+end
+
+applyBestAntiLag()
 
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
@@ -269,7 +369,8 @@ local function runStealPath(path)
         if p.teleportHere then
             local offset = p.teleportOffset or Vector3.zero
             local targetPos = p.pos + offset
-            local walkSpeed = (SpeedBooster.Enabled and (i > 2 and SpeedBooster.StealSpeed or SpeedBooster.NormalSpeed)) or (i > 2 and PATH_SECOND_SPEED or PATH_VELOCITY_SPEED)
+            -- Force speed to 29.0 when going to final checkpoint
+            local walkSpeed = 29.0
             local stopDist = PATH_TP_STEP_DISTANCE
             local conn
             conn = RunService.Heartbeat:Connect(function()
@@ -1726,7 +1827,20 @@ SpinBotScreenTitle.Text = "SPIN BOT"
 SpinBotScreenTitle.TextColor3 = Color3.fromRGB(255, 200, 100)
 SpinBotScreenTitle.Font = Enum.Font.GothamBold
 SpinBotScreenTitle.TextSize = 18
+SpinBotScreenTitle.TextXAlignment = Enum.TextXAlignment.Left
 SpinBotScreenTitle.Parent = SpinBotScreen
+
+-- Add gear icon next to script name for settings
+local GearIcon = Instance.new("ImageButton")
+GearIcon.Name = "SettingsGear"
+GearIcon.Size = UDim2.new(0, 28, 0, 28)
+GearIcon.Position = UDim2.new(1, -34, 0, 1)
+GearIcon.BackgroundTransparency = 1
+GearIcon.Image = "rbxassetid://6031094678" -- Roblox gear icon asset
+GearIcon.Parent = SpinBotScreenTitle
+GearIcon.MouseButton1Click:Connect(function()
+    print("Settings button clicked! (implement settings UI here)")
+end)
 
 local SpinBotScreenClose = Instance.new("TextButton")
 SpinBotScreenClose.Size = UDim2.new(0, 24, 0, 24)
