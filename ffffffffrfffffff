@@ -2421,55 +2421,16 @@ local function createMainGUI(device)
         Corner.CornerRadius = UDim.new(0, 10)
         Corner.Parent = Button
 
-        local Button = Instance.new("TextButton")
-        Button.Size = UDim2.new(1, 0, 0, 50)
-        Button.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-        Button.BorderSizePixel = 0
-        Button.Text = name
-        Button.TextColor3 = Color3.fromRGB(220, 220, 220)
-        Button.Font = Enum.Font.GothamBold
-        Button.TextSize = device == "iPhone" and 11 or 14
-        Button.LayoutOrder = order
-        Button.Parent = MainContent
-
-        local Corner = Instance.new("UICorner")
-        Corner.CornerRadius = UDim.new(0, 10)
-        Corner.Parent = Button
-
-        -- Add black border stroke
-        local BlackStroke = Instance.new("UIStroke")
-        BlackStroke.Color = Color3.fromRGB(0, 0, 0)
-        BlackStroke.Thickness = 4
-        BlackStroke.Transparency = 0
-        BlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-        BlackStroke.Parent = Button
-
-        -- Add white animated border stroke
-        local WhiteStroke = Instance.new("UIStroke")
-        WhiteStroke.Color = Color3.fromRGB(255, 255, 255)
-        WhiteStroke.Thickness = 2.5
-        WhiteStroke.Transparency = 0.35
-        WhiteStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-        WhiteStroke.ZIndex = 2
-        WhiteStroke.Parent = Button
-
-        local WhiteGrad = Instance.new("UIGradient")
-        WhiteGrad.Color = ColorSequence.new(Color3.fromRGB(255,255,255))
-        WhiteGrad.Transparency = NumberSequence.new({
-            NumberSequenceKeypoint.new(0, 1),
-            NumberSequenceKeypoint.new(0.4, 0),
-            NumberSequenceKeypoint.new(0.6, 0),
-            NumberSequenceKeypoint.new(1, 1)
-        })
-        WhiteGrad.Rotation = 0
-        WhiteGrad.Parent = WhiteStroke
-
-        local pulseInfo = TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
-        TweenService:Create(WhiteStroke, pulseInfo, {Thickness = 4.2, Transparency = 0.08}):Play()
-
-        RunService.Heartbeat:Connect(function(dt)
-            WhiteGrad.Rotation = (WhiteGrad.Rotation + 140 * dt) % 360
-        end)
+        local Label = Instance.new("TextLabel")
+        Label.Size = UDim2.new(1, -15, 1, 0)
+        Label.Position = UDim2.new(0, 15, 0, 0)
+        Label.BackgroundTransparency = 1
+        Label.Text = name
+        Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Label.Font = Enum.Font.GothamBold
+        Label.TextSize = device == "iPhone" and 11 or 14
+        Label.TextXAlignment = Enum.TextXAlignment.Left
+        Label.Parent = Button
 
         Button.MouseButton1Click:Connect(callback)
 
@@ -2492,6 +2453,10 @@ local function createMainGUI(device)
         end
 
         return Container, Button, Label
+    end
+
+    -- ✅ SPEED BOOSTER WITH SETTINGS BUTTON!
+    local SpeedContainer, SpeedSettingsBtn, SpeedMainBtn, SpeedLabel = createMainButton("Speed Booster", 1, function()
         SmallSpeedGUI.Visible = true
         SpeedLabel.Text = "Speed Booster"
         SpeedMainBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
@@ -3034,7 +2999,7 @@ local function createMainGUI(device)
 
     local CreditsText = Instance.new("TextLabel")
     CreditsText.Size = UDim2.new(1, 0, 0, 100)
-    CreditsText.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+    CreditsText.BackgroundColor3 = Color3.fromRGB(
     CreditsText.BorderSizePixel = 0
     CreditsText.Text = ""
     CreditsText.TextColor3 = Color3.fromRGB(255, 255, 255)
