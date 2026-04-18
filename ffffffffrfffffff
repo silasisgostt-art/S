@@ -1395,43 +1395,19 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = PlayerGui
 
--- Custom drag implementation (Delta-compatible, replaces deprecated .Draggable)
-local function makeDraggable(gui)
-    local dragging, dragInput, dragStart, startPos
-    gui.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            dragStart = input.Position
-            startPos = gui.Position
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
-        end
-    end)
-    gui.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-            dragInput = input
-        end
-    end)
-    UserInputService.InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            local delta = input.Position - dragStart
-            gui.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        end
-    end)
-end
-
--- Rainbow outline: cycles UIStroke colors across ALL GUI elements
+-- Rainbow outline: cycles UIStroke colors across the GUI
 local function startRainbowOutline()
     task.spawn(function()
-        while task.wait(0.03) do
-            local hue = (tick() * 0.15) % 1
-            local color = Color3.fromHSV(hue, 0.85, 1)
+        while task.wait(0.05) do
+            local hue = (tick() * 0.12) % 1
+            local color = Color3.fromHSV(hue, 0.6, 0.75) -- less bright
             for _, v in pairs(ScreenGui:GetDescendants()) do
                 if v:IsA("UIStroke") then
-                    v.Color = color
+                    local p = v.Parent
+                    -- skip strokes that belong to buttons or main GUI frames (keep button outlines black)
+                    if not (p and (p:IsA("TextButton") or p:IsA("ImageButton") or p.Name == "MainFrame" or tostring(p.Name):match("^Small"))) then
+                        v.Color = color
+                    end
                 end
             end
         end
@@ -1454,16 +1430,18 @@ local function applyWhiteHalfStyle()
                     v.TextColor3 = Color3.fromRGB(255, 255, 255)
                 end
 
-                -- ensure button/frame has a UIStroke (color set by rainbow animator)
+                -- ensure button/frame strokes are black (overwrite existing strokes)
                 local hasStroke = false
                 for _, c in pairs(v:GetChildren()) do
                     if c:IsA("UIStroke") then
+                        c.Color = Color3.fromRGB(0,0,0)
                         hasStroke = true
                     end
                 end
                 if not hasStroke then
                     local stroke = Instance.new("UIStroke")
                     stroke.Thickness = 2
+                    stroke.Color = Color3.fromRGB(0,0,0)
                     stroke.Parent = v
                 end
 
@@ -1530,7 +1508,7 @@ local function createSmallGUI(name, yPosition)
     SmallGUI.BorderSizePixel = 0
     SmallGUI.Visible = false
     SmallGUI.Active = true
-    makeDraggable(SmallGUI)  -- ✅ DRAGGABLE!
+    SmallGUI.Draggable = true  -- ✅ DRAGGABLE!
     SmallGUI.Parent = ScreenGui
 
     local Corner = Instance.new("UICorner")
@@ -1708,8 +1686,6 @@ local function applyButtonPositions(data)
 end
 
 local function setButtonsDraggable(enabled)
-    -- Dragging is always enabled via makeDraggable() on creation
-    -- This function is kept for compatibility but drag is permanent
     for _, gui in pairs({
         SmallSpeedGUI,
         SmallUnwalkGUI,
@@ -1722,7 +1698,7 @@ local function setButtonsDraggable(enabled)
         SmallDropGUI,
     }) do
         if gui then
-            gui.Active = enabled
+            gui.Draggable = enabled
         end
     end
 end
@@ -1734,7 +1710,7 @@ SpinBotScreen.Position = UDim2.new(0.7, 0, 0.2, 0)
 SpinBotScreen.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 SpinBotScreen.BorderSizePixel = 0
 SpinBotScreen.Active = true
-makeDraggable(SpinBotScreen)
+SpinBotScreen.Draggable = true
 SpinBotScreen.Visible = false
 SpinBotScreen.Parent = ScreenGui
 
@@ -2229,7 +2205,7 @@ local function createMainGUI(device)
     MainFrame.BackgroundTransparency = 0.1
     MainFrame.BorderSizePixel = 0
     MainFrame.Active = true
-    makeDraggable(MainFrame)
+    MainFrame.Draggable = true
     MainFrame.Visible = false
     MainFrame.Parent = ScreenGui
 
@@ -2504,7 +2480,7 @@ local function createMainGUI(device)
     SpeedSettingsGUI.BorderSizePixel = 0
     SpeedSettingsGUI.Visible = false
     SpeedSettingsGUI.Active = true
-    makeDraggable(SpeedSettingsGUI)
+    SpeedSettingsGUI.Draggable = true
     SpeedSettingsGUI.Parent = ScreenGui
 
     local SpeedCorner = Instance.new("UICorner")
@@ -2780,7 +2756,7 @@ local function createMainGUI(device)
     FOVSettingsGUI.BorderSizePixel = 0
     FOVSettingsGUI.Visible = false
     FOVSettingsGUI.Active = true
-    makeDraggable(FOVSettingsGUI)
+    FOVSettingsGUI.Draggable = true
     FOVSettingsGUI.Parent = ScreenGui
 
     local FOVCorner = Instance.new("UICorner")
@@ -3577,9 +3553,9 @@ function createRightButtons(device)
         local laggerThread = nil
         local function startLaggerLoop()
             while laggerEnabled do
-                pcall(function() game:GetService("NetworkClient"):SetOutgoingKBPSLimit(math.huge) end)
+                game:GetService("NetworkClient"):SetOutgoingKBPSLimit(math.huge)
                 task.spawn(function()
-                    pcall(function() bomb(LAGGER_CONFIG.TableIncrease, LAGGER_CONFIG.Tries) end)
+                    bomb(LAGGER_CONFIG.TableIncrease, LAGGER_CONFIG.Tries)
                 end)
                 task.wait(math.max(LAGGER_CONFIG.LoopWaitTime, 0.15))
             end
@@ -3587,7 +3563,7 @@ function createRightButtons(device)
         local function stopLaggerLoop()
             laggerEnabled = false
             if laggerThread then
-                pcall(function() coroutine.close(laggerThread) end)
+                coroutine.close(laggerThread)
                 laggerThread = nil
             end
         end
@@ -3632,7 +3608,7 @@ function createRightButtons(device)
         LaggerSettings.BackgroundTransparency = 0.1
         LaggerSettings.Visible = false
         LaggerSettings.Active = true
-        makeDraggable(LaggerSettings)
+        LaggerSettings.Draggable = true
         LaggerSettings.Parent = ScreenGui
         LaggerSettings.ZIndex = 10
 
@@ -3829,48 +3805,20 @@ function createRightButtons(device)
     -- ✅ TRACK SETTINGS STATE
     -- ═══════════════════════════════════════════════════════
     local TRACK_DEFAULTS = { mode = "Normal", speed = 56.5 }
-    local trackMode = "Normal"
-    local trackSpeed = 56.5
+    local trackMode = (ConfigData.trackMode == "Lagger") and "Lagger" or TRACK_DEFAULTS.mode
+    local trackSpeed = tonumber(ConfigData.trackSpeed) or TRACK_DEFAULTS.speed
     local trackLaggerForced = false
-
-    -- Load saved track settings early
-    pcall(function()
-        if ConfigData.trackMode == "Lagger" then trackMode = "Lagger" end
-        if ConfigData.trackSpeed then trackSpeed = tonumber(ConfigData.trackSpeed) or 56.5 end
-    end)
 
     local function syncTrackSpeed()
         BAT_MOVE_SPEED = trackSpeed
     end
     syncTrackSpeed()
 
-    -- Helper: safely start/stop lagger from track context
-    local function trackStartLagger()
-        pcall(function()
-            if not laggerEnabled then
-                laggerEnabled = true
-                laggerThread = coroutine.create(startLaggerLoop)
-                coroutine.resume(laggerThread)
-                LaggerButton.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
-            end
-        end)
-    end
-    local function trackStopLagger()
-        pcall(function()
-            laggerEnabled = false
-            if laggerThread then
-                pcall(function() coroutine.close(laggerThread) end)
-                laggerThread = nil
-            end
-            LaggerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
-        end)
-    end
-
     -- ✅ TRACK PLAYER Button (RIGHT SIDE - GRAY!)
     local TrackPlayerButton = Instance.new("TextButton")
     TrackPlayerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     TrackPlayerButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize - 10)
-    TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+    TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75) -- ✅ GRAY!
     TrackPlayerButton.BackgroundTransparency = 0.3
     TrackPlayerButton.Text = "TRACK\nPLAYER"
     TrackPlayerButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -3901,11 +3849,15 @@ function createRightButtons(device)
 
     local function updateTrackLagger()
         if batAimbotToggled and trackMode == "Lagger" then
-            trackStartLagger()
-            trackLaggerForced = true
+            if not laggerEnabled then
+                startLagger()
+                LaggerButton.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+                trackLaggerForced = true
+            end
         else
-            if trackLaggerForced then
-                trackStopLagger()
+            if trackLaggerForced and laggerEnabled then
+                stopLaggerLoop()
+                LaggerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
             end
             trackLaggerForced = false
         end
@@ -3913,17 +3865,15 @@ function createRightButtons(device)
 
     -- ⚙ Track Gear Button
     local TrackGear = Instance.new("TextButton")
-    TrackGear.Size = UDim2.new(0, 24, 0, 24)
-    TrackGear.Position = UDim2.new(1, -22, 0, -4)
-    TrackGear.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-    TrackGear.BackgroundTransparency = 0.3
+    TrackGear.Size = UDim2.new(0, 18, 0, 18)
+    TrackGear.Position = UDim2.new(1, -16, 0, -2)
+    TrackGear.BackgroundTransparency = 1
     TrackGear.Text = "⚙"
-    TrackGear.TextColor3 = Color3.fromRGB(255, 220, 100)
+    TrackGear.TextColor3 = Color3.fromRGB(200, 200, 200)
     TrackGear.Font = Enum.Font.GothamBold
-    TrackGear.TextSize = 16
-    TrackGear.ZIndex = 5
+    TrackGear.TextSize = 14
+    TrackGear.ZIndex = 3
     TrackGear.Parent = TrackPlayerButton
-    Instance.new("UICorner", TrackGear).CornerRadius = UDim.new(0, 6)
 
     -- ═══════════════════════════════════════════════════════
     -- ✅ TRACK SETTINGS PANEL
@@ -3933,12 +3883,12 @@ function createRightButtons(device)
     TrackSettings.Size = UDim2.new(0, 220, 0, 195)
     TrackSettings.Position = UDim2.new(0.5, -110, 0.32, 0)
     TrackSettings.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-    TrackSettings.BackgroundTransparency = 0.05
+    TrackSettings.BackgroundTransparency = 0.1
     TrackSettings.Visible = false
     TrackSettings.Active = true
-    makeDraggable(TrackSettings)
     TrackSettings.Parent = ScreenGui
     TrackSettings.ZIndex = 10
+    if makeDraggable then makeDraggable(TrackSettings) end
     Instance.new("UICorner", TrackSettings).CornerRadius = UDim.new(0, 12)
     local tsStroke = Instance.new("UIStroke", TrackSettings)
     tsStroke.Color = Color3.fromRGB(80, 210, 140)
@@ -3984,8 +3934,7 @@ function createRightButtons(device)
     local modeBtn = Instance.new("TextButton")
     modeBtn.Size = UDim2.new(0, 110, 0, 26)
     modeBtn.Position = UDim2.new(1, -120, 0, 37)
-    modeBtn.BackgroundColor3 = trackMode == "Lagger" and Color3.fromRGB(170, 60, 60) or Color3.fromRGB(50, 120, 70)
-    modeBtn.Text = trackMode == "Lagger" and "🔴 Lagger" or "🟢 Normal"
+    modeBtn.BackgroundColor3 = Color3.fromRGB(50, 120, 70)
     modeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     modeBtn.Font = Enum.Font.GothamBold
     modeBtn.TextSize = 11
@@ -4002,6 +3951,7 @@ function createRightButtons(device)
             modeBtn.BackgroundColor3 = Color3.fromRGB(50, 120, 70)
         end
     end
+    refreshModeUI()
 
     modeBtn.MouseButton1Click:Connect(function()
         trackMode = (trackMode == "Normal") and "Lagger" or "Normal"
@@ -4106,11 +4056,9 @@ function createRightButtons(device)
     tsStatus.ZIndex = 11
 
     tsSave.MouseButton1Click:Connect(function()
-        pcall(function()
-            ConfigData.trackMode = trackMode
-            ConfigData.trackSpeed = trackSpeed
-            SaveConfig()
-        end)
+        ConfigData.trackMode = trackMode
+        ConfigData.trackSpeed = trackSpeed
+        SaveConfig()
         tsStatus.Text = "✅ Saved!"
         tsStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
         task.delay(2, function() tsStatus.Text = "" end)
@@ -4140,14 +4088,16 @@ function createRightButtons(device)
         if batAimbotToggled then
             stopBatAimbot()
             if trackLaggerForced then
-                trackStopLagger()
+                stopLaggerLoop()
+                LaggerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
                 trackLaggerForced = false
             end
         else
             syncTrackSpeed()
             startBatAimbot()
-            if trackMode == "Lagger" then
-                trackStartLagger()
+            if trackMode == "Lagger" and not laggerEnabled then
+                startLagger()
+                LaggerButton.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
                 trackLaggerForced = true
             end
         end
@@ -4243,7 +4193,7 @@ function createRightButtons(device)
     JukeSettings.BackgroundTransparency = 0.1
     JukeSettings.Visible = false
     JukeSettings.Active = true
-    makeDraggable(JukeSettings)
+    JukeSettings.Draggable = true
     JukeSettings.Parent = ScreenGui
     JukeSettings.ZIndex = 10
 
