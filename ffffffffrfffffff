@@ -1161,7 +1161,7 @@ end
 -- TRACK PLAYER (BAT AIMBOT)
 -- ═══════════════════════════════════════════════════════
 
--- IMPROVED BAT AIMBOT (velocity-based motion prediction, handles TP up/down)
+-- IMPROVED BAT AIMBOT (velocity-based motion prediction for TP up/down)
 local batAimbotToggled = false
 local BAT_MOVE_SPEED = 56.5
 local BAT_ENGAGE_RANGE = 20
@@ -1172,10 +1172,7 @@ local lookConnection_bat = nil
 local attachment_bat = nil
 local alignOrientation_bat = nil
 local BAT_LOOK_DISTANCE = 50
-
--- Velocity tracking for motion prediction
-local prevTargetPositions = {}
-local targetVelocityEstimate = Vector3.zero
+local lastTargetPositions = {} -- track position history for velocity prediction
 
 local function nearestPlayer_bat()
     if not hrp then return nil, math.huge end
@@ -1212,30 +1209,34 @@ local function closestLookTarget()
     return nearest
 end
 
-local function updateTargetVelocity(target)
-    if not target then
-        targetVelocityEstimate = Vector3.zero
-        return
-    end
-    local id = target:GetFullName()
+-- Get predicted position using velocity history (handles TP up/down, jukes, etc)
+local function getPredictedPosition(targetHRP)
+    if not targetHRP then return nil end
     local now = tick()
-    local pos = target.Position
-    local prev = prevTargetPositions[id]
-    if prev then
-        local dt = now - prev.t
-        if dt > 0 and dt < 1 then
-            local rawVel = (pos - prev.p) / dt
-            -- Smooth velocity but react fast to big changes (TP detection)
-            if rawVel.Magnitude > 100 then
-                -- Sudden teleport detected - snap velocity instantly
-                targetVelocityEstimate = rawVel
-            else
-                -- Smooth blend
-                targetVelocityEstimate = targetVelocityEstimate:Lerp(rawVel, 0.6)
-            end
-        end
+    local name = targetHRP.Parent and targetHRP.Parent.Name or ""
+    local history = lastTargetPositions[name]
+    if not history then
+        history = {pos = targetHRP.Position, time = now, vel = Vector3.zero}
+        lastTargetPositions[name] = history
     end
-    prevTargetPositions[id] = {p = pos, t = now}
+
+    local dt = now - history.time
+    if dt > 0.01 then
+        local rawVel = (targetHRP.Position - history.pos) / dt
+        -- Blend with assembly velocity for better prediction
+        local assemblyVel = targetHRP.AssemblyLinearVelocity or Vector3.zero
+        local blendedVel = rawVel * 0.6 + assemblyVel * 0.4
+        history.vel = history.vel:Lerp(blendedVel, math.clamp(dt * 8, 0.3, 1))
+        history.pos = targetHRP.Position
+        history.time = now
+    end
+
+    -- Predict ahead based on distance (further = more prediction)
+    local dist = hrp and (targetHRP.Position - hrp.Position).Magnitude or 0
+    local predTime = math.clamp(dist / BAT_MOVE_SPEED, 0.05, 0.4)
+    local predicted = targetHRP.Position + history.vel * predTime
+
+    return predicted
 end
 
 local function startLookAt()
@@ -1255,10 +1256,8 @@ local function startLookAt()
         if not hrp or not alignOrientation_bat then return end
         local target = closestLookTarget()
         if not target then return end
-        updateTargetVelocity(target)
-        -- Predict where target will be in ~0.15s using velocity
-        local predictedPos = target.Position + targetVelocityEstimate * 0.15
-        alignOrientation_bat.CFrame = CFrame.lookAt(hrp.Position, predictedPos)
+        local predicted = getPredictedPosition(target) or target.Position
+        alignOrientation_bat.CFrame = CFrame.lookAt(hrp.Position, predicted)
     end)
 end
 
@@ -1301,10 +1300,8 @@ RunService.Heartbeat:Connect(function()
     local target, distance = nearestPlayer_bat()
     if not target then return end
 
-    -- Use velocity-based prediction: aim where target will be
-    updateTargetVelocity(target)
-    local predictAhead = math.clamp(distance / BAT_MOVE_SPEED, 0.05, 0.4)
-    local predictedPos = target.Position + targetVelocityEstimate * predictAhead
+    -- Use velocity-based prediction to follow player motion (handles TP up/down, jukes)
+    local predictedPos = getPredictedPosition(target) or target.Position
 
     local moveDir = (predictedPos - hrp.Position).Unit
     hrp.AssemblyLinearVelocity = moveDir * BAT_MOVE_SPEED
@@ -1548,7 +1545,7 @@ local SmallGUIInstances = {}
 local function createSmallGUI(name, yPosition)
     local SmallGUI = Instance.new("Frame")
     SmallGUI.Name = "Small"..name.."GUI"
-    SmallGUI.Size = UDim2.new(0, 62, 0, 18) -- Compact for 4+4 layout
+    SmallGUI.Size = UDim2.new(0, 62, 0, 18) -- Compact size
     SmallGUI.Position = UDim2.new(0.5, -40, 0, yPosition)
     SmallGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     SmallGUI.BackgroundTransparency = 0
@@ -1656,44 +1653,32 @@ local function refreshSmallButtonPositions()
         end
     end
 
-    -- Layout: 4 buttons LEFT | center gap for title/bar | 4 buttons RIGHT
-    local btnW = 62
-    local btnH = 20
-    local gapX = 4
+    local buttonWidth = 62
+    local buttonHeight = 18
     local gapY = 4
-    local topPadding = 4
+    local topPadding = 6
     local sidePadding = 6
-    local centerGap = 220 -- space for TIM CHEESE DUELS title + bar
+    local maxPerSide = 4
 
-    local viewport = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1280, 720)
-    local centerX = math.floor(viewport.X / 2)
-
-    -- Left side: up to 4 buttons (2 cols x 2 rows)
-    -- Right side: up to 4 buttons (2 cols x 2 rows)
-    local leftStartX = centerX - math.floor(centerGap / 2) - (2 * btnW + gapX)
-    local rightStartX = centerX + math.floor(centerGap / 2)
-
-    for index, frame in ipairs(visibleFrames) do
-        if index > 8 then
-            frame.Visible = false
-            continue
-        end
-
-        frame.Size = UDim2.new(0, btnW, 0, btnH)
-
-        local isRight = index > 4
-        local localIdx = isRight and (index - 4) or index
-        local row = math.floor((localIdx - 1) / 2)
-        local col = (localIdx - 1) % 2
-        local baseX = isRight and rightStartX or leftStartX
-
-        frame.Position = UDim2.new(
-            0,
-            baseX + col * (btnW + gapX),
-            0,
-            topPadding + row * (btnH + gapY)
-        )
+    -- Left side: first 4 visible buttons
+    for i = 1, math.min(maxPerSide, #visibleFrames) do
+        local frame = visibleFrames[i]
+        frame.Size = UDim2.new(0, buttonWidth, 0, buttonHeight)
+        frame.Position = UDim2.new(0, sidePadding, 0, topPadding + (i - 1) * (buttonHeight + gapY))
         frame.Visible = true
+    end
+
+    -- Right side: next 4 visible buttons
+    for i = maxPerSide + 1, math.min(maxPerSide * 2, #visibleFrames) do
+        local frame = visibleFrames[i]
+        frame.Size = UDim2.new(0, buttonWidth, 0, buttonHeight)
+        frame.Position = UDim2.new(1, -buttonWidth - sidePadding, 0, topPadding + (i - maxPerSide - 1) * (buttonHeight + gapY))
+        frame.Visible = true
+    end
+
+    -- Hide any beyond 8
+    for i = maxPerSide * 2 + 1, #visibleFrames do
+        visibleFrames[i].Visible = false
     end
 end
 
@@ -2059,109 +2044,108 @@ SmallDropButton.MouseButton1Click:Connect(function()
 end)
 
 -- ═══════════════════════════════════════════════════════
--- TOP CENTER: TIM CHEESE DUELS TITLE + AUTO GRAB BAR
+-- STEAL BAR (ALWAYS VISIBLE - INSTA STEAL ON)
 -- ═══════════════════════════════════════════════════════
 
-local TopCenterFrame = Instance.new("Frame")
-TopCenterFrame.Name = "TopCenterFrame"
-TopCenterFrame.Size = UDim2.new(0, 210, 0, 48)
-TopCenterFrame.Position = UDim2.new(0.5, -105, 0, 2)
-TopCenterFrame.BackgroundColor3 = Color3.fromRGB(14, 14, 14)
-TopCenterFrame.BackgroundTransparency = 0
-TopCenterFrame.BorderSizePixel = 0
-TopCenterFrame.Parent = ScreenGui
-TopCenterFrame.ZIndex = 50
+local StealBarContainer = Instance.new("Frame")
+StealBarContainer.Name = "StealBarContainer"
+StealBarContainer.Size = UDim2.new(0, 240, 0, 52)
+StealBarContainer.Position = UDim2.new(0.5, -120, 0, 4)
+StealBarContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+StealBarContainer.BorderSizePixel = 0
+StealBarContainer.Parent = ScreenGui
+StealBarContainer.ZIndex = 50
 
-local TCCorner = Instance.new("UICorner")
-TCCorner.CornerRadius = UDim.new(0, 8)
-TCCorner.Parent = TopCenterFrame
+local ContainerCorner = Instance.new("UICorner")
+ContainerCorner.CornerRadius = UDim.new(0, 8)
+ContainerCorner.Parent = StealBarContainer
 
-local TCBlackStroke = Instance.new("UIStroke")
-TCBlackStroke.Color = Color3.fromRGB(0, 0, 0)
-TCBlackStroke.Thickness = 4
-TCBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-TCBlackStroke.Parent = TopCenterFrame
+local ContainerStroke = Instance.new("UIStroke")
+ContainerStroke.Color = Color3.fromRGB(0, 0, 0)
+ContainerStroke.Thickness = 3
+ContainerStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+ContainerStroke.Parent = StealBarContainer
 
-local TCWaveStroke = Instance.new("UIStroke")
-TCWaveStroke.Color = Color3.fromRGB(255, 255, 255)
-TCWaveStroke.Thickness = 2.5
-TCWaveStroke.Transparency = 0.35
-TCWaveStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-TCWaveStroke.ZIndex = 2
-TCWaveStroke.Parent = TopCenterFrame
+local ContainerWave = Instance.new("UIStroke")
+ContainerWave.Color = Color3.fromRGB(255, 255, 255)
+ContainerWave.Thickness = 2
+ContainerWave.Transparency = 0.35
+ContainerWave.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+ContainerWave.ZIndex = 51
+ContainerWave.Parent = StealBarContainer
 
-local TCWaveGrad = Instance.new("UIGradient")
-TCWaveGrad.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
-TCWaveGrad.Transparency = NumberSequence.new({
+local ContainerGrad = Instance.new("UIGradient")
+ContainerGrad.Transparency = NumberSequence.new({
     NumberSequenceKeypoint.new(0, 1),
     NumberSequenceKeypoint.new(0.4, 0),
     NumberSequenceKeypoint.new(0.6, 0),
     NumberSequenceKeypoint.new(1, 1)
 })
-TCWaveGrad.Rotation = 0
-TCWaveGrad.Parent = TCWaveStroke
-TweenService:Create(TCWaveStroke, TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Thickness = 4.2, Transparency = 0.08}):Play()
-RunService.Heartbeat:Connect(function(dt) pcall(function() TCWaveGrad.Rotation = (TCWaveGrad.Rotation + 140 * dt) % 360 end) end)
+ContainerGrad.Parent = ContainerWave
+TweenService:Create(ContainerWave, TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Thickness = 3.5, Transparency = 0.08}):Play()
+RunService.Heartbeat:Connect(function(dt) pcall(function() ContainerGrad.Rotation = (ContainerGrad.Rotation + 140 * dt) % 360 end) end)
 
--- Title
+-- Title: TIM CHEESE DUELS
 local TitleLabel = Instance.new("TextLabel")
-TitleLabel.Size = UDim2.new(1, -55, 0, 16)
-TitleLabel.Position = UDim2.new(0, 5, 0, 2)
+TitleLabel.Size = UDim2.new(1, -70, 0, 16)
+TitleLabel.Position = UDim2.new(0, 6, 0, 2)
 TitleLabel.BackgroundTransparency = 1
 TitleLabel.Text = "TIM CHEESE DUELS"
-TitleLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
+TitleLabel.TextColor3 = Color3.fromRGB(255, 200, 80)
 TitleLabel.Font = Enum.Font.GothamBlack
-TitleLabel.TextSize = 10
+TitleLabel.TextSize = 11
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
-TitleLabel.Parent = TopCenterFrame
 TitleLabel.ZIndex = 51
+TitleLabel.Parent = StealBarContainer
 
--- Radius TextBox (beside title)
+-- On indicator
+local OnLabel = Instance.new("TextLabel")
+OnLabel.Size = UDim2.new(0, 20, 0, 16)
+OnLabel.Position = UDim2.new(1, -68, 0, 2)
+OnLabel.BackgroundTransparency = 1
+OnLabel.Text = "On"
+OnLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+OnLabel.Font = Enum.Font.GothamBold
+OnLabel.TextSize = 9
+OnLabel.ZIndex = 51
+OnLabel.Parent = StealBarContainer
+
+-- Radius textbox
 local RadiusBox = Instance.new("TextBox")
-RadiusBox.Size = UDim2.new(0, 32, 0, 14)
-RadiusBox.Position = UDim2.new(1, -42, 0, 3)
-RadiusBox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+RadiusBox.Size = UDim2.new(0, 38, 0, 16)
+RadiusBox.Position = UDim2.new(1, -44, 0, 2)
+RadiusBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 RadiusBox.Text = tostring(InstaSteal.Radius)
 RadiusBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 RadiusBox.Font = Enum.Font.GothamBold
-RadiusBox.TextSize = 9
+RadiusBox.TextSize = 10
+RadiusBox.PlaceholderText = "R"
 RadiusBox.ClearTextOnFocus = false
-RadiusBox.Parent = TopCenterFrame
-RadiusBox.ZIndex = 51
+RadiusBox.ZIndex = 52
+RadiusBox.Parent = StealBarContainer
 Instance.new("UICorner", RadiusBox).CornerRadius = UDim.new(0, 4)
 
-local RLabel = Instance.new("TextLabel")
-RLabel.Size = UDim2.new(0, 8, 0, 14)
-RLabel.Position = UDim2.new(1, -50, 0, 3)
-RLabel.BackgroundTransparency = 1
-RLabel.Text = "R"
-RLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-RLabel.Font = Enum.Font.GothamBold
-RLabel.TextSize = 8
-RLabel.Parent = TopCenterFrame
-RLabel.ZIndex = 51
+local RadiusValue = RadiusBox -- alias for compatibility
 
 RadiusBox.FocusLost:Connect(function()
-    local val = tonumber(RadiusBox.Text)
-    if val then
-        val = math.clamp(math.floor(val), 1, 50)
-        InstaSteal.Radius = val
-        RadiusBox.Text = tostring(val)
+    local num = tonumber(RadiusBox.Text)
+    if num then
+        num = math.clamp(math.floor(num), 1, 50)
+        InstaSteal.Radius = num
+        RadiusBox.Text = tostring(num)
     else
         RadiusBox.Text = tostring(InstaSteal.Radius)
     end
 end)
 
 -- Progress bar
-local StealBarContainer = TopCenterFrame -- alias for compatibility
-
 local ProgressBarBg = Instance.new("Frame")
-ProgressBarBg.Size = UDim2.new(1, -10, 0, 12)
-ProgressBarBg.Position = UDim2.new(0, 5, 0, 20)
+ProgressBarBg.Size = UDim2.new(1, -12, 0, 14)
+ProgressBarBg.Position = UDim2.new(0, 6, 0, 22)
 ProgressBarBg.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 ProgressBarBg.BorderSizePixel = 0
-ProgressBarBg.Parent = TopCenterFrame
 ProgressBarBg.ZIndex = 51
+ProgressBarBg.Parent = StealBarContainer
 
 local ProgressBgCorner = Instance.new("UICorner")
 ProgressBgCorner.CornerRadius = UDim.new(1, 0)
@@ -2171,25 +2155,23 @@ ProgressBarFill = Instance.new("Frame")
 ProgressBarFill.Size = UDim2.new(0, 0, 1, 0)
 ProgressBarFill.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
 ProgressBarFill.BorderSizePixel = 0
-ProgressBarFill.Parent = ProgressBarBg
 ProgressBarFill.ZIndex = 52
+ProgressBarFill.Parent = ProgressBarBg
 
 local ProgressFillCorner = Instance.new("UICorner")
 ProgressFillCorner.CornerRadius = UDim.new(1, 0)
 ProgressFillCorner.Parent = ProgressBarFill
 
--- On label (below bar)
-local OnLabel = Instance.new("TextLabel")
-OnLabel.Size = UDim2.new(1, -10, 0, 12)
-OnLabel.Position = UDim2.new(0, 5, 0, 34)
-OnLabel.BackgroundTransparency = 1
-OnLabel.Text = "Auto Grab: On"
-OnLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
-OnLabel.Font = Enum.Font.GothamBold
-OnLabel.TextSize = 8
-OnLabel.TextXAlignment = Enum.TextXAlignment.Left
-OnLabel.Parent = TopCenterFrame
-OnLabel.ZIndex = 51
+-- Status text on progress bar
+local ProgressText = Instance.new("TextLabel")
+ProgressText.Size = UDim2.new(1, 0, 1, 0)
+ProgressText.BackgroundTransparency = 1
+ProgressText.Text = "Auto Grab"
+ProgressText.TextColor3 = Color3.fromRGB(180, 180, 180)
+ProgressText.Font = Enum.Font.GothamBold
+ProgressText.TextSize = 8
+ProgressText.ZIndex = 53
+ProgressText.Parent = ProgressBarBg
 
 -- ═══════════════════════════════════════════════════════
 -- DEVICE SELECTION SCREEN
@@ -3239,7 +3221,7 @@ local function initializeGUI(device)
     if normalSpeedBox then normalSpeedBox.Text = tostring(SpeedBooster.NormalSpeed) end
     if stealSpeedBox then stealSpeedBox.Text = tostring(SpeedBooster.StealSpeed) end
     if fovSliderBox then fovSliderBox.Text = tostring(fovValue) end
-    if RadiusBox then RadiusBox.Text = tostring(InstaSteal.Radius) end
+    if RadiusValue then RadiusValue.Text = tostring(InstaSteal.Radius) end
 
     createOpenButton(device)
     createAutoButtons(device)
