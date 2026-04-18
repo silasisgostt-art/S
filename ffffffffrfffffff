@@ -1638,12 +1638,12 @@ local function refreshSmallButtonPositions()
     end
 
     local columns = 5
-    local buttonHeight = 18
+    local buttonHeight = 30
     local rows = 3
-    local gapX = 4
-    local gapY = 4
-    local topPadding = 75
-    local sidePadding = 6
+    local gapX = 8
+    local gapY = 8
+    local topPadding = 8
+    local sidePadding = 10
     local viewport = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1280, 720)
     local availableWidth = math.max(400, viewport.X - sidePadding * 2)
     local buttonWidth = math.floor((availableWidth - gapX * (columns - 1)) / columns)
@@ -2038,90 +2038,69 @@ end)
 
 local StealBarContainer = Instance.new("Frame")
 StealBarContainer.Name = "StealBarContainer"
-StealBarContainer.Size = UDim2.new(0, 320, 0, 65)
-StealBarContainer.Position = UDim2.new(0.5, -160, 0, 4)
-StealBarContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+StealBarContainer.Size = UDim2.new(0, 200, 0, 42)
+StealBarContainer.Position = UDim2.new(0.5, -100, 1, -70)
+StealBarContainer.BackgroundColor3 = Color3.fromRGB(20, 25, 20)
 StealBarContainer.BorderSizePixel = 0
 StealBarContainer.Parent = ScreenGui
 
 local ContainerCorner = Instance.new("UICorner")
-ContainerCorner.CornerRadius = UDim.new(0, 8)
+ContainerCorner.CornerRadius = UDim.new(0, 10)
 ContainerCorner.Parent = StealBarContainer
-
-local ContainerBlackStroke = Instance.new("UIStroke")
-ContainerBlackStroke.Color = Color3.fromRGB(0, 0, 0)
-ContainerBlackStroke.Thickness = 4
-ContainerBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-ContainerBlackStroke.Parent = StealBarContainer
 
 local ContainerStroke = Instance.new("UIStroke")
 ContainerStroke.Color = Color3.fromRGB(255, 255, 255)
-ContainerStroke.Thickness = 2.5
-ContainerStroke.Transparency = 0.35
-ContainerStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-ContainerStroke.ZIndex = 2
+ContainerStroke.Thickness = 1.5
 ContainerStroke.Parent = StealBarContainer
 
-local ContainerWaveGrad = Instance.new("UIGradient")
-ContainerWaveGrad.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
-ContainerWaveGrad.Transparency = NumberSequence.new({
-    NumberSequenceKeypoint.new(0, 1),
-    NumberSequenceKeypoint.new(0.4, 0),
-    NumberSequenceKeypoint.new(0.6, 0),
-    NumberSequenceKeypoint.new(1, 1)
-})
-ContainerWaveGrad.Rotation = 0
-ContainerWaveGrad.Parent = ContainerStroke
-TweenService:Create(ContainerStroke, TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Thickness = 4.2, Transparency = 0.08}):Play()
-RunService.Heartbeat:Connect(function(dt) pcall(function() ContainerWaveGrad.Rotation = (ContainerWaveGrad.Rotation + 140 * dt) % 360 end) end)
-
--- TIM CHEESE DUELS Title
+-- TIM CHEESE DUELS title
 local TitleLabel = Instance.new("TextLabel")
-TitleLabel.Size = UDim2.new(1, 0, 0, 18)
-TitleLabel.Position = UDim2.new(0, 0, 0, 2)
+TitleLabel.Size = UDim2.new(0, 120, 0, 12)
+TitleLabel.Position = UDim2.new(0, 6, 0, 2)
 TitleLabel.BackgroundTransparency = 1
 TitleLabel.Text = "TIM CHEESE DUELS"
-TitleLabel.TextColor3 = Color3.fromRGB(255, 220, 80)
+TitleLabel.TextColor3 = Color3.fromRGB(255, 200, 80)
 TitleLabel.Font = Enum.Font.GothamBlack
-TitleLabel.TextSize = 13
+TitleLabel.TextSize = 8
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 TitleLabel.Parent = StealBarContainer
 
 local OnLabel = Instance.new("TextLabel")
-OnLabel.Size = UDim2.new(0, 30, 0, 14)
-OnLabel.Position = UDim2.new(0, 8, 0, 20)
+OnLabel.Size = UDim2.new(0, 20, 0, 12)
+OnLabel.Position = UDim2.new(0, 6, 0, 14)
 OnLabel.BackgroundTransparency = 1
 OnLabel.Text = "On"
 OnLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
 OnLabel.Font = Enum.Font.Gotham
-OnLabel.TextSize = 10
+OnLabel.TextSize = 8
 OnLabel.TextXAlignment = Enum.TextXAlignment.Left
 OnLabel.Parent = StealBarContainer
 
 local RadiusLabel = Instance.new("TextLabel")
-RadiusLabel.Size = UDim2.new(0, 50, 0, 14)
-RadiusLabel.Position = UDim2.new(1, -65, 0, 20)
+RadiusLabel.Size = UDim2.new(0, 40, 0, 12)
+RadiusLabel.Position = UDim2.new(1, -65, 0, 2)
 RadiusLabel.BackgroundTransparency = 1
 RadiusLabel.Text = "Radius:"
 RadiusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
 RadiusLabel.Font = Enum.Font.Gotham
-RadiusLabel.TextSize = 10
+RadiusLabel.TextSize = 8
 RadiusLabel.TextXAlignment = Enum.TextXAlignment.Left
 RadiusLabel.Parent = StealBarContainer
 
 local RadiusValue = Instance.new("TextLabel")
-RadiusValue.Size = UDim2.new(0, 20, 0, 14)
-RadiusValue.Position = UDim2.new(1, -15, 0, 20)
+RadiusValue.Size = UDim2.new(0, 15, 0, 12)
+RadiusValue.Position = UDim2.new(1, -10, 0, 2)
 RadiusValue.BackgroundTransparency = 1
 RadiusValue.Text = tostring(InstaSteal.Radius)
 RadiusValue.TextColor3 = Color3.fromRGB(255, 255, 255)
 RadiusValue.Font = Enum.Font.GothamBold
-RadiusValue.TextSize = 10
+RadiusValue.TextSize = 8
 RadiusValue.TextXAlignment = Enum.TextXAlignment.Right
 RadiusValue.Parent = StealBarContainer
 
 local ProgressBarBg = Instance.new("Frame")
-ProgressBarBg.Size = UDim2.new(1, -16, 0, 16)
-ProgressBarBg.Position = UDim2.new(0, 8, 0, 38)
+ProgressBarBg.Size = UDim2.new(1, -12, 0, 12)
+ProgressBarBg.Position = UDim2.new(0, 6, 0, 27)
 ProgressBarBg.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 ProgressBarBg.BorderSizePixel = 0
 ProgressBarBg.Parent = StealBarContainer
@@ -2142,7 +2121,7 @@ ProgressFillCorner.Parent = ProgressBarFill
 
 local MinusArea = Instance.new("TextButton")
 MinusArea.Size = UDim2.new(0, 10, 0, 8)
-MinusArea.Position = UDim2.new(1, -55, 0, 8)
+MinusArea.Position = UDim2.new(1, -45, 0, 15)
 MinusArea.BackgroundTransparency = 0.4
 MinusArea.BackgroundColor3 = Color3.fromRGB(240,240,240)
 MinusArea.Text = "-"
@@ -2153,7 +2132,7 @@ MinusArea.Parent = StealBarContainer
 
 local PlusArea = Instance.new("TextButton")
 PlusArea.Size = UDim2.new(0, 10, 0, 8)
-PlusArea.Position = UDim2.new(1, -25, 0, 8)
+PlusArea.Position = UDim2.new(1, -20, 0, 15)
 PlusArea.BackgroundTransparency = 0.4
 PlusArea.BackgroundColor3 = Color3.fromRGB(240,240,240)
 PlusArea.Text = "+"
