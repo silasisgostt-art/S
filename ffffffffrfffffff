@@ -3894,20 +3894,156 @@ function createRightButtons(device)
     local function stopAnims(hum)
         for _, track in pairs(hum:GetPlayingAnimationTracks()) do track:Stop() end
     end
+
+    local desyncGhost = nil
+    local desyncHeartbeat = nil
+    local desyncSpeedConn = nil
+    local desyncJumpConn = nil
+    local desyncOrigPos = nil
+    local DESYNC_SPEED = 65
+
+    local function cleanupDesync()
+        if animConnection then animConnection:Disconnect() animConnection = nil end
+        if desyncHeartbeat then desyncHeartbeat:Disconnect() desyncHeartbeat = nil end
+        if desyncSpeedConn then desyncSpeedConn:Disconnect() desyncSpeedConn = nil end
+        if desyncJumpConn then desyncJumpConn:Disconnect() desyncJumpConn = nil end
+        if desyncGhost then pcall(function() desyncGhost:Destroy() end) desyncGhost = nil end
+        -- Restore real character visibility
+        local char = player.Character
+        if char then
+            for _, part in pairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.Transparency = part.Name == "HumanoidRootPart" and 1 or 0
+                elseif part:IsA("Decal") or part:IsA("Texture") then
+                    part.Transparency = 0
+                end
+            end
+            -- Teleport real char back to ghost position if ghost exists
+            local root = char:FindFirstChild("HumanoidRootPart")
+            if root and desyncOrigPos then
+                root.CFrame = desyncOrigPos
+            end
+        end
+        desyncOrigPos = nil
+    end
+
     DesyncButton.MouseButton1Click:Connect(function()
         desyncEnabled = not desyncEnabled
         local humanoid = getHumanoid()
-        if desyncEnabled then
+        local char = player.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+
+        if desyncEnabled and char and root then
             DesyncButton.BackgroundColor3 = Color3.fromRGB(120, 60, 255)
+
+            -- Stop animations on real character (server side frozen)
             stopAnims(humanoid)
-            if animConnection then animConnection:Disconnect() animConnection = nil end
             animConnection = humanoid.AnimationPlayed:Connect(function(t) t:Stop() end)
-            if raknet and raknet.desync then raknet.desync(true) end
-            print("leak by Lacsy on dc\nLeak Royals desync by Lacsy")
+
+            -- Save position
+            desyncOrigPos = root.CFrame
+
+            -- Create ghost clone (local only - visible to you)
+            desyncGhost = char:Clone()
+            desyncGhost.Name = "DesyncGhost"
+            -- Remove scripts/server objects from ghost
+            for _, obj in pairs(desyncGhost:GetDescendants()) do
+                if obj:IsA("Script") or obj:IsA("LocalScript") or obj:IsA("ModuleScript") then
+                    obj:Destroy()
+                end
+            end
+            local ghostHum = desyncGhost:FindFirstChildOfClass("Humanoid")
+            if ghostHum then
+                ghostHum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+            end
+            desyncGhost.Parent = workspace
+
+            -- Make real character invisible (but still exists on server)
+            for _, part in pairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.Transparency = 1
+                elseif part:IsA("Decal") or part:IsA("Texture") then
+                    part.Transparency = 1
+                end
+            end
+
+            -- Anchor real character in place (server sees you frozen here)
+            root.Anchored = true
+
+            -- Ghost speed bypass movement
+            local ghostRoot = desyncGhost:FindFirstChild("HumanoidRootPart")
+            if ghostRoot then
+                ghostRoot.Anchored = false
+
+                -- Lock camera to ghost
+                workspace.CurrentCamera.CameraSubject = desyncGhost:FindFirstChildOfClass("Humanoid") or ghostRoot
+
+                desyncHeartbeat = RunService.Heartbeat:Connect(function()
+                    pcall(function()
+                        if not desyncGhost or not ghostRoot or not ghostRoot.Parent then return end
+                        local moveDir = humanoid.MoveDirection
+                        if moveDir.Magnitude > 0 then
+                            ghostRoot.CFrame = ghostRoot.CFrame + Vector3.new(moveDir.X * DESYNC_SPEED * 0.016, 0, moveDir.Z * DESYNC_SPEED * 0.016)
+                        end
+                        -- Apply gravity
+                        local rayParams = RaycastParams.new()
+                        rayParams.FilterDescendantsInstances = {desyncGhost, char}
+                        rayParams.FilterType = Enum.RaycastFilterType.Exclude
+                        local rayResult = workspace:Raycast(ghostRoot.Position, Vector3.new(0, -50, 0), rayParams)
+                        if rayResult then
+                            local targetY = rayResult.Position.Y + 3
+                            if ghostRoot.Position.Y > targetY + 0.5 then
+                                ghostRoot.CFrame = ghostRoot.CFrame + Vector3.new(0, -0.5, 0)
+                            elseif ghostRoot.Position.Y < targetY - 0.5 then
+                                ghostRoot.CFrame = CFrame.new(ghostRoot.Position.X, targetY, ghostRoot.Position.Z) * (ghostRoot.CFrame - ghostRoot.CFrame.Position)
+                            end
+                        end
+                        -- Face movement direction
+                        if moveDir.Magnitude > 0 then
+                            ghostRoot.CFrame = CFrame.new(ghostRoot.Position, ghostRoot.Position + Vector3.new(moveDir.X, 0, moveDir.Z))
+                        end
+                        -- Update desyncOrigPos so we return to ghost pos on disable
+                        desyncOrigPos = ghostRoot.CFrame
+                    end)
+                end)
+
+                -- Ghost jump
+                desyncJumpConn = UserInputService.JumpRequest:Connect(function()
+                    pcall(function()
+                        if desyncEnabled and ghostRoot and ghostRoot.Parent then
+                            ghostRoot.CFrame = ghostRoot.CFrame + Vector3.new(0, 8, 0)
+                        end
+                    end)
+                end)
+            end
+
+            if raknet and raknet.desync then pcall(function() raknet.desync(true) end) end
         else
             DesyncButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-            if animConnection then animConnection:Disconnect() animConnection = nil end
-            if raknet and raknet.desync then raknet.desync(false) end
+
+            -- Unanchor real character before restoring
+            local char2 = player.Character
+            local root2 = char2 and char2:FindFirstChild("HumanoidRootPart")
+            if root2 then root2.Anchored = false end
+
+            -- Restore camera
+            pcall(function()
+                workspace.CurrentCamera.CameraSubject = player.Character:FindFirstChildOfClass("Humanoid")
+            end)
+
+            cleanupDesync()
+            desyncEnabled = false
+
+            if raknet and raknet.desync then pcall(function() raknet.desync(false) end) end
+        end
+    end)
+
+    -- Auto-cleanup on death/respawn
+    player.CharacterAdded:Connect(function()
+        if desyncEnabled then
+            desyncEnabled = false
+            DesyncButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            cleanupDesync()
         end
     end)
 
