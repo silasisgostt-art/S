@@ -148,7 +148,13 @@ local function startSpeedBooster()
         
         if h.MoveDirection.Magnitude > 0 then
             local vel = carry and SpeedBooster.StealSpeed or SpeedBooster.NormalSpeed
-            r.AssemblyLinearVelocity = Vector3.new(h.MoveDirection.X * vel, r.AssemblyLinearVelocity.Y, h.MoveDirection.Z * vel)
+            -- True bypass: if lag-back detected, use CFrame teleport
+            if math.abs(r.AssemblyLinearVelocity.X) < 1 and math.abs(r.AssemblyLinearVelocity.Z) < 1 and h.MoveDirection.Magnitude > 0.1 then
+                r.CFrame = r.CFrame + Vector3.new(h.MoveDirection.X * 2, 0, h.MoveDirection.Z * 2)
+                r.AssemblyLinearVelocity = Vector3.zero
+            else
+                r.AssemblyLinearVelocity = Vector3.new(h.MoveDirection.X * vel, r.AssemblyLinearVelocity.Y, h.MoveDirection.Z * vel)
+            end
         end
     end)
     
@@ -180,9 +186,9 @@ local PATH_BASE_STOP = 1.32
 local PATH_MIN_STOP = 0.60
 local PATH_NEXT_POINT_BIAS = 0.45
 local PATH_SMOOTH_FACTOR = 0.10
-local PATH_CHECKPOINT_RADIUS = 14
+local PATH_CHECKPOINT_RADIUS = 12
 local PATH_TP_STEP_DISTANCE = 2.5
-local PATH_TP_STEP_DELAY = 0.03
+local PATH_TP_STEP_DELAY = 0.05
 
 local stealPath1 = {
     -- Auto Right (switched spots)
@@ -255,44 +261,74 @@ end
 
 local function runStealPath(path)
     local hrpLocal = (player.Character or player.CharacterAdded:Wait()):WaitForChild("HumanoidRootPart")
-    for i, p in ipairs(path) do
+    local i = 1
+    while i <= #path do
+        local p = path[i]
         if not pathActive then return end
-
+        -- Instead of teleport, walk to the target position using velocity
         if p.teleportHere then
             local offset = p.teleportOffset or Vector3.zero
             local targetPos = p.pos + offset
-
-            while pathActive do
-                local currentPos = hrpLocal.Position
-                local toTarget = targetPos - currentPos
+            local walkSpeed = 29.0
+            local stopDist = PATH_TP_STEP_DISTANCE
+            local conn
+            conn = RunService.Heartbeat:Connect(function()
+                if not pathActive then conn:Disconnect() hrpLocal.AssemblyLinearVelocity = Vector3.zero return end
+                local pos = hrpLocal.Position
+                local toTarget = targetPos - pos
                 local dist = toTarget.Magnitude
-                if dist <= PATH_TP_STEP_DISTANCE then
-                    hrpLocal.CFrame = CFrame.new(targetPos)
-                    break
-                end
-
-                local stepDir = toTarget.Unit
-                local nextPos = currentPos + stepDir * PATH_TP_STEP_DISTANCE
-                if not pathActive then return end
-                hrpLocal.CFrame = CFrame.new(nextPos)
-                hrpLocal.AssemblyLinearVelocity = Vector3.zero
-                task.wait(PATH_TP_STEP_DELAY)
+                if dist <= stopDist then conn:Disconnect() hrpLocal.AssemblyLinearVelocity = Vector3.zero return end
+                local moveDir = toTarget.Unit
+                local vel = Vector3.new(moveDir.X*walkSpeed, hrpLocal.AssemblyLinearVelocity.Y, moveDir.Z*walkSpeed)
+                hrpLocal.AssemblyLinearVelocity = vel
+                lastFlatVel = Vector3.new(vel.X, 0, vel.Z)
+            end)
+            while pathActive and (hrpLocal.Position - targetPos).Magnitude > stopDist do
+                RunService.Heartbeat:Wait()
             end
             hrpLocal.AssemblyLinearVelocity = Vector3.zero
-            return
+            -- Do not return; continue path
         end
-        
         local speed
         if SpeedBooster.Enabled then
             speed = i > 2 and SpeedBooster.StealSpeed or SpeedBooster.NormalSpeed
         else
             speed = i > 2 and PATH_SECOND_SPEED or PATH_VELOCITY_SPEED
         end
-        
         local nextP = path[i+1] and path[i+1].pos
-        pathMoveToPoint(hrpLocal, p, nextP, speed)
-
-        task.wait()
+        -- Ultra-smooth, lag-free, brain-speed bypass
+        local currentPos = p.pos or p
+        local stopRadius = p.checkpointRadius or PATH_BASE_STOP
+        local conn
+        conn = RunService.Heartbeat:Connect(function()
+            if not pathActive then conn:Disconnect() hrpLocal.AssemblyLinearVelocity = Vector3.zero return end
+            local pos = hrpLocal.Position
+            local target = Vector3.new(currentPos.X, pos.Y, currentPos.Z)
+            local dir = target - pos
+            local dist = dir.Magnitude
+            local stopDist = p.checkpointRadius and stopRadius or math.clamp(PATH_BASE_STOP - dist*0.04, PATH_MIN_STOP, PATH_BASE_STOP)
+            if dist <= stopDist then conn:Disconnect() hrpLocal.AssemblyLinearVelocity = Vector3.zero return end
+            local moveDir = dir.Unit
+            if nextP then
+                local nextDir = (Vector3.new(nextP.X, pos.Y, nextP.Z) - pos).Unit
+                moveDir = (moveDir + nextDir * PATH_NEXT_POINT_BIAS).Unit
+            end
+            if lastFlatVel.Magnitude > 0.1 then
+                moveDir = (moveDir*(1-PATH_SMOOTH_FACTOR) + lastFlatVel.Unit*PATH_SMOOTH_FACTOR).Unit
+            end
+            local vel = Vector3.new(moveDir.X*speed, hrpLocal.AssemblyLinearVelocity.Y, moveDir.Z*speed)
+            hrpLocal.AssemblyLinearVelocity = vel
+            lastFlatVel = Vector3.new(vel.X, 0, vel.Z)
+        end)
+        while pathActive and (Vector3.new(hrpLocal.Position.X,0,hrpLocal.Position.Z)-Vector3.new(currentPos.X,0,currentPos.Z)).Magnitude > stopRadius do
+            RunService.Heartbeat:Wait()
+        end
+        -- If reached 4th checkpoint, skip to final
+        if i == 4 then
+            i = #path
+        else
+            i = i + 1
+        end
     end
 end
 
@@ -1125,6 +1161,7 @@ end
 -- TRACK PLAYER (BAT AIMBOT)
 -- ═══════════════════════════════════════════════════════
 
+-- IMPROVED BAT AIMBOT (restored original follow, better TP up/down prediction)
 local batAimbotToggled = false
 local BAT_MOVE_SPEED = 56.5
 local BAT_ENGAGE_RANGE = 20
@@ -1174,7 +1211,7 @@ end
 local function startLookAt()
     if not hrp or not hum then return end
     hum.AutoRotate = false
-    
+
     attachment_bat = Instance.new("Attachment", hrp)
     alignOrientation_bat = Instance.new("AlignOrientation")
     alignOrientation_bat.Attachment0 = attachment_bat
@@ -1183,12 +1220,22 @@ local function startLookAt()
     alignOrientation_bat.Responsiveness = 1000
     alignOrientation_bat.RigidityEnabled = true
     alignOrientation_bat.Parent = hrp
-
+    -- Restore original follow/lock logic, but add vertical prediction for TP up/down
+    local lastTargetPos = nil
     lookConnection_bat = RunService.RenderStepped:Connect(function()
         if not hrp or not alignOrientation_bat then return end
         local target = closestLookTarget()
         if not target then return end
-        local lookPos = Vector3.new(target.Position.X, hrp.Position.Y, target.Position.Z)
+        local predictY = target.Position.Y
+        -- If target is moving up/down fast (TP), predict further in that direction
+        if lastTargetPos then
+            local dy = target.Position.Y - lastTargetPos.Y
+            if math.abs(dy) > 2 then
+                predictY = target.Position.Y + dy * 0.7
+            end
+        end
+        lastTargetPos = target.Position
+        local lookPos = Vector3.new(target.Position.X, predictY, target.Position.Z)
         alignOrientation_bat.CFrame = CFrame.lookAt(hrp.Position, lookPos)
     end)
 end
@@ -1232,8 +1279,15 @@ RunService.Heartbeat:Connect(function()
     local target, distance = nearestPlayer_bat()
     if not target then return end
 
-    local targetPos = Vector3.new(target.Position.X, target.Position.Y, target.Position.Z)
-    local moveDir = (targetPos - hrp.Position).Unit
+    -- Predict target movement for anti-dodge/anti-jump
+    local predictedPos = target.Position
+    local targetHum = target.Parent and target.Parent:FindFirstChildOfClass("Humanoid")
+    if targetHum and targetHum.FloorMaterial == Enum.Material.Air then
+        -- If jumping, predict upward movement
+        predictedPos = predictedPos + Vector3.new(0, targetHum.Jump and 4 or 2, 0)
+    end
+
+    local moveDir = (predictedPos - hrp.Position).Unit
     hrp.AssemblyLinearVelocity = moveDir * BAT_MOVE_SPEED
 
     if distance <= BAT_ENGAGE_RANGE then
@@ -1447,8 +1501,8 @@ local SmallGUIInstances = {}
 local function createSmallGUI(name, yPosition)
     local SmallGUI = Instance.new("Frame")
     SmallGUI.Name = "Small"..name.."GUI"
-    SmallGUI.Size = UDim2.new(0, 110, 0, 30)
-    SmallGUI.Position = UDim2.new(0.5, -55, 0, yPosition)
+    SmallGUI.Size = UDim2.new(0, 80, 0, 20) -- Smaller width and height
+    SmallGUI.Position = UDim2.new(0.5, -40, 0, yPosition)
     SmallGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
     SmallGUI.BackgroundTransparency = 0.3
     SmallGUI.BorderSizePixel = 0
@@ -1456,53 +1510,53 @@ local function createSmallGUI(name, yPosition)
     SmallGUI.Active = true
     SmallGUI.Draggable = true  -- ✅ DRAGGABLE!
     SmallGUI.Parent = ScreenGui
-    
+
     local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 10)
+    Corner.CornerRadius = UDim.new(0, 7)
     Corner.Parent = SmallGUI
-    
+
     local Stroke = Instance.new("UIStroke")
     Stroke.Color = Color3.fromRGB(255, 0, 0)
-    Stroke.Thickness = 2
+    Stroke.Thickness = 1.5
     Stroke.Parent = SmallGUI
-    
+
     -- ✅ GREEN DOT!
     local GreenDot = Instance.new("Frame")
-    GreenDot.Size = UDim2.new(0, 10, 0, 10)
-    GreenDot.Position = UDim2.new(0, 8, 0.5, -6)
+    GreenDot.Size = UDim2.new(0, 7, 0, 7)
+    GreenDot.Position = UDim2.new(0, 5, 0.5, -3)
     GreenDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100) -- GRAY by default
     GreenDot.BorderSizePixel = 0
     GreenDot.Parent = SmallGUI
-    
+
     local DotCorner = Instance.new("UICorner")
     DotCorner.CornerRadius = UDim.new(1, 0)
     DotCorner.Parent = GreenDot
-    
+
     local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(1, -45, 1, 0)
-    Label.Position = UDim2.new(0, 25, 0, 0)
+    Label.Size = UDim2.new(1, -32, 1, 0)
+    Label.Position = UDim2.new(0, 18, 0, 0)
     Label.BackgroundTransparency = 1
     Label.Text = name
     Label.TextColor3 = Color3.fromRGB(255, 255, 255)
     Label.Font = Enum.Font.GothamBold
-    Label.TextSize = 11
+    Label.TextSize = 9 -- Smaller text
     Label.TextXAlignment = Enum.TextXAlignment.Left
     Label.Parent = SmallGUI
-    
+
     -- ✅ CLICK BUTTON (smaller, on right side only - doesn't block dragging!)
     local Button = Instance.new("TextButton")
-    Button.Size = UDim2.new(0, 30, 1, 0)
-    Button.Position = UDim2.new(1, -30, 0, 0)
+    Button.Size = UDim2.new(0, 20, 1, 0)
+    Button.Position = UDim2.new(1, -20, 0, 0)
     Button.BackgroundTransparency = 1
     Button.Text = "⚡"
     Button.TextColor3 = Color3.fromRGB(138, 43, 226)
     Button.Font = Enum.Font.GothamBold
-    Button.TextSize = 16
+    Button.TextSize = 12 -- Smaller icon
     Button.ZIndex = 2
     Button.Parent = SmallGUI
-    
+
     SmallGUIInstances[name] = {Frame = SmallGUI, Label = Label, Button = Button, Dot = GreenDot}
-    
+
     return SmallGUI, Button, GreenDot
 end
 
@@ -1848,7 +1902,7 @@ SmallFOVButton.MouseButton1Click:Connect(function()
     else
         SmallFOVGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
         FOVDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        camera.FieldOfView = 70
+        camera.FieldOfView = 70 -- Reset to default
         if fovConnection then fovConnection:Disconnect() fovConnection = nil end
     end
     SaveConfig()
@@ -3194,7 +3248,141 @@ function createAutoButtons(device)
     LeftStroke.Thickness = 2
     LeftStroke.Parent = AutoLeftButton
 
-    -- ✅ AUTO RIGHT Button (SIDE BY SIDE - GRAY!)
+    -- ✅ AUTO MEDUSA Button (above Auto Right)
+    local AutoMedusaButton = Instance.new("TextButton")
+    AutoMedusaButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
+    AutoMedusaButton.Position = UDim2.new(0, 15 + buttonSize + 10, 0.5, -buttonSize*1.5 + yOffset - 10)
+    AutoMedusaButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+    AutoMedusaButton.BackgroundTransparency = 0.3
+    AutoMedusaButton.Text = "AUTO\nMEDUSA"
+    AutoMedusaButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    AutoMedusaButton.Font = Enum.Font.GothamBold
+    AutoMedusaButton.TextSize = device == "iPhone" and 9 or 12
+    AutoMedusaButton.Parent = ScreenGui
+
+    local MedusaCorner = Instance.new("UICorner")
+    MedusaCorner.CornerRadius = UDim.new(0, 15)
+    MedusaCorner.Parent = AutoMedusaButton
+
+    local MedusaStroke = Instance.new("UIStroke")
+    MedusaStroke.Color = Color3.fromRGB(0, 80, 255)
+    MedusaStroke.Thickness = 2
+    MedusaStroke.Parent = AutoMedusaButton
+
+    -- Auto Medusa logic (logic only, no extra GUI)
+    local MEDUSA_RANGE = 9.5
+    local MEDUSA_COOLDOWN = 0.12
+    local autoMedusaEnabled = false
+    local autoMedusaConn = nil
+    local medusaCircle = nil
+    local medusaAttacking = false
+    local function findMedusaTool()
+        local char = player.Character
+        local backpack = player:FindFirstChildOfClass("Backpack")
+        local keywords = {"medusa", "Medusa's Head", "medusa's head"}
+        local function search(container)
+            if not container then return nil end
+            for _, tool in ipairs(container:GetChildren()) do
+                if tool:IsA("Tool") then
+                    local nameLower = tool.Name:lower()
+                    for _, kw in ipairs(keywords) do
+                        if nameLower:find(kw:lower()) then
+                            return tool
+                        end
+                    end
+                end
+            end
+            return nil
+        end
+        return search(char) or search(backpack)
+    end
+    local function unequipMedusa()
+        local char = player.Character
+        local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+        if not humanoid then return end
+        local medusa = findMedusaTool()
+        if medusa and medusa.Parent == char then
+            pcall(function() humanoid:UnequipTools() end)
+        end
+    end
+    local function enemyInRange()
+        local char = player.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        if not root then return false end
+        for _, other in ipairs(Players:GetPlayers()) do
+            if other ~= player and other.Character then
+                local otherRoot = other.Character:FindFirstChild("HumanoidRootPart")
+                local otherHum = other.Character:FindFirstChildOfClass("Humanoid")
+                if otherRoot and otherHum and otherHum.Health > 0 then
+                    local distance = (root.Position - otherRoot.Position).Magnitude
+                    if distance <= MEDUSA_RANGE then
+                        return true
+                    end
+                end
+            end
+        end
+        return false
+    end
+    local function createMedusaCircle()
+        if medusaCircle then medusaCircle:Destroy() end
+        medusaCircle = Instance.new("Part")
+        medusaCircle.Name = "AutoMedusaRange"
+        medusaCircle.Shape = Enum.PartType.Cylinder
+        medusaCircle.Size = Vector3.new(0.2, MEDUSA_RANGE * 2, MEDUSA_RANGE * 2)
+        medusaCircle.Color = Color3.fromRGB(255, 0, 0)
+        medusaCircle.Material = Enum.Material.Neon
+        medusaCircle.Transparency = 0.35
+        medusaCircle.Anchored = true
+        medusaCircle.CanCollide = false
+        medusaCircle.Parent = workspace
+    end
+    local function updateMedusaCircle()
+        local char = player.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        if medusaCircle and root then
+            medusaCircle.CFrame = CFrame.new(root.Position - Vector3.new(0, 2.6, 0)) * CFrame.Angles(0, 0, math.rad(90))
+        end
+    end
+    local function startAutoMedusa()
+        if autoMedusaConn then autoMedusaConn:Disconnect() end
+        createMedusaCircle()
+        autoMedusaConn = RunService.Heartbeat:Connect(function()
+            if not autoMedusaEnabled then return end
+            updateMedusaCircle()
+            if not enemyInRange() then
+                unequipMedusa()
+                return
+            end
+            local medusa = findMedusaTool()
+            if not medusa then return end
+            local char = player.Character
+            local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+            if humanoid and medusa.Parent ~= char then
+                pcall(function() humanoid:EquipTool(medusa) end)
+            end
+            local heldTool = char and char:FindFirstChildOfClass("Tool")
+            if not heldTool or medusaAttacking then return end
+            medusaAttacking = true
+            heldTool:Activate()
+            task.delay(MEDUSA_COOLDOWN, function() medusaAttacking = false end)
+        end)
+    end
+    local function stopAutoMedusa()
+        if autoMedusaConn then autoMedusaConn:Disconnect(); autoMedusaConn = nil end
+        if medusaCircle then medusaCircle:Destroy(); medusaCircle = nil end
+        medusaAttacking = false
+        unequipMedusa()
+    end
+    AutoMedusaButton.MouseButton1Click:Connect(function()
+        autoMedusaEnabled = not autoMedusaEnabled
+        if autoMedusaEnabled then
+            AutoMedusaButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+            startAutoMedusa()
+        else
+            AutoMedusaButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+            stopAutoMedusa()
+        end
+    end)
     local AutoRightButton = Instance.new("TextButton")
     AutoRightButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     AutoRightButton.Position = UDim2.new(0, 15 + buttonSize + 10, 0.5, -buttonSize/2 + yOffset)
@@ -3249,102 +3437,375 @@ end
 -- ═══════════════════════════════════════════════════════
 
 function createRightButtons(device)
-    local buttonSize = device == "iPhone" and 60 or 75
+    local buttonSize = device == "iPhone" and 38 or 48
 
-    -- ═══════════════════════════════════════════════════════
-    -- ✅ LAGGER LOGIC (built-in, used by Lagger-mode tracking)
-    -- ═══════════════════════════════════════════════════════
-    local isMobile = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
-    local LAGGER_CONFIG = isMobile and {
-        TableIncrease = 290, Tries = 1, LoopWaitTime = 0.85
-    } or {
-        TableIncrease = 265, Tries = 1, LoopWaitTime = 0.05
-    }
-    local CUSTOM_REMOTE_PATH = "RobloxReplicatedStorage.SetPlayerBlockList"
-    local function resolveRemote(path)
-        if not path or path == "" then return nil end
-        local obj = game
-        local cleaned = path:gsub("^game%.", "")
-        for segment in cleaned:gmatch("[^%.]+") do
-            if obj then obj = obj[segment] else return nil end
-        end
-        return obj
+    -- ✅ DESYNC Button (ABOVE TRACK PLAYER)
+    local DesyncButton = Instance.new("TextButton")
+    DesyncButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
+    DesyncButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize*2 - 20)
+    DesyncButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+    DesyncButton.BackgroundTransparency = 0.3
+    DesyncButton.Text = "DESYNC"
+    DesyncButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    DesyncButton.Font = Enum.Font.GothamBold
+    DesyncButton.TextSize = device == "iPhone" and 9 or 12
+    DesyncButton.Parent = ScreenGui
+
+    local DesyncCorner = Instance.new("UICorner")
+    DesyncCorner.CornerRadius = UDim.new(0, 15)
+    DesyncCorner.Parent = DesyncButton
+
+    local DesyncStroke = Instance.new("UIStroke")
+    DesyncStroke.Color = Color3.fromRGB(255, 255, 255)
+    DesyncStroke.Thickness = 2
+    DesyncStroke.Parent = DesyncButton
+
+    -- Desync logic
+    local desyncEnabled = false
+    local laggerEnabled = false
+    local animConnection
+    local prevSpeed, prevJump, prevBypass, prevSpin, prevPath, prevAimbot
+    local function getStealSpeed()
+        if SpeedBooster and SpeedBooster.StealSpeed then return SpeedBooster.StealSpeed end
+        if ConfigData and ConfigData.stealSpeed then return ConfigData.stealSpeed end
+        return 29.6
     end
-    local function getmaxvalue(val)
-        if type(val) ~= "number" then return nil end
-        return 499999 / (val + 2)
-    end
-    local function bomb(tableincrease, tries)
-        local maintable = {}
-        local spammedtable = {}
-        table.insert(spammedtable, {})
-        local z = spammedtable[1]
-        for i = 1, tableincrease do
-            local tableins = {}
-            table.insert(z, tableins)
-            z = tableins
+        -- ✅ LAGGER Button (TOP)
+        local LaggerButton = Instance.new("TextButton")
+        LaggerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
+        LaggerButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize*3 - 30)
+        LaggerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+        LaggerButton.BackgroundTransparency = 0.3
+        LaggerButton.Text = "LAGGER"
+        LaggerButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        LaggerButton.Font = Enum.Font.GothamBold
+        LaggerButton.TextSize = device == "iPhone" and 9 or 12
+        LaggerButton.Parent = ScreenGui
+
+        local LaggerCorner = Instance.new("UICorner")
+        LaggerCorner.CornerRadius = UDim.new(0, 15)
+        LaggerCorner.Parent = LaggerButton
+
+        local LaggerStroke = Instance.new("UIStroke")
+        LaggerStroke.Color = Color3.fromRGB(255, 255, 255)
+        LaggerStroke.Thickness = 2
+        LaggerStroke.Parent = LaggerButton
+
+        -- LAGGER logic (no extra GUI, just logic)
+        local isMobile = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
+        local LAGGER_CONFIG = isMobile and {
+            TableIncrease = 290,
+            Tries = 1,
+            LoopWaitTime = 0.85
+        } or {
+            TableIncrease = 265,
+            Tries = 1,
+            LoopWaitTime = 0.05
+        }
+        local CUSTOM_REMOTE_PATH = "RobloxReplicatedStorage.SetPlayerBlockList"
+        local function resolveRemote(path)
+            if not path or path == "" then return nil end
+            local obj = game
+            local cleaned = path:gsub("^game%.", "")
+            for segment in cleaned:gmatch("[^%.]+") do
+                if obj then
+                    obj = obj[segment]
+                else
+                    return nil
+                end
+            end
+            return obj
         end
-        local maximum = getmaxvalue(tableincrease) or 9999999
-        for i = 1, maximum do
-            table.insert(maintable, spammedtable)
-            if i % 5000 == 0 then task.wait() end
+        local function getmaxvalue(val)
+            local mainvalueifonetable = 499999
+            if type(val) ~= "number" then return nil end
+            return mainvalueifonetable / (val + 2)
         end
-        local remote = resolveRemote(CUSTOM_REMOTE_PATH)
-        if remote then
-            for i = 1, tries do
-                pcall(function()
-                    if remote:IsA("RemoteEvent") or remote:IsA("UnreliableRemoteEvent") then
-                        remote:FireServer(maintable)
-                    elseif remote:IsA("RemoteFunction") then
-                        remote:InvokeServer(maintable)
-                    end
+        local function bomb(tableincrease, tries)
+            local maintable = {}
+            local spammedtable = {}
+            table.insert(spammedtable, {})
+            local z = spammedtable[1]
+            for i = 1, tableincrease do
+                local tableins = {}
+                table.insert(z, tableins)
+                z = tableins
+            end
+            local maximum = getmaxvalue(tableincrease) or 9999999
+            for i = 1, maximum do
+                table.insert(maintable, spammedtable)
+                if i % 5000 == 0 then task.wait() end
+            end
+            local remote = resolveRemote(CUSTOM_REMOTE_PATH)
+            if remote then
+                for i = 1, tries do
+                    pcall(function()
+                        if remote:IsA("RemoteEvent") or remote:IsA("UnreliableRemoteEvent") then
+                            remote:FireServer(maintable)
+                        elseif remote:IsA("RemoteFunction") then
+                            remote:InvokeServer(maintable)
+                        end
+                    end)
+                end
+            end
+        end
+        local laggerEnabled = false
+        local laggerThread = nil
+        local function startLaggerLoop()
+            while laggerEnabled do
+                game:GetService("NetworkClient"):SetOutgoingKBPSLimit(math.huge)
+                task.spawn(function()
+                    bomb(LAGGER_CONFIG.TableIncrease, LAGGER_CONFIG.Tries)
                 end)
+                task.wait(math.max(LAGGER_CONFIG.LoopWaitTime, 0.15))
+            end
+        end
+        local function stopLaggerLoop()
+            laggerEnabled = false
+            if laggerThread then
+                coroutine.close(laggerThread)
+                laggerThread = nil
+            end
+        end
+        local function startLagger()
+            if laggerThread then return end
+            laggerEnabled = true
+            laggerThread = coroutine.create(startLaggerLoop)
+            coroutine.resume(laggerThread)
+        end
+        LaggerButton.MouseButton1Click:Connect(function()
+            laggerEnabled = not laggerEnabled
+            if laggerEnabled then
+                LaggerButton.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+                startLagger()
+            else
+                LaggerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+                stopLaggerLoop()
+            end
+        end)
+
+        -- ⚙ Lagger Gear Button
+        local LaggerGear = Instance.new("TextButton")
+        LaggerGear.Size = UDim2.new(0, 18, 0, 18)
+        LaggerGear.Position = UDim2.new(1, -16, 0, -2)
+        LaggerGear.BackgroundTransparency = 1
+        LaggerGear.Text = "⚙"
+        LaggerGear.TextColor3 = Color3.fromRGB(200, 200, 200)
+        LaggerGear.Font = Enum.Font.GothamBold
+        LaggerGear.TextSize = 14
+        LaggerGear.ZIndex = 3
+        LaggerGear.Parent = LaggerButton
+
+        -- ═══════════════════════════════════════════════════════
+        -- ✅ LAGGER SETTINGS PANEL
+        -- ═══════════════════════════════════════════════════════
+
+        local LaggerSettings = Instance.new("Frame")
+        LaggerSettings.Name = "LaggerSettings"
+        LaggerSettings.Size = UDim2.new(0, 210, 0, 200)
+        LaggerSettings.Position = UDim2.new(0.5, -105, 0.3, 0)
+        LaggerSettings.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+        LaggerSettings.BackgroundTransparency = 0.1
+        LaggerSettings.Visible = false
+        LaggerSettings.Active = true
+        LaggerSettings.Draggable = true
+        LaggerSettings.Parent = ScreenGui
+        LaggerSettings.ZIndex = 10
+
+        Instance.new("UICorner", LaggerSettings).CornerRadius = UDim.new(0, 12)
+        local LSStroke = Instance.new("UIStroke", LaggerSettings)
+        LSStroke.Color = Color3.fromRGB(255, 80, 80)
+        LSStroke.Thickness = 2
+
+        local LSTitle = Instance.new("TextLabel")
+        LSTitle.Size = UDim2.new(1, 0, 0, 30)
+        LSTitle.BackgroundTransparency = 1
+        LSTitle.Text = "⚙ Lagger Settings"
+        LSTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+        LSTitle.Font = Enum.Font.GothamBold
+        LSTitle.TextSize = 14
+        LSTitle.Parent = LaggerSettings
+        LSTitle.ZIndex = 11
+
+        local LSClose = Instance.new("TextButton")
+        LSClose.Size = UDim2.new(0, 24, 0, 24)
+        LSClose.Position = UDim2.new(1, -28, 0, 3)
+        LSClose.BackgroundTransparency = 1
+        LSClose.Text = "✕"
+        LSClose.TextColor3 = Color3.fromRGB(255, 80, 80)
+        LSClose.Font = Enum.Font.GothamBold
+        LSClose.TextSize = 14
+        LSClose.Parent = LaggerSettings
+        LSClose.ZIndex = 11
+        LSClose.MouseButton1Click:Connect(function() LaggerSettings.Visible = false end)
+
+        -- Helper to create a lagger setting row
+        local function createLaggerRow(labelText, yPos, getValue, setValue, step, minVal)
+            local lbl = Instance.new("TextLabel")
+            lbl.Size = UDim2.new(0.55, 0, 0, 25)
+            lbl.Position = UDim2.new(0, 10, 0, yPos)
+            lbl.BackgroundTransparency = 1
+            lbl.Text = labelText
+            lbl.TextColor3 = Color3.fromRGB(200, 200, 220)
+            lbl.Font = Enum.Font.Gotham
+            lbl.TextSize = 11
+            lbl.TextXAlignment = Enum.TextXAlignment.Left
+            lbl.Parent = LaggerSettings
+            lbl.ZIndex = 11
+
+            local valLbl = Instance.new("TextLabel")
+            valLbl.Size = UDim2.new(0, 50, 0, 25)
+            valLbl.Position = UDim2.new(1, -100, 0, yPos)
+            valLbl.BackgroundTransparency = 1
+            valLbl.Text = tostring(getValue())
+            valLbl.TextColor3 = Color3.fromRGB(255, 100, 100)
+            valLbl.Font = Enum.Font.GothamBold
+            valLbl.TextSize = 12
+            valLbl.Parent = LaggerSettings
+            valLbl.ZIndex = 11
+
+            local minus = Instance.new("TextButton")
+            minus.Size = UDim2.new(0, 22, 0, 22)
+            minus.Position = UDim2.new(1, -48, 0, yPos + 2)
+            minus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+            minus.Text = "-"
+            minus.TextColor3 = Color3.fromRGB(255, 255, 255)
+            minus.Font = Enum.Font.GothamBold
+            minus.TextSize = 14
+            minus.Parent = LaggerSettings
+            minus.ZIndex = 11
+            Instance.new("UICorner", minus).CornerRadius = UDim.new(0, 6)
+
+            local plus = Instance.new("TextButton")
+            plus.Size = UDim2.new(0, 22, 0, 22)
+            plus.Position = UDim2.new(1, -22, 0, yPos + 2)
+            plus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+            plus.Text = "+"
+            plus.TextColor3 = Color3.fromRGB(255, 255, 255)
+            plus.Font = Enum.Font.GothamBold
+            plus.TextSize = 14
+            plus.Parent = LaggerSettings
+            plus.ZIndex = 11
+            Instance.new("UICorner", plus).CornerRadius = UDim.new(0, 6)
+
+            minus.MouseButton1Click:Connect(function()
+                setValue(math.max(minVal, getValue() - step))
+                valLbl.Text = tostring(getValue())
+            end)
+            plus.MouseButton1Click:Connect(function()
+                setValue(getValue() + step)
+                valLbl.Text = tostring(getValue())
+            end)
+            return valLbl
+        end
+
+        createLaggerRow("Table Increase", 35, function() return LAGGER_CONFIG.TableIncrease end, function(v) LAGGER_CONFIG.TableIncrease = v end, 10, 10)
+        createLaggerRow("Tries", 65, function() return LAGGER_CONFIG.Tries end, function(v) LAGGER_CONFIG.Tries = v end, 1, 1)
+        createLaggerRow("Loop Wait (s)", 95, function() return LAGGER_CONFIG.LoopWaitTime end, function(v) LAGGER_CONFIG.LoopWaitTime = v end, 0.05, 0.05)
+
+        -- Save & Reset for Lagger
+        local LSSave = Instance.new("TextButton")
+        LSSave.Size = UDim2.new(0.44, 0, 0, 28)
+        LSSave.Position = UDim2.new(0.03, 0, 0, 130)
+        LSSave.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
+        LSSave.Text = "💾 Save"
+        LSSave.TextColor3 = Color3.fromRGB(255, 255, 255)
+        LSSave.Font = Enum.Font.GothamBold
+        LSSave.TextSize = 12
+        LSSave.Parent = LaggerSettings
+        LSSave.ZIndex = 11
+        Instance.new("UICorner", LSSave).CornerRadius = UDim.new(0, 8)
+
+        local LSReset = Instance.new("TextButton")
+        LSReset.Size = UDim2.new(0.44, 0, 0, 28)
+        LSReset.Position = UDim2.new(0.53, 0, 0, 130)
+        LSReset.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+        LSReset.Text = "🔄 Reset"
+        LSReset.TextColor3 = Color3.fromRGB(255, 255, 255)
+        LSReset.Font = Enum.Font.GothamBold
+        LSReset.TextSize = 12
+        LSReset.Parent = LaggerSettings
+        LSReset.ZIndex = 11
+        Instance.new("UICorner", LSReset).CornerRadius = UDim.new(0, 8)
+
+        local LSStatus = Instance.new("TextLabel")
+        LSStatus.Size = UDim2.new(1, 0, 0, 20)
+        LSStatus.Position = UDim2.new(0, 0, 0, 162)
+        LSStatus.BackgroundTransparency = 1
+        LSStatus.Text = ""
+        LSStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
+        LSStatus.Font = Enum.Font.Gotham
+        LSStatus.TextSize = 11
+        LSStatus.Parent = LaggerSettings
+        LSStatus.ZIndex = 11
+
+        local DEFAULT_LAGGER = isMobile and {TableIncrease = 290, Tries = 1, LoopWaitTime = 0.85} or {TableIncrease = 265, Tries = 1, LoopWaitTime = 0.05}
+
+        LSSave.MouseButton1Click:Connect(function()
+            ConfigData.laggerTableIncrease = LAGGER_CONFIG.TableIncrease
+            ConfigData.laggerTries = LAGGER_CONFIG.Tries
+            ConfigData.laggerLoopWait = LAGGER_CONFIG.LoopWaitTime
+            SaveConfig()
+            LSStatus.Text = "✅ Saved!"
+            LSStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
+            task.delay(2, function() LSStatus.Text = "" end)
+        end)
+
+        LSReset.MouseButton1Click:Connect(function()
+            LAGGER_CONFIG.TableIncrease = DEFAULT_LAGGER.TableIncrease
+            LAGGER_CONFIG.Tries = DEFAULT_LAGGER.Tries
+            LAGGER_CONFIG.LoopWaitTime = DEFAULT_LAGGER.LoopWaitTime
+            LaggerSettings.Visible = false
+            LaggerSettings.Visible = true -- refresh
+            LSStatus.Text = "🔄 Reset!"
+            LSStatus.TextColor3 = Color3.fromRGB(255, 200, 80)
+            task.delay(2, function() LSStatus.Text = "" end)
+        end)
+
+        -- Load saved lagger settings
+        if ConfigData.laggerTableIncrease then LAGGER_CONFIG.TableIncrease = ConfigData.laggerTableIncrease end
+        if ConfigData.laggerTries then LAGGER_CONFIG.Tries = ConfigData.laggerTries end
+        if ConfigData.laggerLoopWait then LAGGER_CONFIG.LoopWaitTime = ConfigData.laggerLoopWait end
+
+        LaggerGear.MouseButton1Click:Connect(function()
+            LaggerSettings.Visible = not LaggerSettings.Visible
+        end)
+    local function getHumanoid()
+        local char = player.Character or player.CharacterAdded:Wait()
+        return char:WaitForChild("Humanoid")
+    end
+    local function stopAnims(hum)
+        for _, track in pairs(hum:GetPlayingAnimationTracks()) do track:Stop() end
+    end
+    local function setOtherPlayersDesync(state)
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= player and plr.Character and plr.Character:FindFirstChild("Humanoid") then
+                if raknet and raknet.desync then pcall(function() raknet.desync(state, plr) end) end
             end
         end
     end
-    local _laggerEnabled = false
-    local _laggerThread = nil
-    local function _startLaggerLoop()
-        while _laggerEnabled do
-            pcall(function() game:GetService("NetworkClient"):SetOutgoingKBPSLimit(math.huge) end)
-            task.spawn(function()
-                bomb(LAGGER_CONFIG.TableIncrease, LAGGER_CONFIG.Tries)
-            end)
-            task.wait(math.max(LAGGER_CONFIG.LoopWaitTime, 0.15))
+    DesyncButton.MouseButton1Click:Connect(function()
+        desyncEnabled = not desyncEnabled
+        local humanoid = getHumanoid()
+        if desyncEnabled then
+            DesyncButton.BackgroundColor3 = Color3.fromRGB(120, 60, 255)
+            stopAnims(humanoid)
+            if animConnection then animConnection:Disconnect() animConnection = nil end
+            animConnection = humanoid.AnimationPlayed:Connect(function(t) t:Stop() end)
+            if raknet and raknet.desync then raknet.desync(true) end
+            print("leak by Lacsy on dc\nLeak Royals desync by Lacsy")
+        else
+            DesyncButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+            if animConnection then animConnection:Disconnect() animConnection = nil end
+            if raknet and raknet.desync then raknet.desync(false) end
         end
-    end
-    local function stopLagger()
-        _laggerEnabled = false
-        if _laggerThread then
-            pcall(function() coroutine.close(_laggerThread) end)
-            _laggerThread = nil
-        end
-    end
-    local function startLagger()
-        if _laggerThread then return end
-        _laggerEnabled = true
-        _laggerThread = coroutine.create(_startLaggerLoop)
-        coroutine.resume(_laggerThread)
-    end
-
-    -- ═══════════════════════════════════════════════════════
-    -- ✅ TRACK SETTINGS STATE
-    -- ═══════════════════════════════════════════════════════
-    local TRACK_DEFAULTS = { mode = "Normal", speed = 56.5 }
-    local trackMode = (ConfigData.trackMode == "Lagger") and "Lagger" or TRACK_DEFAULTS.mode
-    local trackSpeed = tonumber(ConfigData.trackSpeed) or TRACK_DEFAULTS.speed
-    local trackLaggerForced = false
-
-    local function syncTrackSpeed()
-        BAT_MOVE_SPEED = trackSpeed
-    end
-    syncTrackSpeed()
+    end)
 
     -- ✅ TRACK PLAYER Button (RIGHT SIDE - GRAY!)
     local TrackPlayerButton = Instance.new("TextButton")
     TrackPlayerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     TrackPlayerButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize - 10)
-    TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+    TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75) -- ✅ GRAY!
     TrackPlayerButton.BackgroundTransparency = 0.3
     TrackPlayerButton.Text = "TRACK\nPLAYER"
     TrackPlayerButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -3361,281 +3822,23 @@ function createRightButtons(device)
     TrackStroke.Thickness = 2
     TrackStroke.Parent = TrackPlayerButton
 
-    local function setTrackButtonVisual()
+    TrackPlayerButton.MouseButton1Click:Connect(function()
+        batAimbotToggled = not batAimbotToggled
+        
         if batAimbotToggled then
-            if trackMode == "Lagger" then
-                TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(255, 120, 80)
-            else
-                TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-            end
+            startBatAimbot()
+            TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
         else
+            stopBatAimbot()
             TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
         end
-    end
-
-    local function updateTrackLagger()
-        if batAimbotToggled and trackMode == "Lagger" then
-            if not _laggerEnabled then
-                startLagger()
-                trackLaggerForced = true
-            end
-        else
-            if trackLaggerForced and _laggerEnabled then
-                stopLagger()
-            end
-            trackLaggerForced = false
-        end
-    end
-
-    -- ⚙ Track Gear Button (top-right of TRACK PLAYER)
-    local TrackGear = Instance.new("TextButton")
-    TrackGear.Size = UDim2.new(0, 18, 0, 18)
-    TrackGear.Position = UDim2.new(1, -16, 0, -2)
-    TrackGear.BackgroundTransparency = 1
-    TrackGear.Text = "⚙"
-    TrackGear.TextColor3 = Color3.fromRGB(200, 200, 200)
-    TrackGear.Font = Enum.Font.GothamBold
-    TrackGear.TextSize = 14
-    TrackGear.ZIndex = 3
-    TrackGear.Parent = TrackPlayerButton
-
-    -- ═══════════════════════════════════════════════════════
-    -- ✅ TRACK SETTINGS PANEL
-    -- ═══════════════════════════════════════════════════════
-    local TrackSettings = Instance.new("Frame")
-    TrackSettings.Name = "TrackSettings"
-    TrackSettings.Size = UDim2.new(0, 220, 0, 195)
-    TrackSettings.Position = UDim2.new(0.5, -110, 0.32, 0)
-    TrackSettings.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-    TrackSettings.BackgroundTransparency = 0.1
-    TrackSettings.Visible = false
-    TrackSettings.Active = true
-    TrackSettings.Draggable = true
-    TrackSettings.Parent = ScreenGui
-    TrackSettings.ZIndex = 10
-
-    Instance.new("UICorner", TrackSettings).CornerRadius = UDim.new(0, 12)
-    local tsStroke = Instance.new("UIStroke", TrackSettings)
-    tsStroke.Color = Color3.fromRGB(80, 210, 140)
-    tsStroke.Thickness = 2
-
-    -- Title
-    local tsTitle = Instance.new("TextLabel")
-    tsTitle.Size = UDim2.new(1, 0, 0, 30)
-    tsTitle.BackgroundTransparency = 1
-    tsTitle.Text = "⚙ Track Settings"
-    tsTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-    tsTitle.Font = Enum.Font.GothamBold
-    tsTitle.TextSize = 14
-    tsTitle.Parent = TrackSettings
-    tsTitle.ZIndex = 11
-
-    -- Close
-    local tsClose = Instance.new("TextButton")
-    tsClose.Size = UDim2.new(0, 24, 0, 24)
-    tsClose.Position = UDim2.new(1, -28, 0, 3)
-    tsClose.BackgroundTransparency = 1
-    tsClose.Text = "✕"
-    tsClose.TextColor3 = Color3.fromRGB(255, 80, 80)
-    tsClose.Font = Enum.Font.GothamBold
-    tsClose.TextSize = 14
-    tsClose.Parent = TrackSettings
-    tsClose.ZIndex = 11
-    tsClose.MouseButton1Click:Connect(function() TrackSettings.Visible = false end)
-
-    -- ── MODE ROW ──
-    local modeLabel = Instance.new("TextLabel")
-    modeLabel.Size = UDim2.new(0.45, 0, 0, 25)
-    modeLabel.Position = UDim2.new(0, 10, 0, 38)
-    modeLabel.BackgroundTransparency = 1
-    modeLabel.Text = "Mode"
-    modeLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
-    modeLabel.Font = Enum.Font.Gotham
-    modeLabel.TextSize = 12
-    modeLabel.TextXAlignment = Enum.TextXAlignment.Left
-    modeLabel.Parent = TrackSettings
-    modeLabel.ZIndex = 11
-
-    local modeBtn = Instance.new("TextButton")
-    modeBtn.Size = UDim2.new(0, 110, 0, 26)
-    modeBtn.Position = UDim2.new(1, -120, 0, 37)
-    modeBtn.BackgroundColor3 = Color3.fromRGB(50, 120, 70)
-    modeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    modeBtn.Font = Enum.Font.GothamBold
-    modeBtn.TextSize = 11
-    modeBtn.Parent = TrackSettings
-    modeBtn.ZIndex = 11
-    Instance.new("UICorner", modeBtn).CornerRadius = UDim.new(0, 8)
-
-    local function refreshModeUI()
-        if trackMode == "Lagger" then
-            modeBtn.Text = "🔴 Lagger"
-            modeBtn.BackgroundColor3 = Color3.fromRGB(170, 60, 60)
-        else
-            modeBtn.Text = "🟢 Normal"
-            modeBtn.BackgroundColor3 = Color3.fromRGB(50, 120, 70)
-        end
-    end
-    refreshModeUI()
-
-    modeBtn.MouseButton1Click:Connect(function()
-        trackMode = (trackMode == "Normal") and "Lagger" or "Normal"
-        refreshModeUI()
-        setTrackButtonVisual()
-        updateTrackLagger()
     end)
-
-    -- ── SPEED ROW ──
-    local speedLabel = Instance.new("TextLabel")
-    speedLabel.Size = UDim2.new(0.5, 0, 0, 25)
-    speedLabel.Position = UDim2.new(0, 10, 0, 72)
-    speedLabel.BackgroundTransparency = 1
-    speedLabel.Text = "Track Speed"
-    speedLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
-    speedLabel.Font = Enum.Font.Gotham
-    speedLabel.TextSize = 12
-    speedLabel.TextXAlignment = Enum.TextXAlignment.Left
-    speedLabel.Parent = TrackSettings
-    speedLabel.ZIndex = 11
-
-    local speedVal = Instance.new("TextLabel")
-    speedVal.Size = UDim2.new(0, 46, 0, 25)
-    speedVal.Position = UDim2.new(1, -100, 0, 72)
-    speedVal.BackgroundTransparency = 1
-    speedVal.Text = string.format("%.1f", trackSpeed)
-    speedVal.TextColor3 = Color3.fromRGB(80, 210, 140)
-    speedVal.Font = Enum.Font.GothamBold
-    speedVal.TextSize = 12
-    speedVal.Parent = TrackSettings
-    speedVal.ZIndex = 11
-
-    local speedMinus = Instance.new("TextButton")
-    speedMinus.Size = UDim2.new(0, 22, 0, 22)
-    speedMinus.Position = UDim2.new(1, -48, 0, 74)
-    speedMinus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-    speedMinus.Text = "-"
-    speedMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
-    speedMinus.Font = Enum.Font.GothamBold
-    speedMinus.TextSize = 14
-    speedMinus.Parent = TrackSettings
-    speedMinus.ZIndex = 11
-    Instance.new("UICorner", speedMinus).CornerRadius = UDim.new(0, 6)
-
-    local speedPlus = Instance.new("TextButton")
-    speedPlus.Size = UDim2.new(0, 22, 0, 22)
-    speedPlus.Position = UDim2.new(1, -22, 0, 74)
-    speedPlus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-    speedPlus.Text = "+"
-    speedPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
-    speedPlus.Font = Enum.Font.GothamBold
-    speedPlus.TextSize = 14
-    speedPlus.Parent = TrackSettings
-    speedPlus.ZIndex = 11
-    Instance.new("UICorner", speedPlus).CornerRadius = UDim.new(0, 6)
-
-    speedMinus.MouseButton1Click:Connect(function()
-        trackSpeed = math.max(10, trackSpeed - 2.5)
-        syncTrackSpeed()
-        speedVal.Text = string.format("%.1f", trackSpeed)
-    end)
-    speedPlus.MouseButton1Click:Connect(function()
-        trackSpeed = math.min(150, trackSpeed + 2.5)
-        syncTrackSpeed()
-        speedVal.Text = string.format("%.1f", trackSpeed)
-    end)
-
-    -- ── SAVE / RESET ──
-    local tsSave = Instance.new("TextButton")
-    tsSave.Size = UDim2.new(0.44, 0, 0, 28)
-    tsSave.Position = UDim2.new(0.03, 0, 0, 112)
-    tsSave.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
-    tsSave.Text = "💾 Save"
-    tsSave.TextColor3 = Color3.fromRGB(255, 255, 255)
-    tsSave.Font = Enum.Font.GothamBold
-    tsSave.TextSize = 12
-    tsSave.Parent = TrackSettings
-    tsSave.ZIndex = 11
-    Instance.new("UICorner", tsSave).CornerRadius = UDim.new(0, 8)
-
-    local tsReset = Instance.new("TextButton")
-    tsReset.Size = UDim2.new(0.44, 0, 0, 28)
-    tsReset.Position = UDim2.new(0.53, 0, 0, 112)
-    tsReset.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-    tsReset.Text = "🔄 Reset"
-    tsReset.TextColor3 = Color3.fromRGB(255, 255, 255)
-    tsReset.Font = Enum.Font.GothamBold
-    tsReset.TextSize = 12
-    tsReset.Parent = TrackSettings
-    tsReset.ZIndex = 11
-    Instance.new("UICorner", tsReset).CornerRadius = UDim.new(0, 8)
-
-    local tsStatus = Instance.new("TextLabel")
-    tsStatus.Size = UDim2.new(1, 0, 0, 20)
-    tsStatus.Position = UDim2.new(0, 0, 0, 148)
-    tsStatus.BackgroundTransparency = 1
-    tsStatus.Text = ""
-    tsStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
-    tsStatus.Font = Enum.Font.Gotham
-    tsStatus.TextSize = 11
-    tsStatus.Parent = TrackSettings
-    tsStatus.ZIndex = 11
-
-    tsSave.MouseButton1Click:Connect(function()
-        ConfigData.trackMode = trackMode
-        ConfigData.trackSpeed = trackSpeed
-        SaveConfig()
-        tsStatus.Text = "✅ Saved!"
-        tsStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
-        task.delay(2, function() tsStatus.Text = "" end)
-    end)
-
-    tsReset.MouseButton1Click:Connect(function()
-        trackMode = TRACK_DEFAULTS.mode
-        trackSpeed = TRACK_DEFAULTS.speed
-        syncTrackSpeed()
-        refreshModeUI()
-        speedVal.Text = string.format("%.1f", trackSpeed)
-        setTrackButtonVisual()
-        updateTrackLagger()
-        tsStatus.Text = "🔄 Reset!"
-        tsStatus.TextColor3 = Color3.fromRGB(255, 200, 80)
-        task.delay(2, function() tsStatus.Text = "" end)
-    end)
-
-    TrackGear.MouseButton1Click:Connect(function()
-        TrackSettings.Visible = not TrackSettings.Visible
-    end)
-
-    -- ═══════════════════════════════════════════════════════
-    -- ✅ TRACK PLAYER BUTTON CLICK (with lagger integration)
-    -- ═══════════════════════════════════════════════════════
-    TrackPlayerButton.MouseButton1Click:Connect(function()
-        if batAimbotToggled then
-            stopBatAimbot()
-            -- If lagger was forced on by tracking, stop it
-            if trackLaggerForced then
-                stopLagger()
-                trackLaggerForced = false
-            end
-        else
-            syncTrackSpeed()
-            startBatAimbot()
-            -- If in Lagger mode, auto-start lagger
-            if trackMode == "Lagger" and not _laggerEnabled then
-                startLagger()
-                trackLaggerForced = true
-            end
-        end
-        setTrackButtonVisual()
-    end)
-
-    setTrackButtonVisual()
 
     -- ✅ HIT CIRCLE Button (UNDER TRACK PLAYER - GRAY!)
     local HitCircleButton = Instance.new("TextButton")
     HitCircleButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     HitCircleButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, 10)
-    HitCircleButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+    HitCircleButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75) -- ✅ GRAY!
     HitCircleButton.BackgroundTransparency = 0.3
     HitCircleButton.Text = "HIT\nCIRCLE"
     HitCircleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -3662,6 +3865,654 @@ function createRightButtons(device)
             stopHitCircle()
             HitCircleButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
         end
+    end)
+
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ JUKE BUTTON (BELOW HIT CIRCLE) WITH SETTINGS GEAR
+    -- ═══════════════════════════════════════════════════════
+
+    local jukeFloatY = 5
+    local jukeTPDelay = 0.35
+    local jukeFloatSpeed = 40
+    local jukeActive = false
+
+    -- JUKE Button
+    local JukeButton = Instance.new("TextButton")
+    JukeButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
+    JukeButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, buttonSize + 20)
+    JukeButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+    JukeButton.BackgroundTransparency = 0.3
+    JukeButton.Text = "JUKE"
+    JukeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    JukeButton.Font = Enum.Font.GothamBold
+    JukeButton.TextSize = device == "iPhone" and 9 or 12
+    JukeButton.Parent = ScreenGui
+
+    local JukeCorner = Instance.new("UICorner")
+    JukeCorner.CornerRadius = UDim.new(0, 15)
+    JukeCorner.Parent = JukeButton
+
+    local JukeStroke = Instance.new("UIStroke")
+    JukeStroke.Color = Color3.fromRGB(255, 255, 255)
+    JukeStroke.Thickness = 2
+    JukeStroke.Parent = JukeButton
+
+    -- ⚙ Gear Settings Button (top-right corner of JUKE)
+    local JukeGear = Instance.new("TextButton")
+    JukeGear.Size = UDim2.new(0, 18, 0, 18)
+    JukeGear.Position = UDim2.new(1, -16, 0, -2)
+    JukeGear.BackgroundTransparency = 1
+    JukeGear.Text = "⚙"
+    JukeGear.TextColor3 = Color3.fromRGB(200, 200, 200)
+    JukeGear.Font = Enum.Font.GothamBold
+    JukeGear.TextSize = 14
+    JukeGear.ZIndex = 3
+    JukeGear.Parent = JukeButton
+
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ JUKE SETTINGS PANEL
+    -- ═══════════════════════════════════════════════════════
+
+    local JukeSettings = Instance.new("Frame")
+    JukeSettings.Name = "JukeSettings"
+    JukeSettings.Size = UDim2.new(0, 210, 0, 380)
+    JukeSettings.Position = UDim2.new(0.5, -105, 0.5, -140)
+    JukeSettings.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+    JukeSettings.BackgroundTransparency = 0.1
+    JukeSettings.Visible = false
+    JukeSettings.Active = true
+    JukeSettings.Draggable = true
+    JukeSettings.Parent = ScreenGui
+    JukeSettings.ZIndex = 10
+
+    local JSCorner = Instance.new("UICorner")
+    JSCorner.CornerRadius = UDim.new(0, 12)
+    JSCorner.Parent = JukeSettings
+
+    local JSStroke = Instance.new("UIStroke")
+    JSStroke.Color = Color3.fromRGB(138, 43, 226)
+    JSStroke.Thickness = 2
+    JSStroke.Parent = JukeSettings
+
+    -- Title
+    local JSTitle = Instance.new("TextLabel")
+    JSTitle.Size = UDim2.new(1, 0, 0, 30)
+    JSTitle.BackgroundTransparency = 1
+    JSTitle.Text = "⚙ Hub Settings"
+    JSTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    JSTitle.Font = Enum.Font.GothamBold
+    JSTitle.TextSize = 14
+    JSTitle.Parent = JukeSettings
+    JSTitle.ZIndex = 11
+
+    -- Close X
+    local JSClose = Instance.new("TextButton")
+    JSClose.Size = UDim2.new(0, 24, 0, 24)
+    JSClose.Position = UDim2.new(1, -28, 0, 3)
+    JSClose.BackgroundTransparency = 1
+    JSClose.Text = "✕"
+    JSClose.TextColor3 = Color3.fromRGB(255, 80, 80)
+    JSClose.Font = Enum.Font.GothamBold
+    JSClose.TextSize = 14
+    JSClose.Parent = JukeSettings
+    JSClose.ZIndex = 11
+    JSClose.MouseButton1Click:Connect(function() JukeSettings.Visible = false end)
+
+    -- Float Height Label + Value
+    local FloatLabel = Instance.new("TextLabel")
+    FloatLabel.Size = UDim2.new(0.6, 0, 0, 25)
+    FloatLabel.Position = UDim2.new(0, 10, 0, 35)
+    FloatLabel.BackgroundTransparency = 1
+    FloatLabel.Text = "Float Height (Y)"
+    FloatLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+    FloatLabel.Font = Enum.Font.Gotham
+    FloatLabel.TextSize = 12
+    FloatLabel.TextXAlignment = Enum.TextXAlignment.Left
+    FloatLabel.Parent = JukeSettings
+    FloatLabel.ZIndex = 11
+
+    local FloatValLabel = Instance.new("TextLabel")
+    FloatValLabel.Size = UDim2.new(0, 40, 0, 25)
+    FloatValLabel.Position = UDim2.new(1, -90, 0, 35)
+    FloatValLabel.BackgroundTransparency = 1
+    FloatValLabel.Text = tostring(jukeFloatY)
+    FloatValLabel.TextColor3 = Color3.fromRGB(138, 43, 226)
+    FloatValLabel.Font = Enum.Font.GothamBold
+    FloatValLabel.TextSize = 13
+    FloatValLabel.Parent = JukeSettings
+    FloatValLabel.ZIndex = 11
+
+    local FloatMinus = Instance.new("TextButton")
+    FloatMinus.Size = UDim2.new(0, 22, 0, 22)
+    FloatMinus.Position = UDim2.new(1, -48, 0, 37)
+    FloatMinus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    FloatMinus.Text = "-"
+    FloatMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    FloatMinus.Font = Enum.Font.GothamBold
+    FloatMinus.TextSize = 14
+    FloatMinus.Parent = JukeSettings
+    FloatMinus.ZIndex = 11
+    Instance.new("UICorner", FloatMinus).CornerRadius = UDim.new(0, 6)
+
+    local FloatPlus = Instance.new("TextButton")
+    FloatPlus.Size = UDim2.new(0, 22, 0, 22)
+    FloatPlus.Position = UDim2.new(1, -22, 0, 37)
+    FloatPlus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    FloatPlus.Text = "+"
+    FloatPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    FloatPlus.Font = Enum.Font.GothamBold
+    FloatPlus.TextSize = 14
+    FloatPlus.Parent = JukeSettings
+    FloatPlus.ZIndex = 11
+    Instance.new("UICorner", FloatPlus).CornerRadius = UDim.new(0, 6)
+
+    FloatMinus.MouseButton1Click:Connect(function()
+        jukeFloatY = math.max(1, jukeFloatY - 1)
+        FloatValLabel.Text = tostring(jukeFloatY)
+    end)
+    FloatPlus.MouseButton1Click:Connect(function()
+        jukeFloatY = jukeFloatY + 1
+        FloatValLabel.Text = tostring(jukeFloatY)
+    end)
+
+    -- TP Delay Label + Value
+    local DelayLabel = Instance.new("TextLabel")
+    DelayLabel.Size = UDim2.new(0.6, 0, 0, 25)
+    DelayLabel.Position = UDim2.new(0, 10, 0, 65)
+    DelayLabel.BackgroundTransparency = 1
+    DelayLabel.Text = "TP Down Delay (s)"
+    DelayLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+    DelayLabel.Font = Enum.Font.Gotham
+    DelayLabel.TextSize = 12
+    DelayLabel.TextXAlignment = Enum.TextXAlignment.Left
+    DelayLabel.Parent = JukeSettings
+    DelayLabel.ZIndex = 11
+
+    local DelayValLabel = Instance.new("TextLabel")
+    DelayValLabel.Size = UDim2.new(0, 40, 0, 25)
+    DelayValLabel.Position = UDim2.new(1, -90, 0, 65)
+    DelayValLabel.BackgroundTransparency = 1
+    DelayValLabel.Text = tostring(jukeTPDelay)
+    DelayValLabel.TextColor3 = Color3.fromRGB(138, 43, 226)
+    DelayValLabel.Font = Enum.Font.GothamBold
+    DelayValLabel.TextSize = 13
+    DelayValLabel.Parent = JukeSettings
+    DelayValLabel.ZIndex = 11
+
+    local DelayMinus = Instance.new("TextButton")
+    DelayMinus.Size = UDim2.new(0, 22, 0, 22)
+    DelayMinus.Position = UDim2.new(1, -48, 0, 67)
+    DelayMinus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    DelayMinus.Text = "-"
+    DelayMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    DelayMinus.Font = Enum.Font.GothamBold
+    DelayMinus.TextSize = 14
+    DelayMinus.Parent = JukeSettings
+    DelayMinus.ZIndex = 11
+    Instance.new("UICorner", DelayMinus).CornerRadius = UDim.new(0, 6)
+
+    local DelayPlus = Instance.new("TextButton")
+    DelayPlus.Size = UDim2.new(0, 22, 0, 22)
+    DelayPlus.Position = UDim2.new(1, -22, 0, 67)
+    DelayPlus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    DelayPlus.Text = "+"
+    DelayPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    DelayPlus.Font = Enum.Font.GothamBold
+    DelayPlus.TextSize = 14
+    DelayPlus.Parent = JukeSettings
+    DelayPlus.ZIndex = 11
+    Instance.new("UICorner", DelayPlus).CornerRadius = UDim.new(0, 6)
+
+    DelayMinus.MouseButton1Click:Connect(function()
+        jukeTPDelay = math.max(0.05, jukeTPDelay - 0.05)
+        DelayValLabel.Text = string.format("%.2f", jukeTPDelay)
+    end)
+    DelayPlus.MouseButton1Click:Connect(function()
+        jukeTPDelay = jukeTPDelay + 0.05
+        DelayValLabel.Text = string.format("%.2f", jukeTPDelay)
+    end)
+
+    -- Float Speed Label + Value
+    local SpeedLabel = Instance.new("TextLabel")
+    SpeedLabel.Size = UDim2.new(0.6, 0, 0, 25)
+    SpeedLabel.Position = UDim2.new(0, 10, 0, 95)
+    SpeedLabel.BackgroundTransparency = 1
+    SpeedLabel.Text = "Float Speed"
+    SpeedLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+    SpeedLabel.Font = Enum.Font.Gotham
+    SpeedLabel.TextSize = 12
+    SpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
+    SpeedLabel.Parent = JukeSettings
+    SpeedLabel.ZIndex = 11
+
+    local SpeedValLabel = Instance.new("TextLabel")
+    SpeedValLabel.Size = UDim2.new(0, 40, 0, 25)
+    SpeedValLabel.Position = UDim2.new(1, -90, 0, 95)
+    SpeedValLabel.BackgroundTransparency = 1
+    SpeedValLabel.Text = tostring(jukeFloatSpeed)
+    SpeedValLabel.TextColor3 = Color3.fromRGB(138, 43, 226)
+    SpeedValLabel.Font = Enum.Font.GothamBold
+    SpeedValLabel.TextSize = 13
+    SpeedValLabel.Parent = JukeSettings
+    SpeedValLabel.ZIndex = 11
+
+    local SpeedMinus = Instance.new("TextButton")
+    SpeedMinus.Size = UDim2.new(0, 22, 0, 22)
+    SpeedMinus.Position = UDim2.new(1, -48, 0, 97)
+    SpeedMinus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    SpeedMinus.Text = "-"
+    SpeedMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SpeedMinus.Font = Enum.Font.GothamBold
+    SpeedMinus.TextSize = 14
+    SpeedMinus.Parent = JukeSettings
+    SpeedMinus.ZIndex = 11
+    Instance.new("UICorner", SpeedMinus).CornerRadius = UDim.new(0, 6)
+
+    local SpeedPlus = Instance.new("TextButton")
+    SpeedPlus.Size = UDim2.new(0, 22, 0, 22)
+    SpeedPlus.Position = UDim2.new(1, -22, 0, 97)
+    SpeedPlus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    SpeedPlus.Text = "+"
+    SpeedPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SpeedPlus.Font = Enum.Font.GothamBold
+    SpeedPlus.TextSize = 14
+    SpeedPlus.Parent = JukeSettings
+    SpeedPlus.ZIndex = 11
+    Instance.new("UICorner", SpeedPlus).CornerRadius = UDim.new(0, 6)
+
+    SpeedMinus.MouseButton1Click:Connect(function()
+        jukeFloatSpeed = math.max(5, jukeFloatSpeed - 5)
+        SpeedValLabel.Text = tostring(jukeFloatSpeed)
+    end)
+    SpeedPlus.MouseButton1Click:Connect(function()
+        jukeFloatSpeed = jukeFloatSpeed + 5
+        SpeedValLabel.Text = tostring(jukeFloatSpeed)
+    end)
+
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ BUTTON SIZE +/- (resizes right-side buttons)
+    -- ═══════════════════════════════════════════════════════
+
+    local allRightButtons = {DesyncButton, LaggerButton, TrackPlayerButton, HitCircleButton, JukeButton}
+
+    local BtnSizeLabel = Instance.new("TextLabel")
+    BtnSizeLabel.Size = UDim2.new(0.55, 0, 0, 25)
+    BtnSizeLabel.Position = UDim2.new(0, 10, 0, 125)
+    BtnSizeLabel.BackgroundTransparency = 1
+    BtnSizeLabel.Text = "Right Btn Size"
+    BtnSizeLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+    BtnSizeLabel.Font = Enum.Font.Gotham
+    BtnSizeLabel.TextSize = 11
+    BtnSizeLabel.TextXAlignment = Enum.TextXAlignment.Left
+    BtnSizeLabel.Parent = JukeSettings
+    BtnSizeLabel.ZIndex = 11
+
+    local BtnSizeValLabel = Instance.new("TextLabel")
+    BtnSizeValLabel.Size = UDim2.new(0, 40, 0, 25)
+    BtnSizeValLabel.Position = UDim2.new(1, -90, 0, 125)
+    BtnSizeValLabel.BackgroundTransparency = 1
+    BtnSizeValLabel.Text = tostring(buttonSize)
+    BtnSizeValLabel.TextColor3 = Color3.fromRGB(138, 43, 226)
+    BtnSizeValLabel.Font = Enum.Font.GothamBold
+    BtnSizeValLabel.TextSize = 13
+    BtnSizeValLabel.Parent = JukeSettings
+    BtnSizeValLabel.ZIndex = 11
+
+    local BtnSizeMinus = Instance.new("TextButton")
+    BtnSizeMinus.Size = UDim2.new(0, 22, 0, 22)
+    BtnSizeMinus.Position = UDim2.new(1, -48, 0, 127)
+    BtnSizeMinus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    BtnSizeMinus.Text = "-"
+    BtnSizeMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    BtnSizeMinus.Font = Enum.Font.GothamBold
+    BtnSizeMinus.TextSize = 14
+    BtnSizeMinus.Parent = JukeSettings
+    BtnSizeMinus.ZIndex = 11
+    Instance.new("UICorner", BtnSizeMinus).CornerRadius = UDim.new(0, 6)
+
+    local BtnSizePlus = Instance.new("TextButton")
+    BtnSizePlus.Size = UDim2.new(0, 22, 0, 22)
+    BtnSizePlus.Position = UDim2.new(1, -22, 0, 127)
+    BtnSizePlus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    BtnSizePlus.Text = "+"
+    BtnSizePlus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    BtnSizePlus.Font = Enum.Font.GothamBold
+    BtnSizePlus.TextSize = 14
+    BtnSizePlus.Parent = JukeSettings
+    BtnSizePlus.ZIndex = 11
+    Instance.new("UICorner", BtnSizePlus).CornerRadius = UDim.new(0, 6)
+
+    local function relayoutRightButtons(newSize)
+        for _, btn in ipairs(allRightButtons) do
+            btn.Size = UDim2.new(0, newSize, 0, newSize)
+        end
+        LaggerButton.Position = UDim2.new(1, -newSize - 15, 0.5, -newSize*3 - 30)
+        DesyncButton.Position = UDim2.new(1, -newSize - 15, 0.5, -newSize*2 - 20)
+        TrackPlayerButton.Position = UDim2.new(1, -newSize - 15, 0.5, -newSize - 10)
+        HitCircleButton.Position = UDim2.new(1, -newSize - 15, 0.5, 10)
+        JukeButton.Position = UDim2.new(1, -newSize - 15, 0.5, newSize + 20)
+    end
+
+    BtnSizeMinus.MouseButton1Click:Connect(function()
+        buttonSize = math.max(24, buttonSize - 4)
+        BtnSizeValLabel.Text = tostring(buttonSize)
+        relayoutRightButtons(buttonSize)
+    end)
+    BtnSizePlus.MouseButton1Click:Connect(function()
+        buttonSize = math.min(80, buttonSize + 4)
+        BtnSizeValLabel.Text = tostring(buttonSize)
+        relayoutRightButtons(buttonSize)
+    end)
+
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ LEFT BUTTON SIZE +/- (resizes left-side buttons)
+    -- ═══════════════════════════════════════════════════════
+
+    local leftBtnSize = device == "iPhone" and 55 or 70
+    local leftYOffset = leftBtnSize + 10
+
+    local LeftBtnLabel = Instance.new("TextLabel")
+    LeftBtnLabel.Size = UDim2.new(0.55, 0, 0, 25)
+    LeftBtnLabel.Position = UDim2.new(0, 10, 0, 155)
+    LeftBtnLabel.BackgroundTransparency = 1
+    LeftBtnLabel.Text = "Left Btn Size"
+    LeftBtnLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+    LeftBtnLabel.Font = Enum.Font.Gotham
+    LeftBtnLabel.TextSize = 11
+    LeftBtnLabel.TextXAlignment = Enum.TextXAlignment.Left
+    LeftBtnLabel.Parent = JukeSettings
+    LeftBtnLabel.ZIndex = 11
+
+    local LeftBtnValLabel = Instance.new("TextLabel")
+    LeftBtnValLabel.Size = UDim2.new(0, 40, 0, 25)
+    LeftBtnValLabel.Position = UDim2.new(1, -90, 0, 155)
+    LeftBtnValLabel.BackgroundTransparency = 1
+    LeftBtnValLabel.Text = tostring(leftBtnSize)
+    LeftBtnValLabel.TextColor3 = Color3.fromRGB(138, 43, 226)
+    LeftBtnValLabel.Font = Enum.Font.GothamBold
+    LeftBtnValLabel.TextSize = 13
+    LeftBtnValLabel.Parent = JukeSettings
+    LeftBtnValLabel.ZIndex = 11
+
+    local LeftBtnMinus = Instance.new("TextButton")
+    LeftBtnMinus.Size = UDim2.new(0, 22, 0, 22)
+    LeftBtnMinus.Position = UDim2.new(1, -48, 0, 157)
+    LeftBtnMinus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    LeftBtnMinus.Text = "-"
+    LeftBtnMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    LeftBtnMinus.Font = Enum.Font.GothamBold
+    LeftBtnMinus.TextSize = 14
+    LeftBtnMinus.Parent = JukeSettings
+    LeftBtnMinus.ZIndex = 11
+    Instance.new("UICorner", LeftBtnMinus).CornerRadius = UDim.new(0, 6)
+
+    local LeftBtnPlus = Instance.new("TextButton")
+    LeftBtnPlus.Size = UDim2.new(0, 22, 0, 22)
+    LeftBtnPlus.Position = UDim2.new(1, -22, 0, 157)
+    LeftBtnPlus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    LeftBtnPlus.Text = "+"
+    LeftBtnPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    LeftBtnPlus.Font = Enum.Font.GothamBold
+    LeftBtnPlus.TextSize = 14
+    LeftBtnPlus.Parent = JukeSettings
+    LeftBtnPlus.ZIndex = 11
+    Instance.new("UICorner", LeftBtnPlus).CornerRadius = UDim.new(0, 6)
+
+    -- Collect left-side buttons from ScreenGui
+    local function getLeftButtons()
+        local btns = {}
+        for _, child in ipairs(ScreenGui:GetChildren()) do
+            if child:IsA("TextButton") then
+                local txt = child.Text or ""
+                if txt:find("AUTO") or txt:find("MEDUSA") then
+                    table.insert(btns, child)
+                end
+            end
+        end
+        return btns
+    end
+
+    local function relayoutLeftButtons(newSize)
+        leftBtnSize = newSize
+        leftYOffset = newSize + 10
+        local leftBtns = getLeftButtons()
+        for _, btn in ipairs(leftBtns) do
+            btn.Size = UDim2.new(0, newSize, 0, newSize)
+        end
+    end
+
+    LeftBtnMinus.MouseButton1Click:Connect(function()
+        leftBtnSize = math.max(30, leftBtnSize - 5)
+        LeftBtnValLabel.Text = tostring(leftBtnSize)
+        relayoutLeftButtons(leftBtnSize)
+    end)
+    LeftBtnPlus.MouseButton1Click:Connect(function()
+        leftBtnSize = math.min(100, leftBtnSize + 5)
+        LeftBtnValLabel.Text = tostring(leftBtnSize)
+        relayoutLeftButtons(leftBtnSize)
+    end)
+
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ SMALL GUI SIZE +/- (resizes top small GUI buttons)
+    -- ═══════════════════════════════════════════════════════
+
+    local smallGuiWidth = 80
+    local smallGuiHeight = 20
+
+    local SmallGuiLabel = Instance.new("TextLabel")
+    SmallGuiLabel.Size = UDim2.new(0.55, 0, 0, 25)
+    SmallGuiLabel.Position = UDim2.new(0, 10, 0, 185)
+    SmallGuiLabel.BackgroundTransparency = 1
+    SmallGuiLabel.Text = "Small GUI Size"
+    SmallGuiLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+    SmallGuiLabel.Font = Enum.Font.Gotham
+    SmallGuiLabel.TextSize = 11
+    SmallGuiLabel.TextXAlignment = Enum.TextXAlignment.Left
+    SmallGuiLabel.Parent = JukeSettings
+    SmallGuiLabel.ZIndex = 11
+
+    local SmallGuiValLabel = Instance.new("TextLabel")
+    SmallGuiValLabel.Size = UDim2.new(0, 40, 0, 25)
+    SmallGuiValLabel.Position = UDim2.new(1, -90, 0, 185)
+    SmallGuiValLabel.BackgroundTransparency = 1
+    SmallGuiValLabel.Text = tostring(smallGuiWidth)
+    SmallGuiValLabel.TextColor3 = Color3.fromRGB(138, 43, 226)
+    SmallGuiValLabel.Font = Enum.Font.GothamBold
+    SmallGuiValLabel.TextSize = 13
+    SmallGuiValLabel.Parent = JukeSettings
+    SmallGuiValLabel.ZIndex = 11
+
+    local SmallGuiMinus = Instance.new("TextButton")
+    SmallGuiMinus.Size = UDim2.new(0, 22, 0, 22)
+    SmallGuiMinus.Position = UDim2.new(1, -48, 0, 187)
+    SmallGuiMinus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    SmallGuiMinus.Text = "-"
+    SmallGuiMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SmallGuiMinus.Font = Enum.Font.GothamBold
+    SmallGuiMinus.TextSize = 14
+    SmallGuiMinus.Parent = JukeSettings
+    SmallGuiMinus.ZIndex = 11
+    Instance.new("UICorner", SmallGuiMinus).CornerRadius = UDim.new(0, 6)
+
+    local SmallGuiPlus = Instance.new("TextButton")
+    SmallGuiPlus.Size = UDim2.new(0, 22, 0, 22)
+    SmallGuiPlus.Position = UDim2.new(1, -22, 0, 187)
+    SmallGuiPlus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    SmallGuiPlus.Text = "+"
+    SmallGuiPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SmallGuiPlus.Font = Enum.Font.GothamBold
+    SmallGuiPlus.TextSize = 14
+    SmallGuiPlus.Parent = JukeSettings
+    SmallGuiPlus.ZIndex = 11
+    Instance.new("UICorner", SmallGuiPlus).CornerRadius = UDim.new(0, 6)
+
+    local function resizeSmallGUIs(w, h)
+        smallGuiWidth = w
+        smallGuiHeight = h
+        for _, entry in pairs(SmallGUIInstances) do
+            if entry.Frame then
+                entry.Frame.Size = UDim2.new(0, w, 0, h)
+            end
+        end
+        if refreshSmallButtonPositions then refreshSmallButtonPositions() end
+    end
+
+    SmallGuiMinus.MouseButton1Click:Connect(function()
+        smallGuiWidth = math.max(50, smallGuiWidth - 10)
+        smallGuiHeight = math.max(14, smallGuiHeight - 2)
+        SmallGuiValLabel.Text = tostring(smallGuiWidth)
+        resizeSmallGUIs(smallGuiWidth, smallGuiHeight)
+    end)
+    SmallGuiPlus.MouseButton1Click:Connect(function()
+        smallGuiWidth = math.min(160, smallGuiWidth + 10)
+        smallGuiHeight = math.min(40, smallGuiHeight + 2)
+        SmallGuiValLabel.Text = tostring(smallGuiWidth)
+        resizeSmallGUIs(smallGuiWidth, smallGuiHeight)
+    end)
+
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ SAVE & RESET BUTTONS
+    -- ═══════════════════════════════════════════════════════
+
+    local DEFAULT_JUKE = {floatY = 5, tpDelay = 0.35, floatSpeed = 40, btnSize = device == "iPhone" and 38 or 48, leftBtnSize = device == "iPhone" and 55 or 70, smallW = 80, smallH = 20}
+
+    local SaveBtn = Instance.new("TextButton")
+    SaveBtn.Size = UDim2.new(0.44, 0, 0, 28)
+    SaveBtn.Position = UDim2.new(0.03, 0, 0, 220)
+    SaveBtn.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
+    SaveBtn.Text = "💾 Save"
+    SaveBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SaveBtn.Font = Enum.Font.GothamBold
+    SaveBtn.TextSize = 12
+    SaveBtn.Parent = JukeSettings
+    SaveBtn.ZIndex = 11
+    Instance.new("UICorner", SaveBtn).CornerRadius = UDim.new(0, 8)
+
+    local ResetBtn = Instance.new("TextButton")
+    ResetBtn.Size = UDim2.new(0.44, 0, 0, 28)
+    ResetBtn.Position = UDim2.new(0.53, 0, 0, 220)
+    ResetBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+    ResetBtn.Text = "🔄 Reset"
+    ResetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ResetBtn.Font = Enum.Font.GothamBold
+    ResetBtn.TextSize = 12
+    ResetBtn.Parent = JukeSettings
+    ResetBtn.ZIndex = 11
+    Instance.new("UICorner", ResetBtn).CornerRadius = UDim.new(0, 8)
+
+    local SaveStatus = Instance.new("TextLabel")
+    SaveStatus.Size = UDim2.new(1, 0, 0, 20)
+    SaveStatus.Position = UDim2.new(0, 0, 0, 252)
+    SaveStatus.BackgroundTransparency = 1
+    SaveStatus.Text = ""
+    SaveStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
+    SaveStatus.Font = Enum.Font.Gotham
+    SaveStatus.TextSize = 11
+    SaveStatus.Parent = JukeSettings
+    SaveStatus.ZIndex = 11
+
+    SaveBtn.MouseButton1Click:Connect(function()
+        ConfigData.jukeFloatY = jukeFloatY
+        ConfigData.jukeTPDelay = jukeTPDelay
+        ConfigData.jukeFloatSpeed = jukeFloatSpeed
+        ConfigData.jukeBtnSize = buttonSize
+        ConfigData.leftBtnSize = leftBtnSize
+        ConfigData.smallGuiWidth = smallGuiWidth
+        ConfigData.smallGuiHeight = smallGuiHeight
+        SaveConfig()
+        SaveStatus.Text = "✅ Saved!"
+        SaveStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
+        task.delay(2, function() SaveStatus.Text = "" end)
+    end)
+
+    ResetBtn.MouseButton1Click:Connect(function()
+        jukeFloatY = DEFAULT_JUKE.floatY
+        jukeTPDelay = DEFAULT_JUKE.tpDelay
+        jukeFloatSpeed = DEFAULT_JUKE.floatSpeed
+        buttonSize = DEFAULT_JUKE.btnSize
+        leftBtnSize = DEFAULT_JUKE.leftBtnSize
+        smallGuiWidth = DEFAULT_JUKE.smallW
+        smallGuiHeight = DEFAULT_JUKE.smallH
+        FloatValLabel.Text = tostring(jukeFloatY)
+        DelayValLabel.Text = string.format("%.2f", jukeTPDelay)
+        SpeedValLabel.Text = tostring(jukeFloatSpeed)
+        BtnSizeValLabel.Text = tostring(buttonSize)
+        LeftBtnValLabel.Text = tostring(leftBtnSize)
+        SmallGuiValLabel.Text = tostring(smallGuiWidth)
+        relayoutRightButtons(buttonSize)
+        relayoutLeftButtons(leftBtnSize)
+        resizeSmallGUIs(smallGuiWidth, smallGuiHeight)
+        SaveStatus.Text = "🔄 Reset to defaults!"
+        SaveStatus.TextColor3 = Color3.fromRGB(255, 200, 80)
+        task.delay(2, function() SaveStatus.Text = "" end)
+    end)
+
+    -- Load saved settings if available
+    if ConfigData.jukeFloatY then jukeFloatY = ConfigData.jukeFloatY; FloatValLabel.Text = tostring(jukeFloatY) end
+    if ConfigData.jukeTPDelay then jukeTPDelay = ConfigData.jukeTPDelay; DelayValLabel.Text = string.format("%.2f", jukeTPDelay) end
+    if ConfigData.jukeFloatSpeed then jukeFloatSpeed = ConfigData.jukeFloatSpeed; SpeedValLabel.Text = tostring(jukeFloatSpeed) end
+    if ConfigData.jukeBtnSize then buttonSize = ConfigData.jukeBtnSize; BtnSizeValLabel.Text = tostring(buttonSize); relayoutRightButtons(buttonSize) end
+    if ConfigData.leftBtnSize then leftBtnSize = ConfigData.leftBtnSize; LeftBtnValLabel.Text = tostring(leftBtnSize); relayoutLeftButtons(leftBtnSize) end
+    if ConfigData.smallGuiWidth and ConfigData.smallGuiHeight then
+        smallGuiWidth = ConfigData.smallGuiWidth
+        smallGuiHeight = ConfigData.smallGuiHeight
+        SmallGuiValLabel.Text = tostring(smallGuiWidth)
+        resizeSmallGUIs(smallGuiWidth, smallGuiHeight)
+    end
+
+    -- Gear opens/closes settings
+    JukeGear.MouseButton1Click:Connect(function()
+        JukeSettings.Visible = not JukeSettings.Visible
+    end)
+
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ JUKE LOGIC: Float up, spam tool, wait, then TP down
+    -- ═══════════════════════════════════════════════════════
+
+    JukeButton.MouseButton1Click:Connect(function()
+        if jukeActive then return end
+        local c = player.Character
+        local r = c and c:FindFirstChild("HumanoidRootPart")
+        if not r then return end
+        jukeActive = true
+        JukeButton.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+
+        local startPos = r.Position
+        local targetY = startPos.Y + jukeFloatY
+
+        -- Float up using velocity + spam tool activate
+        local floatConn
+        floatConn = RunService.Heartbeat:Connect(function()
+            if not jukeActive then if floatConn then floatConn:Disconnect() end return end
+            local rr = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+            if not rr then if floatConn then floatConn:Disconnect() end return end
+
+            -- Spam activate held tool
+            local char = player.Character
+            if char then
+                local tool = char:FindFirstChildOfClass("Tool")
+                if tool then
+                    pcall(function() tool:Activate() end)
+                end
+            end
+
+            if rr.Position.Y >= targetY then
+                rr.AssemblyLinearVelocity = Vector3.new(rr.AssemblyLinearVelocity.X, 0, rr.AssemblyLinearVelocity.Z)
+                floatConn:Disconnect()
+                -- Wait delay then TP down
+                task.delay(jukeTPDelay, function()
+                    local rrr = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                    if rrr then
+                        rrr.CFrame = CFrame.new(startPos.X, startPos.Y, startPos.Z)
+                        rrr.AssemblyLinearVelocity = Vector3.zero
+                    end
+                    jukeActive = false
+                    JukeButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+                end)
+                return
+            end
+            rr.AssemblyLinearVelocity = Vector3.new(rr.AssemblyLinearVelocity.X, jukeFloatSpeed, rr.AssemblyLinearVelocity.Z)
+        end)
     end)
 end
 
