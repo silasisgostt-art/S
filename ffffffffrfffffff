@@ -821,6 +821,232 @@ local function enableOptimizer()
     Lighting.ClockTime = 12
 end
 
+-- ═══════════════════════════════════════════════════════
+-- SKY GALAXY RTX (Purple galaxy skybox + RTX bloom)
+-- ═══════════════════════════════════════════════════════
+
+local GalaxyRTXEnabled = false
+local galaxySky = nil
+local galaxyBloom = nil
+local galaxyCC = nil
+local galaxyAtmo = nil
+local savedLightingProps = nil
+
+local function enableGalaxyRTX()
+    GalaxyRTXEnabled = true
+
+    -- Save original lighting
+    savedLightingProps = {
+        Ambient = Lighting.Ambient,
+        OutdoorAmbient = Lighting.OutdoorAmbient,
+        Brightness = Lighting.Brightness,
+        ClockTime = Lighting.ClockTime,
+        FogEnd = Lighting.FogEnd,
+        FogColor = Lighting.FogColor,
+    }
+
+    -- Remove existing sky
+    for _, child in pairs(Lighting:GetChildren()) do
+        if child:IsA("Sky") then child:Destroy() end
+    end
+
+    -- Galaxy skybox
+    galaxySky = Instance.new("Sky")
+    galaxySky.Name = "GalaxyRTX"
+    galaxySky.SkyboxBk = "rbxassetid://1012890"
+    galaxySky.SkyboxDn = "rbxassetid://1012891"
+    galaxySky.SkyboxFt = "rbxassetid://1012887"
+    galaxySky.SkyboxLf = "rbxassetid://1012889"
+    galaxySky.SkyboxRt = "rbxassetid://1012888"
+    galaxySky.SkyboxUp = "rbxassetid://1014449"
+    galaxySky.StarCount = 5000
+    galaxySky.MoonAngularSize = 15
+    galaxySky.SunAngularSize = 0
+    galaxySky.Parent = Lighting
+
+    -- RTX-like lighting
+    Lighting.Ambient = Color3.fromRGB(30, 10, 50)
+    Lighting.OutdoorAmbient = Color3.fromRGB(40, 15, 70)
+    Lighting.Brightness = 0.3
+    Lighting.ClockTime = 0
+    Lighting.FogEnd = 9e9
+    Lighting.FogColor = Color3.fromRGB(10, 5, 25)
+
+    -- Atmosphere for galaxy glow
+    for _, child in pairs(Lighting:GetChildren()) do
+        if child:IsA("Atmosphere") then child:Destroy() end
+    end
+    galaxyAtmo = Instance.new("Atmosphere")
+    galaxyAtmo.Name = "GalaxyAtmo"
+    galaxyAtmo.Density = 0.3
+    galaxyAtmo.Offset = 0.25
+    galaxyAtmo.Color = Color3.fromRGB(60, 20, 100)
+    galaxyAtmo.Decay = Color3.fromRGB(30, 10, 60)
+    galaxyAtmo.Glare = 0.4
+    galaxyAtmo.Haze = 2
+    galaxyAtmo.Parent = Lighting
+
+    -- RTX Bloom
+    galaxyBloom = Instance.new("BloomEffect")
+    galaxyBloom.Name = "GalaxyBloom"
+    galaxyBloom.Intensity = 0.8
+    galaxyBloom.Size = 40
+    galaxyBloom.Threshold = 0.7
+    galaxyBloom.Parent = Lighting
+
+    -- Color correction for purple tint
+    galaxyCC = Instance.new("ColorCorrectionEffect")
+    galaxyCC.Name = "GalaxyCC"
+    galaxyCC.Brightness = 0.05
+    galaxyCC.Contrast = 0.15
+    galaxyCC.Saturation = 0.3
+    galaxyCC.TintColor = Color3.fromRGB(200, 160, 255)
+    galaxyCC.Parent = Lighting
+end
+
+local function disableGalaxyRTX()
+    GalaxyRTXEnabled = false
+
+    if galaxySky then galaxySky:Destroy() galaxySky = nil end
+    if galaxyBloom then galaxyBloom:Destroy() galaxyBloom = nil end
+    if galaxyCC then galaxyCC:Destroy() galaxyCC = nil end
+    if galaxyAtmo then galaxyAtmo:Destroy() galaxyAtmo = nil end
+
+    if savedLightingProps then
+        pcall(function()
+            Lighting.Ambient = savedLightingProps.Ambient
+            Lighting.OutdoorAmbient = savedLightingProps.OutdoorAmbient
+            Lighting.Brightness = savedLightingProps.Brightness
+            Lighting.ClockTime = savedLightingProps.ClockTime
+            Lighting.FogEnd = savedLightingProps.FogEnd
+            Lighting.FogColor = savedLightingProps.FogColor
+        end)
+        savedLightingProps = nil
+    end
+end
+
+-- ═══════════════════════════════════════════════════════
+-- ANTI LAG (Network + rendering optimization)
+-- ═══════════════════════════════════════════════════════
+
+local AntiLagEnabled = false
+local antiLagConns = {}
+
+local function enableAntiLag()
+    AntiLagEnabled = true
+
+    -- Reduce rendering quality
+    pcall(function()
+        settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+    end)
+
+    -- Disable global shadows and effects
+    Lighting.GlobalShadows = false
+    Lighting.FogEnd = 9e9
+
+    -- Destroy heavy visual effects in workspace
+    for _, obj in pairs(workspace:GetDescendants()) do
+        pcall(function()
+            if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam") or
+               obj:IsA("Smoke") or obj:IsA("Fire") or obj:IsA("Sparkles") then
+                obj.Enabled = false
+            end
+        end)
+    end
+
+    -- Destroy camera post-effects
+    local cam = workspace.CurrentCamera
+    if cam then
+        for _, effect in pairs(cam:GetChildren()) do
+            if effect:IsA("BloomEffect") or effect:IsA("BlurEffect") or
+               effect:IsA("DepthOfFieldEffect") or effect:IsA("SunRaysEffect") or
+               effect:IsA("ColorCorrectionEffect") then
+                effect.Enabled = false
+            end
+        end
+    end
+
+    -- Reduce terrain detail
+    pcall(function()
+        workspace.Terrain.WaterWaveSize = 0
+        workspace.Terrain.WaterWaveSpeed = 0
+        workspace.Terrain.WaterReflectance = 0
+        workspace.Terrain.WaterTransparency = 0
+    end)
+
+    -- Disable lights on far objects
+    for _, light in pairs(workspace:GetDescendants()) do
+        if light:IsA("PointLight") or light:IsA("SpotLight") or light:IsA("SurfaceLight") then
+            pcall(function() light.Enabled = false end)
+        end
+    end
+
+    -- Continuously clean new heavy effects
+    table.insert(antiLagConns, workspace.DescendantAdded:Connect(function(obj)
+        pcall(function()
+            if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam") or
+               obj:IsA("Smoke") or obj:IsA("Fire") or obj:IsA("Sparkles") then
+                obj.Enabled = false
+            end
+            if obj:IsA("PointLight") or obj:IsA("SpotLight") or obj:IsA("SurfaceLight") then
+                obj.Enabled = false
+            end
+        end)
+    end))
+end
+
+local function disableAntiLag()
+    AntiLagEnabled = false
+    for _, conn in pairs(antiLagConns) do
+        conn:Disconnect()
+    end
+    antiLagConns = {}
+end
+
+-- ═══════════════════════════════════════════════════════
+-- SPEED D BYPASS (CFrame-based speed, harder to detect)
+-- ═══════════════════════════════════════════════════════
+
+local SpeedDEnabled = false
+local speedDConn = nil
+local SPEED_D_VELOCITY = 62
+
+local function enableSpeedD()
+    SpeedDEnabled = true
+    if speedDConn then speedDConn:Disconnect() end
+
+    speedDConn = RunService.RenderStepped:Connect(function(dt)
+        if not SpeedDEnabled then return end
+        local c = player.Character
+        local h = c and c:FindFirstChildOfClass("Humanoid")
+        local r = c and c:FindFirstChild("HumanoidRootPart")
+        if not h or not r then return end
+
+        if h.MoveDirection.Magnitude > 0 then
+            local carry = false
+            local a = h:FindFirstChildOfClass("Animator")
+            if a then
+                for _, t in pairs(a:GetPlayingAnimationTracks()) do
+                    if string.find(t.Animation.AnimationId, "71186871415348") then
+                        carry = true
+                        break
+                    end
+                end
+            end
+
+            local spd = carry and 30 or SPEED_D_VELOCITY
+            local moveDir = h.MoveDirection
+            local delta = moveDir * spd * dt
+            r.CFrame = r.CFrame + Vector3.new(delta.X, 0, delta.Z)
+        end
+    end)
+end
+
+local function disableSpeedD()
+    SpeedDEnabled = false
+    if speedDConn then speedDConn:Disconnect() speedDConn = nil end
+end
+
 local HitboxActive = false
 local HitboxConnection = nil
 
@@ -958,263 +1184,6 @@ local function disableAntiRagdoll()
         conn:Disconnect()
     end
     AntiRagdollConns = {}
-end
-
--- ═══════════════════════════════════════════════════════
--- SKY GALAXY RTX
--- ═══════════════════════════════════════════════════════
-
-local SkyGalaxyEnabled = false
-local skyGalaxyObjects = {}
-
-local function enableSkyGalaxy()
-    if SkyGalaxyEnabled then return end
-    SkyGalaxyEnabled = true
-
-    -- Remove existing sky/atmosphere
-    for _, child in pairs(Lighting:GetChildren()) do
-        if child:IsA("Sky") or child:IsA("Atmosphere") or child:IsA("BloomEffect") or child:IsA("ColorCorrectionEffect") or child:IsA("SunRaysEffect") then
-            child:Destroy()
-        end
-    end
-
-    -- Galaxy Sky
-    local sky = Instance.new("Sky")
-    sky.Name = "GalaxySkyRTX"
-    sky.SkyboxBk = "rbxassetid://1012890"
-    sky.SkyboxDn = "rbxassetid://1012891"
-    sky.SkyboxFt = "rbxassetid://1012887"
-    sky.SkyboxLf = "rbxassetid://1012889"
-    sky.SkyboxRt = "rbxassetid://1012888"
-    sky.SkyboxUp = "rbxassetid://1012890"
-    sky.StarCount = 5000
-    sky.MoonAngularSize = 14
-    sky.SunAngularSize = 8
-    sky.CelestialBodiesShown = true
-    sky.Parent = Lighting
-    table.insert(skyGalaxyObjects, sky)
-
-    -- RTX-style atmosphere
-    local atmo = Instance.new("Atmosphere")
-    atmo.Name = "RTXAtmosphere"
-    atmo.Density = 0.3
-    atmo.Offset = 0.25
-    atmo.Color = Color3.fromRGB(20, 10, 40)
-    atmo.Decay = Color3.fromRGB(60, 20, 80)
-    atmo.Glare = 0.4
-    atmo.Haze = 2
-    atmo.Parent = Lighting
-    table.insert(skyGalaxyObjects, atmo)
-
-    -- RTX Bloom
-    local bloom = Instance.new("BloomEffect")
-    bloom.Name = "RTXBloom"
-    bloom.Intensity = 0.8
-    bloom.Size = 32
-    bloom.Threshold = 0.9
-    bloom.Parent = Lighting
-    table.insert(skyGalaxyObjects, bloom)
-
-    -- RTX Color correction - deep purple galaxy tint
-    local cc = Instance.new("ColorCorrectionEffect")
-    cc.Name = "RTXColor"
-    cc.Brightness = 0.05
-    cc.Contrast = 0.15
-    cc.Saturation = 0.3
-    cc.TintColor = Color3.fromRGB(200, 180, 255)
-    cc.Parent = Lighting
-    table.insert(skyGalaxyObjects, cc)
-
-    -- Sun rays
-    local rays = Instance.new("SunRaysEffect")
-    rays.Name = "RTXSunRays"
-    rays.Intensity = 0.15
-    rays.Spread = 0.8
-    rays.Parent = Lighting
-    table.insert(skyGalaxyObjects, rays)
-
-    -- Lighting settings for RTX look
-    Lighting.ClockTime = 0
-    Lighting.Brightness = 0.5
-    Lighting.Ambient = Color3.fromRGB(30, 15, 50)
-    Lighting.OutdoorAmbient = Color3.fromRGB(40, 20, 60)
-    Lighting.FogEnd = 100000
-    Lighting.GlobalShadows = true
-    Lighting.EnvironmentDiffuseScale = 1
-    Lighting.EnvironmentSpecularScale = 1
-end
-
-local function disableSkyGalaxy()
-    SkyGalaxyEnabled = false
-    for _, obj in pairs(skyGalaxyObjects) do
-        pcall(function() obj:Destroy() end)
-    end
-    skyGalaxyObjects = {}
-    Lighting.ClockTime = 12
-    Lighting.Brightness = 1
-    Lighting.Ambient = Color3.fromRGB(128, 128, 128)
-    Lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128)
-    Lighting.GlobalShadows = false
-end
-
--- ═══════════════════════════════════════════════════════
--- ANTI LAG (AGGRESSIVE PERFORMANCE MODE)
--- ═══════════════════════════════════════════════════════
-
-local AntiLagEnabled = false
-local antiLagConns = {}
-
-local function enableAntiLag()
-    if AntiLagEnabled then return end
-    AntiLagEnabled = true
-
-    -- Nuke all visual effects
-    for _, obj in pairs(workspace:GetDescendants()) do
-        pcall(function()
-            if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam") or
-               obj:IsA("Smoke") or obj:IsA("Fire") or obj:IsA("Sparkles") or
-               obj:IsA("Explosion") or obj:IsA("Sound") then
-                obj:Destroy()
-            end
-        end)
-    end
-
-    -- Remove lighting effects
-    for _, child in pairs(Lighting:GetChildren()) do
-        pcall(function()
-            if child:IsA("BloomEffect") or child:IsA("BlurEffect") or
-               child:IsA("DepthOfFieldEffect") or child:IsA("SunRaysEffect") or
-               child:IsA("ColorCorrectionEffect") then
-                child:Destroy()
-            end
-        end)
-    end
-
-    -- Kill workspace lights
-    for _, light in pairs(workspace:GetDescendants()) do
-        if light:IsA("PointLight") or light:IsA("SpotLight") or light:IsA("SurfaceLight") then
-            pcall(function() light:Destroy() end)
-        end
-    end
-
-    -- Simplify terrain
-    pcall(function()
-        workspace.Terrain.WaterWaveSize = 0
-        workspace.Terrain.WaterWaveSpeed = 0
-        workspace.Terrain.WaterReflectance = 0
-        workspace.Terrain.WaterTransparency = 0
-    end)
-
-    -- Lowest rendering
-    pcall(function() settings().Rendering.QualityLevel = Enum.QualityLevel.Level01 end)
-
-    -- Minimal lighting
-    Lighting.GlobalShadows = false
-    Lighting.FogEnd = 9e9
-    Lighting.Brightness = 1
-    Lighting.ClockTime = 12
-    if Lighting:FindFirstChild("Atmosphere") then
-        Lighting.Atmosphere:Destroy()
-    end
-
-    -- Auto-destroy new lag-causing instances
-    local conn = workspace.DescendantAdded:Connect(function(obj)
-        task.defer(function()
-            pcall(function()
-                if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam") or
-                   obj:IsA("Smoke") or obj:IsA("Fire") or obj:IsA("Sparkles") or
-                   obj:IsA("Explosion") or obj:IsA("Sound") then
-                    obj:Destroy()
-                end
-            end)
-        end)
-    end)
-    table.insert(antiLagConns, conn)
-
-    -- Reduce mesh/texture detail
-    for _, obj in pairs(workspace:GetDescendants()) do
-        pcall(function()
-            if obj:IsA("MeshPart") then
-                obj.RenderFidelity = Enum.RenderFidelity.Performance
-            end
-            if obj:IsA("Decal") or obj:IsA("Texture") then
-                obj.Transparency = 1
-            end
-        end)
-    end
-end
-
-local function disableAntiLag()
-    AntiLagEnabled = false
-    for _, conn in pairs(antiLagConns) do
-        pcall(function() conn:Disconnect() end)
-    end
-    antiLagConns = {}
-end
-
--- ═══════════════════════════════════════════════════════
--- SPEED BYPASS (ADVANCED ANTI-DETECTION)
--- ═══════════════════════════════════════════════════════
-
-local SpeedBypassEnabled = false
-local speedBypassConn = nil
-local bypassJumpConn = nil
-local BYPASS_WALK_SPEED = 95
-local BYPASS_JUMP_POWER = 35
-
-local function enableSpeedBypass()
-    if SpeedBypassEnabled then return end
-    SpeedBypassEnabled = true
-
-    if speedBypassConn then speedBypassConn:Disconnect() end
-    if bypassJumpConn then bypassJumpConn:Disconnect() end
-
-    speedBypassConn = RunService.Heartbeat:Connect(function()
-        if not SpeedBypassEnabled then return end
-        local c = player.Character
-        local h = c and c:FindFirstChildOfClass("Humanoid")
-        local r = c and c:FindFirstChild("HumanoidRootPart")
-        if not h or not r then return end
-
-        if h.MoveDirection.Magnitude > 0 then
-            local moveDir = h.MoveDirection.Unit
-            -- Anti-detection: alternate between CFrame and velocity
-            local tick_val = math.floor(tick() * 10) % 3
-            if tick_val == 0 then
-                -- CFrame step (harder to detect)
-                r.CFrame = r.CFrame + Vector3.new(moveDir.X * 3.2, 0, moveDir.Z * 3.2)
-            else
-                -- Velocity push
-                r.AssemblyLinearVelocity = Vector3.new(
-                    moveDir.X * BYPASS_WALK_SPEED,
-                    r.AssemblyLinearVelocity.Y,
-                    moveDir.Z * BYPASS_WALK_SPEED
-                )
-            end
-        end
-
-        -- Reset WalkSpeed each frame so server check sees 16
-        h.WalkSpeed = 16
-    end)
-
-    bypassJumpConn = UserInputService.JumpRequest:Connect(function()
-        if SpeedBypassEnabled and player.Character then
-            local r = player.Character:FindFirstChild("HumanoidRootPart")
-            if r then
-                r.AssemblyLinearVelocity = Vector3.new(
-                    r.AssemblyLinearVelocity.X,
-                    BYPASS_JUMP_POWER,
-                    r.AssemblyLinearVelocity.Z
-                )
-            end
-        end
-    end)
-end
-
-local function disableSpeedBypass()
-    SpeedBypassEnabled = false
-    if speedBypassConn then speedBypassConn:Disconnect() speedBypassConn = nil end
-    if bypassJumpConn then bypassJumpConn:Disconnect() bypassJumpConn = nil end
 end
 
 -- ═══════════════════════════════════════════════════════
@@ -1831,7 +1800,7 @@ local SmallButtonOrder = {
     "TP Up",
     "Galaxy RTX",
     "Anti Lag",
-    "Speed Bypass",
+    "Speed D",
 }
 
 local function refreshSmallButtonPositions()
@@ -1891,7 +1860,7 @@ SmallTPDownGUI, SmallTPDownButton, TPDownDot = createSmallGUI("TP Down", 505)
 SmallTPUpGUI, SmallTPUpButton, TPUpDot = createSmallGUI("TP Up", 550)
 local SmallGalaxyGUI, SmallGalaxyButton, GalaxyDot = createSmallGUI("Galaxy RTX", 595)
 local SmallAntiLagGUI, SmallAntiLagButton, AntiLagDot = createSmallGUI("Anti Lag", 640)
-local SmallSpeedBypassGUI, SmallSpeedBypassButton, SpeedBypassDot = createSmallGUI("Speed Bypass", 685)
+local SmallSpeedDGUI, SmallSpeedDButton, SpeedDDot = createSmallGUI("Speed D", 685)
 
 local function serializeUDim2(value)
     return {
@@ -1920,6 +1889,9 @@ getButtonPositions = function()
         ["Drop Brainrot"] = serializeUDim2(SmallDropGUI.Position),
         ["TP Down"] = serializeUDim2(SmallTPDownGUI.Position),
         ["TP Up"] = serializeUDim2(SmallTPUpGUI.Position),
+        ["Galaxy RTX"] = serializeUDim2(SmallGalaxyGUI.Position),
+        ["Anti Lag"] = serializeUDim2(SmallAntiLagGUI.Position),
+        ["Speed D"] = serializeUDim2(SmallSpeedDGUI.Position),
     }
 end
 
@@ -1937,6 +1909,9 @@ local function applyButtonPositions(data)
         ["Drop Brainrot"] = SmallDropGUI,
         ["TP Down"] = SmallTPDownGUI,
         ["TP Up"] = SmallTPUpGUI,
+        ["Galaxy RTX"] = SmallGalaxyGUI,
+        ["Anti Lag"] = SmallAntiLagGUI,
+        ["Speed D"] = SmallSpeedDGUI,
     }
     for name, gui in pairs(mapping) do
         if gui and data[name] then
@@ -1959,6 +1934,9 @@ local function setButtonsDraggable(enabled)
         SmallAntiRagGUI,
         SmallRagdollTPGUI,
         SmallDropGUI,
+        SmallGalaxyGUI,
+        SmallAntiLagGUI,
+        SmallSpeedDGUI,
     }) do
         if gui then
             gui.Draggable = enabled
@@ -2241,42 +2219,55 @@ SmallDropButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- ✅ GALAXY RTX SMALL GUI TOGGLE
+-- ✅ SKY GALAXY RTX SMALL GUI TOGGLE
 SmallGalaxyButton.MouseButton1Click:Connect(function()
-    if SkyGalaxyEnabled then
-        disableSkyGalaxy()
+    GalaxyRTXEnabled = not GalaxyRTXEnabled
+
+    if GalaxyRTXEnabled then
+        SmallGalaxyGUI.BackgroundColor3 = Color3.fromRGB(100, 50, 200)
+        GalaxyDot.BackgroundColor3 = Color3.fromRGB(180, 80, 255)
+        enableGalaxyRTX()
+    else
         SmallGalaxyGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
         GalaxyDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-    else
-        enableSkyGalaxy()
-        SmallGalaxyGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        GalaxyDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        disableGalaxyRTX()
     end
 end)
 
 -- ✅ ANTI LAG SMALL GUI TOGGLE
 SmallAntiLagButton.MouseButton1Click:Connect(function()
+    AntiLagEnabled = not AntiLagEnabled
+
     if AntiLagEnabled then
-        disableAntiLag()
-        SmallAntiLagGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        AntiLagDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-    else
-        enableAntiLag()
         SmallAntiLagGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
         AntiLagDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        enableAntiLag()
+    else
+        SmallAntiLagGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+        AntiLagDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        disableAntiLag()
     end
 end)
 
--- ✅ SPEED BYPASS SMALL GUI TOGGLE
-SmallSpeedBypassButton.MouseButton1Click:Connect(function()
-    if SpeedBypassEnabled then
-        disableSpeedBypass()
-        SmallSpeedBypassGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        SpeedBypassDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+-- ✅ SPEED D BYPASS SMALL GUI TOGGLE
+SmallSpeedDButton.MouseButton1Click:Connect(function()
+    SpeedDEnabled = not SpeedDEnabled
+
+    if SpeedDEnabled then
+        -- Disable regular speed booster if on
+        if SpeedBooster.Enabled then
+            SpeedBooster.Enabled = false
+            stopSpeedBooster()
+            SmallSpeedGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+            SpeedDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        end
+        SmallSpeedDGUI.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+        SpeedDDot.BackgroundColor3 = Color3.fromRGB(0, 200, 255)
+        enableSpeedD()
     else
-        enableSpeedBypass()
-        SmallSpeedBypassGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        SpeedBypassDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        SmallSpeedDGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+        SpeedDDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        disableSpeedD()
     end
 end)
 
@@ -3408,6 +3399,21 @@ local function initializeGUI(device)
         SmallTPDownGUI.Visible = true
         SmallTPDownGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
         TPDownDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        
+        -- ⚪ Galaxy RTX - SHOW SMALL GUI but OFF (gray dot)
+        SmallGalaxyGUI.Visible = true
+        SmallGalaxyGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+        GalaxyDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        
+        -- ⚪ Anti Lag - SHOW SMALL GUI but OFF (gray dot)
+        SmallAntiLagGUI.Visible = true
+        SmallAntiLagGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+        AntiLagDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        
+        -- ⚪ Speed D Bypass - SHOW SMALL GUI but OFF (gray dot)
+        SmallSpeedDGUI.Visible = true
+        SmallSpeedDGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+        SpeedDDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
         
         -- Restore TP Up / TP Down visibility from config
         if ConfigData.tpUpEnabled then
@@ -4829,8 +4835,7 @@ print("   Speed, Unwalk, Anti Rag, Ragdoll TP")
 print("✅ AUTO-ENABLED MISC:")
 print("   FPS, Optimizer, Hitbox, Anti Death")
 print("⚪ Hidden until you turn on:")
-print("   Inf Jump, Spin Bot, Float, FOV,")
-print("   Galaxy RTX, Anti Lag, Speed Bypass")
+print("   Inf Jump, Spin Bot, Float, FOV")
 print("✅ WORKS ON: PC, iPad, iPhone!")
 print("══════════════════════════════════════════════")
 
