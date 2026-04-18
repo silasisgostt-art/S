@@ -124,11 +124,28 @@ SpeedBooster = {
     JumpConn = nil
 }
 
+local speedLastPos = Vector3.zero
+local speedStuckFrames = 0
+local speedSmoothVel = Vector3.zero
+
 local function startSpeedBooster()
     if SpeedBooster.HeartbeatConn then SpeedBooster.HeartbeatConn:Disconnect() end
     if SpeedBooster.JumpConn then SpeedBooster.JumpConn:Disconnect() end
+    if SpeedBooster.RenderConn then SpeedBooster.RenderConn:Disconnect() end
     
-    SpeedBooster.HeartbeatConn = RunService.Heartbeat:Connect(function()
+    speedLastPos = Vector3.zero
+    speedStuckFrames = 0
+    speedSmoothVel = Vector3.zero
+    
+    -- WalkSpeed override - hide real speed from server
+    SpeedBooster.RenderConn = RunService.RenderStepped:Connect(function()
+        if not SpeedBooster.Enabled then return end
+        local c = player.Character
+        local h = c and c:FindFirstChildOfClass("Humanoid")
+        if h then h.WalkSpeed = 0 end
+    end)
+    
+    SpeedBooster.HeartbeatConn = RunService.Heartbeat:Connect(function(dt)
         if not SpeedBooster.Enabled then return end
         local c = player.Character
         local h = c and c:FindFirstChildOfClass("Humanoid")
@@ -147,14 +164,40 @@ local function startSpeedBooster()
         end
         
         if h.MoveDirection.Magnitude > 0 then
-            local vel = carry and SpeedBooster.StealSpeed or SpeedBooster.NormalSpeed
-            -- True bypass: if lag-back detected, use CFrame teleport
-            if math.abs(r.AssemblyLinearVelocity.X) < 1 and math.abs(r.AssemblyLinearVelocity.Z) < 1 and h.MoveDirection.Magnitude > 0.1 then
-                r.CFrame = r.CFrame + Vector3.new(h.MoveDirection.X * 2, 0, h.MoveDirection.Z * 2)
-                r.AssemblyLinearVelocity = Vector3.zero
+            local targetSpeed = carry and SpeedBooster.StealSpeed or SpeedBooster.NormalSpeed
+            local moveDir = h.MoveDirection
+            local targetVel = Vector3.new(moveDir.X * targetSpeed, r.AssemblyLinearVelocity.Y, moveDir.Z * targetSpeed)
+            
+            -- Smooth velocity interpolation to avoid sudden spikes
+            local smoothFactor = math.clamp(dt * 12, 0.1, 1)
+            local smoothX = speedSmoothVel.X + (targetVel.X - speedSmoothVel.X) * smoothFactor
+            local smoothZ = speedSmoothVel.Z + (targetVel.Z - speedSmoothVel.Z) * smoothFactor
+            speedSmoothVel = Vector3.new(smoothX, 0, smoothZ)
+            
+            -- Anti-lagback: detect if server rubber-banded us
+            local flatPos = Vector3.new(r.Position.X, 0, r.Position.Z)
+            local flatLast = Vector3.new(speedLastPos.X, 0, speedLastPos.Z)
+            local moved = (flatPos - flatLast).Magnitude
+            
+            if speedLastPos ~= Vector3.zero and moved < 0.3 and targetSpeed > 10 then
+                speedStuckFrames = speedStuckFrames + 1
             else
-                r.AssemblyLinearVelocity = Vector3.new(h.MoveDirection.X * vel, r.AssemblyLinearVelocity.Y, h.MoveDirection.Z * vel)
+                speedStuckFrames = 0
             end
+            speedLastPos = r.Position
+            
+            if speedStuckFrames > 5 then
+                -- CFrame micro-teleport to break free from lagback
+                local step = math.clamp(targetSpeed * dt, 0.5, 3)
+                r.CFrame = r.CFrame + Vector3.new(moveDir.X * step, 0, moveDir.Z * step)
+                r.AssemblyLinearVelocity = Vector3.new(0, r.AssemblyLinearVelocity.Y, 0)
+                speedStuckFrames = 0
+            else
+                r.AssemblyLinearVelocity = Vector3.new(smoothX, r.AssemblyLinearVelocity.Y, smoothZ)
+            end
+        else
+            speedSmoothVel = Vector3.zero
+            speedStuckFrames = 0
         end
     end)
     
@@ -171,6 +214,12 @@ end
 local function stopSpeedBooster()
     if SpeedBooster.HeartbeatConn then SpeedBooster.HeartbeatConn:Disconnect() SpeedBooster.HeartbeatConn = nil end
     if SpeedBooster.JumpConn then SpeedBooster.JumpConn:Disconnect() SpeedBooster.JumpConn = nil end
+    if SpeedBooster.RenderConn then SpeedBooster.RenderConn:Disconnect() SpeedBooster.RenderConn = nil end
+    -- Restore WalkSpeed
+    pcall(function()
+        local h = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+        if h then h.WalkSpeed = 16 end
+    end)
 end
 
 -- ═══════════════════════════════════════════════════════
@@ -822,229 +871,78 @@ local function enableOptimizer()
 end
 
 -- ═══════════════════════════════════════════════════════
--- SKY GALAXY RTX (Purple galaxy skybox + RTX bloom)
+-- ✅ SKY GALAXY EFFECT
 -- ═══════════════════════════════════════════════════════
 
-local GalaxyRTXEnabled = false
+local GalaxyEnabled = false
 local galaxySky = nil
-local galaxyBloom = nil
-local galaxyCC = nil
 local galaxyAtmo = nil
-local savedLightingProps = nil
+local galaxyCC = nil
+local galaxyStars = nil
 
-local function enableGalaxyRTX()
-    GalaxyRTXEnabled = true
+local GALAXY_SKYBOX = "rbxassetid://159454286" -- dark space/nebula
 
-    -- Save original lighting
-    savedLightingProps = {
-        Ambient = Lighting.Ambient,
-        OutdoorAmbient = Lighting.OutdoorAmbient,
-        Brightness = Lighting.Brightness,
-        ClockTime = Lighting.ClockTime,
-        FogEnd = Lighting.FogEnd,
-        FogColor = Lighting.FogColor,
-    }
-
+local function enableGalaxy()
+    GalaxyEnabled = true
     -- Remove existing sky
-    for _, child in pairs(Lighting:GetChildren()) do
+    for _, child in ipairs(Lighting:GetChildren()) do
         if child:IsA("Sky") then child:Destroy() end
     end
-
-    -- Galaxy skybox
+    
     galaxySky = Instance.new("Sky")
-    galaxySky.Name = "GalaxyRTX"
-    galaxySky.SkyboxBk = "rbxassetid://1012890"
-    galaxySky.SkyboxDn = "rbxassetid://1012891"
-    galaxySky.SkyboxFt = "rbxassetid://1012887"
-    galaxySky.SkyboxLf = "rbxassetid://1012889"
-    galaxySky.SkyboxRt = "rbxassetid://1012888"
-    galaxySky.SkyboxUp = "rbxassetid://1014449"
+    galaxySky.Name = "GalaxySky"
+    galaxySky.SkyboxBk = GALAXY_SKYBOX
+    galaxySky.SkyboxDn = GALAXY_SKYBOX
+    galaxySky.SkyboxFt = GALAXY_SKYBOX
+    galaxySky.SkyboxLf = GALAXY_SKYBOX
+    galaxySky.SkyboxRt = GALAXY_SKYBOX
+    galaxySky.SkyboxUp = GALAXY_SKYBOX
     galaxySky.StarCount = 5000
-    galaxySky.MoonAngularSize = 15
+    galaxySky.MoonAngularSize = 6
     galaxySky.SunAngularSize = 0
     galaxySky.Parent = Lighting
-
-    -- RTX-like lighting
-    Lighting.Ambient = Color3.fromRGB(30, 10, 50)
-    Lighting.OutdoorAmbient = Color3.fromRGB(40, 15, 70)
-    Lighting.Brightness = 0.3
+    
+    -- Atmosphere for depth
+    if not galaxyAtmo then
+        galaxyAtmo = Instance.new("Atmosphere")
+        galaxyAtmo.Name = "GalaxyAtmo"
+        galaxyAtmo.Density = 0.3
+        galaxyAtmo.Offset = 0
+        galaxyAtmo.Color = Color3.fromRGB(15, 5, 30)
+        galaxyAtmo.Decay = Color3.fromRGB(20, 10, 40)
+        galaxyAtmo.Glare = 0
+        galaxyAtmo.Haze = 2
+        galaxyAtmo.Parent = Lighting
+    end
+    
+    -- Color correction for purple/blue galaxy tint
+    if not galaxyCC then
+        galaxyCC = Instance.new("ColorCorrectionEffect")
+        galaxyCC.Name = "GalaxyCC"
+        galaxyCC.Brightness = 0.05
+        galaxyCC.Contrast = 0.15
+        galaxyCC.Saturation = 0.3
+        galaxyCC.TintColor = Color3.fromRGB(180, 140, 255)
+        galaxyCC.Parent = Lighting
+    end
+    
     Lighting.ClockTime = 0
+    Lighting.Brightness = 0.1
+    Lighting.Ambient = Color3.fromRGB(30, 15, 50)
+    Lighting.OutdoorAmbient = Color3.fromRGB(20, 10, 35)
+    Lighting.FogColor = Color3.fromRGB(10, 5, 20)
     Lighting.FogEnd = 9e9
-    Lighting.FogColor = Color3.fromRGB(10, 5, 25)
-
-    -- Atmosphere for galaxy glow
-    for _, child in pairs(Lighting:GetChildren()) do
-        if child:IsA("Atmosphere") then child:Destroy() end
-    end
-    galaxyAtmo = Instance.new("Atmosphere")
-    galaxyAtmo.Name = "GalaxyAtmo"
-    galaxyAtmo.Density = 0.3
-    galaxyAtmo.Offset = 0.25
-    galaxyAtmo.Color = Color3.fromRGB(60, 20, 100)
-    galaxyAtmo.Decay = Color3.fromRGB(30, 10, 60)
-    galaxyAtmo.Glare = 0.4
-    galaxyAtmo.Haze = 2
-    galaxyAtmo.Parent = Lighting
-
-    -- RTX Bloom
-    galaxyBloom = Instance.new("BloomEffect")
-    galaxyBloom.Name = "GalaxyBloom"
-    galaxyBloom.Intensity = 0.8
-    galaxyBloom.Size = 40
-    galaxyBloom.Threshold = 0.7
-    galaxyBloom.Parent = Lighting
-
-    -- Color correction for purple tint
-    galaxyCC = Instance.new("ColorCorrectionEffect")
-    galaxyCC.Name = "GalaxyCC"
-    galaxyCC.Brightness = 0.05
-    galaxyCC.Contrast = 0.15
-    galaxyCC.Saturation = 0.3
-    galaxyCC.TintColor = Color3.fromRGB(200, 160, 255)
-    galaxyCC.Parent = Lighting
 end
 
-local function disableGalaxyRTX()
-    GalaxyRTXEnabled = false
-
+local function disableGalaxy()
+    GalaxyEnabled = false
     if galaxySky then galaxySky:Destroy() galaxySky = nil end
-    if galaxyBloom then galaxyBloom:Destroy() galaxyBloom = nil end
-    if galaxyCC then galaxyCC:Destroy() galaxyCC = nil end
     if galaxyAtmo then galaxyAtmo:Destroy() galaxyAtmo = nil end
-
-    if savedLightingProps then
-        pcall(function()
-            Lighting.Ambient = savedLightingProps.Ambient
-            Lighting.OutdoorAmbient = savedLightingProps.OutdoorAmbient
-            Lighting.Brightness = savedLightingProps.Brightness
-            Lighting.ClockTime = savedLightingProps.ClockTime
-            Lighting.FogEnd = savedLightingProps.FogEnd
-            Lighting.FogColor = savedLightingProps.FogColor
-        end)
-        savedLightingProps = nil
-    end
-end
-
--- ═══════════════════════════════════════════════════════
--- ANTI LAG (Network + rendering optimization)
--- ═══════════════════════════════════════════════════════
-
-local AntiLagEnabled = false
-local antiLagConns = {}
-
-local function enableAntiLag()
-    AntiLagEnabled = true
-
-    -- Reduce rendering quality
-    pcall(function()
-        settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
-    end)
-
-    -- Disable global shadows and effects
-    Lighting.GlobalShadows = false
-    Lighting.FogEnd = 9e9
-
-    -- Destroy heavy visual effects in workspace
-    for _, obj in pairs(workspace:GetDescendants()) do
-        pcall(function()
-            if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam") or
-               obj:IsA("Smoke") or obj:IsA("Fire") or obj:IsA("Sparkles") then
-                obj.Enabled = false
-            end
-        end)
-    end
-
-    -- Destroy camera post-effects
-    local cam = workspace.CurrentCamera
-    if cam then
-        for _, effect in pairs(cam:GetChildren()) do
-            if effect:IsA("BloomEffect") or effect:IsA("BlurEffect") or
-               effect:IsA("DepthOfFieldEffect") or effect:IsA("SunRaysEffect") or
-               effect:IsA("ColorCorrectionEffect") then
-                effect.Enabled = false
-            end
-        end
-    end
-
-    -- Reduce terrain detail
-    pcall(function()
-        workspace.Terrain.WaterWaveSize = 0
-        workspace.Terrain.WaterWaveSpeed = 0
-        workspace.Terrain.WaterReflectance = 0
-        workspace.Terrain.WaterTransparency = 0
-    end)
-
-    -- Disable lights on far objects
-    for _, light in pairs(workspace:GetDescendants()) do
-        if light:IsA("PointLight") or light:IsA("SpotLight") or light:IsA("SurfaceLight") then
-            pcall(function() light.Enabled = false end)
-        end
-    end
-
-    -- Continuously clean new heavy effects
-    table.insert(antiLagConns, workspace.DescendantAdded:Connect(function(obj)
-        pcall(function()
-            if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam") or
-               obj:IsA("Smoke") or obj:IsA("Fire") or obj:IsA("Sparkles") then
-                obj.Enabled = false
-            end
-            if obj:IsA("PointLight") or obj:IsA("SpotLight") or obj:IsA("SurfaceLight") then
-                obj.Enabled = false
-            end
-        end)
-    end))
-end
-
-local function disableAntiLag()
-    AntiLagEnabled = false
-    for _, conn in pairs(antiLagConns) do
-        conn:Disconnect()
-    end
-    antiLagConns = {}
-end
-
--- ═══════════════════════════════════════════════════════
--- SPEED D BYPASS (CFrame-based speed, harder to detect)
--- ═══════════════════════════════════════════════════════
-
-local SpeedDEnabled = false
-local speedDConn = nil
-local SPEED_D_VELOCITY = 62
-
-local function enableSpeedD()
-    SpeedDEnabled = true
-    if speedDConn then speedDConn:Disconnect() end
-
-    speedDConn = RunService.RenderStepped:Connect(function(dt)
-        if not SpeedDEnabled then return end
-        local c = player.Character
-        local h = c and c:FindFirstChildOfClass("Humanoid")
-        local r = c and c:FindFirstChild("HumanoidRootPart")
-        if not h or not r then return end
-
-        if h.MoveDirection.Magnitude > 0 then
-            local carry = false
-            local a = h:FindFirstChildOfClass("Animator")
-            if a then
-                for _, t in pairs(a:GetPlayingAnimationTracks()) do
-                    if string.find(t.Animation.AnimationId, "71186871415348") then
-                        carry = true
-                        break
-                    end
-                end
-            end
-
-            local spd = carry and 30 or SPEED_D_VELOCITY
-            local moveDir = h.MoveDirection
-            local delta = moveDir * spd * dt
-            r.CFrame = r.CFrame + Vector3.new(delta.X, 0, delta.Z)
-        end
-    end)
-end
-
-local function disableSpeedD()
-    SpeedDEnabled = false
-    if speedDConn then speedDConn:Disconnect() speedDConn = nil end
+    if galaxyCC then galaxyCC:Destroy() galaxyCC = nil end
+    Lighting.ClockTime = 12
+    Lighting.Brightness = 1
+    Lighting.Ambient = Color3.fromRGB(127, 127, 127)
+    Lighting.OutdoorAmbient = Color3.fromRGB(127, 127, 127)
 end
 
 local HitboxActive = false
@@ -1624,9 +1522,9 @@ ScreenGui.Parent = PlayerGui
 -- Rainbow outline: cycles UIStroke colors across the GUI
 local function startRainbowOutline()
     task.spawn(function()
-        while task.wait(0.05) do
-            local hue = (tick() * 0.12) % 1
-            local color = Color3.fromHSV(hue, 0.6, 0.75) -- less bright
+        while task.wait(0.03) do
+            local hue = (tick() * 0.15) % 1
+            local color = Color3.fromHSV(hue, 0.7, 0.9)
             for _, v in pairs(ScreenGui:GetDescendants()) do
                 if v:IsA("UIStroke") then
                     local p = v.Parent
@@ -1727,30 +1625,40 @@ local SmallGUIInstances = {}
 local function createSmallGUI(name, yPosition)
     local SmallGUI = Instance.new("Frame")
     SmallGUI.Name = "Small"..name.."GUI"
-    SmallGUI.Size = UDim2.new(0, 80, 0, 20) -- Smaller width and height
+    SmallGUI.Size = UDim2.new(0, 80, 0, 20)
     SmallGUI.Position = UDim2.new(0.5, -40, 0, yPosition)
-    SmallGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-    SmallGUI.BackgroundTransparency = 0.3
+    SmallGUI.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+    SmallGUI.BackgroundTransparency = 0.15
     SmallGUI.BorderSizePixel = 0
     SmallGUI.Visible = false
     SmallGUI.Active = true
-    SmallGUI.Draggable = true  -- ✅ DRAGGABLE!
+    SmallGUI.Draggable = true
     SmallGUI.Parent = ScreenGui
 
     local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 7)
+    Corner.CornerRadius = UDim.new(0, 8)
     Corner.Parent = SmallGUI
 
     local Stroke = Instance.new("UIStroke")
-    Stroke.Color = Color3.fromRGB(255, 0, 0)
+    Stroke.Color = Color3.fromRGB(138, 43, 226)
     Stroke.Thickness = 1.5
+    Stroke.Transparency = 0.3
     Stroke.Parent = SmallGUI
 
-    -- ✅ GREEN DOT!
+    -- Gradient overlay for depth
+    local Gradient = Instance.new("UIGradient")
+    Gradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 30, 60)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 15, 25))
+    })
+    Gradient.Rotation = 45
+    Gradient.Parent = SmallGUI
+
+    -- Glow dot
     local GreenDot = Instance.new("Frame")
-    GreenDot.Size = UDim2.new(0, 7, 0, 7)
-    GreenDot.Position = UDim2.new(0, 5, 0.5, -3)
-    GreenDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100) -- GRAY by default
+    GreenDot.Size = UDim2.new(0, 8, 0, 8)
+    GreenDot.Position = UDim2.new(0, 5, 0.5, -4)
+    GreenDot.BackgroundColor3 = Color3.fromRGB(80, 80, 90)
     GreenDot.BorderSizePixel = 0
     GreenDot.Parent = SmallGUI
 
@@ -1763,21 +1671,21 @@ local function createSmallGUI(name, yPosition)
     Label.Position = UDim2.new(0, 18, 0, 0)
     Label.BackgroundTransparency = 1
     Label.Text = name
-    Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Label.TextColor3 = Color3.fromRGB(220, 220, 240)
     Label.Font = Enum.Font.GothamBold
-    Label.TextSize = 9 -- Smaller text
+    Label.TextSize = 9
     Label.TextXAlignment = Enum.TextXAlignment.Left
     Label.Parent = SmallGUI
 
-    -- ✅ CLICK BUTTON (smaller, on right side only - doesn't block dragging!)
+    -- Click button (right side)
     local Button = Instance.new("TextButton")
     Button.Size = UDim2.new(0, 20, 1, 0)
     Button.Position = UDim2.new(1, -20, 0, 0)
     Button.BackgroundTransparency = 1
     Button.Text = "⚡"
-    Button.TextColor3 = Color3.fromRGB(138, 43, 226)
+    Button.TextColor3 = Color3.fromRGB(180, 100, 255)
     Button.Font = Enum.Font.GothamBold
-    Button.TextSize = 12 -- Smaller icon
+    Button.TextSize = 12
     Button.ZIndex = 2
     Button.Parent = SmallGUI
 
@@ -1798,9 +1706,7 @@ local SmallButtonOrder = {
     "Drop Brainrot",
     "TP Down",
     "TP Up",
-    "Galaxy RTX",
-    "Anti Lag",
-    "Speed D",
+    "Galaxy Sky",
 }
 
 local function refreshSmallButtonPositions()
@@ -1814,7 +1720,7 @@ local function refreshSmallButtonPositions()
 
     local columns = 5
     local buttonHeight = 30
-    local rows = 4
+    local rows = 3
     local gapX = 8
     local gapY = 8
     local topPadding = 8
@@ -1858,9 +1764,7 @@ local SmallRagdollTPGUI, SmallRagdollTPButton, RagdollTPDot = createSmallGUI("Ra
 local SmallDropGUI, SmallDropButton, DropDot = createSmallGUI("Drop Brainrot", 460) -- ✅ NEW!
 SmallTPDownGUI, SmallTPDownButton, TPDownDot = createSmallGUI("TP Down", 505)
 SmallTPUpGUI, SmallTPUpButton, TPUpDot = createSmallGUI("TP Up", 550)
-local SmallGalaxyGUI, SmallGalaxyButton, GalaxyDot = createSmallGUI("Galaxy RTX", 595)
-local SmallAntiLagGUI, SmallAntiLagButton, AntiLagDot = createSmallGUI("Anti Lag", 640)
-local SmallSpeedDGUI, SmallSpeedDButton, SpeedDDot = createSmallGUI("Speed D", 685)
+local SmallGalaxyGUI, SmallGalaxyButton, GalaxyDot = createSmallGUI("Galaxy Sky", 595)
 
 local function serializeUDim2(value)
     return {
@@ -1889,9 +1793,7 @@ getButtonPositions = function()
         ["Drop Brainrot"] = serializeUDim2(SmallDropGUI.Position),
         ["TP Down"] = serializeUDim2(SmallTPDownGUI.Position),
         ["TP Up"] = serializeUDim2(SmallTPUpGUI.Position),
-        ["Galaxy RTX"] = serializeUDim2(SmallGalaxyGUI.Position),
-        ["Anti Lag"] = serializeUDim2(SmallAntiLagGUI.Position),
-        ["Speed D"] = serializeUDim2(SmallSpeedDGUI.Position),
+        ["Galaxy Sky"] = serializeUDim2(SmallGalaxyGUI.Position),
     }
 end
 
@@ -1909,9 +1811,7 @@ local function applyButtonPositions(data)
         ["Drop Brainrot"] = SmallDropGUI,
         ["TP Down"] = SmallTPDownGUI,
         ["TP Up"] = SmallTPUpGUI,
-        ["Galaxy RTX"] = SmallGalaxyGUI,
-        ["Anti Lag"] = SmallAntiLagGUI,
-        ["Speed D"] = SmallSpeedDGUI,
+        ["Galaxy Sky"] = SmallGalaxyGUI,
     }
     for name, gui in pairs(mapping) do
         if gui and data[name] then
@@ -1934,9 +1834,6 @@ local function setButtonsDraggable(enabled)
         SmallAntiRagGUI,
         SmallRagdollTPGUI,
         SmallDropGUI,
-        SmallGalaxyGUI,
-        SmallAntiLagGUI,
-        SmallSpeedDGUI,
     }) do
         if gui then
             gui.Draggable = enabled
@@ -2102,6 +1999,21 @@ SmallTPUpButton.MouseButton1Click:Connect(function()
     refreshSmallButtonPositions()
 end)
 
+-- ✅ GALAXY SKY SMALL GUI TOGGLE
+SmallGalaxyButton.MouseButton1Click:Connect(function()
+    GalaxyEnabled = not GalaxyEnabled
+    if GalaxyEnabled then
+        SmallGalaxyGUI.BackgroundColor3 = Color3.fromRGB(80, 40, 180)
+        GalaxyDot.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+        enableGalaxy()
+    else
+        SmallGalaxyGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+        GalaxyDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        disableGalaxy()
+    end
+    refreshSmallButtonPositions()
+end)
+
 -- ✅ INF JUMP SMALL GUI TOGGLE
 SmallInfJumpButton.MouseButton1Click:Connect(function()
     InfJumpEnabled = not InfJumpEnabled
@@ -2216,58 +2128,6 @@ SmallDropButton.MouseButton1Click:Connect(function()
         SmallDropGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
         DropDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
         stopDropBrainrot()
-    end
-end)
-
--- ✅ SKY GALAXY RTX SMALL GUI TOGGLE
-SmallGalaxyButton.MouseButton1Click:Connect(function()
-    GalaxyRTXEnabled = not GalaxyRTXEnabled
-
-    if GalaxyRTXEnabled then
-        SmallGalaxyGUI.BackgroundColor3 = Color3.fromRGB(100, 50, 200)
-        GalaxyDot.BackgroundColor3 = Color3.fromRGB(180, 80, 255)
-        enableGalaxyRTX()
-    else
-        SmallGalaxyGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        GalaxyDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        disableGalaxyRTX()
-    end
-end)
-
--- ✅ ANTI LAG SMALL GUI TOGGLE
-SmallAntiLagButton.MouseButton1Click:Connect(function()
-    AntiLagEnabled = not AntiLagEnabled
-
-    if AntiLagEnabled then
-        SmallAntiLagGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        AntiLagDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-        enableAntiLag()
-    else
-        SmallAntiLagGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        AntiLagDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        disableAntiLag()
-    end
-end)
-
--- ✅ SPEED D BYPASS SMALL GUI TOGGLE
-SmallSpeedDButton.MouseButton1Click:Connect(function()
-    SpeedDEnabled = not SpeedDEnabled
-
-    if SpeedDEnabled then
-        -- Disable regular speed booster if on
-        if SpeedBooster.Enabled then
-            SpeedBooster.Enabled = false
-            stopSpeedBooster()
-            SmallSpeedGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-            SpeedDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        end
-        SmallSpeedDGUI.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
-        SpeedDDot.BackgroundColor3 = Color3.fromRGB(0, 200, 255)
-        enableSpeedD()
-    else
-        SmallSpeedDGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        SpeedDDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        disableSpeedD()
     end
 end)
 
@@ -2390,25 +2250,46 @@ local DeviceSelectFrame = Instance.new("Frame")
 DeviceSelectFrame.Name = "DeviceSelect"
 DeviceSelectFrame.Size = UDim2.new(0, 400, 0, 300)
 DeviceSelectFrame.Position = UDim2.new(0.5, -200, 0.5, -150)
-DeviceSelectFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+DeviceSelectFrame.BackgroundColor3 = Color3.fromRGB(18, 14, 28)
 DeviceSelectFrame.BorderSizePixel = 0
 DeviceSelectFrame.Parent = ScreenGui
 
 local DeviceCorner = Instance.new("UICorner")
-DeviceCorner.CornerRadius = UDim.new(0, 15)
+DeviceCorner.CornerRadius = UDim.new(0, 18)
 DeviceCorner.Parent = DeviceSelectFrame
+
+local DeviceGradient = Instance.new("UIGradient")
+DeviceGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 20, 50)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(18, 14, 28)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 8, 18))
+})
+DeviceGradient.Rotation = 135
+DeviceGradient.Parent = DeviceSelectFrame
+
+local DeviceStroke = Instance.new("UIStroke")
+DeviceStroke.Color = Color3.fromRGB(138, 43, 226)
+DeviceStroke.Thickness = 2
+DeviceStroke.Transparency = 0.3
+DeviceStroke.Parent = DeviceSelectFrame
 
 local DeviceTitle = Instance.new("TextLabel")
 DeviceTitle.Size = UDim2.new(1, 0, 0, 60)
-DeviceTitle.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-DeviceTitle.BorderSizePixel = 0
-DeviceTitle.Text = "SELECT YOUR DEVICE"
-DeviceTitle.TextColor3 = Color3.fromRGB(255, 200, 100)
-DeviceTitle.Font = Enum.Font.GothamBold
-DeviceTitle.TextSize = 20
-DeviceTitle.Parent = DeviceSelectFrame
+    DeviceTitle.BackgroundColor3 = Color3.fromRGB(18, 12, 30)
+    DeviceTitle.BorderSizePixel = 0
+    DeviceTitle.Text = "🧀 TIM CHEESE DUELS"
+    DeviceTitle.TextColor3 = Color3.fromRGB(255, 200, 100)
+    DeviceTitle.Font = Enum.Font.GothamBold
+    DeviceTitle.TextSize = 20
+    DeviceTitle.Parent = DeviceSelectFrame
 
-local TitleCorner = Instance.new("UICorner")
+    local DTGradient = Instance.new("UIGradient")
+    DTGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 15, 50)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(12, 8, 20))
+    })
+    DTGradient.Rotation = 90
+    DTGradient.Parent = DeviceTitle
 TitleCorner.CornerRadius = UDim.new(0, 15)
 TitleCorner.Parent = DeviceTitle
 
@@ -2494,8 +2375,8 @@ local function createMainGUI(device)
     MainFrame.Name = "MainFrame"
     MainFrame.Size = UDim2.new(0, width, 0, height)
     MainFrame.Position = UDim2.new(0.5, -width/2, 0.5, -height/2)
-    MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-    MainFrame.BackgroundTransparency = 0.1
+    MainFrame.BackgroundColor3 = Color3.fromRGB(18, 14, 28)
+    MainFrame.BackgroundTransparency = 0.05
     MainFrame.BorderSizePixel = 0
     MainFrame.Active = true
     MainFrame.Draggable = true
@@ -2503,12 +2384,21 @@ local function createMainGUI(device)
     MainFrame.Parent = ScreenGui
 
     local MainCorner = Instance.new("UICorner")
-    MainCorner.CornerRadius = UDim.new(0, 15)
+    MainCorner.CornerRadius = UDim.new(0, 18)
     MainCorner.Parent = MainFrame
+
+    local MainGradient = Instance.new("UIGradient")
+    MainGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 20, 50)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(18, 14, 28)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 8, 18))
+    })
+    MainGradient.Rotation = 135
+    MainGradient.Parent = MainFrame
 
     local Header = Instance.new("Frame")
     Header.Size = UDim2.new(1, 0, 0, 50)
-    Header.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    Header.BackgroundColor3 = Color3.fromRGB(15, 10, 25)
     Header.BorderSizePixel = 0
     Header.Parent = MainFrame
 
@@ -3400,21 +3290,6 @@ local function initializeGUI(device)
         SmallTPDownGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
         TPDownDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
         
-        -- ⚪ Galaxy RTX - SHOW SMALL GUI but OFF (gray dot)
-        SmallGalaxyGUI.Visible = true
-        SmallGalaxyGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        GalaxyDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        
-        -- ⚪ Anti Lag - SHOW SMALL GUI but OFF (gray dot)
-        SmallAntiLagGUI.Visible = true
-        SmallAntiLagGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        AntiLagDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        
-        -- ⚪ Speed D Bypass - SHOW SMALL GUI but OFF (gray dot)
-        SmallSpeedDGUI.Visible = true
-        SmallSpeedDGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        SpeedDDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        
         -- Restore TP Up / TP Down visibility from config
         if ConfigData.tpUpEnabled then
             TPUpEnabled = true
@@ -3535,14 +3410,14 @@ function createAutoButtons(device)
     local buttonSize = device == "iPhone" and 55 or 70
     local yOffset = buttonSize + 10
 
-    -- ✅ AUTO LEFT Button (GRAY!)
+    -- ✅ AUTO LEFT Button
     local AutoLeftButton = Instance.new("TextButton")
     AutoLeftButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     AutoLeftButton.Position = UDim2.new(0, 15, 0.5, -buttonSize/2 + yOffset)
-    AutoLeftButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75) -- ✅ GRAY!
-    AutoLeftButton.BackgroundTransparency = 0.3
+    AutoLeftButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
+    AutoLeftButton.BackgroundTransparency = 0.15
     AutoLeftButton.Text = "AUTO\nLEFT"
-    AutoLeftButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    AutoLeftButton.TextColor3 = Color3.fromRGB(220, 220, 240)
     AutoLeftButton.Font = Enum.Font.GothamBold
     AutoLeftButton.TextSize = device == "iPhone" and 9 or 12
     AutoLeftButton.Parent = ScreenGui
@@ -3552,18 +3427,27 @@ function createAutoButtons(device)
     LeftCorner.Parent = AutoLeftButton
 
     local LeftStroke = Instance.new("UIStroke")
-    LeftStroke.Color = Color3.fromRGB(255, 255, 255)
+    LeftStroke.Color = Color3.fromRGB(138, 43, 226)
     LeftStroke.Thickness = 2
+    LeftStroke.Transparency = 0.3
     LeftStroke.Parent = AutoLeftButton
+
+    local LeftGrad = Instance.new("UIGradient")
+    LeftGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 30, 65)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 15, 30))
+    })
+    LeftGrad.Rotation = 135
+    LeftGrad.Parent = AutoLeftButton
 
     -- ✅ AUTO MEDUSA Button (above Auto Right)
     local AutoMedusaButton = Instance.new("TextButton")
     AutoMedusaButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     AutoMedusaButton.Position = UDim2.new(0, 15 + buttonSize + 10, 0.5, -buttonSize*1.5 + yOffset - 10)
-    AutoMedusaButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
-    AutoMedusaButton.BackgroundTransparency = 0.3
+    AutoMedusaButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
+    AutoMedusaButton.BackgroundTransparency = 0.15
     AutoMedusaButton.Text = "AUTO\nMEDUSA"
-    AutoMedusaButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    AutoMedusaButton.TextColor3 = Color3.fromRGB(220, 220, 240)
     AutoMedusaButton.Font = Enum.Font.GothamBold
     AutoMedusaButton.TextSize = device == "iPhone" and 9 or 12
     AutoMedusaButton.Parent = ScreenGui
@@ -3573,9 +3457,18 @@ function createAutoButtons(device)
     MedusaCorner.Parent = AutoMedusaButton
 
     local MedusaStroke = Instance.new("UIStroke")
-    MedusaStroke.Color = Color3.fromRGB(0, 80, 255)
+    MedusaStroke.Color = Color3.fromRGB(80, 40, 200)
     MedusaStroke.Thickness = 2
+    MedusaStroke.Transparency = 0.3
     MedusaStroke.Parent = AutoMedusaButton
+
+    local MedusaGrad = Instance.new("UIGradient")
+    MedusaGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(35, 25, 70)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(18, 12, 35))
+    })
+    MedusaGrad.Rotation = 135
+    MedusaGrad.Parent = AutoMedusaButton
 
     -- Auto Medusa logic (logic only, no extra GUI)
     local MEDUSA_RANGE = 9.5
@@ -3687,17 +3580,17 @@ function createAutoButtons(device)
             AutoMedusaButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
             startAutoMedusa()
         else
-            AutoMedusaButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+            AutoMedusaButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
             stopAutoMedusa()
         end
     end)
     local AutoRightButton = Instance.new("TextButton")
     AutoRightButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     AutoRightButton.Position = UDim2.new(0, 15 + buttonSize + 10, 0.5, -buttonSize/2 + yOffset)
-    AutoRightButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75) -- ✅ GRAY!
-    AutoRightButton.BackgroundTransparency = 0.3
+    AutoRightButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
+    AutoRightButton.BackgroundTransparency = 0.15
     AutoRightButton.Text = "AUTO\nRIGHT"
-    AutoRightButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    AutoRightButton.TextColor3 = Color3.fromRGB(220, 220, 240)
     AutoRightButton.Font = Enum.Font.GothamBold
     AutoRightButton.TextSize = device == "iPhone" and 9 or 12
     AutoRightButton.Parent = ScreenGui
@@ -3707,20 +3600,29 @@ function createAutoButtons(device)
     RightCorner.Parent = AutoRightButton
 
     local RightStroke = Instance.new("UIStroke")
-    RightStroke.Color = Color3.fromRGB(255, 255, 255)
+    RightStroke.Color = Color3.fromRGB(138, 43, 226)
     RightStroke.Thickness = 2
+    RightStroke.Transparency = 0.3
     RightStroke.Parent = AutoRightButton
+
+    local RightGrad = Instance.new("UIGradient")
+    RightGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 30, 65)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 15, 30))
+    })
+    RightGrad.Rotation = 135
+    RightGrad.Parent = AutoRightButton
 
     -- ✅ AUTO LEFT CLICK (WITH PATH!)
     AutoLeftButton.MouseButton1Click:Connect(function()
         if pathActive then
             stopStealPath()
-            AutoLeftButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
-            AutoRightButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+            AutoLeftButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
+            AutoRightButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
         else
             stopStealPath()
             AutoLeftButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-            AutoRightButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+            AutoRightButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
             startStealPath(stealPath2) -- ✅ LEFT PATH!
         end
     end)
@@ -3729,11 +3631,11 @@ function createAutoButtons(device)
     AutoRightButton.MouseButton1Click:Connect(function()
         if pathActive then
             stopStealPath()
-            AutoLeftButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
-            AutoRightButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+            AutoLeftButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
+            AutoRightButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
         else
             stopStealPath()
-            AutoLeftButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+            AutoLeftButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
             AutoRightButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
             startStealPath(stealPath1) -- ✅ RIGHT PATH!
         end
@@ -3751,10 +3653,10 @@ function createRightButtons(device)
     local DesyncButton = Instance.new("TextButton")
     DesyncButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     DesyncButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize*2 - 20)
-    DesyncButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
-    DesyncButton.BackgroundTransparency = 0.3
+    DesyncButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
+    DesyncButton.BackgroundTransparency = 0.15
     DesyncButton.Text = "DESYNC"
-    DesyncButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    DesyncButton.TextColor3 = Color3.fromRGB(220, 220, 240)
     DesyncButton.Font = Enum.Font.GothamBold
     DesyncButton.TextSize = device == "iPhone" and 9 or 12
     DesyncButton.Parent = ScreenGui
@@ -3764,9 +3666,18 @@ function createRightButtons(device)
     DesyncCorner.Parent = DesyncButton
 
     local DesyncStroke = Instance.new("UIStroke")
-    DesyncStroke.Color = Color3.fromRGB(255, 255, 255)
+    DesyncStroke.Color = Color3.fromRGB(138, 43, 226)
     DesyncStroke.Thickness = 2
+    DesyncStroke.Transparency = 0.3
     DesyncStroke.Parent = DesyncButton
+
+    local DesyncGrad = Instance.new("UIGradient")
+    DesyncGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 30, 65)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 15, 30))
+    })
+    DesyncGrad.Rotation = 135
+    DesyncGrad.Parent = DesyncButton
 
     -- Desync logic
     local desyncEnabled = false
@@ -3782,10 +3693,10 @@ function createRightButtons(device)
         local LaggerButton = Instance.new("TextButton")
         LaggerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
         LaggerButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize*3 - 30)
-        LaggerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
-        LaggerButton.BackgroundTransparency = 0.3
+        LaggerButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
+        LaggerButton.BackgroundTransparency = 0.15
         LaggerButton.Text = "LAGGER"
-        LaggerButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        LaggerButton.TextColor3 = Color3.fromRGB(220, 220, 240)
         LaggerButton.Font = Enum.Font.GothamBold
         LaggerButton.TextSize = device == "iPhone" and 9 or 12
         LaggerButton.Parent = ScreenGui
@@ -3795,9 +3706,18 @@ function createRightButtons(device)
         LaggerCorner.Parent = LaggerButton
 
         local LaggerStroke = Instance.new("UIStroke")
-        LaggerStroke.Color = Color3.fromRGB(255, 255, 255)
+        LaggerStroke.Color = Color3.fromRGB(138, 43, 226)
         LaggerStroke.Thickness = 2
+        LaggerStroke.Transparency = 0.3
         LaggerStroke.Parent = LaggerButton
+
+        local LaggerGrad = Instance.new("UIGradient")
+        LaggerGrad.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 30, 65)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 15, 30))
+        })
+        LaggerGrad.Rotation = 135
+        LaggerGrad.Parent = LaggerButton
 
         -- LAGGER logic (no extra GUI, just logic)
         local isMobile = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
@@ -3887,7 +3807,7 @@ function createRightButtons(device)
                 LaggerButton.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
                 startLagger()
             else
-                LaggerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+                LaggerButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
                 stopLaggerLoop()
             end
         end)
@@ -4103,7 +4023,7 @@ function createRightButtons(device)
             if raknet and raknet.desync then raknet.desync(true) end
             print("leak by Lacsy on dc\nLeak Royals desync by Lacsy")
         else
-            DesyncButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+            DesyncButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
             if animConnection then animConnection:Disconnect() animConnection = nil end
             if raknet and raknet.desync then raknet.desync(false) end
         end
@@ -4113,10 +4033,10 @@ function createRightButtons(device)
     local TrackPlayerButton = Instance.new("TextButton")
     TrackPlayerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     TrackPlayerButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize - 10)
-    TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75) -- ✅ GRAY!
-    TrackPlayerButton.BackgroundTransparency = 0.3
+    TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
+    TrackPlayerButton.BackgroundTransparency = 0.15
     TrackPlayerButton.Text = "TRACK\nPLAYER"
-    TrackPlayerButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TrackPlayerButton.TextColor3 = Color3.fromRGB(220, 220, 240)
     TrackPlayerButton.Font = Enum.Font.GothamBold
     TrackPlayerButton.TextSize = device == "iPhone" and 9 or 12
     TrackPlayerButton.Parent = ScreenGui
@@ -4126,9 +4046,18 @@ function createRightButtons(device)
     TrackCorner.Parent = TrackPlayerButton
 
     local TrackStroke = Instance.new("UIStroke")
-    TrackStroke.Color = Color3.fromRGB(255, 255, 255)
+    TrackStroke.Color = Color3.fromRGB(138, 43, 226)
     TrackStroke.Thickness = 2
+    TrackStroke.Transparency = 0.3
     TrackStroke.Parent = TrackPlayerButton
+
+    local TrackGrad = Instance.new("UIGradient")
+    TrackGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 30, 65)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 15, 30))
+    })
+    TrackGrad.Rotation = 135
+    TrackGrad.Parent = TrackPlayerButton
 
     TrackPlayerButton.MouseButton1Click:Connect(function()
         batAimbotToggled = not batAimbotToggled
@@ -4138,18 +4067,18 @@ function createRightButtons(device)
             TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
         else
             stopBatAimbot()
-            TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+            TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
         end
     end)
 
-    -- ✅ HIT CIRCLE Button (UNDER TRACK PLAYER - GRAY!)
+    -- ✅ HIT CIRCLE Button (UNDER TRACK PLAYER)
     local HitCircleButton = Instance.new("TextButton")
     HitCircleButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     HitCircleButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, 10)
-    HitCircleButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75) -- ✅ GRAY!
-    HitCircleButton.BackgroundTransparency = 0.3
+    HitCircleButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
+    HitCircleButton.BackgroundTransparency = 0.15
     HitCircleButton.Text = "HIT\nCIRCLE"
-    HitCircleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    HitCircleButton.TextColor3 = Color3.fromRGB(220, 220, 240)
     HitCircleButton.Font = Enum.Font.GothamBold
     HitCircleButton.TextSize = device == "iPhone" and 9 or 12
     HitCircleButton.Parent = ScreenGui
@@ -4159,9 +4088,18 @@ function createRightButtons(device)
     HitCorner.Parent = HitCircleButton
 
     local HitStroke = Instance.new("UIStroke")
-    HitStroke.Color = Color3.fromRGB(255, 255, 255)
+    HitStroke.Color = Color3.fromRGB(138, 43, 226)
     HitStroke.Thickness = 2
+    HitStroke.Transparency = 0.3
     HitStroke.Parent = HitCircleButton
+
+    local HitGrad = Instance.new("UIGradient")
+    HitGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 30, 65)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 15, 30))
+    })
+    HitGrad.Rotation = 135
+    HitGrad.Parent = HitCircleButton
 
     HitCircleButton.MouseButton1Click:Connect(function()
         hitCircleEnabled = not hitCircleEnabled
@@ -4171,7 +4109,7 @@ function createRightButtons(device)
             HitCircleButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
         else
             stopHitCircle()
-            HitCircleButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+            HitCircleButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
         end
     end)
 
@@ -4188,10 +4126,10 @@ function createRightButtons(device)
     local JukeButton = Instance.new("TextButton")
     JukeButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     JukeButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, buttonSize + 20)
-    JukeButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
-    JukeButton.BackgroundTransparency = 0.3
+    JukeButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
+    JukeButton.BackgroundTransparency = 0.15
     JukeButton.Text = "JUKE"
-    JukeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    JukeButton.TextColor3 = Color3.fromRGB(220, 220, 240)
     JukeButton.Font = Enum.Font.GothamBold
     JukeButton.TextSize = device == "iPhone" and 9 or 12
     JukeButton.Parent = ScreenGui
@@ -4201,9 +4139,18 @@ function createRightButtons(device)
     JukeCorner.Parent = JukeButton
 
     local JukeStroke = Instance.new("UIStroke")
-    JukeStroke.Color = Color3.fromRGB(255, 255, 255)
+    JukeStroke.Color = Color3.fromRGB(138, 43, 226)
     JukeStroke.Thickness = 2
+    JukeStroke.Transparency = 0.3
     JukeStroke.Parent = JukeButton
+
+    local JukeGrad = Instance.new("UIGradient")
+    JukeGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 30, 65)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 15, 30))
+    })
+    JukeGrad.Rotation = 135
+    JukeGrad.Parent = JukeButton
 
     -- ⚙ Gear Settings Button (top-right corner of JUKE)
     local JukeGear = Instance.new("TextButton")
@@ -4774,24 +4721,24 @@ function createRightButtons(device)
     end)
 
     -- ═══════════════════════════════════════════════════════
-    -- ✅ JUKE LOGIC: Float up, spam tool, wait, then TP down
+    -- ✅ JUKE LOGIC: Toggle spam - continuously floats up, spams tool, TPs down, repeats
     -- ═══════════════════════════════════════════════════════
 
-    JukeButton.MouseButton1Click:Connect(function()
-        if jukeActive then return end
+    local jukeSpamActive = false
+
+    local function doOneJuke()
         local c = player.Character
         local r = c and c:FindFirstChild("HumanoidRootPart")
         if not r then return end
-        jukeActive = true
-        JukeButton.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
 
         local startPos = r.Position
         local targetY = startPos.Y + jukeFloatY
 
-        -- Float up using velocity + spam tool activate
+        -- Phase 1: Float up while spamming tool
+        local reached = false
         local floatConn
         floatConn = RunService.Heartbeat:Connect(function()
-            if not jukeActive then if floatConn then floatConn:Disconnect() end return end
+            if not jukeSpamActive then if floatConn then floatConn:Disconnect() end return end
             local rr = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
             if not rr then if floatConn then floatConn:Disconnect() end return end
 
@@ -4807,20 +4754,65 @@ function createRightButtons(device)
             if rr.Position.Y >= targetY then
                 rr.AssemblyLinearVelocity = Vector3.new(rr.AssemblyLinearVelocity.X, 0, rr.AssemblyLinearVelocity.Z)
                 floatConn:Disconnect()
-                -- Wait delay then TP down
-                task.delay(jukeTPDelay, function()
-                    local rrr = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-                    if rrr then
-                        rrr.CFrame = CFrame.new(startPos.X, startPos.Y, startPos.Z)
-                        rrr.AssemblyLinearVelocity = Vector3.zero
-                    end
-                    jukeActive = false
-                    JukeButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
-                end)
+                reached = true
                 return
             end
             rr.AssemblyLinearVelocity = Vector3.new(rr.AssemblyLinearVelocity.X, jukeFloatSpeed, rr.AssemblyLinearVelocity.Z)
         end)
+
+        -- Wait until float finishes or cancelled
+        local timeout = tick() + 3
+        while jukeSpamActive and not reached and tick() < timeout do
+            RunService.Heartbeat:Wait()
+        end
+        if floatConn then pcall(function() floatConn:Disconnect() end) end
+        if not jukeSpamActive then return end
+
+        -- Phase 2: Wait delay
+        local delayStart = tick()
+        while jukeSpamActive and (tick() - delayStart) < jukeTPDelay do
+            -- Keep spamming tool during delay too
+            pcall(function()
+                local char = player.Character
+                if char then
+                    local tool = char:FindFirstChildOfClass("Tool")
+                    if tool then tool:Activate() end
+                end
+            end)
+            RunService.Heartbeat:Wait()
+        end
+        if not jukeSpamActive then return end
+
+        -- Phase 3: TP back down
+        local rrr = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+        if rrr then
+            rrr.CFrame = CFrame.new(startPos.X, startPos.Y, startPos.Z)
+            rrr.AssemblyLinearVelocity = Vector3.zero
+        end
+    end
+
+    JukeButton.MouseButton1Click:Connect(function()
+        jukeSpamActive = not jukeSpamActive
+
+        if jukeSpamActive then
+            JukeButton.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+            JukeButton.Text = "JUKE\n(ON)"
+            -- Spam loop in background
+            task.spawn(function()
+                while jukeSpamActive do
+                    doOneJuke()
+                    if jukeSpamActive then
+                        task.wait(0.1) -- small gap between juke cycles
+                    end
+                end
+            end)
+        else
+            JukeButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
+            JukeButton.Text = "JUKE"
+            -- Stop any velocity
+            local r = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+            if r then r.AssemblyLinearVelocity = Vector3.zero end
+        end
     end)
 end
 
@@ -4830,12 +4822,9 @@ print("════════════════════════�
 print("✅ VISIBLE SMALL GUIs (5):")
 print("   Speed (ON), Unwalk (ON), Anti Rag (ON),")
 print("   Ragdoll TP (ON), Drop Brainrot (OFF)")
-print("✅ AUTO-ENABLED MAIN:")
-print("   Speed, Unwalk, Anti Rag, Ragdoll TP")
-print("✅ AUTO-ENABLED MISC:")
-print("   FPS, Optimizer, Hitbox, Anti Death")
-print("⚪ Hidden until you turn on:")
-print("   Inf Jump, Spin Bot, Float, FOV")
+print("✅ NEW: Galaxy Sky, Improved Speed Bypass")
+print("✅ JUKE is now a toggle - spams continuously!")
+print("✅ UI upgraded with gradients + purple theme")
 print("✅ WORKS ON: PC, iPad, iPhone!")
 print("══════════════════════════════════════════════")
 
