@@ -1637,15 +1637,15 @@ local function refreshSmallButtonPositions()
         end
     end
 
-    local columns = 5
+    local columns = 6
     local buttonHeight = 18
     local rows = 3
     local gapX = 4
     local gapY = 4
     local topPadding = 4
-    local sidePadding = 10
+    local sidePadding = 6
     local viewport = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1280, 720)
-    local availableWidth = math.max(300, viewport.X - sidePadding * 2)
+    local availableWidth = math.max(400, viewport.X - sidePadding * 2)
     local buttonWidth = math.floor((availableWidth - gapX * (columns - 1)) / columns)
     buttonWidth = math.clamp(buttonWidth, 50, 100)
     local totalWidth = columns * buttonWidth + (columns - 1) * gapX
