@@ -3805,20 +3805,48 @@ function createRightButtons(device)
     -- ✅ TRACK SETTINGS STATE
     -- ═══════════════════════════════════════════════════════
     local TRACK_DEFAULTS = { mode = "Normal", speed = 56.5 }
-    local trackMode = (ConfigData.trackMode == "Lagger") and "Lagger" or TRACK_DEFAULTS.mode
-    local trackSpeed = tonumber(ConfigData.trackSpeed) or TRACK_DEFAULTS.speed
+    local trackMode = "Normal"
+    local trackSpeed = 56.5
     local trackLaggerForced = false
+
+    -- Load saved track settings early
+    pcall(function()
+        if ConfigData.trackMode == "Lagger" then trackMode = "Lagger" end
+        if ConfigData.trackSpeed then trackSpeed = tonumber(ConfigData.trackSpeed) or 56.5 end
+    end)
 
     local function syncTrackSpeed()
         BAT_MOVE_SPEED = trackSpeed
     end
     syncTrackSpeed()
 
+    -- Helper: safely start/stop lagger from track context
+    local function trackStartLagger()
+        pcall(function()
+            if not laggerEnabled then
+                laggerEnabled = true
+                laggerThread = coroutine.create(startLaggerLoop)
+                coroutine.resume(laggerThread)
+                LaggerButton.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+            end
+        end)
+    end
+    local function trackStopLagger()
+        pcall(function()
+            laggerEnabled = false
+            if laggerThread then
+                pcall(function() coroutine.close(laggerThread) end)
+                laggerThread = nil
+            end
+            LaggerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+        end)
+    end
+
     -- ✅ TRACK PLAYER Button (RIGHT SIDE - GRAY!)
     local TrackPlayerButton = Instance.new("TextButton")
     TrackPlayerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     TrackPlayerButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize - 10)
-    TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75) -- ✅ GRAY!
+    TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
     TrackPlayerButton.BackgroundTransparency = 0.3
     TrackPlayerButton.Text = "TRACK\nPLAYER"
     TrackPlayerButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -3849,31 +3877,29 @@ function createRightButtons(device)
 
     local function updateTrackLagger()
         if batAimbotToggled and trackMode == "Lagger" then
-            if not laggerEnabled then
-                startLagger()
-                LaggerButton.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
-                trackLaggerForced = true
-            end
+            trackStartLagger()
+            trackLaggerForced = true
         else
-            if trackLaggerForced and laggerEnabled then
-                stopLaggerLoop()
-                LaggerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+            if trackLaggerForced then
+                trackStopLagger()
             end
             trackLaggerForced = false
         end
     end
 
-    -- ⚙ Track Gear Button (top-right of TRACK PLAYER)
+    -- ⚙ Track Gear Button
     local TrackGear = Instance.new("TextButton")
-    TrackGear.Size = UDim2.new(0, 18, 0, 18)
-    TrackGear.Position = UDim2.new(1, -16, 0, -2)
-    TrackGear.BackgroundTransparency = 1
+    TrackGear.Size = UDim2.new(0, 24, 0, 24)
+    TrackGear.Position = UDim2.new(1, -22, 0, -4)
+    TrackGear.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+    TrackGear.BackgroundTransparency = 0.3
     TrackGear.Text = "⚙"
-    TrackGear.TextColor3 = Color3.fromRGB(200, 200, 200)
+    TrackGear.TextColor3 = Color3.fromRGB(255, 220, 100)
     TrackGear.Font = Enum.Font.GothamBold
-    TrackGear.TextSize = 14
-    TrackGear.ZIndex = 3
+    TrackGear.TextSize = 16
+    TrackGear.ZIndex = 5
     TrackGear.Parent = TrackPlayerButton
+    Instance.new("UICorner", TrackGear).CornerRadius = UDim.new(0, 6)
 
     -- ═══════════════════════════════════════════════════════
     -- ✅ TRACK SETTINGS PANEL
@@ -3883,7 +3909,7 @@ function createRightButtons(device)
     TrackSettings.Size = UDim2.new(0, 220, 0, 195)
     TrackSettings.Position = UDim2.new(0.5, -110, 0.32, 0)
     TrackSettings.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-    TrackSettings.BackgroundTransparency = 0.1
+    TrackSettings.BackgroundTransparency = 0.05
     TrackSettings.Visible = false
     TrackSettings.Active = true
     TrackSettings.Draggable = true
@@ -3934,7 +3960,8 @@ function createRightButtons(device)
     local modeBtn = Instance.new("TextButton")
     modeBtn.Size = UDim2.new(0, 110, 0, 26)
     modeBtn.Position = UDim2.new(1, -120, 0, 37)
-    modeBtn.BackgroundColor3 = Color3.fromRGB(50, 120, 70)
+    modeBtn.BackgroundColor3 = trackMode == "Lagger" and Color3.fromRGB(170, 60, 60) or Color3.fromRGB(50, 120, 70)
+    modeBtn.Text = trackMode == "Lagger" and "🔴 Lagger" or "🟢 Normal"
     modeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     modeBtn.Font = Enum.Font.GothamBold
     modeBtn.TextSize = 11
@@ -3951,7 +3978,6 @@ function createRightButtons(device)
             modeBtn.BackgroundColor3 = Color3.fromRGB(50, 120, 70)
         end
     end
-    refreshModeUI()
 
     modeBtn.MouseButton1Click:Connect(function()
         trackMode = (trackMode == "Normal") and "Lagger" or "Normal"
@@ -4056,9 +4082,11 @@ function createRightButtons(device)
     tsStatus.ZIndex = 11
 
     tsSave.MouseButton1Click:Connect(function()
-        ConfigData.trackMode = trackMode
-        ConfigData.trackSpeed = trackSpeed
-        SaveConfig()
+        pcall(function()
+            ConfigData.trackMode = trackMode
+            ConfigData.trackSpeed = trackSpeed
+            SaveConfig()
+        end)
         tsStatus.Text = "✅ Saved!"
         tsStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
         task.delay(2, function() tsStatus.Text = "" end)
@@ -4088,16 +4116,14 @@ function createRightButtons(device)
         if batAimbotToggled then
             stopBatAimbot()
             if trackLaggerForced then
-                stopLaggerLoop()
-                LaggerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+                trackStopLagger()
                 trackLaggerForced = false
             end
         else
             syncTrackSpeed()
             startBatAimbot()
-            if trackMode == "Lagger" and not laggerEnabled then
-                startLagger()
-                LaggerButton.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+            if trackMode == "Lagger" then
+                trackStartLagger()
                 trackLaggerForced = true
             end
         end
