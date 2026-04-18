@@ -24,6 +24,29 @@ local Lighting = game:GetService("Lighting")
 
 local player = Players.LocalPlayer or Players:GetPlayers()[1] or Players.PlayerAdded:Wait()
 local PlayerGui = player:WaitForChild("PlayerGui")
+
+-- Delta / executor GUI parent (gethui > CoreGui > PlayerGui)
+local GuiParent
+do
+    local ok, result = pcall(function()
+        if gethui then return gethui() end
+    end)
+    if ok and result then
+        GuiParent = result
+    else
+        local ok2, cg = pcall(function() return CoreGui end)
+        if ok2 and cg then
+            local ok3 = pcall(function()
+                local test = Instance.new("ScreenGui")
+                test.Parent = cg
+                test:Destroy()
+            end)
+            GuiParent = ok3 and cg or PlayerGui
+        else
+            GuiParent = PlayerGui
+        end
+    end
+end
 local character
 local hrp
 local hum
@@ -1393,21 +1416,17 @@ local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "TimCheeseDuelsGUI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.Parent = PlayerGui
+ScreenGui.Parent = GuiParent
 
--- Rainbow outline: cycles UIStroke colors across the GUI
+-- Rainbow outline: cycles UIStroke colors across ALL UI elements
 local function startRainbowOutline()
     task.spawn(function()
-        while task.wait(0.05) do
-            local hue = (tick() * 0.12) % 1
-            local color = Color3.fromHSV(hue, 0.6, 0.75) -- less bright
+        while task.wait(0.03) do
+            local hue = (tick() * 0.15) % 1
+            local color = Color3.fromHSV(hue, 1, 1)
             for _, v in pairs(ScreenGui:GetDescendants()) do
                 if v:IsA("UIStroke") then
-                    local p = v.Parent
-                    -- skip strokes that belong to buttons or main GUI frames (keep button outlines black)
-                    if not (p and (p:IsA("TextButton") or p:IsA("ImageButton") or p.Name == "MainFrame" or tostring(p.Name):match("^Small"))) then
-                        v.Color = color
-                    end
+                    v.Color = color
                 end
             end
         end
@@ -1430,18 +1449,16 @@ local function applyWhiteHalfStyle()
                     v.TextColor3 = Color3.fromRGB(255, 255, 255)
                 end
 
-                -- ensure button/frame strokes are black (overwrite existing strokes)
+                -- ensure strokes exist (rainbow animator will set colors)
                 local hasStroke = false
                 for _, c in pairs(v:GetChildren()) do
                     if c:IsA("UIStroke") then
-                        c.Color = Color3.fromRGB(0,0,0)
                         hasStroke = true
                     end
                 end
                 if not hasStroke then
                     local stroke = Instance.new("UIStroke")
                     stroke.Thickness = 2
-                    stroke.Color = Color3.fromRGB(0,0,0)
                     stroke.Parent = v
                 end
 
@@ -3792,12 +3809,12 @@ function createRightButtons(device)
             stopAnims(humanoid)
             if animConnection then animConnection:Disconnect() animConnection = nil end
             animConnection = humanoid.AnimationPlayed:Connect(function(t) t:Stop() end)
-            if raknet and raknet.desync then raknet.desync(true) end
+            if raknet and raknet.desync then pcall(raknet.desync, true) end
             print("leak by Lacsy on dc\nLeak Royals desync by Lacsy")
         else
             DesyncButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
             if animConnection then animConnection:Disconnect() animConnection = nil end
-            if raknet and raknet.desync then raknet.desync(false) end
+            if raknet and raknet.desync then pcall(raknet.desync, false) end
         end
     end)
 
