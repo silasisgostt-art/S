@@ -1529,8 +1529,8 @@ local SmallGUIInstances = {}
 local function createSmallGUI(name, yPosition)
     local SmallGUI = Instance.new("Frame")
     SmallGUI.Name = "Small"..name.."GUI"
-    SmallGUI.Size = UDim2.new(0, 55, 0, 14) -- Smaller width and height
-    SmallGUI.Position = UDim2.new(0.5, -28, 0, yPosition)
+    SmallGUI.Size = UDim2.new(0, 80, 0, 20) -- Smaller width and height
+    SmallGUI.Position = UDim2.new(0.5, -40, 0, yPosition)
     SmallGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     SmallGUI.BackgroundTransparency = 0
     SmallGUI.BorderSizePixel = 0
@@ -1576,8 +1576,8 @@ local function createSmallGUI(name, yPosition)
 
     -- ✅ GREEN DOT!
     local GreenDot = Instance.new("Frame")
-    GreenDot.Size = UDim2.new(0, 5, 0, 5)
-    GreenDot.Position = UDim2.new(0, 3, 0.5, -2)
+    GreenDot.Size = UDim2.new(0, 7, 0, 7)
+    GreenDot.Position = UDim2.new(0, 5, 0.5, -3)
     GreenDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100) -- GRAY by default
     GreenDot.BorderSizePixel = 0
     GreenDot.Parent = SmallGUI
@@ -1587,25 +1587,25 @@ local function createSmallGUI(name, yPosition)
     DotCorner.Parent = GreenDot
 
     local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(1, -22, 1, 0)
-    Label.Position = UDim2.new(0, 11, 0, 0)
+    Label.Size = UDim2.new(1, -32, 1, 0)
+    Label.Position = UDim2.new(0, 18, 0, 0)
     Label.BackgroundTransparency = 1
     Label.Text = name
     Label.TextColor3 = Color3.fromRGB(220, 220, 220)
     Label.Font = Enum.Font.GothamBold
-    Label.TextSize = 7 -- Smaller text
+    Label.TextSize = 9 -- Smaller text
     Label.TextXAlignment = Enum.TextXAlignment.Left
     Label.Parent = SmallGUI
 
     -- ✅ CLICK BUTTON (smaller, on right side only - doesn't block dragging!)
     local Button = Instance.new("TextButton")
-    Button.Size = UDim2.new(0, 14, 1, 0)
-    Button.Position = UDim2.new(1, -14, 0, 0)
+    Button.Size = UDim2.new(0, 20, 1, 0)
+    Button.Position = UDim2.new(1, -20, 0, 0)
     Button.BackgroundTransparency = 1
     Button.Text = "⚡"
     Button.TextColor3 = Color3.fromRGB(220, 220, 220)
     Button.Font = Enum.Font.GothamBold
-    Button.TextSize = 8 -- Smaller icon
+    Button.TextSize = 12 -- Smaller icon
     Button.ZIndex = 2
     Button.Parent = SmallGUI
 
@@ -1637,17 +1637,17 @@ local function refreshSmallButtonPositions()
         end
     end
 
-    local columns = 6
-    local buttonHeight = 18
+    local columns = 5
+    local buttonHeight = 30
     local rows = 3
-    local gapX = 4
-    local gapY = 4
-    local topPadding = 4
-    local sidePadding = 6
+    local gapX = 8
+    local gapY = 8
+    local topPadding = 8
+    local sidePadding = 10
     local viewport = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1280, 720)
     local availableWidth = math.max(400, viewport.X - sidePadding * 2)
     local buttonWidth = math.floor((availableWidth - gapX * (columns - 1)) / columns)
-    buttonWidth = math.clamp(buttonWidth, 50, 100)
+    buttonWidth = math.clamp(buttonWidth, 70, 150)
     local totalWidth = columns * buttonWidth + (columns - 1) * gapX
     local startX = math.max(sidePadding, math.floor((viewport.X - totalWidth) / 2))
     local startY = topPadding
@@ -2038,60 +2038,113 @@ end)
 
 local StealBarContainer = Instance.new("Frame")
 StealBarContainer.Name = "StealBarContainer"
-StealBarContainer.Size = UDim2.new(0, 320, 0, 50)
-StealBarContainer.Position = UDim2.new(0.5, -160, 1, -90)
-StealBarContainer.BackgroundColor3 = Color3.fromRGB(20, 25, 20)
+StealBarContainer.Size = UDim2.new(0, 260, 0, 42)
+StealBarContainer.Position = UDim2.new(0.5, -130, 0, 4)
+StealBarContainer.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 StealBarContainer.BorderSizePixel = 0
+StealBarContainer.Active = true
+StealBarContainer.Draggable = true
 StealBarContainer.Parent = ScreenGui
+StealBarContainer.ZIndex = 200
 
 local ContainerCorner = Instance.new("UICorner")
-ContainerCorner.CornerRadius = UDim.new(0, 15)
+ContainerCorner.CornerRadius = UDim.new(0, 8)
 ContainerCorner.Parent = StealBarContainer
 
-local ContainerStroke = Instance.new("UIStroke")
-ContainerStroke.Color = Color3.fromRGB(255, 255, 255)
-ContainerStroke.Thickness = 2
-ContainerStroke.Parent = StealBarContainer
+local ContainerBlackStroke = Instance.new("UIStroke")
+ContainerBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+ContainerBlackStroke.Thickness = 4
+ContainerBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+ContainerBlackStroke.Parent = StealBarContainer
 
-local OnLabel = Instance.new("TextLabel")
-OnLabel.Size = UDim2.new(0, 30, 0, 20)
-OnLabel.Position = UDim2.new(0, 10, 0, 5)
-OnLabel.BackgroundTransparency = 1
-OnLabel.Text = "On"
-OnLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
-OnLabel.Font = Enum.Font.Gotham
-OnLabel.TextSize = 12
-OnLabel.TextXAlignment = Enum.TextXAlignment.Left
-OnLabel.Parent = StealBarContainer
+local ContainerWaveStroke = Instance.new("UIStroke")
+ContainerWaveStroke.Color = Color3.fromRGB(255, 255, 255)
+ContainerWaveStroke.Thickness = 2.5
+ContainerWaveStroke.Transparency = 0.35
+ContainerWaveStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+ContainerWaveStroke.ZIndex = 2
+ContainerWaveStroke.Parent = StealBarContainer
 
+local ContainerWaveGrad = Instance.new("UIGradient")
+ContainerWaveGrad.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
+ContainerWaveGrad.Transparency = NumberSequence.new({
+    NumberSequenceKeypoint.new(0, 1),
+    NumberSequenceKeypoint.new(0.4, 0),
+    NumberSequenceKeypoint.new(0.6, 0),
+    NumberSequenceKeypoint.new(1, 1)
+})
+ContainerWaveGrad.Rotation = 0
+ContainerWaveGrad.Parent = ContainerWaveStroke
+
+TweenService:Create(ContainerWaveStroke, TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Thickness = 4.2, Transparency = 0.08}):Play()
+RunService.Heartbeat:Connect(function(dt)
+    pcall(function() ContainerWaveGrad.Rotation = (ContainerWaveGrad.Rotation + 140 * dt) % 360 end)
+end)
+
+-- Title: TIM CHEESE DUELS
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Size = UDim2.new(0, 140, 0, 16)
+TitleLabel.Position = UDim2.new(0, 8, 0, 2)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "TIM CHEESE DUELS"
+TitleLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+TitleLabel.Font = Enum.Font.GothamBlack
+TitleLabel.TextSize = 10
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.Parent = StealBarContainer
+TitleLabel.ZIndex = 201
+
+-- Radius label + text box
 local RadiusLabel = Instance.new("TextLabel")
-RadiusLabel.Size = UDim2.new(0, 60, 0, 20)
-RadiusLabel.Position = UDim2.new(1, -70, 0, 5)
+RadiusLabel.Size = UDim2.new(0, 40, 0, 16)
+RadiusLabel.Position = UDim2.new(1, -90, 0, 2)
 RadiusLabel.BackgroundTransparency = 1
 RadiusLabel.Text = "Radius:"
-RadiusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+RadiusLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
 RadiusLabel.Font = Enum.Font.Gotham
-RadiusLabel.TextSize = 12
-RadiusLabel.TextXAlignment = Enum.TextXAlignment.Left
+RadiusLabel.TextSize = 9
+RadiusLabel.TextXAlignment = Enum.TextXAlignment.Right
 RadiusLabel.Parent = StealBarContainer
+RadiusLabel.ZIndex = 201
 
-local RadiusValue = Instance.new("TextLabel")
-RadiusValue.Size = UDim2.new(0, 20, 0, 20)
-RadiusValue.Position = UDim2.new(1, -15, 0, 5)
-RadiusValue.BackgroundTransparency = 1
-RadiusValue.Text = tostring(InstaSteal.Radius)
-RadiusValue.TextColor3 = Color3.fromRGB(255, 255, 255)
-RadiusValue.Font = Enum.Font.GothamBold
-RadiusValue.TextSize = 12
-RadiusValue.TextXAlignment = Enum.TextXAlignment.Right
-RadiusValue.Parent = StealBarContainer
+local RadiusBox = Instance.new("TextBox")
+RadiusBox.Size = UDim2.new(0, 30, 0, 14)
+RadiusBox.Position = UDim2.new(1, -46, 0, 3)
+RadiusBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+RadiusBox.Text = tostring(InstaSteal.Radius)
+RadiusBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+RadiusBox.Font = Enum.Font.GothamBold
+RadiusBox.TextSize = 9
+RadiusBox.ClearTextOnFocus = false
+RadiusBox.Parent = StealBarContainer
+RadiusBox.ZIndex = 201
 
+local RadiusBoxCorner = Instance.new("UICorner")
+RadiusBoxCorner.CornerRadius = UDim.new(0, 4)
+RadiusBoxCorner.Parent = RadiusBox
+
+-- Keep RadiusValue as a reference for other code that updates it
+local RadiusValue = RadiusBox
+
+RadiusBox.FocusLost:Connect(function()
+    local num = tonumber(RadiusBox.Text)
+    if num then
+        num = math.clamp(math.floor(num), 1, 50)
+        InstaSteal.Radius = num
+        RadiusBox.Text = tostring(num)
+    else
+        RadiusBox.Text = tostring(InstaSteal.Radius)
+    end
+end)
+
+-- Progress bar
 local ProgressBarBg = Instance.new("Frame")
-ProgressBarBg.Size = UDim2.new(1, -20, 0, 20)
-ProgressBarBg.Position = UDim2.new(0, 10, 0, 30)
+ProgressBarBg.Size = UDim2.new(1, -16, 0, 14)
+ProgressBarBg.Position = UDim2.new(0, 8, 0, 22)
 ProgressBarBg.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 ProgressBarBg.BorderSizePixel = 0
 ProgressBarBg.Parent = StealBarContainer
+ProgressBarBg.ZIndex = 201
 
 local ProgressBgCorner = Instance.new("UICorner")
 ProgressBgCorner.CornerRadius = UDim.new(1, 0)
@@ -2102,46 +2155,11 @@ ProgressBarFill.Size = UDim2.new(0, 0, 1, 0)
 ProgressBarFill.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
 ProgressBarFill.BorderSizePixel = 0
 ProgressBarFill.Parent = ProgressBarBg
+ProgressBarFill.ZIndex = 202
 
 local ProgressFillCorner = Instance.new("UICorner")
 ProgressFillCorner.CornerRadius = UDim.new(1, 0)
 ProgressFillCorner.Parent = ProgressBarFill
-
-local MinusArea = Instance.new("TextButton")
-MinusArea.Size = UDim2.new(0, 10, 0, 8)
-MinusArea.Position = UDim2.new(1, -55, 0, 8)
-MinusArea.BackgroundTransparency = 0.4
-MinusArea.BackgroundColor3 = Color3.fromRGB(240,240,240)
-MinusArea.Text = "-"
-MinusArea.TextColor3 = Color3.fromRGB(30,30,30)
-MinusArea.Font = Enum.Font.GothamBold
-MinusArea.TextSize = 6
-MinusArea.Parent = StealBarContainer
-
-local PlusArea = Instance.new("TextButton")
-PlusArea.Size = UDim2.new(0, 10, 0, 8)
-PlusArea.Position = UDim2.new(1, -25, 0, 8)
-PlusArea.BackgroundTransparency = 0.4
-PlusArea.BackgroundColor3 = Color3.fromRGB(240,240,240)
-PlusArea.Text = "+"
-PlusArea.TextColor3 = Color3.fromRGB(30,30,30)
-PlusArea.Font = Enum.Font.GothamBold
-PlusArea.TextSize = 6
-PlusArea.Parent = StealBarContainer
-
-MinusArea.MouseButton1Click:Connect(function()
-    if InstaSteal.Radius > 1 then
-        InstaSteal.Radius = InstaSteal.Radius - 1
-        RadiusValue.Text = tostring(InstaSteal.Radius)
-    end
-end)
-
-PlusArea.MouseButton1Click:Connect(function()
-    if InstaSteal.Radius < 50 then
-        InstaSteal.Radius = InstaSteal.Radius + 1
-        RadiusValue.Text = tostring(InstaSteal.Radius)
-    end
-end)
 
 -- ═══════════════════════════════════════════════════════
 -- DEVICE SELECTION SCREEN
