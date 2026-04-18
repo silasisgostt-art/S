@@ -4673,9 +4673,104 @@ function createRightButtons(device)
             rr.AssemblyLinearVelocity = Vector3.new(rr.AssemblyLinearVelocity.X, jukeFloatSpeed, rr.AssemblyLinearVelocity.Z)
         end)
     end)
-end
 
-print("══════════════════════════════════════════════")
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ DANCE BUTTON (BELOW JUKE - PLAYS RANDOM UGC DANCE)
+    -- ═══════════════════════════════════════════════════════
+
+    local DANCE_ANIM_IDS = {
+        "rbxassetid://10714345951",  -- Popular dance 1
+        "rbxassetid://10714360391",  -- Popular dance 2
+        "rbxassetid://10714349773",  -- Popular dance 3
+        "rbxassetid://5917459365",   -- Shuffling
+        "rbxassetid://3333499508",   -- Robot dance
+        "rbxassetid://5918726674",   -- Tiktok dance
+        "rbxassetid://5915779043",   -- Hype dance
+        "rbxassetid://5915693819",   -- Orange justice
+        "rbxassetid://10714362429",  -- Groove
+        "rbxassetid://10714356094",  -- Wave dance
+        "rbxassetid://4841405708",   -- Salsa
+        "rbxassetid://3695898382",   -- Spin dance
+    }
+    local currentDanceTrack = nil
+
+    local DanceButton = Instance.new("TextButton")
+    DanceButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
+    DanceButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, buttonSize*2 + 30)
+    DanceButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    DanceButton.BackgroundTransparency = 0
+    DanceButton.Text = "DANCE"
+    DanceButton.TextColor3 = Color3.fromRGB(220, 220, 220)
+    DanceButton.Font = Enum.Font.GothamBold
+    DanceButton.TextSize = device == "iPhone" and 9 or 12
+    DanceButton.Parent = ScreenGui
+
+    local DanceCorner = Instance.new("UICorner")
+    DanceCorner.CornerRadius = UDim.new(0, 8)
+    DanceCorner.Parent = DanceButton
+
+    local DanceBlackStroke = Instance.new("UIStroke")
+    DanceBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+    DanceBlackStroke.Thickness = 4
+    DanceBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    DanceBlackStroke.Parent = DanceButton
+
+    local DanceStroke = Instance.new("UIStroke")
+    DanceStroke.Color = Color3.fromRGB(255, 255, 255)
+    DanceStroke.Thickness = 2.5
+    DanceStroke.Transparency = 0.35
+    DanceStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    DanceStroke.ZIndex = 2
+    DanceStroke.Parent = DanceButton
+
+    DanceButton.MouseButton1Click:Connect(function()
+        local char = player.Character
+        if not char then return end
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if not hum then return end
+
+        -- Stop current dance if playing
+        if currentDanceTrack and currentDanceTrack.IsPlaying then
+            currentDanceTrack:Stop()
+            currentDanceTrack:Destroy()
+            currentDanceTrack = nil
+            DanceButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            return
+        end
+
+        -- Pick a random dance and play it
+        local animId = DANCE_ANIM_IDS[math.random(1, #DANCE_ANIM_IDS)]
+        local anim = Instance.new("Animation")
+        anim.AnimationId = animId
+
+        local ok, track = pcall(function()
+            return hum:LoadAnimation(anim)
+        end)
+        if not ok or not track then
+            anim:Destroy()
+            return
+        end
+
+        track.Looped = true
+        track.Priority = Enum.AnimationPriority.Action
+        track:Play()
+        currentDanceTrack = track
+        DanceButton.BackgroundColor3 = Color3.fromRGB(180, 80, 255)
+
+        -- Stop dance if character dies/resets
+        local diedConn
+        diedConn = hum.Died:Connect(function()
+            if currentDanceTrack then
+                pcall(function() currentDanceTrack:Stop() currentDanceTrack:Destroy() end)
+                currentDanceTrack = nil
+            end
+            DanceButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            if diedConn then diedConn:Disconnect() end
+        end)
+
+        anim:Destroy()
+    end)
+end
 print("   TIM CHEESE DUELS LOADED")
 print("══════════════════════════════════════════════")
 print("✅ VISIBLE SMALL GUIs (5):")
