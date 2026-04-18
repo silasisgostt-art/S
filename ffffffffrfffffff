@@ -124,28 +124,11 @@ SpeedBooster = {
     JumpConn = nil
 }
 
-local speedLastPos = Vector3.zero
-local speedStuckFrames = 0
-local speedSmoothVel = Vector3.zero
-
 local function startSpeedBooster()
     if SpeedBooster.HeartbeatConn then SpeedBooster.HeartbeatConn:Disconnect() end
     if SpeedBooster.JumpConn then SpeedBooster.JumpConn:Disconnect() end
-    if SpeedBooster.RenderConn then SpeedBooster.RenderConn:Disconnect() end
     
-    speedLastPos = Vector3.zero
-    speedStuckFrames = 0
-    speedSmoothVel = Vector3.zero
-    
-    -- WalkSpeed override - hide real speed from server
-    SpeedBooster.RenderConn = RunService.RenderStepped:Connect(function()
-        if not SpeedBooster.Enabled then return end
-        local c = player.Character
-        local h = c and c:FindFirstChildOfClass("Humanoid")
-        if h then h.WalkSpeed = 0 end
-    end)
-    
-    SpeedBooster.HeartbeatConn = RunService.Heartbeat:Connect(function(dt)
+    SpeedBooster.HeartbeatConn = RunService.Heartbeat:Connect(function()
         if not SpeedBooster.Enabled then return end
         local c = player.Character
         local h = c and c:FindFirstChildOfClass("Humanoid")
@@ -164,40 +147,14 @@ local function startSpeedBooster()
         end
         
         if h.MoveDirection.Magnitude > 0 then
-            local targetSpeed = carry and SpeedBooster.StealSpeed or SpeedBooster.NormalSpeed
-            local moveDir = h.MoveDirection
-            local targetVel = Vector3.new(moveDir.X * targetSpeed, r.AssemblyLinearVelocity.Y, moveDir.Z * targetSpeed)
-            
-            -- Smooth velocity interpolation to avoid sudden spikes
-            local smoothFactor = math.clamp(dt * 12, 0.1, 1)
-            local smoothX = speedSmoothVel.X + (targetVel.X - speedSmoothVel.X) * smoothFactor
-            local smoothZ = speedSmoothVel.Z + (targetVel.Z - speedSmoothVel.Z) * smoothFactor
-            speedSmoothVel = Vector3.new(smoothX, 0, smoothZ)
-            
-            -- Anti-lagback: detect if server rubber-banded us
-            local flatPos = Vector3.new(r.Position.X, 0, r.Position.Z)
-            local flatLast = Vector3.new(speedLastPos.X, 0, speedLastPos.Z)
-            local moved = (flatPos - flatLast).Magnitude
-            
-            if speedLastPos ~= Vector3.zero and moved < 0.3 and targetSpeed > 10 then
-                speedStuckFrames = speedStuckFrames + 1
+            local vel = carry and SpeedBooster.StealSpeed or SpeedBooster.NormalSpeed
+            -- True bypass: if lag-back detected, use CFrame teleport
+            if math.abs(r.AssemblyLinearVelocity.X) < 1 and math.abs(r.AssemblyLinearVelocity.Z) < 1 and h.MoveDirection.Magnitude > 0.1 then
+                r.CFrame = r.CFrame + Vector3.new(h.MoveDirection.X * 2, 0, h.MoveDirection.Z * 2)
+                r.AssemblyLinearVelocity = Vector3.zero
             else
-                speedStuckFrames = 0
+                r.AssemblyLinearVelocity = Vector3.new(h.MoveDirection.X * vel, r.AssemblyLinearVelocity.Y, h.MoveDirection.Z * vel)
             end
-            speedLastPos = r.Position
-            
-            if speedStuckFrames > 5 then
-                -- CFrame micro-teleport to break free from lagback
-                local step = math.clamp(targetSpeed * dt, 0.5, 3)
-                r.CFrame = r.CFrame + Vector3.new(moveDir.X * step, 0, moveDir.Z * step)
-                r.AssemblyLinearVelocity = Vector3.new(0, r.AssemblyLinearVelocity.Y, 0)
-                speedStuckFrames = 0
-            else
-                r.AssemblyLinearVelocity = Vector3.new(smoothX, r.AssemblyLinearVelocity.Y, smoothZ)
-            end
-        else
-            speedSmoothVel = Vector3.zero
-            speedStuckFrames = 0
         end
     end)
     
@@ -214,12 +171,6 @@ end
 local function stopSpeedBooster()
     if SpeedBooster.HeartbeatConn then SpeedBooster.HeartbeatConn:Disconnect() SpeedBooster.HeartbeatConn = nil end
     if SpeedBooster.JumpConn then SpeedBooster.JumpConn:Disconnect() SpeedBooster.JumpConn = nil end
-    if SpeedBooster.RenderConn then SpeedBooster.RenderConn:Disconnect() SpeedBooster.RenderConn = nil end
-    -- Restore WalkSpeed
-    pcall(function()
-        local h = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
-        if h then h.WalkSpeed = 16 end
-    end)
 end
 
 -- ═══════════════════════════════════════════════════════
@@ -870,81 +821,6 @@ local function enableOptimizer()
     Lighting.ClockTime = 12
 end
 
--- ═══════════════════════════════════════════════════════
--- ✅ SKY GALAXY EFFECT
--- ═══════════════════════════════════════════════════════
-
-local GalaxyEnabled = false
-local galaxySky = nil
-local galaxyAtmo = nil
-local galaxyCC = nil
-local galaxyStars = nil
-
-local GALAXY_SKYBOX = "rbxassetid://159454286" -- dark space/nebula
-
-local function enableGalaxy()
-    GalaxyEnabled = true
-    -- Remove existing sky
-    for _, child in ipairs(Lighting:GetChildren()) do
-        if child:IsA("Sky") then child:Destroy() end
-    end
-    
-    galaxySky = Instance.new("Sky")
-    galaxySky.Name = "GalaxySky"
-    galaxySky.SkyboxBk = GALAXY_SKYBOX
-    galaxySky.SkyboxDn = GALAXY_SKYBOX
-    galaxySky.SkyboxFt = GALAXY_SKYBOX
-    galaxySky.SkyboxLf = GALAXY_SKYBOX
-    galaxySky.SkyboxRt = GALAXY_SKYBOX
-    galaxySky.SkyboxUp = GALAXY_SKYBOX
-    galaxySky.StarCount = 5000
-    galaxySky.MoonAngularSize = 6
-    galaxySky.SunAngularSize = 0
-    galaxySky.Parent = Lighting
-    
-    -- Atmosphere for depth
-    if not galaxyAtmo then
-        galaxyAtmo = Instance.new("Atmosphere")
-        galaxyAtmo.Name = "GalaxyAtmo"
-        galaxyAtmo.Density = 0.3
-        galaxyAtmo.Offset = 0
-        galaxyAtmo.Color = Color3.fromRGB(15, 5, 30)
-        galaxyAtmo.Decay = Color3.fromRGB(20, 10, 40)
-        galaxyAtmo.Glare = 0
-        galaxyAtmo.Haze = 2
-        galaxyAtmo.Parent = Lighting
-    end
-    
-    -- Color correction for purple/blue galaxy tint
-    if not galaxyCC then
-        galaxyCC = Instance.new("ColorCorrectionEffect")
-        galaxyCC.Name = "GalaxyCC"
-        galaxyCC.Brightness = 0.05
-        galaxyCC.Contrast = 0.15
-        galaxyCC.Saturation = 0.3
-        galaxyCC.TintColor = Color3.fromRGB(180, 140, 255)
-        galaxyCC.Parent = Lighting
-    end
-    
-    Lighting.ClockTime = 0
-    Lighting.Brightness = 0.1
-    Lighting.Ambient = Color3.fromRGB(30, 15, 50)
-    Lighting.OutdoorAmbient = Color3.fromRGB(20, 10, 35)
-    Lighting.FogColor = Color3.fromRGB(10, 5, 20)
-    Lighting.FogEnd = 9e9
-end
-
-local function disableGalaxy()
-    GalaxyEnabled = false
-    if galaxySky then galaxySky:Destroy() galaxySky = nil end
-    if galaxyAtmo then galaxyAtmo:Destroy() galaxyAtmo = nil end
-    if galaxyCC then galaxyCC:Destroy() galaxyCC = nil end
-    Lighting.ClockTime = 12
-    Lighting.Brightness = 1
-    Lighting.Ambient = Color3.fromRGB(127, 127, 127)
-    Lighting.OutdoorAmbient = Color3.fromRGB(127, 127, 127)
-end
-
 local HitboxActive = false
 local HitboxConnection = nil
 
@@ -1288,6 +1164,8 @@ end
 -- IMPROVED BAT AIMBOT (restored original follow, better TP up/down prediction)
 local batAimbotToggled = false
 local BAT_MOVE_SPEED = 56.5
+local trackSpeed = 56.5
+local trackMode = "Normal" -- "Normal" or "Lagger"
 local BAT_ENGAGE_RANGE = 20
 local BAT_LOOP_TIME = 0.3
 local lastEquipTick_bat = 0
@@ -1412,7 +1290,7 @@ RunService.Heartbeat:Connect(function()
     end
 
     local moveDir = (predictedPos - hrp.Position).Unit
-    hrp.AssemblyLinearVelocity = moveDir * BAT_MOVE_SPEED
+    hrp.AssemblyLinearVelocity = moveDir * trackSpeed
 
     if distance <= BAT_ENGAGE_RANGE then
         if tick() - lastEquipTick_bat >= BAT_LOOP_TIME then
@@ -1522,9 +1400,9 @@ ScreenGui.Parent = PlayerGui
 -- Rainbow outline: cycles UIStroke colors across the GUI
 local function startRainbowOutline()
     task.spawn(function()
-        while task.wait(0.03) do
-            local hue = (tick() * 0.15) % 1
-            local color = Color3.fromHSV(hue, 0.7, 0.9)
+        while task.wait(0.05) do
+            local hue = (tick() * 0.12) % 1
+            local color = Color3.fromHSV(hue, 0.6, 0.75) -- less bright
             for _, v in pairs(ScreenGui:GetDescendants()) do
                 if v:IsA("UIStroke") then
                     local p = v.Parent
@@ -1625,40 +1503,30 @@ local SmallGUIInstances = {}
 local function createSmallGUI(name, yPosition)
     local SmallGUI = Instance.new("Frame")
     SmallGUI.Name = "Small"..name.."GUI"
-    SmallGUI.Size = UDim2.new(0, 80, 0, 20)
+    SmallGUI.Size = UDim2.new(0, 80, 0, 20) -- Smaller width and height
     SmallGUI.Position = UDim2.new(0.5, -40, 0, yPosition)
-    SmallGUI.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-    SmallGUI.BackgroundTransparency = 0.15
+    SmallGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    SmallGUI.BackgroundTransparency = 0.3
     SmallGUI.BorderSizePixel = 0
     SmallGUI.Visible = false
     SmallGUI.Active = true
-    SmallGUI.Draggable = true
+    SmallGUI.Draggable = true  -- ✅ DRAGGABLE!
     SmallGUI.Parent = ScreenGui
 
     local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 8)
+    Corner.CornerRadius = UDim.new(0, 7)
     Corner.Parent = SmallGUI
 
     local Stroke = Instance.new("UIStroke")
-    Stroke.Color = Color3.fromRGB(138, 43, 226)
+    Stroke.Color = Color3.fromRGB(255, 0, 0)
     Stroke.Thickness = 1.5
-    Stroke.Transparency = 0.3
     Stroke.Parent = SmallGUI
 
-    -- Gradient overlay for depth
-    local Gradient = Instance.new("UIGradient")
-    Gradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 30, 60)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 15, 25))
-    })
-    Gradient.Rotation = 45
-    Gradient.Parent = SmallGUI
-
-    -- Glow dot
+    -- ✅ GREEN DOT!
     local GreenDot = Instance.new("Frame")
-    GreenDot.Size = UDim2.new(0, 8, 0, 8)
-    GreenDot.Position = UDim2.new(0, 5, 0.5, -4)
-    GreenDot.BackgroundColor3 = Color3.fromRGB(80, 80, 90)
+    GreenDot.Size = UDim2.new(0, 7, 0, 7)
+    GreenDot.Position = UDim2.new(0, 5, 0.5, -3)
+    GreenDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100) -- GRAY by default
     GreenDot.BorderSizePixel = 0
     GreenDot.Parent = SmallGUI
 
@@ -1671,21 +1539,21 @@ local function createSmallGUI(name, yPosition)
     Label.Position = UDim2.new(0, 18, 0, 0)
     Label.BackgroundTransparency = 1
     Label.Text = name
-    Label.TextColor3 = Color3.fromRGB(220, 220, 240)
+    Label.TextColor3 = Color3.fromRGB(255, 255, 255)
     Label.Font = Enum.Font.GothamBold
-    Label.TextSize = 9
+    Label.TextSize = 9 -- Smaller text
     Label.TextXAlignment = Enum.TextXAlignment.Left
     Label.Parent = SmallGUI
 
-    -- Click button (right side)
+    -- ✅ CLICK BUTTON (smaller, on right side only - doesn't block dragging!)
     local Button = Instance.new("TextButton")
     Button.Size = UDim2.new(0, 20, 1, 0)
     Button.Position = UDim2.new(1, -20, 0, 0)
     Button.BackgroundTransparency = 1
     Button.Text = "⚡"
-    Button.TextColor3 = Color3.fromRGB(180, 100, 255)
+    Button.TextColor3 = Color3.fromRGB(138, 43, 226)
     Button.Font = Enum.Font.GothamBold
-    Button.TextSize = 12
+    Button.TextSize = 12 -- Smaller icon
     Button.ZIndex = 2
     Button.Parent = SmallGUI
 
@@ -1706,7 +1574,6 @@ local SmallButtonOrder = {
     "Drop Brainrot",
     "TP Down",
     "TP Up",
-    "Galaxy Sky",
 }
 
 local function refreshSmallButtonPositions()
@@ -1764,7 +1631,6 @@ local SmallRagdollTPGUI, SmallRagdollTPButton, RagdollTPDot = createSmallGUI("Ra
 local SmallDropGUI, SmallDropButton, DropDot = createSmallGUI("Drop Brainrot", 460) -- ✅ NEW!
 SmallTPDownGUI, SmallTPDownButton, TPDownDot = createSmallGUI("TP Down", 505)
 SmallTPUpGUI, SmallTPUpButton, TPUpDot = createSmallGUI("TP Up", 550)
-local SmallGalaxyGUI, SmallGalaxyButton, GalaxyDot = createSmallGUI("Galaxy Sky", 595)
 
 local function serializeUDim2(value)
     return {
@@ -1793,7 +1659,6 @@ getButtonPositions = function()
         ["Drop Brainrot"] = serializeUDim2(SmallDropGUI.Position),
         ["TP Down"] = serializeUDim2(SmallTPDownGUI.Position),
         ["TP Up"] = serializeUDim2(SmallTPUpGUI.Position),
-        ["Galaxy Sky"] = serializeUDim2(SmallGalaxyGUI.Position),
     }
 end
 
@@ -1811,7 +1676,6 @@ local function applyButtonPositions(data)
         ["Drop Brainrot"] = SmallDropGUI,
         ["TP Down"] = SmallTPDownGUI,
         ["TP Up"] = SmallTPUpGUI,
-        ["Galaxy Sky"] = SmallGalaxyGUI,
     }
     for name, gui in pairs(mapping) do
         if gui and data[name] then
@@ -1996,21 +1860,6 @@ SmallTPUpButton.MouseButton1Click:Connect(function()
         if TPUpJumpConn then TPUpJumpConn:Disconnect() TPUpJumpConn = nil end
     end
     SaveConfig()
-    refreshSmallButtonPositions()
-end)
-
--- ✅ GALAXY SKY SMALL GUI TOGGLE
-SmallGalaxyButton.MouseButton1Click:Connect(function()
-    GalaxyEnabled = not GalaxyEnabled
-    if GalaxyEnabled then
-        SmallGalaxyGUI.BackgroundColor3 = Color3.fromRGB(80, 40, 180)
-        GalaxyDot.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
-        enableGalaxy()
-    else
-        SmallGalaxyGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        GalaxyDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        disableGalaxy()
-    end
     refreshSmallButtonPositions()
 end)
 
@@ -2250,46 +2099,25 @@ local DeviceSelectFrame = Instance.new("Frame")
 DeviceSelectFrame.Name = "DeviceSelect"
 DeviceSelectFrame.Size = UDim2.new(0, 400, 0, 300)
 DeviceSelectFrame.Position = UDim2.new(0.5, -200, 0.5, -150)
-DeviceSelectFrame.BackgroundColor3 = Color3.fromRGB(18, 14, 28)
+DeviceSelectFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
 DeviceSelectFrame.BorderSizePixel = 0
 DeviceSelectFrame.Parent = ScreenGui
 
 local DeviceCorner = Instance.new("UICorner")
-DeviceCorner.CornerRadius = UDim.new(0, 18)
+DeviceCorner.CornerRadius = UDim.new(0, 15)
 DeviceCorner.Parent = DeviceSelectFrame
-
-local DeviceGradient = Instance.new("UIGradient")
-DeviceGradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 20, 50)),
-    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(18, 14, 28)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 8, 18))
-})
-DeviceGradient.Rotation = 135
-DeviceGradient.Parent = DeviceSelectFrame
-
-local DeviceStroke = Instance.new("UIStroke")
-DeviceStroke.Color = Color3.fromRGB(138, 43, 226)
-DeviceStroke.Thickness = 2
-DeviceStroke.Transparency = 0.3
-DeviceStroke.Parent = DeviceSelectFrame
 
 local DeviceTitle = Instance.new("TextLabel")
 DeviceTitle.Size = UDim2.new(1, 0, 0, 60)
-    DeviceTitle.BackgroundColor3 = Color3.fromRGB(18, 12, 30)
-    DeviceTitle.BorderSizePixel = 0
-    DeviceTitle.Text = "🧀 TIM CHEESE DUELS"
-    DeviceTitle.TextColor3 = Color3.fromRGB(255, 200, 100)
-    DeviceTitle.Font = Enum.Font.GothamBold
-    DeviceTitle.TextSize = 20
-    DeviceTitle.Parent = DeviceSelectFrame
+DeviceTitle.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+DeviceTitle.BorderSizePixel = 0
+DeviceTitle.Text = "SELECT YOUR DEVICE"
+DeviceTitle.TextColor3 = Color3.fromRGB(255, 200, 100)
+DeviceTitle.Font = Enum.Font.GothamBold
+DeviceTitle.TextSize = 20
+DeviceTitle.Parent = DeviceSelectFrame
 
-    local DTGradient = Instance.new("UIGradient")
-    DTGradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 15, 50)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(12, 8, 20))
-    })
-    DTGradient.Rotation = 90
-    DTGradient.Parent = DeviceTitle
+local TitleCorner = Instance.new("UICorner")
 TitleCorner.CornerRadius = UDim.new(0, 15)
 TitleCorner.Parent = DeviceTitle
 
@@ -2375,8 +2203,8 @@ local function createMainGUI(device)
     MainFrame.Name = "MainFrame"
     MainFrame.Size = UDim2.new(0, width, 0, height)
     MainFrame.Position = UDim2.new(0.5, -width/2, 0.5, -height/2)
-    MainFrame.BackgroundColor3 = Color3.fromRGB(18, 14, 28)
-    MainFrame.BackgroundTransparency = 0.05
+    MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    MainFrame.BackgroundTransparency = 0.1
     MainFrame.BorderSizePixel = 0
     MainFrame.Active = true
     MainFrame.Draggable = true
@@ -2384,21 +2212,12 @@ local function createMainGUI(device)
     MainFrame.Parent = ScreenGui
 
     local MainCorner = Instance.new("UICorner")
-    MainCorner.CornerRadius = UDim.new(0, 18)
+    MainCorner.CornerRadius = UDim.new(0, 15)
     MainCorner.Parent = MainFrame
-
-    local MainGradient = Instance.new("UIGradient")
-    MainGradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 20, 50)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(18, 14, 28)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 8, 18))
-    })
-    MainGradient.Rotation = 135
-    MainGradient.Parent = MainFrame
 
     local Header = Instance.new("Frame")
     Header.Size = UDim2.new(1, 0, 0, 50)
-    Header.BackgroundColor3 = Color3.fromRGB(15, 10, 25)
+    Header.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
     Header.BorderSizePixel = 0
     Header.Parent = MainFrame
 
@@ -3410,14 +3229,14 @@ function createAutoButtons(device)
     local buttonSize = device == "iPhone" and 55 or 70
     local yOffset = buttonSize + 10
 
-    -- ✅ AUTO LEFT Button
+    -- ✅ AUTO LEFT Button (GRAY!)
     local AutoLeftButton = Instance.new("TextButton")
     AutoLeftButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     AutoLeftButton.Position = UDim2.new(0, 15, 0.5, -buttonSize/2 + yOffset)
-    AutoLeftButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
-    AutoLeftButton.BackgroundTransparency = 0.15
+    AutoLeftButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75) -- ✅ GRAY!
+    AutoLeftButton.BackgroundTransparency = 0.3
     AutoLeftButton.Text = "AUTO\nLEFT"
-    AutoLeftButton.TextColor3 = Color3.fromRGB(220, 220, 240)
+    AutoLeftButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     AutoLeftButton.Font = Enum.Font.GothamBold
     AutoLeftButton.TextSize = device == "iPhone" and 9 or 12
     AutoLeftButton.Parent = ScreenGui
@@ -3427,27 +3246,18 @@ function createAutoButtons(device)
     LeftCorner.Parent = AutoLeftButton
 
     local LeftStroke = Instance.new("UIStroke")
-    LeftStroke.Color = Color3.fromRGB(138, 43, 226)
+    LeftStroke.Color = Color3.fromRGB(255, 255, 255)
     LeftStroke.Thickness = 2
-    LeftStroke.Transparency = 0.3
     LeftStroke.Parent = AutoLeftButton
-
-    local LeftGrad = Instance.new("UIGradient")
-    LeftGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 30, 65)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 15, 30))
-    })
-    LeftGrad.Rotation = 135
-    LeftGrad.Parent = AutoLeftButton
 
     -- ✅ AUTO MEDUSA Button (above Auto Right)
     local AutoMedusaButton = Instance.new("TextButton")
     AutoMedusaButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     AutoMedusaButton.Position = UDim2.new(0, 15 + buttonSize + 10, 0.5, -buttonSize*1.5 + yOffset - 10)
-    AutoMedusaButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
-    AutoMedusaButton.BackgroundTransparency = 0.15
+    AutoMedusaButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+    AutoMedusaButton.BackgroundTransparency = 0.3
     AutoMedusaButton.Text = "AUTO\nMEDUSA"
-    AutoMedusaButton.TextColor3 = Color3.fromRGB(220, 220, 240)
+    AutoMedusaButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     AutoMedusaButton.Font = Enum.Font.GothamBold
     AutoMedusaButton.TextSize = device == "iPhone" and 9 or 12
     AutoMedusaButton.Parent = ScreenGui
@@ -3457,18 +3267,9 @@ function createAutoButtons(device)
     MedusaCorner.Parent = AutoMedusaButton
 
     local MedusaStroke = Instance.new("UIStroke")
-    MedusaStroke.Color = Color3.fromRGB(80, 40, 200)
+    MedusaStroke.Color = Color3.fromRGB(0, 80, 255)
     MedusaStroke.Thickness = 2
-    MedusaStroke.Transparency = 0.3
     MedusaStroke.Parent = AutoMedusaButton
-
-    local MedusaGrad = Instance.new("UIGradient")
-    MedusaGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(35, 25, 70)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(18, 12, 35))
-    })
-    MedusaGrad.Rotation = 135
-    MedusaGrad.Parent = AutoMedusaButton
 
     -- Auto Medusa logic (logic only, no extra GUI)
     local MEDUSA_RANGE = 9.5
@@ -3580,17 +3381,17 @@ function createAutoButtons(device)
             AutoMedusaButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
             startAutoMedusa()
         else
-            AutoMedusaButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
+            AutoMedusaButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
             stopAutoMedusa()
         end
     end)
     local AutoRightButton = Instance.new("TextButton")
     AutoRightButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     AutoRightButton.Position = UDim2.new(0, 15 + buttonSize + 10, 0.5, -buttonSize/2 + yOffset)
-    AutoRightButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
-    AutoRightButton.BackgroundTransparency = 0.15
+    AutoRightButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75) -- ✅ GRAY!
+    AutoRightButton.BackgroundTransparency = 0.3
     AutoRightButton.Text = "AUTO\nRIGHT"
-    AutoRightButton.TextColor3 = Color3.fromRGB(220, 220, 240)
+    AutoRightButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     AutoRightButton.Font = Enum.Font.GothamBold
     AutoRightButton.TextSize = device == "iPhone" and 9 or 12
     AutoRightButton.Parent = ScreenGui
@@ -3600,29 +3401,20 @@ function createAutoButtons(device)
     RightCorner.Parent = AutoRightButton
 
     local RightStroke = Instance.new("UIStroke")
-    RightStroke.Color = Color3.fromRGB(138, 43, 226)
+    RightStroke.Color = Color3.fromRGB(255, 255, 255)
     RightStroke.Thickness = 2
-    RightStroke.Transparency = 0.3
     RightStroke.Parent = AutoRightButton
-
-    local RightGrad = Instance.new("UIGradient")
-    RightGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 30, 65)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 15, 30))
-    })
-    RightGrad.Rotation = 135
-    RightGrad.Parent = AutoRightButton
 
     -- ✅ AUTO LEFT CLICK (WITH PATH!)
     AutoLeftButton.MouseButton1Click:Connect(function()
         if pathActive then
             stopStealPath()
-            AutoLeftButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
-            AutoRightButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
+            AutoLeftButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+            AutoRightButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
         else
             stopStealPath()
             AutoLeftButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-            AutoRightButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
+            AutoRightButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
             startStealPath(stealPath2) -- ✅ LEFT PATH!
         end
     end)
@@ -3631,11 +3423,11 @@ function createAutoButtons(device)
     AutoRightButton.MouseButton1Click:Connect(function()
         if pathActive then
             stopStealPath()
-            AutoLeftButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
-            AutoRightButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
+            AutoLeftButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+            AutoRightButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
         else
             stopStealPath()
-            AutoLeftButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
+            AutoLeftButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
             AutoRightButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
             startStealPath(stealPath1) -- ✅ RIGHT PATH!
         end
@@ -3653,10 +3445,10 @@ function createRightButtons(device)
     local DesyncButton = Instance.new("TextButton")
     DesyncButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     DesyncButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize*2 - 20)
-    DesyncButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
-    DesyncButton.BackgroundTransparency = 0.15
+    DesyncButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+    DesyncButton.BackgroundTransparency = 0.3
     DesyncButton.Text = "DESYNC"
-    DesyncButton.TextColor3 = Color3.fromRGB(220, 220, 240)
+    DesyncButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     DesyncButton.Font = Enum.Font.GothamBold
     DesyncButton.TextSize = device == "iPhone" and 9 or 12
     DesyncButton.Parent = ScreenGui
@@ -3666,18 +3458,9 @@ function createRightButtons(device)
     DesyncCorner.Parent = DesyncButton
 
     local DesyncStroke = Instance.new("UIStroke")
-    DesyncStroke.Color = Color3.fromRGB(138, 43, 226)
+    DesyncStroke.Color = Color3.fromRGB(255, 255, 255)
     DesyncStroke.Thickness = 2
-    DesyncStroke.Transparency = 0.3
     DesyncStroke.Parent = DesyncButton
-
-    local DesyncGrad = Instance.new("UIGradient")
-    DesyncGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 30, 65)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 15, 30))
-    })
-    DesyncGrad.Rotation = 135
-    DesyncGrad.Parent = DesyncButton
 
     -- Desync logic
     local desyncEnabled = false
@@ -3693,10 +3476,10 @@ function createRightButtons(device)
         local LaggerButton = Instance.new("TextButton")
         LaggerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
         LaggerButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize*3 - 30)
-        LaggerButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
-        LaggerButton.BackgroundTransparency = 0.15
+        LaggerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+        LaggerButton.BackgroundTransparency = 0.3
         LaggerButton.Text = "LAGGER"
-        LaggerButton.TextColor3 = Color3.fromRGB(220, 220, 240)
+        LaggerButton.TextColor3 = Color3.fromRGB(255, 255, 255)
         LaggerButton.Font = Enum.Font.GothamBold
         LaggerButton.TextSize = device == "iPhone" and 9 or 12
         LaggerButton.Parent = ScreenGui
@@ -3706,18 +3489,9 @@ function createRightButtons(device)
         LaggerCorner.Parent = LaggerButton
 
         local LaggerStroke = Instance.new("UIStroke")
-        LaggerStroke.Color = Color3.fromRGB(138, 43, 226)
+        LaggerStroke.Color = Color3.fromRGB(255, 255, 255)
         LaggerStroke.Thickness = 2
-        LaggerStroke.Transparency = 0.3
         LaggerStroke.Parent = LaggerButton
-
-        local LaggerGrad = Instance.new("UIGradient")
-        LaggerGrad.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 30, 65)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 15, 30))
-        })
-        LaggerGrad.Rotation = 135
-        LaggerGrad.Parent = LaggerButton
 
         -- LAGGER logic (no extra GUI, just logic)
         local isMobile = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
@@ -3807,7 +3581,7 @@ function createRightButtons(device)
                 LaggerButton.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
                 startLagger()
             else
-                LaggerButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
+                LaggerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
                 stopLaggerLoop()
             end
         end)
@@ -4023,7 +3797,7 @@ function createRightButtons(device)
             if raknet and raknet.desync then raknet.desync(true) end
             print("leak by Lacsy on dc\nLeak Royals desync by Lacsy")
         else
-            DesyncButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
+            DesyncButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
             if animConnection then animConnection:Disconnect() animConnection = nil end
             if raknet and raknet.desync then raknet.desync(false) end
         end
@@ -4033,10 +3807,10 @@ function createRightButtons(device)
     local TrackPlayerButton = Instance.new("TextButton")
     TrackPlayerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     TrackPlayerButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize - 10)
-    TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
-    TrackPlayerButton.BackgroundTransparency = 0.15
+    TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75) -- ✅ GRAY!
+    TrackPlayerButton.BackgroundTransparency = 0.3
     TrackPlayerButton.Text = "TRACK\nPLAYER"
-    TrackPlayerButton.TextColor3 = Color3.fromRGB(220, 220, 240)
+    TrackPlayerButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     TrackPlayerButton.Font = Enum.Font.GothamBold
     TrackPlayerButton.TextSize = device == "iPhone" and 9 or 12
     TrackPlayerButton.Parent = ScreenGui
@@ -4046,18 +3820,9 @@ function createRightButtons(device)
     TrackCorner.Parent = TrackPlayerButton
 
     local TrackStroke = Instance.new("UIStroke")
-    TrackStroke.Color = Color3.fromRGB(138, 43, 226)
+    TrackStroke.Color = Color3.fromRGB(255, 255, 255)
     TrackStroke.Thickness = 2
-    TrackStroke.Transparency = 0.3
     TrackStroke.Parent = TrackPlayerButton
-
-    local TrackGrad = Instance.new("UIGradient")
-    TrackGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 30, 65)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 15, 30))
-    })
-    TrackGrad.Rotation = 135
-    TrackGrad.Parent = TrackPlayerButton
 
     TrackPlayerButton.MouseButton1Click:Connect(function()
         batAimbotToggled = not batAimbotToggled
@@ -4065,20 +3830,281 @@ function createRightButtons(device)
         if batAimbotToggled then
             startBatAimbot()
             TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+            -- Auto-start lagger in Lagger mode
+            if trackMode == "Lagger" and not laggerEnabled then
+                laggerEnabled = true
+                LaggerButton.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+                startLagger()
+            end
         else
             stopBatAimbot()
-            TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
+            TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+            -- Auto-stop lagger if it was started by tracking
+            if trackMode == "Lagger" and laggerEnabled then
+                laggerEnabled = false
+                LaggerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+                stopLaggerLoop()
+            end
         end
     end)
 
-    -- ✅ HIT CIRCLE Button (UNDER TRACK PLAYER)
+    -- ⚙ Track Player Gear Button
+    local TrackGear = Instance.new("TextButton")
+    TrackGear.Size = UDim2.new(0, 18, 0, 18)
+    TrackGear.Position = UDim2.new(1, -16, 0, -2)
+    TrackGear.BackgroundTransparency = 1
+    TrackGear.Text = "⚙"
+    TrackGear.TextColor3 = Color3.fromRGB(200, 200, 200)
+    TrackGear.Font = Enum.Font.GothamBold
+    TrackGear.TextSize = 14
+    TrackGear.ZIndex = 3
+    TrackGear.Parent = TrackPlayerButton
+
+    -- Track Player Settings Panel
+    local TrackSettings = Instance.new("Frame")
+    TrackSettings.Size = UDim2.new(0, 210, 0, 180)
+    TrackSettings.Position = UDim2.new(0.5, -105, 0.35, 0)
+    TrackSettings.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    TrackSettings.BackgroundTransparency = 0.05
+    TrackSettings.BorderSizePixel = 0
+    TrackSettings.Visible = false
+    TrackSettings.ZIndex = 10
+    TrackSettings.Parent = ScreenGui
+    TrackSettings.Active = true
+    TrackSettings.Draggable = true
+
+    Instance.new("UICorner", TrackSettings).CornerRadius = UDim.new(0, 12)
+    local TrackSettingsStroke = Instance.new("UIStroke")
+    TrackSettingsStroke.Color = Color3.fromRGB(50, 200, 50)
+    TrackSettingsStroke.Thickness = 2
+    TrackSettingsStroke.Parent = TrackSettings
+
+    local TrackSettingsTitle = Instance.new("TextLabel")
+    TrackSettingsTitle.Size = UDim2.new(1, 0, 0, 30)
+    TrackSettingsTitle.Position = UDim2.new(0, 0, 0, 0)
+    TrackSettingsTitle.BackgroundTransparency = 1
+    TrackSettingsTitle.Text = "⚙ Track Settings"
+    TrackSettingsTitle.TextColor3 = Color3.fromRGB(50, 200, 50)
+    TrackSettingsTitle.Font = Enum.Font.GothamBold
+    TrackSettingsTitle.TextSize = 14
+    TrackSettingsTitle.ZIndex = 11
+    TrackSettingsTitle.Parent = TrackSettings
+
+    local TrackClose = Instance.new("TextButton")
+    TrackClose.Size = UDim2.new(0, 25, 0, 25)
+    TrackClose.Position = UDim2.new(1, -28, 0, 3)
+    TrackClose.BackgroundTransparency = 1
+    TrackClose.Text = "✕"
+    TrackClose.TextColor3 = Color3.fromRGB(255, 100, 100)
+    TrackClose.Font = Enum.Font.GothamBold
+    TrackClose.TextSize = 16
+    TrackClose.ZIndex = 12
+    TrackClose.Parent = TrackSettings
+    TrackClose.MouseButton1Click:Connect(function()
+        TrackSettings.Visible = false
+    end)
+
+    TrackGear.MouseButton1Click:Connect(function()
+        TrackSettings.Visible = not TrackSettings.Visible
+    end)
+
+    -- MODE toggle row
+    local ModeLabel = Instance.new("TextLabel")
+    ModeLabel.Size = UDim2.new(0.45, 0, 0, 25)
+    ModeLabel.Position = UDim2.new(0, 10, 0, 35)
+    ModeLabel.BackgroundTransparency = 1
+    ModeLabel.Text = "Mode"
+    ModeLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+    ModeLabel.Font = Enum.Font.Gotham
+    ModeLabel.TextSize = 12
+    ModeLabel.TextXAlignment = Enum.TextXAlignment.Left
+    ModeLabel.Parent = TrackSettings
+    ModeLabel.ZIndex = 11
+
+    local ModeValLabel = Instance.new("TextLabel")
+    ModeValLabel.Size = UDim2.new(0, 60, 0, 25)
+    ModeValLabel.Position = UDim2.new(1, -110, 0, 35)
+    ModeValLabel.BackgroundTransparency = 1
+    ModeValLabel.Text = trackMode
+    ModeValLabel.TextColor3 = Color3.fromRGB(50, 200, 50)
+    ModeValLabel.Font = Enum.Font.GothamBold
+    ModeValLabel.TextSize = 12
+    ModeValLabel.Parent = TrackSettings
+    ModeValLabel.ZIndex = 11
+
+    local ModeToggleBtn = Instance.new("TextButton")
+    ModeToggleBtn.Size = UDim2.new(0, 44, 0, 22)
+    ModeToggleBtn.Position = UDim2.new(1, -48, 0, 37)
+    ModeToggleBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    ModeToggleBtn.Text = "Switch"
+    ModeToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ModeToggleBtn.Font = Enum.Font.GothamBold
+    ModeToggleBtn.TextSize = 10
+    ModeToggleBtn.Parent = TrackSettings
+    ModeToggleBtn.ZIndex = 11
+    Instance.new("UICorner", ModeToggleBtn).CornerRadius = UDim.new(0, 6)
+
+    ModeToggleBtn.MouseButton1Click:Connect(function()
+        if trackMode == "Normal" then
+            trackMode = "Lagger"
+            ModeValLabel.Text = "Lagger"
+            ModeValLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
+        else
+            trackMode = "Normal"
+            ModeValLabel.Text = "Normal"
+            ModeValLabel.TextColor3 = Color3.fromRGB(50, 200, 50)
+        end
+        -- If tracking is active, toggle lagger accordingly
+        if batAimbotToggled then
+            if trackMode == "Lagger" and not laggerEnabled then
+                laggerEnabled = true
+                LaggerButton.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+                startLagger()
+            elseif trackMode == "Normal" and laggerEnabled then
+                laggerEnabled = false
+                LaggerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+                stopLaggerLoop()
+            end
+        end
+    end)
+
+    -- SPEED +/- row
+    local TrackSpeedLabel = Instance.new("TextLabel")
+    TrackSpeedLabel.Size = UDim2.new(0.45, 0, 0, 25)
+    TrackSpeedLabel.Position = UDim2.new(0, 10, 0, 65)
+    TrackSpeedLabel.BackgroundTransparency = 1
+    TrackSpeedLabel.Text = "Speed"
+    TrackSpeedLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+    TrackSpeedLabel.Font = Enum.Font.Gotham
+    TrackSpeedLabel.TextSize = 12
+    TrackSpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
+    TrackSpeedLabel.Parent = TrackSettings
+    TrackSpeedLabel.ZIndex = 11
+
+    local TrackSpeedVal = Instance.new("TextLabel")
+    TrackSpeedVal.Size = UDim2.new(0, 40, 0, 25)
+    TrackSpeedVal.Position = UDim2.new(1, -90, 0, 65)
+    TrackSpeedVal.BackgroundTransparency = 1
+    TrackSpeedVal.Text = tostring(trackSpeed)
+    TrackSpeedVal.TextColor3 = Color3.fromRGB(138, 43, 226)
+    TrackSpeedVal.Font = Enum.Font.GothamBold
+    TrackSpeedVal.TextSize = 13
+    TrackSpeedVal.Parent = TrackSettings
+    TrackSpeedVal.ZIndex = 11
+
+    local TrackSpeedMinus = Instance.new("TextButton")
+    TrackSpeedMinus.Size = UDim2.new(0, 22, 0, 22)
+    TrackSpeedMinus.Position = UDim2.new(1, -48, 0, 67)
+    TrackSpeedMinus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    TrackSpeedMinus.Text = "-"
+    TrackSpeedMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TrackSpeedMinus.Font = Enum.Font.GothamBold
+    TrackSpeedMinus.TextSize = 14
+    TrackSpeedMinus.Parent = TrackSettings
+    TrackSpeedMinus.ZIndex = 11
+    Instance.new("UICorner", TrackSpeedMinus).CornerRadius = UDim.new(0, 6)
+
+    local TrackSpeedPlus = Instance.new("TextButton")
+    TrackSpeedPlus.Size = UDim2.new(0, 22, 0, 22)
+    TrackSpeedPlus.Position = UDim2.new(1, -22, 0, 67)
+    TrackSpeedPlus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    TrackSpeedPlus.Text = "+"
+    TrackSpeedPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TrackSpeedPlus.Font = Enum.Font.GothamBold
+    TrackSpeedPlus.TextSize = 14
+    TrackSpeedPlus.Parent = TrackSettings
+    TrackSpeedPlus.ZIndex = 11
+    Instance.new("UICorner", TrackSpeedPlus).CornerRadius = UDim.new(0, 6)
+
+    TrackSpeedMinus.MouseButton1Click:Connect(function()
+        trackSpeed = math.max(10, trackSpeed - 5)
+        TrackSpeedVal.Text = tostring(trackSpeed)
+    end)
+    TrackSpeedPlus.MouseButton1Click:Connect(function()
+        trackSpeed = math.min(120, trackSpeed + 5)
+        TrackSpeedVal.Text = tostring(trackSpeed)
+    end)
+
+    -- SAVE & RESET for Track Settings
+    local TrackSaveBtn = Instance.new("TextButton")
+    TrackSaveBtn.Size = UDim2.new(0.44, 0, 0, 28)
+    TrackSaveBtn.Position = UDim2.new(0.03, 0, 0, 100)
+    TrackSaveBtn.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
+    TrackSaveBtn.Text = "💾 Save"
+    TrackSaveBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TrackSaveBtn.Font = Enum.Font.GothamBold
+    TrackSaveBtn.TextSize = 12
+    TrackSaveBtn.Parent = TrackSettings
+    TrackSaveBtn.ZIndex = 11
+    Instance.new("UICorner", TrackSaveBtn).CornerRadius = UDim.new(0, 8)
+
+    local TrackResetBtn = Instance.new("TextButton")
+    TrackResetBtn.Size = UDim2.new(0.44, 0, 0, 28)
+    TrackResetBtn.Position = UDim2.new(0.53, 0, 0, 100)
+    TrackResetBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+    TrackResetBtn.Text = "🔄 Reset"
+    TrackResetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TrackResetBtn.Font = Enum.Font.GothamBold
+    TrackResetBtn.TextSize = 12
+    TrackResetBtn.Parent = TrackSettings
+    TrackResetBtn.ZIndex = 11
+    Instance.new("UICorner", TrackResetBtn).CornerRadius = UDim.new(0, 8)
+
+    local TrackSaveStatus = Instance.new("TextLabel")
+    TrackSaveStatus.Size = UDim2.new(1, 0, 0, 20)
+    TrackSaveStatus.Position = UDim2.new(0, 0, 0, 132)
+    TrackSaveStatus.BackgroundTransparency = 1
+    TrackSaveStatus.Text = ""
+    TrackSaveStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
+    TrackSaveStatus.Font = Enum.Font.Gotham
+    TrackSaveStatus.TextSize = 11
+    TrackSaveStatus.Parent = TrackSettings
+    TrackSaveStatus.ZIndex = 11
+
+    local DEFAULT_TRACK = {speed = 56.5, mode = "Normal"}
+
+    TrackSaveBtn.MouseButton1Click:Connect(function()
+        ConfigData.trackSpeed = trackSpeed
+        ConfigData.trackMode = trackMode
+        SaveConfig()
+        TrackSaveStatus.Text = "✅ Saved!"
+        TrackSaveStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
+        task.delay(2, function() TrackSaveStatus.Text = "" end)
+    end)
+
+    TrackResetBtn.MouseButton1Click:Connect(function()
+        trackSpeed = DEFAULT_TRACK.speed
+        trackMode = DEFAULT_TRACK.mode
+        TrackSpeedVal.Text = tostring(trackSpeed)
+        ModeValLabel.Text = trackMode
+        ModeValLabel.TextColor3 = Color3.fromRGB(50, 200, 50)
+        -- Stop lagger if it was running from Lagger mode
+        if laggerEnabled then
+            laggerEnabled = false
+            LaggerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+            stopLaggerLoop()
+        end
+        TrackSaveStatus.Text = "🔄 Reset to defaults!"
+        TrackSaveStatus.TextColor3 = Color3.fromRGB(255, 200, 80)
+        task.delay(2, function() TrackSaveStatus.Text = "" end)
+    end)
+
+    -- Load saved track settings
+    if ConfigData.trackSpeed then trackSpeed = ConfigData.trackSpeed; TrackSpeedVal.Text = tostring(trackSpeed) end
+    if ConfigData.trackMode then
+        trackMode = ConfigData.trackMode
+        ModeValLabel.Text = trackMode
+        ModeValLabel.TextColor3 = trackMode == "Lagger" and Color3.fromRGB(255, 80, 80) or Color3.fromRGB(50, 200, 50)
+    end
+
+    -- ✅ HIT CIRCLE Button (UNDER TRACK PLAYER - GRAY!)
     local HitCircleButton = Instance.new("TextButton")
     HitCircleButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     HitCircleButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, 10)
-    HitCircleButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
-    HitCircleButton.BackgroundTransparency = 0.15
+    HitCircleButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75) -- ✅ GRAY!
+    HitCircleButton.BackgroundTransparency = 0.3
     HitCircleButton.Text = "HIT\nCIRCLE"
-    HitCircleButton.TextColor3 = Color3.fromRGB(220, 220, 240)
+    HitCircleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     HitCircleButton.Font = Enum.Font.GothamBold
     HitCircleButton.TextSize = device == "iPhone" and 9 or 12
     HitCircleButton.Parent = ScreenGui
@@ -4088,18 +4114,9 @@ function createRightButtons(device)
     HitCorner.Parent = HitCircleButton
 
     local HitStroke = Instance.new("UIStroke")
-    HitStroke.Color = Color3.fromRGB(138, 43, 226)
+    HitStroke.Color = Color3.fromRGB(255, 255, 255)
     HitStroke.Thickness = 2
-    HitStroke.Transparency = 0.3
     HitStroke.Parent = HitCircleButton
-
-    local HitGrad = Instance.new("UIGradient")
-    HitGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 30, 65)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 15, 30))
-    })
-    HitGrad.Rotation = 135
-    HitGrad.Parent = HitCircleButton
 
     HitCircleButton.MouseButton1Click:Connect(function()
         hitCircleEnabled = not hitCircleEnabled
@@ -4109,7 +4126,7 @@ function createRightButtons(device)
             HitCircleButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
         else
             stopHitCircle()
-            HitCircleButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
+            HitCircleButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
         end
     end)
 
@@ -4126,10 +4143,10 @@ function createRightButtons(device)
     local JukeButton = Instance.new("TextButton")
     JukeButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     JukeButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, buttonSize + 20)
-    JukeButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
-    JukeButton.BackgroundTransparency = 0.15
+    JukeButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+    JukeButton.BackgroundTransparency = 0.3
     JukeButton.Text = "JUKE"
-    JukeButton.TextColor3 = Color3.fromRGB(220, 220, 240)
+    JukeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     JukeButton.Font = Enum.Font.GothamBold
     JukeButton.TextSize = device == "iPhone" and 9 or 12
     JukeButton.Parent = ScreenGui
@@ -4139,18 +4156,9 @@ function createRightButtons(device)
     JukeCorner.Parent = JukeButton
 
     local JukeStroke = Instance.new("UIStroke")
-    JukeStroke.Color = Color3.fromRGB(138, 43, 226)
+    JukeStroke.Color = Color3.fromRGB(255, 255, 255)
     JukeStroke.Thickness = 2
-    JukeStroke.Transparency = 0.3
     JukeStroke.Parent = JukeButton
-
-    local JukeGrad = Instance.new("UIGradient")
-    JukeGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 30, 65)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 15, 30))
-    })
-    JukeGrad.Rotation = 135
-    JukeGrad.Parent = JukeButton
 
     -- ⚙ Gear Settings Button (top-right corner of JUKE)
     local JukeGear = Instance.new("TextButton")
@@ -4721,24 +4729,24 @@ function createRightButtons(device)
     end)
 
     -- ═══════════════════════════════════════════════════════
-    -- ✅ JUKE LOGIC: Toggle spam - continuously floats up, spams tool, TPs down, repeats
+    -- ✅ JUKE LOGIC: Float up, spam tool, wait, then TP down
     -- ═══════════════════════════════════════════════════════
 
-    local jukeSpamActive = false
-
-    local function doOneJuke()
+    JukeButton.MouseButton1Click:Connect(function()
+        if jukeActive then return end
         local c = player.Character
         local r = c and c:FindFirstChild("HumanoidRootPart")
         if not r then return end
+        jukeActive = true
+        JukeButton.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
 
         local startPos = r.Position
         local targetY = startPos.Y + jukeFloatY
 
-        -- Phase 1: Float up while spamming tool
-        local reached = false
+        -- Float up using velocity + spam tool activate
         local floatConn
         floatConn = RunService.Heartbeat:Connect(function()
-            if not jukeSpamActive then if floatConn then floatConn:Disconnect() end return end
+            if not jukeActive then if floatConn then floatConn:Disconnect() end return end
             local rr = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
             if not rr then if floatConn then floatConn:Disconnect() end return end
 
@@ -4754,65 +4762,20 @@ function createRightButtons(device)
             if rr.Position.Y >= targetY then
                 rr.AssemblyLinearVelocity = Vector3.new(rr.AssemblyLinearVelocity.X, 0, rr.AssemblyLinearVelocity.Z)
                 floatConn:Disconnect()
-                reached = true
+                -- Wait delay then TP down
+                task.delay(jukeTPDelay, function()
+                    local rrr = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                    if rrr then
+                        rrr.CFrame = CFrame.new(startPos.X, startPos.Y, startPos.Z)
+                        rrr.AssemblyLinearVelocity = Vector3.zero
+                    end
+                    jukeActive = false
+                    JukeButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+                end)
                 return
             end
             rr.AssemblyLinearVelocity = Vector3.new(rr.AssemblyLinearVelocity.X, jukeFloatSpeed, rr.AssemblyLinearVelocity.Z)
         end)
-
-        -- Wait until float finishes or cancelled
-        local timeout = tick() + 3
-        while jukeSpamActive and not reached and tick() < timeout do
-            RunService.Heartbeat:Wait()
-        end
-        if floatConn then pcall(function() floatConn:Disconnect() end) end
-        if not jukeSpamActive then return end
-
-        -- Phase 2: Wait delay
-        local delayStart = tick()
-        while jukeSpamActive and (tick() - delayStart) < jukeTPDelay do
-            -- Keep spamming tool during delay too
-            pcall(function()
-                local char = player.Character
-                if char then
-                    local tool = char:FindFirstChildOfClass("Tool")
-                    if tool then tool:Activate() end
-                end
-            end)
-            RunService.Heartbeat:Wait()
-        end
-        if not jukeSpamActive then return end
-
-        -- Phase 3: TP back down
-        local rrr = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-        if rrr then
-            rrr.CFrame = CFrame.new(startPos.X, startPos.Y, startPos.Z)
-            rrr.AssemblyLinearVelocity = Vector3.zero
-        end
-    end
-
-    JukeButton.MouseButton1Click:Connect(function()
-        jukeSpamActive = not jukeSpamActive
-
-        if jukeSpamActive then
-            JukeButton.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
-            JukeButton.Text = "JUKE\n(ON)"
-            -- Spam loop in background
-            task.spawn(function()
-                while jukeSpamActive do
-                    doOneJuke()
-                    if jukeSpamActive then
-                        task.wait(0.1) -- small gap between juke cycles
-                    end
-                end
-            end)
-        else
-            JukeButton.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
-            JukeButton.Text = "JUKE"
-            -- Stop any velocity
-            local r = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-            if r then r.AssemblyLinearVelocity = Vector3.zero end
-        end
     end)
 end
 
@@ -4822,9 +4785,12 @@ print("════════════════════════�
 print("✅ VISIBLE SMALL GUIs (5):")
 print("   Speed (ON), Unwalk (ON), Anti Rag (ON),")
 print("   Ragdoll TP (ON), Drop Brainrot (OFF)")
-print("✅ NEW: Galaxy Sky, Improved Speed Bypass")
-print("✅ JUKE is now a toggle - spams continuously!")
-print("✅ UI upgraded with gradients + purple theme")
+print("✅ AUTO-ENABLED MAIN:")
+print("   Speed, Unwalk, Anti Rag, Ragdoll TP")
+print("✅ AUTO-ENABLED MISC:")
+print("   FPS, Optimizer, Hitbox, Anti Death")
+print("⚪ Hidden until you turn on:")
+print("   Inf Jump, Spin Bot, Float, FOV")
 print("✅ WORKS ON: PC, iPad, iPhone!")
 print("══════════════════════════════════════════════")
 
