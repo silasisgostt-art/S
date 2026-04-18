@@ -3863,19 +3863,17 @@ function createRightButtons(device)
         end
     end
 
-    -- ⚙ Track Gear Button (top-right corner, larger for visibility)
+    -- ⚙ Track Gear Button (top-right of TRACK PLAYER)
     local TrackGear = Instance.new("TextButton")
-    TrackGear.Size = UDim2.new(0, 24, 0, 24)
-    TrackGear.Position = UDim2.new(1, -22, 0, -4)
-    TrackGear.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-    TrackGear.BackgroundTransparency = 0.3
+    TrackGear.Size = UDim2.new(0, 18, 0, 18)
+    TrackGear.Position = UDim2.new(1, -16, 0, -2)
+    TrackGear.BackgroundTransparency = 1
     TrackGear.Text = "⚙"
-    TrackGear.TextColor3 = Color3.fromRGB(255, 220, 100)
+    TrackGear.TextColor3 = Color3.fromRGB(200, 200, 200)
     TrackGear.Font = Enum.Font.GothamBold
-    TrackGear.TextSize = 16
-    TrackGear.ZIndex = 5
+    TrackGear.TextSize = 14
+    TrackGear.ZIndex = 3
     TrackGear.Parent = TrackPlayerButton
-    Instance.new("UICorner", TrackGear).CornerRadius = UDim.new(0, 6)
 
     -- ═══════════════════════════════════════════════════════
     -- ✅ TRACK SETTINGS PANEL
