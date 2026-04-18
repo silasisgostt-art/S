@@ -2999,7 +2999,7 @@ local function createMainGUI(device)
 
     local CreditsText = Instance.new("TextLabel")
     CreditsText.Size = UDim2.new(1, 0, 0, 100)
-    CreditsText.BackgroundColor3 = Color3.fromRGB(
+    CreditsText.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
     CreditsText.BorderSizePixel = 0
     CreditsText.Text = ""
     CreditsText.TextColor3 = Color3.fromRGB(255, 255, 255)
