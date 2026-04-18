@@ -1529,30 +1529,29 @@ local SmallGUIInstances = {}
 local function createSmallGUI(name, yPosition)
     local SmallGUI = Instance.new("Frame")
     SmallGUI.Name = "Small"..name.."GUI"
-    SmallGUI.Size = UDim2.new(0, 62, 0, 16)
-    SmallGUI.Position = UDim2.new(0.5, -31, 0, yPosition)
+    SmallGUI.Size = UDim2.new(0, 58, 0, 15) -- Compact small buttons
+    SmallGUI.Position = UDim2.new(0.5, -40, 0, yPosition)
     SmallGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     SmallGUI.BackgroundTransparency = 0
     SmallGUI.BorderSizePixel = 0
     SmallGUI.Visible = false
     SmallGUI.Active = true
-    SmallGUI.Draggable = true
-    SmallGUI.ZIndex = 50
+    SmallGUI.Draggable = true  -- ✅ DRAGGABLE!
     SmallGUI.Parent = ScreenGui
 
     local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 6)
+    Corner.CornerRadius = UDim.new(0, 8)
     Corner.Parent = SmallGUI
 
     local Stroke = Instance.new("UIStroke")
     Stroke.Color = Color3.fromRGB(0, 0, 0)
-    Stroke.Thickness = 3
+    Stroke.Thickness = 4
     Stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     Stroke.Parent = SmallGUI
 
     local WaveStroke = Instance.new("UIStroke")
     WaveStroke.Color = Color3.fromRGB(255, 255, 255)
-    WaveStroke.Thickness = 2
+    WaveStroke.Thickness = 2.5
     WaveStroke.Transparency = 0.35
     WaveStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     WaveStroke.ZIndex = 2
@@ -1570,18 +1569,17 @@ local function createSmallGUI(name, yPosition)
     WaveGrad.Parent = WaveStroke
 
     local pulseSmall = TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
-    TweenService:Create(WaveStroke, pulseSmall, {Thickness = 3.5, Transparency = 0.08}):Play()
+    TweenService:Create(WaveStroke, pulseSmall, {Thickness = 4.2, Transparency = 0.08}):Play()
     RunService.Heartbeat:Connect(function(dt)
         pcall(function() WaveGrad.Rotation = (WaveGrad.Rotation + 140 * dt) % 360 end)
     end)
 
-    -- ✅ GREEN DOT
+    -- ✅ GREEN DOT!
     local GreenDot = Instance.new("Frame")
     GreenDot.Size = UDim2.new(0, 5, 0, 5)
     GreenDot.Position = UDim2.new(0, 3, 0.5, -2)
-    GreenDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+    GreenDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100) -- GRAY by default
     GreenDot.BorderSizePixel = 0
-    GreenDot.ZIndex = 51
     GreenDot.Parent = SmallGUI
 
     local DotCorner = Instance.new("UICorner")
@@ -1590,17 +1588,16 @@ local function createSmallGUI(name, yPosition)
 
     local Label = Instance.new("TextLabel")
     Label.Size = UDim2.new(1, -22, 1, 0)
-    Label.Position = UDim2.new(0, 11, 0, 0)
+    Label.Position = UDim2.new(0, 12, 0, 0)
     Label.BackgroundTransparency = 1
     Label.Text = name
     Label.TextColor3 = Color3.fromRGB(220, 220, 220)
     Label.Font = Enum.Font.GothamBold
-    Label.TextSize = 7
+    Label.TextSize = 7 -- Compact text
     Label.TextXAlignment = Enum.TextXAlignment.Left
-    Label.ZIndex = 51
     Label.Parent = SmallGUI
 
-    -- ✅ CLICK BUTTON
+    -- ✅ CLICK BUTTON (smaller, on right side only - doesn't block dragging!)
     local Button = Instance.new("TextButton")
     Button.Size = UDim2.new(0, 14, 1, 0)
     Button.Position = UDim2.new(1, -14, 0, 0)
@@ -1608,8 +1605,8 @@ local function createSmallGUI(name, yPosition)
     Button.Text = "⚡"
     Button.TextColor3 = Color3.fromRGB(220, 220, 220)
     Button.Font = Enum.Font.GothamBold
-    Button.TextSize = 8
-    Button.ZIndex = 52
+    Button.TextSize = 9 -- Compact icon
+    Button.ZIndex = 2
     Button.Parent = SmallGUI
 
     SmallGUIInstances[name] = {Frame = SmallGUI, Label = Label, Button = Button, Dot = GreenDot}
@@ -1640,31 +1637,36 @@ local function refreshSmallButtonPositions()
         end
     end
 
-    local btnW = 62
-    local btnH = 16
-    local gap = 4
-    local topY = 6
+    local columns = 6
+    local buttonHeight = 20
+    local rows = 2
+    local gapX = 4
+    local gapY = 4
+    local topPadding = 4
+    local sidePadding = 6
     local viewport = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1280, 720)
-    local centerBarW = 260
-    local centerX = math.floor(viewport.X / 2)
-    local leftStart = centerX - math.floor(centerBarW / 2) - gap
-    local rightStart = centerX + math.floor(centerBarW / 2) + gap
+    local availableWidth = math.max(400, viewport.X - sidePadding * 2)
+    local buttonWidth = math.floor((availableWidth - gapX * (columns - 1)) / columns)
+    buttonWidth = math.clamp(buttonWidth, 50, 110)
+    local totalWidth = columns * buttonWidth + (columns - 1) * gapX
+    local startX = math.max(sidePadding, math.floor((viewport.X - totalWidth) / 2))
+    local startY = topPadding
 
     for index, frame in ipairs(visibleFrames) do
-        frame.Size = UDim2.new(0, btnW, 0, btnH)
-        if index <= 4 then
-            -- Left side: stack from right to left
-            local col = 4 - index
-            frame.Position = UDim2.new(0, leftStart - (col + 1) * (btnW + gap) + gap, 0, topY)
-        elseif index <= 8 then
-            -- Right side: stack from left to right
-            local col = index - 5
-            frame.Position = UDim2.new(0, rightStart + col * (btnW + gap), 0, topY)
-        else
-            -- Overflow: second row under center
-            local col = index - 9
-            frame.Position = UDim2.new(0, leftStart - 3 * (btnW + gap) + gap + col * (btnW + gap), 0, topY + btnH + gap)
+        if index > (rows * columns) then
+            frame.Visible = false
+            continue
         end
+
+        frame.Size = UDim2.new(0, buttonWidth, 0, buttonHeight)
+        local row = math.floor((index - 1) / columns)
+        local col = (index - 1) % columns
+        frame.Position = UDim2.new(
+            0,
+            startX + col * (buttonWidth + gapX),
+            0,
+            startY + row * (buttonHeight + gapY)
+        )
         frame.Visible = true
     end
 end
@@ -2031,70 +2033,113 @@ SmallDropButton.MouseButton1Click:Connect(function()
 end)
 
 -- ═══════════════════════════════════════════════════════
--- TOP CENTER BAR (TITLE + AUTO GRAB PROGRESS + RADIUS)
+-- CENTER TITLE + AUTO GRAB PROGRESS BAR
 -- ═══════════════════════════════════════════════════════
 
-local TopCenterBar = Instance.new("Frame")
-TopCenterBar.Name = "StealBarContainer"
-TopCenterBar.Size = UDim2.new(0, 260, 0, 42)
-TopCenterBar.Position = UDim2.new(0.5, -130, 0, 2)
-TopCenterBar.BackgroundColor3 = Color3.fromRGB(14, 14, 14)
-TopCenterBar.BackgroundTransparency = 0.05
-TopCenterBar.BorderSizePixel = 0
-TopCenterBar.ZIndex = 50
-TopCenterBar.Parent = ScreenGui
+-- TIM CHEESE DUELS Title (center of screen)
+local CenterTitle = Instance.new("TextLabel")
+CenterTitle.Name = "CenterTitle"
+CenterTitle.Size = UDim2.new(0, 220, 0, 28)
+CenterTitle.Position = UDim2.new(0.5, -110, 0.5, -50)
+CenterTitle.BackgroundColor3 = Color3.fromRGB(14, 14, 14)
+CenterTitle.BackgroundTransparency = 0.15
+CenterTitle.BorderSizePixel = 0
+CenterTitle.Text = "TIM CHEESE DUELS"
+CenterTitle.TextColor3 = Color3.fromRGB(255, 200, 80)
+CenterTitle.Font = Enum.Font.GothamBlack
+CenterTitle.TextSize = 16
+CenterTitle.ZIndex = 5
+CenterTitle.Parent = ScreenGui
 
-local TCCorner = Instance.new("UICorner")
-TCCorner.CornerRadius = UDim.new(0, 8)
-TCCorner.Parent = TopCenterBar
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0, 8)
+TitleCorner.Parent = CenterTitle
 
-local TCBlackStroke = Instance.new("UIStroke")
-TCBlackStroke.Color = Color3.fromRGB(0, 0, 0)
-TCBlackStroke.Thickness = 4
-TCBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-TCBlackStroke.Parent = TopCenterBar
+local TitleBlackStroke = Instance.new("UIStroke")
+TitleBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+TitleBlackStroke.Thickness = 4
+TitleBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+TitleBlackStroke.Parent = CenterTitle
 
-local TCWaveStroke = Instance.new("UIStroke")
-TCWaveStroke.Color = Color3.fromRGB(255, 255, 255)
-TCWaveStroke.Thickness = 2.5
-TCWaveStroke.Transparency = 0.35
-TCWaveStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-TCWaveStroke.ZIndex = 2
-TCWaveStroke.Parent = TopCenterBar
+local TitleWaveStroke = Instance.new("UIStroke")
+TitleWaveStroke.Color = Color3.fromRGB(255, 255, 255)
+TitleWaveStroke.Thickness = 2.5
+TitleWaveStroke.Transparency = 0.35
+TitleWaveStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+TitleWaveStroke.ZIndex = 2
+TitleWaveStroke.Parent = CenterTitle
 
-local TCWaveGrad = Instance.new("UIGradient")
-TCWaveGrad.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
-TCWaveGrad.Transparency = NumberSequence.new({
+local TitleWaveGrad = Instance.new("UIGradient")
+TitleWaveGrad.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
+TitleWaveGrad.Transparency = NumberSequence.new({
     NumberSequenceKeypoint.new(0, 1),
     NumberSequenceKeypoint.new(0.4, 0),
     NumberSequenceKeypoint.new(0.6, 0),
     NumberSequenceKeypoint.new(1, 1)
 })
-TCWaveGrad.Rotation = 0
-TCWaveGrad.Parent = TCWaveStroke
-TweenService:Create(TCWaveStroke, TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Thickness = 4.2, Transparency = 0.08}):Play()
-RunService.Heartbeat:Connect(function(dt) pcall(function() TCWaveGrad.Rotation = (TCWaveGrad.Rotation + 140 * dt) % 360 end) end)
+TitleWaveGrad.Rotation = 0
+TitleWaveGrad.Parent = TitleWaveStroke
 
--- Title
-local TitleLabel = Instance.new("TextLabel")
-TitleLabel.Size = UDim2.new(1, 0, 0, 16)
-TitleLabel.Position = UDim2.new(0, 0, 0, 2)
-TitleLabel.BackgroundTransparency = 1
-TitleLabel.Text = "TIM CHEESE DUELS"
-TitleLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
-TitleLabel.Font = Enum.Font.GothamBlack
-TitleLabel.TextSize = 11
-TitleLabel.ZIndex = 51
-TitleLabel.Parent = TopCenterBar
+TweenService:Create(TitleWaveStroke, TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Thickness = 4.2, Transparency = 0.08}):Play()
+RunService.Heartbeat:Connect(function(dt) pcall(function() TitleWaveGrad.Rotation = (TitleWaveGrad.Rotation + 140 * dt) % 360 end) end)
 
--- Progress bar row
+-- Auto Grab Progress Bar (below title, center)
+local StealBarContainer = Instance.new("Frame")
+StealBarContainer.Name = "StealBarContainer"
+StealBarContainer.Size = UDim2.new(0, 220, 0, 42)
+StealBarContainer.Position = UDim2.new(0.5, -110, 0.5, -18)
+StealBarContainer.BackgroundColor3 = Color3.fromRGB(20, 25, 20)
+StealBarContainer.BorderSizePixel = 0
+StealBarContainer.Parent = ScreenGui
+
+local ContainerCorner = Instance.new("UICorner")
+ContainerCorner.CornerRadius = UDim.new(0, 8)
+ContainerCorner.Parent = StealBarContainer
+
+local ContainerStroke = Instance.new("UIStroke")
+ContainerStroke.Color = Color3.fromRGB(255, 255, 255)
+ContainerStroke.Thickness = 2
+ContainerStroke.Parent = StealBarContainer
+
+local OnLabel = Instance.new("TextLabel")
+OnLabel.Size = UDim2.new(0, 20, 0, 16)
+OnLabel.Position = UDim2.new(0, 6, 0, 2)
+OnLabel.BackgroundTransparency = 1
+OnLabel.Text = "On"
+OnLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+OnLabel.Font = Enum.Font.Gotham
+OnLabel.TextSize = 10
+OnLabel.TextXAlignment = Enum.TextXAlignment.Left
+OnLabel.Parent = StealBarContainer
+
+local RadiusLabel = Instance.new("TextLabel")
+RadiusLabel.Size = UDim2.new(0, 45, 0, 16)
+RadiusLabel.Position = UDim2.new(1, -55, 0, 2)
+RadiusLabel.BackgroundTransparency = 1
+RadiusLabel.Text = "Radius:"
+RadiusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+RadiusLabel.Font = Enum.Font.Gotham
+RadiusLabel.TextSize = 10
+RadiusLabel.TextXAlignment = Enum.TextXAlignment.Left
+RadiusLabel.Parent = StealBarContainer
+
+local RadiusValue = Instance.new("TextLabel")
+RadiusValue.Size = UDim2.new(0, 15, 0, 16)
+RadiusValue.Position = UDim2.new(1, -12, 0, 2)
+RadiusValue.BackgroundTransparency = 1
+RadiusValue.Text = tostring(InstaSteal.Radius)
+RadiusValue.TextColor3 = Color3.fromRGB(255, 255, 255)
+RadiusValue.Font = Enum.Font.GothamBold
+RadiusValue.TextSize = 10
+RadiusValue.TextXAlignment = Enum.TextXAlignment.Right
+RadiusValue.Parent = StealBarContainer
+
 local ProgressBarBg = Instance.new("Frame")
-ProgressBarBg.Size = UDim2.new(1, -70, 0, 12)
-ProgressBarBg.Position = UDim2.new(0, 6, 0, 22)
+ProgressBarBg.Size = UDim2.new(1, -14, 0, 16)
+ProgressBarBg.Position = UDim2.new(0, 7, 0, 22)
 ProgressBarBg.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 ProgressBarBg.BorderSizePixel = 0
-ProgressBarBg.ZIndex = 51
-ProgressBarBg.Parent = TopCenterBar
+ProgressBarBg.Parent = StealBarContainer
 
 local ProgressBgCorner = Instance.new("UICorner")
 ProgressBgCorner.CornerRadius = UDim.new(1, 0)
@@ -2104,45 +2149,45 @@ ProgressBarFill = Instance.new("Frame")
 ProgressBarFill.Size = UDim2.new(0, 0, 1, 0)
 ProgressBarFill.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
 ProgressBarFill.BorderSizePixel = 0
-ProgressBarFill.ZIndex = 52
 ProgressBarFill.Parent = ProgressBarBg
 
 local ProgressFillCorner = Instance.new("UICorner")
 ProgressFillCorner.CornerRadius = UDim.new(1, 0)
 ProgressFillCorner.Parent = ProgressBarFill
 
--- Radius textbox
-local RadiusBox = Instance.new("TextBox")
-RadiusBox.Size = UDim2.new(0, 50, 0, 16)
-RadiusBox.Position = UDim2.new(1, -58, 0, 20)
-RadiusBox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-RadiusBox.BackgroundTransparency = 0
-RadiusBox.Text = tostring(InstaSteal.Radius)
-RadiusBox.PlaceholderText = "Radius"
-RadiusBox.TextColor3 = Color3.fromRGB(220, 220, 220)
-RadiusBox.Font = Enum.Font.GothamBold
-RadiusBox.TextSize = 10
-RadiusBox.ZIndex = 52
-RadiusBox.ClearTextOnFocus = false
-RadiusBox.Parent = TopCenterBar
+local MinusArea = Instance.new("TextButton")
+MinusArea.Size = UDim2.new(0, 10, 0, 8)
+MinusArea.Position = UDim2.new(1, -55, 0, 8)
+MinusArea.BackgroundTransparency = 0.4
+MinusArea.BackgroundColor3 = Color3.fromRGB(240,240,240)
+MinusArea.Text = "-"
+MinusArea.TextColor3 = Color3.fromRGB(30,30,30)
+MinusArea.Font = Enum.Font.GothamBold
+MinusArea.TextSize = 6
+MinusArea.Parent = StealBarContainer
 
-local RadiusBoxCorner = Instance.new("UICorner")
-RadiusBoxCorner.CornerRadius = UDim.new(0, 6)
-RadiusBoxCorner.Parent = RadiusBox
+local PlusArea = Instance.new("TextButton")
+PlusArea.Size = UDim2.new(0, 10, 0, 8)
+PlusArea.Position = UDim2.new(1, -25, 0, 8)
+PlusArea.BackgroundTransparency = 0.4
+PlusArea.BackgroundColor3 = Color3.fromRGB(240,240,240)
+PlusArea.Text = "+"
+PlusArea.TextColor3 = Color3.fromRGB(30,30,30)
+PlusArea.Font = Enum.Font.GothamBold
+PlusArea.TextSize = 6
+PlusArea.Parent = StealBarContainer
 
-local RadiusBoxStroke = Instance.new("UIStroke")
-RadiusBoxStroke.Color = Color3.fromRGB(60, 60, 60)
-RadiusBoxStroke.Thickness = 1
-RadiusBoxStroke.Parent = RadiusBox
+MinusArea.MouseButton1Click:Connect(function()
+    if InstaSteal.Radius > 1 then
+        InstaSteal.Radius = InstaSteal.Radius - 1
+        RadiusValue.Text = tostring(InstaSteal.Radius)
+    end
+end)
 
-RadiusBox.FocusLost:Connect(function()
-    local val = tonumber(RadiusBox.Text)
-    if val then
-        val = math.clamp(math.floor(val), 1, 50)
-        InstaSteal.Radius = val
-        RadiusBox.Text = tostring(val)
-    else
-        RadiusBox.Text = tostring(InstaSteal.Radius)
+PlusArea.MouseButton1Click:Connect(function()
+    if InstaSteal.Radius < 50 then
+        InstaSteal.Radius = InstaSteal.Radius + 1
+        RadiusValue.Text = tostring(InstaSteal.Radius)
     end
 end)
 
@@ -3194,7 +3239,7 @@ local function initializeGUI(device)
     if normalSpeedBox then normalSpeedBox.Text = tostring(SpeedBooster.NormalSpeed) end
     if stealSpeedBox then stealSpeedBox.Text = tostring(SpeedBooster.StealSpeed) end
     if fovSliderBox then fovSliderBox.Text = tostring(fovValue) end
-    if RadiusBox then RadiusBox.Text = tostring(InstaSteal.Radius) end
+    if RadiusValue then RadiusValue.Text = tostring(InstaSteal.Radius) end
 
     createOpenButton(device)
     createAutoButtons(device)
@@ -3281,19 +3326,19 @@ end
 local AutoLeftSmallGUI, AutoRightSmallGUI
 
 function createAutoButtons(device)
-    local buttonSize = device == "iPhone" and 55 or 70
-    local yOffset = buttonSize + 10
+    local buttonSize = device == "iPhone" and 36 or 42
+    local gap = 6
 
     -- ✅ AUTO LEFT Button (GRAY!)
     local AutoLeftButton = Instance.new("TextButton")
     AutoLeftButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    AutoLeftButton.Position = UDim2.new(0, 15, 0.5, -buttonSize/2 + yOffset)
+    AutoLeftButton.Position = UDim2.new(0, 10, 0.5, -(buttonSize*2 + gap*1.5))
     AutoLeftButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     AutoLeftButton.BackgroundTransparency = 0
     AutoLeftButton.Text = "AUTO\nLEFT"
     AutoLeftButton.TextColor3 = Color3.fromRGB(220, 220, 220)
     AutoLeftButton.Font = Enum.Font.GothamBold
-    AutoLeftButton.TextSize = device == "iPhone" and 9 or 12
+    AutoLeftButton.TextSize = device == "iPhone" and 8 or 10
     AutoLeftButton.Parent = ScreenGui
 
     local LeftCorner = Instance.new("UICorner")
@@ -3317,13 +3362,13 @@ function createAutoButtons(device)
     -- ✅ AUTO MEDUSA Button (above Auto Right)
     local AutoMedusaButton = Instance.new("TextButton")
     AutoMedusaButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    AutoMedusaButton.Position = UDim2.new(0, 15 + buttonSize + 10, 0.5, -buttonSize*1.5 + yOffset - 10)
+    AutoMedusaButton.Position = UDim2.new(0, 10, 0.5, -(buttonSize*1 + gap*0.5))
     AutoMedusaButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     AutoMedusaButton.BackgroundTransparency = 0
     AutoMedusaButton.Text = "AUTO\nMEDUSA"
     AutoMedusaButton.TextColor3 = Color3.fromRGB(220, 220, 220)
     AutoMedusaButton.Font = Enum.Font.GothamBold
-    AutoMedusaButton.TextSize = device == "iPhone" and 9 or 12
+    AutoMedusaButton.TextSize = device == "iPhone" and 8 or 10
     AutoMedusaButton.Parent = ScreenGui
 
     local MedusaCorner = Instance.new("UICorner")
@@ -3460,13 +3505,13 @@ function createAutoButtons(device)
     end)
     local AutoRightButton = Instance.new("TextButton")
     AutoRightButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    AutoRightButton.Position = UDim2.new(0, 15 + buttonSize + 10, 0.5, -buttonSize/2 + yOffset)
+    AutoRightButton.Position = UDim2.new(0, 10, 0.5, (gap*0.5))
     AutoRightButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     AutoRightButton.BackgroundTransparency = 0
     AutoRightButton.Text = "AUTO\nRIGHT"
     AutoRightButton.TextColor3 = Color3.fromRGB(220, 220, 220)
     AutoRightButton.Font = Enum.Font.GothamBold
-    AutoRightButton.TextSize = device == "iPhone" and 9 or 12
+    AutoRightButton.TextSize = device == "iPhone" and 8 or 10
     AutoRightButton.Parent = ScreenGui
 
     local RightCorner = Instance.new("UICorner")
@@ -3521,18 +3566,19 @@ end
 -- ═══════════════════════════════════════════════════════
 
 function createRightButtons(device)
-    local buttonSize = device == "iPhone" and 38 or 48
+    local buttonSize = device == "iPhone" and 36 or 42
+    local gap = 6
 
-    -- ✅ DESYNC Button (ABOVE TRACK PLAYER)
+    -- ✅ DESYNC Button (LEFT SIDE - 4th button)
     local DesyncButton = Instance.new("TextButton")
     DesyncButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    DesyncButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize*2 - 20)
+    DesyncButton.Position = UDim2.new(0, 10, 0.5, (buttonSize + gap*1.5))
     DesyncButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     DesyncButton.BackgroundTransparency = 0
     DesyncButton.Text = "DESYNC"
     DesyncButton.TextColor3 = Color3.fromRGB(220, 220, 220)
     DesyncButton.Font = Enum.Font.GothamBold
-    DesyncButton.TextSize = device == "iPhone" and 9 or 12
+    DesyncButton.TextSize = device == "iPhone" and 8 or 10
     DesyncButton.Parent = ScreenGui
 
     local DesyncCorner = Instance.new("UICorner")
@@ -3566,13 +3612,13 @@ function createRightButtons(device)
         -- ✅ LAGGER Button (TOP)
         local LaggerButton = Instance.new("TextButton")
         LaggerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-        LaggerButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize*3 - 30)
+        LaggerButton.Position = UDim2.new(1, -buttonSize - 10, 0.5, -(buttonSize*2 + gap*1.5))
         LaggerButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
         LaggerButton.BackgroundTransparency = 0
         LaggerButton.Text = "LAGGER"
         LaggerButton.TextColor3 = Color3.fromRGB(220, 220, 220)
         LaggerButton.Font = Enum.Font.GothamBold
-        LaggerButton.TextSize = device == "iPhone" and 9 or 12
+        LaggerButton.TextSize = device == "iPhone" and 8 or 10
         LaggerButton.Parent = ScreenGui
 
         local LaggerCorner = Instance.new("UICorner")
@@ -3925,13 +3971,13 @@ function createRightButtons(device)
     -- ✅ TRACK PLAYER Button (RIGHT SIDE - GRAY!)
     local TrackPlayerButton = Instance.new("TextButton")
     TrackPlayerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    TrackPlayerButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize - 10)
+    TrackPlayerButton.Position = UDim2.new(1, -buttonSize - 10, 0.5, -(buttonSize*1 + gap*0.5))
     TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     TrackPlayerButton.BackgroundTransparency = 0
     TrackPlayerButton.Text = "TRACK\nPLAYER"
     TrackPlayerButton.TextColor3 = Color3.fromRGB(220, 220, 220)
     TrackPlayerButton.Font = Enum.Font.GothamBold
-    TrackPlayerButton.TextSize = device == "iPhone" and 9 or 12
+    TrackPlayerButton.TextSize = device == "iPhone" and 8 or 10
     TrackPlayerButton.Parent = ScreenGui
 
     local TrackCorner = Instance.new("UICorner")
@@ -3967,13 +4013,13 @@ function createRightButtons(device)
     -- ✅ HIT CIRCLE Button (UNDER TRACK PLAYER - GRAY!)
     local HitCircleButton = Instance.new("TextButton")
     HitCircleButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    HitCircleButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, 10)
+    HitCircleButton.Position = UDim2.new(1, -buttonSize - 10, 0.5, (gap*0.5))
     HitCircleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     HitCircleButton.BackgroundTransparency = 0
     HitCircleButton.Text = "HIT\nCIRCLE"
     HitCircleButton.TextColor3 = Color3.fromRGB(220, 220, 220)
     HitCircleButton.Font = Enum.Font.GothamBold
-    HitCircleButton.TextSize = device == "iPhone" and 9 or 12
+    HitCircleButton.TextSize = device == "iPhone" and 8 or 10
     HitCircleButton.Parent = ScreenGui
 
     local HitCorner = Instance.new("UICorner")
@@ -4018,13 +4064,13 @@ function createRightButtons(device)
     -- JUKE Button
     local JukeButton = Instance.new("TextButton")
     JukeButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    JukeButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, buttonSize + 20)
+    JukeButton.Position = UDim2.new(1, -buttonSize - 10, 0.5, (buttonSize + gap*1.5))
     JukeButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     JukeButton.BackgroundTransparency = 0
     JukeButton.Text = "JUKE"
     JukeButton.TextColor3 = Color3.fromRGB(220, 220, 220)
     JukeButton.Font = Enum.Font.GothamBold
-    JukeButton.TextSize = device == "iPhone" and 9 or 12
+    JukeButton.TextSize = device == "iPhone" and 8 or 10
     JukeButton.Parent = ScreenGui
 
     local JukeCorner = Instance.new("UICorner")
