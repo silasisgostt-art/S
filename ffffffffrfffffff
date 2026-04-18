@@ -1395,19 +1395,43 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = PlayerGui
 
--- Rainbow outline: cycles UIStroke colors across the GUI
+-- Custom drag implementation (Delta-compatible, replaces deprecated .Draggable)
+local function makeDraggable(gui)
+    local dragging, dragInput, dragStart, startPos
+    gui.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = gui.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    gui.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            gui.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+end
+
+-- Rainbow outline: cycles UIStroke colors across ALL GUI elements
 local function startRainbowOutline()
     task.spawn(function()
-        while task.wait(0.05) do
-            local hue = (tick() * 0.12) % 1
-            local color = Color3.fromHSV(hue, 0.6, 0.75) -- less bright
+        while task.wait(0.03) do
+            local hue = (tick() * 0.15) % 1
+            local color = Color3.fromHSV(hue, 0.85, 1)
             for _, v in pairs(ScreenGui:GetDescendants()) do
                 if v:IsA("UIStroke") then
-                    local p = v.Parent
-                    -- skip strokes that belong to buttons or main GUI frames (keep button outlines black)
-                    if not (p and (p:IsA("TextButton") or p:IsA("ImageButton") or p.Name == "MainFrame" or tostring(p.Name):match("^Small"))) then
-                        v.Color = color
-                    end
+                    v.Color = color
                 end
             end
         end
@@ -1430,18 +1454,16 @@ local function applyWhiteHalfStyle()
                     v.TextColor3 = Color3.fromRGB(255, 255, 255)
                 end
 
-                -- ensure button/frame strokes are black (overwrite existing strokes)
+                -- ensure button/frame has a UIStroke (color set by rainbow animator)
                 local hasStroke = false
                 for _, c in pairs(v:GetChildren()) do
                     if c:IsA("UIStroke") then
-                        c.Color = Color3.fromRGB(0,0,0)
                         hasStroke = true
                     end
                 end
                 if not hasStroke then
                     local stroke = Instance.new("UIStroke")
                     stroke.Thickness = 2
-                    stroke.Color = Color3.fromRGB(0,0,0)
                     stroke.Parent = v
                 end
 
@@ -1508,7 +1530,7 @@ local function createSmallGUI(name, yPosition)
     SmallGUI.BorderSizePixel = 0
     SmallGUI.Visible = false
     SmallGUI.Active = true
-    SmallGUI.Draggable = true  -- ✅ DRAGGABLE!
+    makeDraggable(SmallGUI)  -- ✅ DRAGGABLE!
     SmallGUI.Parent = ScreenGui
 
     local Corner = Instance.new("UICorner")
@@ -1686,6 +1708,8 @@ local function applyButtonPositions(data)
 end
 
 local function setButtonsDraggable(enabled)
+    -- Dragging is always enabled via makeDraggable() on creation
+    -- This function is kept for compatibility but drag is permanent
     for _, gui in pairs({
         SmallSpeedGUI,
         SmallUnwalkGUI,
@@ -1698,7 +1722,7 @@ local function setButtonsDraggable(enabled)
         SmallDropGUI,
     }) do
         if gui then
-            gui.Draggable = enabled
+            gui.Active = enabled
         end
     end
 end
@@ -1710,7 +1734,7 @@ SpinBotScreen.Position = UDim2.new(0.7, 0, 0.2, 0)
 SpinBotScreen.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 SpinBotScreen.BorderSizePixel = 0
 SpinBotScreen.Active = true
-SpinBotScreen.Draggable = true
+makeDraggable(SpinBotScreen)
 SpinBotScreen.Visible = false
 SpinBotScreen.Parent = ScreenGui
 
@@ -2205,7 +2229,7 @@ local function createMainGUI(device)
     MainFrame.BackgroundTransparency = 0.1
     MainFrame.BorderSizePixel = 0
     MainFrame.Active = true
-    MainFrame.Draggable = true
+    makeDraggable(MainFrame)
     MainFrame.Visible = false
     MainFrame.Parent = ScreenGui
 
@@ -2480,7 +2504,7 @@ local function createMainGUI(device)
     SpeedSettingsGUI.BorderSizePixel = 0
     SpeedSettingsGUI.Visible = false
     SpeedSettingsGUI.Active = true
-    SpeedSettingsGUI.Draggable = true
+    makeDraggable(SpeedSettingsGUI)
     SpeedSettingsGUI.Parent = ScreenGui
 
     local SpeedCorner = Instance.new("UICorner")
@@ -2756,7 +2780,7 @@ local function createMainGUI(device)
     FOVSettingsGUI.BorderSizePixel = 0
     FOVSettingsGUI.Visible = false
     FOVSettingsGUI.Active = true
-    FOVSettingsGUI.Draggable = true
+    makeDraggable(FOVSettingsGUI)
     FOVSettingsGUI.Parent = ScreenGui
 
     local FOVCorner = Instance.new("UICorner")
@@ -3553,9 +3577,9 @@ function createRightButtons(device)
         local laggerThread = nil
         local function startLaggerLoop()
             while laggerEnabled do
-                game:GetService("NetworkClient"):SetOutgoingKBPSLimit(math.huge)
+                pcall(function() game:GetService("NetworkClient"):SetOutgoingKBPSLimit(math.huge) end)
                 task.spawn(function()
-                    bomb(LAGGER_CONFIG.TableIncrease, LAGGER_CONFIG.Tries)
+                    pcall(function() bomb(LAGGER_CONFIG.TableIncrease, LAGGER_CONFIG.Tries) end)
                 end)
                 task.wait(math.max(LAGGER_CONFIG.LoopWaitTime, 0.15))
             end
@@ -3563,7 +3587,7 @@ function createRightButtons(device)
         local function stopLaggerLoop()
             laggerEnabled = false
             if laggerThread then
-                coroutine.close(laggerThread)
+                pcall(function() coroutine.close(laggerThread) end)
                 laggerThread = nil
             end
         end
@@ -3608,7 +3632,7 @@ function createRightButtons(device)
         LaggerSettings.BackgroundTransparency = 0.1
         LaggerSettings.Visible = false
         LaggerSettings.Active = true
-        LaggerSettings.Draggable = true
+        makeDraggable(LaggerSettings)
         LaggerSettings.Parent = ScreenGui
         LaggerSettings.ZIndex = 10
 
@@ -3912,7 +3936,7 @@ function createRightButtons(device)
     TrackSettings.BackgroundTransparency = 0.05
     TrackSettings.Visible = false
     TrackSettings.Active = true
-    TrackSettings.Draggable = true
+    makeDraggable(TrackSettings)
     TrackSettings.Parent = ScreenGui
     TrackSettings.ZIndex = 10
     Instance.new("UICorner", TrackSettings).CornerRadius = UDim.new(0, 12)
@@ -4219,7 +4243,7 @@ function createRightButtons(device)
     JukeSettings.BackgroundTransparency = 0.1
     JukeSettings.Visible = false
     JukeSettings.Active = true
-    JukeSettings.Draggable = true
+    makeDraggable(JukeSettings)
     JukeSettings.Parent = ScreenGui
     JukeSettings.ZIndex = 10
 
