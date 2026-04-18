@@ -1608,9 +1608,9 @@ local function createSmallGUI(name, yPosition)
     Label.Position = UDim2.new(0, 18, 0, 0)
     Label.BackgroundTransparency = 1
     Label.Text = name
-    Label.TextColor3 = Color3.fromRGB(220, 220, 220) -- Yogi Duels style
+    Label.TextColor3 = Color3.fromRGB(255, 255, 255)
     Label.Font = Enum.Font.GothamBold
-    Label.TextSize = 14 -- Yogi Duels style
+    Label.TextSize = 9 -- Smaller text
     Label.TextXAlignment = Enum.TextXAlignment.Left
     Label.Parent = SmallGUI
 
@@ -1620,9 +1620,9 @@ local function createSmallGUI(name, yPosition)
     Button.Position = UDim2.new(1, -20, 0, 0)
     Button.BackgroundTransparency = 1
     Button.Text = "⚡"
-    Button.TextColor3 = Color3.fromRGB(220, 220, 220) -- Yogi Duels style
+    Button.TextColor3 = Color3.fromRGB(138, 43, 226)
     Button.Font = Enum.Font.GothamBold
-    Button.TextSize = 14 -- Yogi Duels style
+    Button.TextSize = 12 -- Smaller icon
     Button.ZIndex = 2
     Button.Parent = SmallGUI
 
@@ -1794,10 +1794,9 @@ SpinBotScreenTitle.Size = UDim2.new(1, 0, 0, 30)
 SpinBotScreenTitle.Position = UDim2.new(0, 0, 0, 0)
 SpinBotScreenTitle.BackgroundTransparency = 1
 SpinBotScreenTitle.Text = "SPIN BOT"
-SpinBotScreenTitle.TextColor3 = Color3.fromRGB(240, 240, 240) -- Yogi Duels style
-SpinBotScreenTitle.Font = Enum.Font.GothamBlack -- Yogi Duels style
-SpinBotScreenTitle.TextSize = 20 -- Yogi Duels style
-SpinBotScreenTitle.TextXAlignment = Enum.TextXAlignment.Left
+SpinBotScreenTitle.TextColor3 = Color3.fromRGB(255, 200, 100)
+SpinBotScreenTitle.Font = Enum.Font.GothamBold
+SpinBotScreenTitle.TextSize = 18
 SpinBotScreenTitle.Parent = SpinBotScreen
 
 local SpinBotScreenClose = Instance.new("TextButton")
@@ -1805,9 +1804,9 @@ SpinBotScreenClose.Size = UDim2.new(0, 24, 0, 24)
 SpinBotScreenClose.Position = UDim2.new(1, -28, 0, 4)
 SpinBotScreenClose.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
 SpinBotScreenClose.Text = "X"
-SpinBotScreenClose.TextColor3 = Color3.fromRGB(220, 220, 220) -- Yogi Duels style
+SpinBotScreenClose.TextColor3 = Color3.fromRGB(255, 255, 255)
 SpinBotScreenClose.Font = Enum.Font.GothamBold
-SpinBotScreenClose.TextSize = 20 -- Yogi Duels style
+SpinBotScreenClose.TextSize = 14
 SpinBotScreenClose.Parent = SpinBotScreen
 
 local SpinBotScreenCloseCorner = Instance.new("UICorner")
@@ -1819,9 +1818,9 @@ SpinBotScreenToggle.Size = UDim2.new(1, -20, 0, 50)
 SpinBotScreenToggle.Position = UDim2.new(0, 10, 0, 50)
 SpinBotScreenToggle.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
 SpinBotScreenToggle.Text = "START SPIN"
-SpinBotScreenToggle.TextColor3 = Color3.fromRGB(220, 220, 220) -- Yogi Duels style
+SpinBotScreenToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
 SpinBotScreenToggle.Font = Enum.Font.GothamBold
-SpinBotScreenToggle.TextSize = 14 -- Yogi Duels style
+SpinBotScreenToggle.TextSize = 18
 SpinBotScreenToggle.Parent = SpinBotScreen
 
 local SpinBotScreenToggleCorner = Instance.new("UICorner")
