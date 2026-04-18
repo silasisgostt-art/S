@@ -3523,10 +3523,10 @@ function createRightButtons(device)
     -- Forward declarations for buttons created later
     local SpeedBypassButton, DanceButton
 
-    -- ✅ DESYNC Button (Row 0, Col 1)
+    -- ✅ DESYNC Button
     local DesyncButton = Instance.new("TextButton")
     DesyncButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    DesyncButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize*2 - 15)
+    DesyncButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize*2 - 20)
     DesyncButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     DesyncButton.BackgroundTransparency = 0
     DesyncButton.Text = "DESYNC"
@@ -3565,7 +3565,7 @@ function createRightButtons(device)
         -- ✅ LAGGER Button (TOP)
         local LaggerButton = Instance.new("TextButton")
         LaggerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-        LaggerButton.Position = UDim2.new(1, -(buttonSize*2 + 20), 0.5, -buttonSize*2 - 15)
+        LaggerButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize*3 - 30)
         LaggerButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
         LaggerButton.BackgroundTransparency = 0
         LaggerButton.Text = "LAGGER"
@@ -4053,7 +4053,7 @@ function createRightButtons(device)
     -- ✅ TRACK PLAYER Button (RIGHT SIDE - GRAY!)
     local TrackPlayerButton = Instance.new("TextButton")
     TrackPlayerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    TrackPlayerButton.Position = UDim2.new(1, -(buttonSize*2 + 20), 0.5, -buttonSize - 5)
+    TrackPlayerButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize - 10)
     TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     TrackPlayerButton.BackgroundTransparency = 0
     TrackPlayerButton.Text = "TRACK\nPLAYER"
@@ -4095,7 +4095,7 @@ function createRightButtons(device)
     -- ✅ HIT CIRCLE Button (UNDER TRACK PLAYER - GRAY!)
     local HitCircleButton = Instance.new("TextButton")
     HitCircleButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    HitCircleButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize - 5)
+    HitCircleButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, 0)
     HitCircleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     HitCircleButton.BackgroundTransparency = 0
     HitCircleButton.Text = "HIT\nCIRCLE"
@@ -4146,7 +4146,7 @@ function createRightButtons(device)
     -- JUKE Button
     local JukeButton = Instance.new("TextButton")
     JukeButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    JukeButton.Position = UDim2.new(1, -(buttonSize*2 + 20), 0.5, 5)
+    JukeButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, buttonSize*2 + 20)
     JukeButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     JukeButton.BackgroundTransparency = 0
     JukeButton.Text = "JUKE"
@@ -4485,24 +4485,14 @@ function createRightButtons(device)
         for _, btn in ipairs(allRightButtons) do
             btn.Size = UDim2.new(0, newSize, 0, newSize)
         end
-        -- 2-column 4-row grid layout
-        local col0X = -(newSize*2 + 20)
-        local col1X = -newSize - 15
-        local row0Y = -newSize*2 - 15
-        local row1Y = -newSize - 5
-        local row2Y = 5
-        local row3Y = newSize + 15
-        -- Row 0: LAGGER (col0) | DESYNC (col1)
-        LaggerButton.Position = UDim2.new(1, col0X, 0.5, row0Y)
-        DesyncButton.Position = UDim2.new(1, col1X, 0.5, row0Y)
-        -- Row 1: TRACK (col0) | HIT CIRCLE (col1)
-        TrackPlayerButton.Position = UDim2.new(1, col0X, 0.5, row1Y)
-        HitCircleButton.Position = UDim2.new(1, col1X, 0.5, row1Y)
-        -- Row 2: JUKE (col0) | SPEED BYP (col1)
-        JukeButton.Position = UDim2.new(1, col0X, 0.5, row2Y)
-        SpeedBypassButton.Position = UDim2.new(1, col1X, 0.5, row2Y)
-        -- Row 3: DANCE (col0) | empty (col1)
-        DanceButton.Position = UDim2.new(1, col0X, 0.5, row3Y)
+        -- Single column layout, right side
+        LaggerButton.Position = UDim2.new(1, -newSize - 15, 0.5, -newSize*3 - 30)
+        DesyncButton.Position = UDim2.new(1, -newSize - 15, 0.5, -newSize*2 - 20)
+        TrackPlayerButton.Position = UDim2.new(1, -newSize - 15, 0.5, -newSize - 10)
+        HitCircleButton.Position = UDim2.new(1, -newSize - 15, 0.5, 0)
+        SpeedBypassButton.Position = UDim2.new(1, -newSize - 15, 0.5, newSize + 10)
+        JukeButton.Position = UDim2.new(1, -newSize - 15, 0.5, newSize*2 + 20)
+        DanceButton.Position = UDim2.new(1, -newSize - 15, 0.5, newSize*3 + 30)
     end
 
     BtnSizeMinus.MouseButton1Click:Connect(function()
@@ -4839,7 +4829,7 @@ function createRightButtons(device)
     SpeedBypassButton = Instance.new("TextButton")
     table.insert(allRightButtons, SpeedBypassButton)
     SpeedBypassButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    SpeedBypassButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, 5)
+    SpeedBypassButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, buttonSize + 10)
     SpeedBypassButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     SpeedBypassButton.BackgroundTransparency = 0
     SpeedBypassButton.Text = "SPEED\nBYP"
@@ -5145,7 +5135,7 @@ function createRightButtons(device)
     DanceButton = Instance.new("TextButton")
     table.insert(allRightButtons, DanceButton)
     DanceButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    DanceButton.Position = UDim2.new(1, -(buttonSize*2 + 20), 0.5, buttonSize + 15)
+    DanceButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, buttonSize*3 + 30)
     DanceButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     DanceButton.BackgroundTransparency = 0
     DanceButton.Text = "DANCE"
