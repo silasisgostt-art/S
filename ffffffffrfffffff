@@ -3520,10 +3520,13 @@ end
 function createRightButtons(device)
     local buttonSize = device == "iPhone" and 38 or 48
 
-    -- ✅ DESYNC Button (ABOVE TRACK PLAYER)
+    -- Forward declarations for buttons created later
+    local SpeedBypassButton, DanceButton
+
+    -- ✅ DESYNC Button (Row 0, Col 1)
     local DesyncButton = Instance.new("TextButton")
     DesyncButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    DesyncButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize*2 - 20)
+    DesyncButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize*2 - 15)
     DesyncButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     DesyncButton.BackgroundTransparency = 0
     DesyncButton.Text = "DESYNC"
@@ -3562,7 +3565,7 @@ function createRightButtons(device)
         -- ✅ LAGGER Button (TOP)
         local LaggerButton = Instance.new("TextButton")
         LaggerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-        LaggerButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize*3 - 30)
+        LaggerButton.Position = UDim2.new(1, -(buttonSize*2 + 20), 0.5, -buttonSize*2 - 15)
         LaggerButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
         LaggerButton.BackgroundTransparency = 0
         LaggerButton.Text = "LAGGER"
@@ -4050,7 +4053,7 @@ function createRightButtons(device)
     -- ✅ TRACK PLAYER Button (RIGHT SIDE - GRAY!)
     local TrackPlayerButton = Instance.new("TextButton")
     TrackPlayerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    TrackPlayerButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize - 10)
+    TrackPlayerButton.Position = UDim2.new(1, -(buttonSize*2 + 20), 0.5, -buttonSize - 5)
     TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     TrackPlayerButton.BackgroundTransparency = 0
     TrackPlayerButton.Text = "TRACK\nPLAYER"
@@ -4092,7 +4095,7 @@ function createRightButtons(device)
     -- ✅ HIT CIRCLE Button (UNDER TRACK PLAYER - GRAY!)
     local HitCircleButton = Instance.new("TextButton")
     HitCircleButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    HitCircleButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, 10)
+    HitCircleButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize - 5)
     HitCircleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     HitCircleButton.BackgroundTransparency = 0
     HitCircleButton.Text = "HIT\nCIRCLE"
@@ -4143,7 +4146,7 @@ function createRightButtons(device)
     -- JUKE Button
     local JukeButton = Instance.new("TextButton")
     JukeButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    JukeButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, buttonSize + 20)
+    JukeButton.Position = UDim2.new(1, -(buttonSize*2 + 20), 0.5, 5)
     JukeButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     JukeButton.BackgroundTransparency = 0
     JukeButton.Text = "JUKE"
@@ -4429,6 +4432,7 @@ function createRightButtons(device)
     -- ═══════════════════════════════════════════════════════
 
     local allRightButtons = {DesyncButton, LaggerButton, TrackPlayerButton, HitCircleButton, JukeButton}
+    -- SpeedBypassButton and DanceButton added after creation below
 
     local BtnSizeLabel = Instance.new("TextLabel")
     BtnSizeLabel.Size = UDim2.new(0.55, 0, 0, 25)
@@ -4481,11 +4485,24 @@ function createRightButtons(device)
         for _, btn in ipairs(allRightButtons) do
             btn.Size = UDim2.new(0, newSize, 0, newSize)
         end
-        LaggerButton.Position = UDim2.new(1, -newSize - 15, 0.5, -newSize*3 - 30)
-        DesyncButton.Position = UDim2.new(1, -newSize - 15, 0.5, -newSize*2 - 20)
-        TrackPlayerButton.Position = UDim2.new(1, -newSize - 15, 0.5, -newSize - 10)
-        HitCircleButton.Position = UDim2.new(1, -newSize - 15, 0.5, 10)
-        JukeButton.Position = UDim2.new(1, -newSize - 15, 0.5, newSize + 20)
+        -- 2-column 4-row grid layout
+        local col0X = -(newSize*2 + 20)
+        local col1X = -newSize - 15
+        local row0Y = -newSize*2 - 15
+        local row1Y = -newSize - 5
+        local row2Y = 5
+        local row3Y = newSize + 15
+        -- Row 0: LAGGER (col0) | DESYNC (col1)
+        LaggerButton.Position = UDim2.new(1, col0X, 0.5, row0Y)
+        DesyncButton.Position = UDim2.new(1, col1X, 0.5, row0Y)
+        -- Row 1: TRACK (col0) | HIT CIRCLE (col1)
+        TrackPlayerButton.Position = UDim2.new(1, col0X, 0.5, row1Y)
+        HitCircleButton.Position = UDim2.new(1, col1X, 0.5, row1Y)
+        -- Row 2: JUKE (col0) | SPEED BYP (col1)
+        JukeButton.Position = UDim2.new(1, col0X, 0.5, row2Y)
+        SpeedBypassButton.Position = UDim2.new(1, col1X, 0.5, row2Y)
+        -- Row 3: DANCE (col0) | empty (col1)
+        DanceButton.Position = UDim2.new(1, col0X, 0.5, row3Y)
     end
 
     BtnSizeMinus.MouseButton1Click:Connect(function()
@@ -4811,7 +4828,302 @@ function createRightButtons(device)
     end)
 
     -- ═══════════════════════════════════════════════════════
-    -- ✅ DANCE BUTTON (BELOW JUKE - PLAYS RANDOM UGC DANCE)
+    -- ✅ SPEED BYPASS BUTTON (Row 2, Col 1) WITH SETTINGS
+    -- ═══════════════════════════════════════════════════════
+
+    local speedBypassEnabled = false
+    local speedBypassAmount = 65
+    local speedBypassLagOn = false
+    local speedBypassLagAmount = 0
+
+    SpeedBypassButton = Instance.new("TextButton")
+    table.insert(allRightButtons, SpeedBypassButton)
+    SpeedBypassButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
+    SpeedBypassButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, 5)
+    SpeedBypassButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    SpeedBypassButton.BackgroundTransparency = 0
+    SpeedBypassButton.Text = "SPEED\nBYP"
+    SpeedBypassButton.TextColor3 = Color3.fromRGB(220, 220, 220)
+    SpeedBypassButton.Font = Enum.Font.GothamBold
+    SpeedBypassButton.TextSize = device == "iPhone" and 8 or 10
+    SpeedBypassButton.Parent = ScreenGui
+
+    local SBCorner = Instance.new("UICorner")
+    SBCorner.CornerRadius = UDim.new(0, 8)
+    SBCorner.Parent = SpeedBypassButton
+
+    local SBBlackStroke = Instance.new("UIStroke")
+    SBBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+    SBBlackStroke.Thickness = 5
+    SBBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    SBBlackStroke.Parent = SpeedBypassButton
+
+    local SBStroke = Instance.new("UIStroke")
+    SBStroke.Color = Color3.fromRGB(255, 255, 255)
+    SBStroke.Thickness = 2.8
+    SBStroke.Transparency = 0.3
+    SBStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    SBStroke.ZIndex = 2
+    SBStroke.Parent = SpeedBypassButton
+
+    SpeedBypassButton.MouseButton1Click:Connect(function()
+        speedBypassEnabled = not speedBypassEnabled
+        if speedBypassEnabled then
+            SpeedBypassButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        else
+            SpeedBypassButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        end
+    end)
+
+    -- ⚙ Speed Bypass Gear Button
+    local SBGear = Instance.new("TextButton")
+    SBGear.Size = UDim2.new(0, 18, 0, 18)
+    SBGear.Position = UDim2.new(1, -16, 0, -2)
+    SBGear.BackgroundTransparency = 1
+    SBGear.Text = "⚙"
+    SBGear.TextColor3 = Color3.fromRGB(200, 200, 200)
+    SBGear.Font = Enum.Font.GothamBold
+    SBGear.TextSize = 14
+    SBGear.ZIndex = 3
+    SBGear.Parent = SpeedBypassButton
+
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ SPEED BYPASS SETTINGS PANEL
+    -- ═══════════════════════════════════════════════════════
+
+    local SBSettings = Instance.new("Frame")
+    SBSettings.Name = "SpeedBypassSettings"
+    SBSettings.Size = UDim2.new(0, 210, 0, 200)
+    SBSettings.Position = UDim2.new(0.5, -105, 0.5, -100)
+    SBSettings.BackgroundColor3 = Color3.fromRGB(14, 14, 14)
+    SBSettings.BackgroundTransparency = 0.05
+    SBSettings.Visible = false
+    SBSettings.Active = true
+    SBSettings.Draggable = true
+    SBSettings.Parent = ScreenGui
+    SBSettings.ZIndex = 10
+
+    local SBSCorner = Instance.new("UICorner")
+    SBSCorner.CornerRadius = UDim.new(0, 8)
+    SBSCorner.Parent = SBSettings
+
+    local SBSBlackStroke = Instance.new("UIStroke")
+    SBSBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+    SBSBlackStroke.Thickness = 5
+    SBSBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    SBSBlackStroke.Parent = SBSettings
+
+    local SBSStroke = Instance.new("UIStroke")
+    SBSStroke.Color = Color3.fromRGB(255, 255, 255)
+    SBSStroke.Thickness = 2.8
+    SBSStroke.Transparency = 0.3
+    SBSStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    SBSStroke.ZIndex = 2
+    SBSStroke.Parent = SBSettings
+
+    local SBSWaveGrad = Instance.new("UIGradient")
+    SBSWaveGrad.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
+    SBSWaveGrad.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 1),
+        NumberSequenceKeypoint.new(0.45, 0),
+        NumberSequenceKeypoint.new(0.55, 0),
+        NumberSequenceKeypoint.new(1, 1)
+    })
+    SBSWaveGrad.Rotation = 0
+    SBSWaveGrad.Parent = SBSStroke
+    TweenService:Create(SBSStroke, TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Thickness = 4.5, Transparency = 0.05}):Play()
+    RunService.Heartbeat:Connect(function(dt) pcall(function() SBSWaveGrad.Rotation = (SBSWaveGrad.Rotation + 180 * dt) % 360 end) end)
+
+    -- Title
+    local SBSTitle = Instance.new("TextLabel")
+    SBSTitle.Size = UDim2.new(1, 0, 0, 30)
+    SBSTitle.BackgroundTransparency = 1
+    SBSTitle.Text = "⚙ Speed Bypass"
+    SBSTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SBSTitle.Font = Enum.Font.GothamBold
+    SBSTitle.TextSize = 14
+    SBSTitle.Parent = SBSettings
+    SBSTitle.ZIndex = 11
+
+    -- Close X
+    local SBSClose = Instance.new("TextButton")
+    SBSClose.Size = UDim2.new(0, 24, 0, 24)
+    SBSClose.Position = UDim2.new(1, -28, 0, 3)
+    SBSClose.BackgroundTransparency = 1
+    SBSClose.Text = "✕"
+    SBSClose.TextColor3 = Color3.fromRGB(255, 80, 80)
+    SBSClose.Font = Enum.Font.GothamBold
+    SBSClose.TextSize = 14
+    SBSClose.Parent = SBSettings
+    SBSClose.ZIndex = 11
+    SBSClose.MouseButton1Click:Connect(function() SBSettings.Visible = false end)
+
+    -- Speed Label + Value + -/+
+    local SBSpeedLabel = Instance.new("TextLabel")
+    SBSpeedLabel.Size = UDim2.new(0.55, 0, 0, 25)
+    SBSpeedLabel.Position = UDim2.new(0, 10, 0, 35)
+    SBSpeedLabel.BackgroundTransparency = 1
+    SBSpeedLabel.Text = "Speed"
+    SBSpeedLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+    SBSpeedLabel.Font = Enum.Font.Gotham
+    SBSpeedLabel.TextSize = 11
+    SBSpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
+    SBSpeedLabel.Parent = SBSettings
+    SBSpeedLabel.ZIndex = 11
+
+    local SBSpeedVal = Instance.new("TextLabel")
+    SBSpeedVal.Size = UDim2.new(0, 40, 0, 25)
+    SBSpeedVal.Position = UDim2.new(1, -90, 0, 35)
+    SBSpeedVal.BackgroundTransparency = 1
+    SBSpeedVal.Text = tostring(speedBypassAmount)
+    SBSpeedVal.TextColor3 = Color3.fromRGB(138, 43, 226)
+    SBSpeedVal.Font = Enum.Font.GothamBold
+    SBSpeedVal.TextSize = 13
+    SBSpeedVal.Parent = SBSettings
+    SBSpeedVal.ZIndex = 11
+
+    local SBSpeedMinus = Instance.new("TextButton")
+    SBSpeedMinus.Size = UDim2.new(0, 22, 0, 22)
+    SBSpeedMinus.Position = UDim2.new(1, -48, 0, 37)
+    SBSpeedMinus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    SBSpeedMinus.Text = "-"
+    SBSpeedMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SBSpeedMinus.Font = Enum.Font.GothamBold
+    SBSpeedMinus.TextSize = 14
+    SBSpeedMinus.Parent = SBSettings
+    SBSpeedMinus.ZIndex = 11
+    Instance.new("UICorner", SBSpeedMinus).CornerRadius = UDim.new(0, 6)
+
+    local SBSpeedPlus = Instance.new("TextButton")
+    SBSpeedPlus.Size = UDim2.new(0, 22, 0, 22)
+    SBSpeedPlus.Position = UDim2.new(1, -22, 0, 37)
+    SBSpeedPlus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    SBSpeedPlus.Text = "+"
+    SBSpeedPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SBSpeedPlus.Font = Enum.Font.GothamBold
+    SBSpeedPlus.TextSize = 14
+    SBSpeedPlus.Parent = SBSettings
+    SBSpeedPlus.ZIndex = 11
+    Instance.new("UICorner", SBSpeedPlus).CornerRadius = UDim.new(0, 6)
+
+    SBSpeedMinus.MouseButton1Click:Connect(function()
+        speedBypassAmount = math.max(16, speedBypassAmount - 5)
+        SBSpeedVal.Text = tostring(speedBypassAmount)
+    end)
+    SBSpeedPlus.MouseButton1Click:Connect(function()
+        speedBypassAmount = math.min(200, speedBypassAmount + 5)
+        SBSpeedVal.Text = tostring(speedBypassAmount)
+    end)
+
+    -- Lag Toggle
+    local SBLagToggle = Instance.new("TextButton")
+    SBLagToggle.Size = UDim2.new(0, 190, 0, 26)
+    SBLagToggle.Position = UDim2.new(0, 10, 0, 70)
+    SBLagToggle.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    SBLagToggle.Text = "Lag: OFF"
+    SBLagToggle.TextColor3 = Color3.fromRGB(220, 220, 220)
+    SBLagToggle.Font = Enum.Font.GothamBold
+    SBLagToggle.TextSize = 12
+    SBLagToggle.Parent = SBSettings
+    SBLagToggle.ZIndex = 11
+    Instance.new("UICorner", SBLagToggle).CornerRadius = UDim.new(0, 6)
+
+    SBLagToggle.MouseButton1Click:Connect(function()
+        speedBypassLagOn = not speedBypassLagOn
+        SBLagToggle.Text = speedBypassLagOn and "Lag: ON" or "Lag: OFF"
+        SBLagToggle.BackgroundColor3 = speedBypassLagOn and Color3.fromRGB(255, 80, 80) or Color3.fromRGB(30, 30, 30)
+    end)
+
+    -- Lag Amount Label + Value + -/+
+    local SBLagLabel = Instance.new("TextLabel")
+    SBLagLabel.Size = UDim2.new(0.55, 0, 0, 25)
+    SBLagLabel.Position = UDim2.new(0, 10, 0, 105)
+    SBLagLabel.BackgroundTransparency = 1
+    SBLagLabel.Text = "Lag Amount"
+    SBLagLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+    SBLagLabel.Font = Enum.Font.Gotham
+    SBLagLabel.TextSize = 11
+    SBLagLabel.TextXAlignment = Enum.TextXAlignment.Left
+    SBLagLabel.Parent = SBSettings
+    SBLagLabel.ZIndex = 11
+
+    local SBLagVal = Instance.new("TextLabel")
+    SBLagVal.Size = UDim2.new(0, 40, 0, 25)
+    SBLagVal.Position = UDim2.new(1, -90, 0, 105)
+    SBLagVal.BackgroundTransparency = 1
+    SBLagVal.Text = tostring(math.floor(speedBypassLagAmount * 100)) .. "%"
+    SBLagVal.TextColor3 = Color3.fromRGB(138, 43, 226)
+    SBLagVal.Font = Enum.Font.GothamBold
+    SBLagVal.TextSize = 13
+    SBLagVal.Parent = SBSettings
+    SBLagVal.ZIndex = 11
+
+    local SBLagMinus = Instance.new("TextButton")
+    SBLagMinus.Size = UDim2.new(0, 22, 0, 22)
+    SBLagMinus.Position = UDim2.new(1, -48, 0, 107)
+    SBLagMinus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    SBLagMinus.Text = "-"
+    SBLagMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SBLagMinus.Font = Enum.Font.GothamBold
+    SBLagMinus.TextSize = 14
+    SBLagMinus.Parent = SBSettings
+    SBLagMinus.ZIndex = 11
+    Instance.new("UICorner", SBLagMinus).CornerRadius = UDim.new(0, 6)
+
+    local SBLagPlus = Instance.new("TextButton")
+    SBLagPlus.Size = UDim2.new(0, 22, 0, 22)
+    SBLagPlus.Position = UDim2.new(1, -22, 0, 107)
+    SBLagPlus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    SBLagPlus.Text = "+"
+    SBLagPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SBLagPlus.Font = Enum.Font.GothamBold
+    SBLagPlus.TextSize = 14
+    SBLagPlus.Parent = SBSettings
+    SBLagPlus.ZIndex = 11
+    Instance.new("UICorner", SBLagPlus).CornerRadius = UDim.new(0, 6)
+
+    SBLagMinus.MouseButton1Click:Connect(function()
+        speedBypassLagAmount = math.max(0, speedBypassLagAmount - 0.1)
+        SBLagVal.Text = tostring(math.floor(speedBypassLagAmount * 100)) .. "%"
+    end)
+    SBLagPlus.MouseButton1Click:Connect(function()
+        speedBypassLagAmount = math.min(1, speedBypassLagAmount + 0.1)
+        SBLagVal.Text = tostring(math.floor(speedBypassLagAmount * 100)) .. "%"
+    end)
+
+    SBGear.MouseButton1Click:Connect(function()
+        SBSettings.Visible = not SBSettings.Visible
+    end)
+
+    -- Speed Bypass RenderStepped: real velocity override
+    RunService.RenderStepped:Connect(function()
+        if not speedBypassEnabled then return end
+        local char = player.Character
+        if not char then return end
+        local root = char:FindFirstChild("HumanoidRootPart")
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if root and hum and hum.MoveDirection.Magnitude > 0 then
+            local dir = hum.MoveDirection.Unit
+            local curY = root.AssemblyLinearVelocity.Y
+            root.AssemblyLinearVelocity = Vector3.new(
+                dir.X * speedBypassAmount,
+                curY,
+                dir.Z * speedBypassAmount
+            )
+        end
+    end)
+
+    -- Speed Bypass Lag: frame-blocking lag
+    RunService.RenderStepped:Connect(function()
+        if speedBypassLagOn and speedBypassLagAmount > 0 then
+            local t = tick()
+            local blockTime = speedBypassLagAmount * 0.1
+            while tick() - t < blockTime do end
+        end
+    end)
+
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ DANCE BUTTON (Row 3, Col 0 - BOTTOM)
     -- ═══════════════════════════════════════════════════════
 
     local DANCE_ANIM_IDS = {
@@ -4830,9 +5142,10 @@ function createRightButtons(device)
     }
     local currentDanceTrack = nil
 
-    local DanceButton = Instance.new("TextButton")
+    DanceButton = Instance.new("TextButton")
+    table.insert(allRightButtons, DanceButton)
     DanceButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    DanceButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, buttonSize*2 + 30)
+    DanceButton.Position = UDim2.new(1, -(buttonSize*2 + 20), 0.5, buttonSize + 15)
     DanceButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     DanceButton.BackgroundTransparency = 0
     DanceButton.Text = "DANCE"
