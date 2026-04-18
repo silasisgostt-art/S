@@ -1638,12 +1638,12 @@ local function refreshSmallButtonPositions()
     end
 
     local columns = 5
-    local buttonHeight = 30
+    local buttonHeight = 18
     local rows = 3
-    local gapX = 8
-    local gapY = 8
-    local topPadding = 8
-    local sidePadding = 10
+    local gapX = 4
+    local gapY = 4
+    local topPadding = 52
+    local sidePadding = 6
     local viewport = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1280, 720)
     local availableWidth = math.max(400, viewport.X - sidePadding * 2)
     local buttonWidth = math.floor((availableWidth - gapX * (columns - 1)) / columns)
@@ -2042,10 +2042,8 @@ StealBarContainer.Size = UDim2.new(0, 260, 0, 42)
 StealBarContainer.Position = UDim2.new(0.5, -130, 0, 4)
 StealBarContainer.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 StealBarContainer.BorderSizePixel = 0
-StealBarContainer.Active = true
-StealBarContainer.Draggable = true
 StealBarContainer.Parent = ScreenGui
-StealBarContainer.ZIndex = 200
+StealBarContainer.ZIndex = 50
 
 local ContainerCorner = Instance.new("UICorner")
 ContainerCorner.CornerRadius = UDim.new(0, 8)
@@ -2091,24 +2089,24 @@ TitleLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
 TitleLabel.Font = Enum.Font.GothamBlack
 TitleLabel.TextSize = 10
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.ZIndex = 51
 TitleLabel.Parent = StealBarContainer
-TitleLabel.ZIndex = 201
 
--- Radius label + text box
+-- Radius label + textbox
 local RadiusLabel = Instance.new("TextLabel")
-RadiusLabel.Size = UDim2.new(0, 40, 0, 16)
-RadiusLabel.Position = UDim2.new(1, -90, 0, 2)
+RadiusLabel.Size = UDim2.new(0, 45, 0, 16)
+RadiusLabel.Position = UDim2.new(1, -95, 0, 2)
 RadiusLabel.BackgroundTransparency = 1
 RadiusLabel.Text = "Radius:"
 RadiusLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
 RadiusLabel.Font = Enum.Font.Gotham
 RadiusLabel.TextSize = 9
 RadiusLabel.TextXAlignment = Enum.TextXAlignment.Right
+RadiusLabel.ZIndex = 51
 RadiusLabel.Parent = StealBarContainer
-RadiusLabel.ZIndex = 201
 
 local RadiusBox = Instance.new("TextBox")
-RadiusBox.Size = UDim2.new(0, 30, 0, 14)
+RadiusBox.Size = UDim2.new(0, 32, 0, 14)
 RadiusBox.Position = UDim2.new(1, -46, 0, 3)
 RadiusBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 RadiusBox.Text = tostring(InstaSteal.Radius)
@@ -2116,15 +2114,12 @@ RadiusBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 RadiusBox.Font = Enum.Font.GothamBold
 RadiusBox.TextSize = 9
 RadiusBox.ClearTextOnFocus = false
+RadiusBox.ZIndex = 51
 RadiusBox.Parent = StealBarContainer
-RadiusBox.ZIndex = 201
 
 local RadiusBoxCorner = Instance.new("UICorner")
 RadiusBoxCorner.CornerRadius = UDim.new(0, 4)
 RadiusBoxCorner.Parent = RadiusBox
-
--- Keep RadiusValue as a reference for other code that updates it
-local RadiusValue = RadiusBox
 
 RadiusBox.FocusLost:Connect(function()
     local num = tonumber(RadiusBox.Text)
@@ -2143,8 +2138,8 @@ ProgressBarBg.Size = UDim2.new(1, -16, 0, 14)
 ProgressBarBg.Position = UDim2.new(0, 8, 0, 22)
 ProgressBarBg.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 ProgressBarBg.BorderSizePixel = 0
+ProgressBarBg.ZIndex = 51
 ProgressBarBg.Parent = StealBarContainer
-ProgressBarBg.ZIndex = 201
 
 local ProgressBgCorner = Instance.new("UICorner")
 ProgressBgCorner.CornerRadius = UDim.new(1, 0)
@@ -2154,8 +2149,8 @@ ProgressBarFill = Instance.new("Frame")
 ProgressBarFill.Size = UDim2.new(0, 0, 1, 0)
 ProgressBarFill.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
 ProgressBarFill.BorderSizePixel = 0
+ProgressBarFill.ZIndex = 52
 ProgressBarFill.Parent = ProgressBarBg
-ProgressBarFill.ZIndex = 202
 
 local ProgressFillCorner = Instance.new("UICorner")
 ProgressFillCorner.CornerRadius = UDim.new(1, 0)
