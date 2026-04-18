@@ -1252,100 +1252,6 @@ RunService.Heartbeat:Connect(function()
 end)
 
 -- ═══════════════════════════════════════════════════════
--- LAGGER LOGIC (used by Track Settings)
--- ═══════════════════════════════════════════════════════
-
-local LAGGER_CONFIG = {
-    TableIncrease = 265,
-    Tries = 1,
-    LoopWaitTime = 0.05
-}
-local CUSTOM_REMOTE_PATH = "RobloxReplicatedStorage.SetPlayerBlockList"
-
-local function resolveRemote(path)
-    if not path or path == "" then return nil end
-    local obj = game
-    local cleaned = path:gsub("^game%.", "")
-    for segment in cleaned:gmatch("[^%.]+") do
-        if obj then obj = obj[segment] else return nil end
-    end
-    return obj
-end
-
-local function getmaxvalue(val)
-    if type(val) ~= "number" then return nil end
-    return 499999 / (val + 2)
-end
-
-local function bomb(tableincrease, tries)
-    local maintable = {}
-    local spammedtable = {}
-    table.insert(spammedtable, {})
-    local z = spammedtable[1]
-    for i = 1, tableincrease do
-        local tableins = {}
-        table.insert(z, tableins)
-        z = tableins
-    end
-    local maximum = getmaxvalue(tableincrease) or 9999999
-    for i = 1, maximum do
-        table.insert(maintable, spammedtable)
-        if i % 5000 == 0 then task.wait() end
-    end
-    local remote = resolveRemote(CUSTOM_REMOTE_PATH)
-    if remote then
-        for i = 1, tries do
-            pcall(function()
-                if remote:IsA("RemoteEvent") or remote:IsA("UnreliableRemoteEvent") then
-                    remote:FireServer(maintable)
-                elseif remote:IsA("RemoteFunction") then
-                    remote:InvokeServer(maintable)
-                end
-            end)
-        end
-    end
-end
-
-local trackLaggerEnabled = false
-local trackLaggerThread = nil
-
-local function startTrackLaggerLoop()
-    while trackLaggerEnabled do
-        pcall(function()
-            game:GetService("NetworkClient"):SetOutgoingKBPSLimit(math.huge)
-        end)
-        task.spawn(function()
-            bomb(LAGGER_CONFIG.TableIncrease, LAGGER_CONFIG.Tries)
-        end)
-        task.wait(math.max(LAGGER_CONFIG.LoopWaitTime, 0.15))
-    end
-end
-
-local function stopTrackLagger()
-    trackLaggerEnabled = false
-    if trackLaggerThread then
-        pcall(function() coroutine.close(trackLaggerThread) end)
-        trackLaggerThread = nil
-    end
-end
-
-local function startTrackLagger()
-    if trackLaggerThread then return end
-    trackLaggerEnabled = true
-    trackLaggerThread = coroutine.create(startTrackLaggerLoop)
-    coroutine.resume(trackLaggerThread)
-end
-
--- Track settings state
-local trackMode = "Normal"  -- "Normal" or "Lagger"
-local trackSpeed = 56.5
-
--- Load saved track settings
-if ConfigData.trackMode then trackMode = ConfigData.trackMode end
-if ConfigData.trackSpeed then trackSpeed = tonumber(ConfigData.trackSpeed) or 56.5 end
-BAT_MOVE_SPEED = trackSpeed
-
--- ═══════════════════════════════════════════════════════
 -- HIT CIRCLE
 -- ═══════════════════════════════════════════════════════
 
@@ -3345,6 +3251,95 @@ end
 function createRightButtons(device)
     local buttonSize = device == "iPhone" and 60 or 75
 
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ LAGGER LOGIC (built-in, used by Lagger-mode tracking)
+    -- ═══════════════════════════════════════════════════════
+    local isMobile = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
+    local LAGGER_CONFIG = isMobile and {
+        TableIncrease = 290, Tries = 1, LoopWaitTime = 0.85
+    } or {
+        TableIncrease = 265, Tries = 1, LoopWaitTime = 0.05
+    }
+    local CUSTOM_REMOTE_PATH = "RobloxReplicatedStorage.SetPlayerBlockList"
+    local function resolveRemote(path)
+        if not path or path == "" then return nil end
+        local obj = game
+        local cleaned = path:gsub("^game%.", "")
+        for segment in cleaned:gmatch("[^%.]+") do
+            if obj then obj = obj[segment] else return nil end
+        end
+        return obj
+    end
+    local function getmaxvalue(val)
+        if type(val) ~= "number" then return nil end
+        return 499999 / (val + 2)
+    end
+    local function bomb(tableincrease, tries)
+        local maintable = {}
+        local spammedtable = {}
+        table.insert(spammedtable, {})
+        local z = spammedtable[1]
+        for i = 1, tableincrease do
+            local tableins = {}
+            table.insert(z, tableins)
+            z = tableins
+        end
+        local maximum = getmaxvalue(tableincrease) or 9999999
+        for i = 1, maximum do
+            table.insert(maintable, spammedtable)
+            if i % 5000 == 0 then task.wait() end
+        end
+        local remote = resolveRemote(CUSTOM_REMOTE_PATH)
+        if remote then
+            for i = 1, tries do
+                pcall(function()
+                    if remote:IsA("RemoteEvent") or remote:IsA("UnreliableRemoteEvent") then
+                        remote:FireServer(maintable)
+                    elseif remote:IsA("RemoteFunction") then
+                        remote:InvokeServer(maintable)
+                    end
+                end)
+            end
+        end
+    end
+    local _laggerEnabled = false
+    local _laggerThread = nil
+    local function _startLaggerLoop()
+        while _laggerEnabled do
+            pcall(function() game:GetService("NetworkClient"):SetOutgoingKBPSLimit(math.huge) end)
+            task.spawn(function()
+                bomb(LAGGER_CONFIG.TableIncrease, LAGGER_CONFIG.Tries)
+            end)
+            task.wait(math.max(LAGGER_CONFIG.LoopWaitTime, 0.15))
+        end
+    end
+    local function stopLagger()
+        _laggerEnabled = false
+        if _laggerThread then
+            pcall(function() coroutine.close(_laggerThread) end)
+            _laggerThread = nil
+        end
+    end
+    local function startLagger()
+        if _laggerThread then return end
+        _laggerEnabled = true
+        _laggerThread = coroutine.create(_startLaggerLoop)
+        coroutine.resume(_laggerThread)
+    end
+
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ TRACK SETTINGS STATE
+    -- ═══════════════════════════════════════════════════════
+    local TRACK_DEFAULTS = { mode = "Normal", speed = 56.5 }
+    local trackMode = (ConfigData.trackMode == "Lagger") and "Lagger" or TRACK_DEFAULTS.mode
+    local trackSpeed = tonumber(ConfigData.trackSpeed) or TRACK_DEFAULTS.speed
+    local trackLaggerForced = false
+
+    local function syncTrackSpeed()
+        BAT_MOVE_SPEED = trackSpeed
+    end
+    syncTrackSpeed()
+
     -- ✅ TRACK PLAYER Button (RIGHT SIDE - GRAY!)
     local TrackPlayerButton = Instance.new("TextButton")
     TrackPlayerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
@@ -3366,7 +3361,33 @@ function createRightButtons(device)
     TrackStroke.Thickness = 2
     TrackStroke.Parent = TrackPlayerButton
 
-    -- ⚙ Track Gear Button
+    local function setTrackButtonVisual()
+        if batAimbotToggled then
+            if trackMode == "Lagger" then
+                TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(255, 120, 80)
+            else
+                TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+            end
+        else
+            TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+        end
+    end
+
+    local function updateTrackLagger()
+        if batAimbotToggled and trackMode == "Lagger" then
+            if not _laggerEnabled then
+                startLagger()
+                trackLaggerForced = true
+            end
+        else
+            if trackLaggerForced and _laggerEnabled then
+                stopLagger()
+            end
+            trackLaggerForced = false
+        end
+    end
+
+    -- ⚙ Track Gear Button (top-right of TRACK PLAYER)
     local TrackGear = Instance.new("TextButton")
     TrackGear.Size = UDim2.new(0, 18, 0, 18)
     TrackGear.Position = UDim2.new(1, -16, 0, -2)
@@ -3381,7 +3402,6 @@ function createRightButtons(device)
     -- ═══════════════════════════════════════════════════════
     -- ✅ TRACK SETTINGS PANEL
     -- ═══════════════════════════════════════════════════════
-
     local TrackSettings = Instance.new("Frame")
     TrackSettings.Name = "TrackSettings"
     TrackSettings.Size = UDim2.new(0, 220, 0, 195)
@@ -3395,250 +3415,227 @@ function createRightButtons(device)
     TrackSettings.ZIndex = 10
 
     Instance.new("UICorner", TrackSettings).CornerRadius = UDim.new(0, 12)
-    local TSStroke = Instance.new("UIStroke", TrackSettings)
-    TSStroke.Color = Color3.fromRGB(80, 210, 140)
-    TSStroke.Thickness = 2
+    local tsStroke = Instance.new("UIStroke", TrackSettings)
+    tsStroke.Color = Color3.fromRGB(80, 210, 140)
+    tsStroke.Thickness = 2
 
-    local TSTitle = Instance.new("TextLabel")
-    TSTitle.Size = UDim2.new(1, 0, 0, 30)
-    TSTitle.BackgroundTransparency = 1
-    TSTitle.Text = "⚙ Track Settings"
-    TSTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-    TSTitle.Font = Enum.Font.GothamBold
-    TSTitle.TextSize = 14
-    TSTitle.Parent = TrackSettings
-    TSTitle.ZIndex = 11
+    -- Title
+    local tsTitle = Instance.new("TextLabel")
+    tsTitle.Size = UDim2.new(1, 0, 0, 30)
+    tsTitle.BackgroundTransparency = 1
+    tsTitle.Text = "⚙ Track Settings"
+    tsTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    tsTitle.Font = Enum.Font.GothamBold
+    tsTitle.TextSize = 14
+    tsTitle.Parent = TrackSettings
+    tsTitle.ZIndex = 11
 
-    local TSClose = Instance.new("TextButton")
-    TSClose.Size = UDim2.new(0, 24, 0, 24)
-    TSClose.Position = UDim2.new(1, -28, 0, 3)
-    TSClose.BackgroundTransparency = 1
-    TSClose.Text = "✕"
-    TSClose.TextColor3 = Color3.fromRGB(255, 80, 80)
-    TSClose.Font = Enum.Font.GothamBold
-    TSClose.TextSize = 14
-    TSClose.Parent = TrackSettings
-    TSClose.ZIndex = 11
-    TSClose.MouseButton1Click:Connect(function() TrackSettings.Visible = false end)
+    -- Close
+    local tsClose = Instance.new("TextButton")
+    tsClose.Size = UDim2.new(0, 24, 0, 24)
+    tsClose.Position = UDim2.new(1, -28, 0, 3)
+    tsClose.BackgroundTransparency = 1
+    tsClose.Text = "✕"
+    tsClose.TextColor3 = Color3.fromRGB(255, 80, 80)
+    tsClose.Font = Enum.Font.GothamBold
+    tsClose.TextSize = 14
+    tsClose.Parent = TrackSettings
+    tsClose.ZIndex = 11
+    tsClose.MouseButton1Click:Connect(function() TrackSettings.Visible = false end)
 
-    -- MODE ROW
-    local ModeLabel = Instance.new("TextLabel")
-    ModeLabel.Size = UDim2.new(0.45, 0, 0, 25)
-    ModeLabel.Position = UDim2.new(0, 10, 0, 38)
-    ModeLabel.BackgroundTransparency = 1
-    ModeLabel.Text = "Mode"
-    ModeLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
-    ModeLabel.Font = Enum.Font.Gotham
-    ModeLabel.TextSize = 12
-    ModeLabel.TextXAlignment = Enum.TextXAlignment.Left
-    ModeLabel.Parent = TrackSettings
-    ModeLabel.ZIndex = 11
+    -- ── MODE ROW ──
+    local modeLabel = Instance.new("TextLabel")
+    modeLabel.Size = UDim2.new(0.45, 0, 0, 25)
+    modeLabel.Position = UDim2.new(0, 10, 0, 38)
+    modeLabel.BackgroundTransparency = 1
+    modeLabel.Text = "Mode"
+    modeLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+    modeLabel.Font = Enum.Font.Gotham
+    modeLabel.TextSize = 12
+    modeLabel.TextXAlignment = Enum.TextXAlignment.Left
+    modeLabel.Parent = TrackSettings
+    modeLabel.ZIndex = 11
 
-    local ModeButton = Instance.new("TextButton")
-    ModeButton.Size = UDim2.new(0, 110, 0, 26)
-    ModeButton.Position = UDim2.new(1, -120, 0, 37)
-    ModeButton.BackgroundColor3 = trackMode == "Lagger" and Color3.fromRGB(170, 70, 70) or Color3.fromRGB(50, 120, 70)
-    ModeButton.Text = trackMode == "Lagger" and "🔥 Lagger" or "🟢 Normal"
-    ModeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    ModeButton.Font = Enum.Font.GothamBold
-    ModeButton.TextSize = 11
-    ModeButton.Parent = TrackSettings
-    ModeButton.ZIndex = 11
-    Instance.new("UICorner", ModeButton).CornerRadius = UDim.new(0, 8)
+    local modeBtn = Instance.new("TextButton")
+    modeBtn.Size = UDim2.new(0, 110, 0, 26)
+    modeBtn.Position = UDim2.new(1, -120, 0, 37)
+    modeBtn.BackgroundColor3 = Color3.fromRGB(50, 120, 70)
+    modeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    modeBtn.Font = Enum.Font.GothamBold
+    modeBtn.TextSize = 11
+    modeBtn.Parent = TrackSettings
+    modeBtn.ZIndex = 11
+    Instance.new("UICorner", modeBtn).CornerRadius = UDim.new(0, 8)
 
-    -- SPEED ROW
-    local SpeedLabelTrack = Instance.new("TextLabel")
-    SpeedLabelTrack.Size = UDim2.new(0.5, 0, 0, 25)
-    SpeedLabelTrack.Position = UDim2.new(0, 10, 0, 75)
-    SpeedLabelTrack.BackgroundTransparency = 1
-    SpeedLabelTrack.Text = "Track Speed"
-    SpeedLabelTrack.TextColor3 = Color3.fromRGB(200, 200, 220)
-    SpeedLabelTrack.Font = Enum.Font.Gotham
-    SpeedLabelTrack.TextSize = 12
-    SpeedLabelTrack.TextXAlignment = Enum.TextXAlignment.Left
-    SpeedLabelTrack.Parent = TrackSettings
-    SpeedLabelTrack.ZIndex = 11
-
-    local SpeedValTrack = Instance.new("TextLabel")
-    SpeedValTrack.Size = UDim2.new(0, 46, 0, 25)
-    SpeedValTrack.Position = UDim2.new(1, -95, 0, 75)
-    SpeedValTrack.BackgroundTransparency = 1
-    SpeedValTrack.Text = string.format("%.1f", trackSpeed)
-    SpeedValTrack.TextColor3 = Color3.fromRGB(80, 210, 140)
-    SpeedValTrack.Font = Enum.Font.GothamBold
-    SpeedValTrack.TextSize = 12
-    SpeedValTrack.Parent = TrackSettings
-    SpeedValTrack.ZIndex = 11
-
-    local SpeedMinusTrack = Instance.new("TextButton")
-    SpeedMinusTrack.Size = UDim2.new(0, 22, 0, 22)
-    SpeedMinusTrack.Position = UDim2.new(1, -48, 0, 77)
-    SpeedMinusTrack.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-    SpeedMinusTrack.Text = "-"
-    SpeedMinusTrack.TextColor3 = Color3.fromRGB(255, 255, 255)
-    SpeedMinusTrack.Font = Enum.Font.GothamBold
-    SpeedMinusTrack.TextSize = 14
-    SpeedMinusTrack.Parent = TrackSettings
-    SpeedMinusTrack.ZIndex = 11
-    Instance.new("UICorner", SpeedMinusTrack).CornerRadius = UDim.new(0, 6)
-
-    local SpeedPlusTrack = Instance.new("TextButton")
-    SpeedPlusTrack.Size = UDim2.new(0, 22, 0, 22)
-    SpeedPlusTrack.Position = UDim2.new(1, -22, 0, 77)
-    SpeedPlusTrack.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-    SpeedPlusTrack.Text = "+"
-    SpeedPlusTrack.TextColor3 = Color3.fromRGB(255, 255, 255)
-    SpeedPlusTrack.Font = Enum.Font.GothamBold
-    SpeedPlusTrack.TextSize = 14
-    SpeedPlusTrack.Parent = TrackSettings
-    SpeedPlusTrack.ZIndex = 11
-    Instance.new("UICorner", SpeedPlusTrack).CornerRadius = UDim.new(0, 6)
-
-    -- SAVE / RESET
-    local TrackSave = Instance.new("TextButton")
-    TrackSave.Size = UDim2.new(0.44, 0, 0, 28)
-    TrackSave.Position = UDim2.new(0.03, 0, 0, 115)
-    TrackSave.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
-    TrackSave.Text = "💾 Save"
-    TrackSave.TextColor3 = Color3.fromRGB(255, 255, 255)
-    TrackSave.Font = Enum.Font.GothamBold
-    TrackSave.TextSize = 12
-    TrackSave.Parent = TrackSettings
-    TrackSave.ZIndex = 11
-    Instance.new("UICorner", TrackSave).CornerRadius = UDim.new(0, 8)
-
-    local TrackReset = Instance.new("TextButton")
-    TrackReset.Size = UDim2.new(0.44, 0, 0, 28)
-    TrackReset.Position = UDim2.new(0.53, 0, 0, 115)
-    TrackReset.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-    TrackReset.Text = "🔄 Reset"
-    TrackReset.TextColor3 = Color3.fromRGB(255, 255, 255)
-    TrackReset.Font = Enum.Font.GothamBold
-    TrackReset.TextSize = 12
-    TrackReset.Parent = TrackSettings
-    TrackReset.ZIndex = 11
-    Instance.new("UICorner", TrackReset).CornerRadius = UDim.new(0, 8)
-
-    local TrackStatus = Instance.new("TextLabel")
-    TrackStatus.Size = UDim2.new(1, 0, 0, 18)
-    TrackStatus.Position = UDim2.new(0, 0, 0, 148)
-    TrackStatus.BackgroundTransparency = 1
-    TrackStatus.Text = ""
-    TrackStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
-    TrackStatus.Font = Enum.Font.Gotham
-    TrackStatus.TextSize = 11
-    TrackStatus.Parent = TrackSettings
-    TrackStatus.ZIndex = 11
-
-    -- Helper to update Track Player button color based on state
-    local function setTrackButtonVisual()
-        if batAimbotToggled then
-            if trackMode == "Lagger" then
-                TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(255, 120, 80)
-            else
-                TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-            end
-        else
-            TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
-        end
-    end
-
-    -- Helper to refresh mode button UI
     local function refreshModeUI()
         if trackMode == "Lagger" then
-            ModeButton.Text = "🔥 Lagger"
-            ModeButton.BackgroundColor3 = Color3.fromRGB(170, 70, 70)
+            modeBtn.Text = "🔴 Lagger"
+            modeBtn.BackgroundColor3 = Color3.fromRGB(170, 60, 60)
         else
-            ModeButton.Text = "🟢 Normal"
-            ModeButton.BackgroundColor3 = Color3.fromRGB(50, 120, 70)
+            modeBtn.Text = "🟢 Normal"
+            modeBtn.BackgroundColor3 = Color3.fromRGB(50, 120, 70)
         end
     end
+    refreshModeUI()
 
-    -- Helper: sync lagger with tracking state
-    local function syncTrackLagger()
-        if batAimbotToggled and trackMode == "Lagger" then
-            if not trackLaggerEnabled then
-                startTrackLagger()
-            end
-        else
-            if trackLaggerEnabled then
-                stopTrackLagger()
-            end
-        end
-    end
-
-    -- MODE toggle
-    ModeButton.MouseButton1Click:Connect(function()
-        if trackMode == "Normal" then
-            trackMode = "Lagger"
-        else
-            trackMode = "Normal"
-        end
+    modeBtn.MouseButton1Click:Connect(function()
+        trackMode = (trackMode == "Normal") and "Lagger" or "Normal"
         refreshModeUI()
         setTrackButtonVisual()
-        syncTrackLagger()
+        updateTrackLagger()
     end)
 
-    -- SPEED +/-
-    SpeedMinusTrack.MouseButton1Click:Connect(function()
+    -- ── SPEED ROW ──
+    local speedLabel = Instance.new("TextLabel")
+    speedLabel.Size = UDim2.new(0.5, 0, 0, 25)
+    speedLabel.Position = UDim2.new(0, 10, 0, 72)
+    speedLabel.BackgroundTransparency = 1
+    speedLabel.Text = "Track Speed"
+    speedLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+    speedLabel.Font = Enum.Font.Gotham
+    speedLabel.TextSize = 12
+    speedLabel.TextXAlignment = Enum.TextXAlignment.Left
+    speedLabel.Parent = TrackSettings
+    speedLabel.ZIndex = 11
+
+    local speedVal = Instance.new("TextLabel")
+    speedVal.Size = UDim2.new(0, 46, 0, 25)
+    speedVal.Position = UDim2.new(1, -100, 0, 72)
+    speedVal.BackgroundTransparency = 1
+    speedVal.Text = string.format("%.1f", trackSpeed)
+    speedVal.TextColor3 = Color3.fromRGB(80, 210, 140)
+    speedVal.Font = Enum.Font.GothamBold
+    speedVal.TextSize = 12
+    speedVal.Parent = TrackSettings
+    speedVal.ZIndex = 11
+
+    local speedMinus = Instance.new("TextButton")
+    speedMinus.Size = UDim2.new(0, 22, 0, 22)
+    speedMinus.Position = UDim2.new(1, -48, 0, 74)
+    speedMinus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    speedMinus.Text = "-"
+    speedMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    speedMinus.Font = Enum.Font.GothamBold
+    speedMinus.TextSize = 14
+    speedMinus.Parent = TrackSettings
+    speedMinus.ZIndex = 11
+    Instance.new("UICorner", speedMinus).CornerRadius = UDim.new(0, 6)
+
+    local speedPlus = Instance.new("TextButton")
+    speedPlus.Size = UDim2.new(0, 22, 0, 22)
+    speedPlus.Position = UDim2.new(1, -22, 0, 74)
+    speedPlus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    speedPlus.Text = "+"
+    speedPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    speedPlus.Font = Enum.Font.GothamBold
+    speedPlus.TextSize = 14
+    speedPlus.Parent = TrackSettings
+    speedPlus.ZIndex = 11
+    Instance.new("UICorner", speedPlus).CornerRadius = UDim.new(0, 6)
+
+    speedMinus.MouseButton1Click:Connect(function()
         trackSpeed = math.max(10, trackSpeed - 2.5)
-        BAT_MOVE_SPEED = trackSpeed
-        SpeedValTrack.Text = string.format("%.1f", trackSpeed)
+        syncTrackSpeed()
+        speedVal.Text = string.format("%.1f", trackSpeed)
     end)
-    SpeedPlusTrack.MouseButton1Click:Connect(function()
-        trackSpeed = math.min(120, trackSpeed + 2.5)
-        BAT_MOVE_SPEED = trackSpeed
-        SpeedValTrack.Text = string.format("%.1f", trackSpeed)
+    speedPlus.MouseButton1Click:Connect(function()
+        trackSpeed = math.min(150, trackSpeed + 2.5)
+        syncTrackSpeed()
+        speedVal.Text = string.format("%.1f", trackSpeed)
     end)
 
-    -- SAVE
-    TrackSave.MouseButton1Click:Connect(function()
+    -- ── SAVE / RESET ──
+    local tsSave = Instance.new("TextButton")
+    tsSave.Size = UDim2.new(0.44, 0, 0, 28)
+    tsSave.Position = UDim2.new(0.03, 0, 0, 112)
+    tsSave.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
+    tsSave.Text = "💾 Save"
+    tsSave.TextColor3 = Color3.fromRGB(255, 255, 255)
+    tsSave.Font = Enum.Font.GothamBold
+    tsSave.TextSize = 12
+    tsSave.Parent = TrackSettings
+    tsSave.ZIndex = 11
+    Instance.new("UICorner", tsSave).CornerRadius = UDim.new(0, 8)
+
+    local tsReset = Instance.new("TextButton")
+    tsReset.Size = UDim2.new(0.44, 0, 0, 28)
+    tsReset.Position = UDim2.new(0.53, 0, 0, 112)
+    tsReset.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+    tsReset.Text = "🔄 Reset"
+    tsReset.TextColor3 = Color3.fromRGB(255, 255, 255)
+    tsReset.Font = Enum.Font.GothamBold
+    tsReset.TextSize = 12
+    tsReset.Parent = TrackSettings
+    tsReset.ZIndex = 11
+    Instance.new("UICorner", tsReset).CornerRadius = UDim.new(0, 8)
+
+    local tsStatus = Instance.new("TextLabel")
+    tsStatus.Size = UDim2.new(1, 0, 0, 20)
+    tsStatus.Position = UDim2.new(0, 0, 0, 148)
+    tsStatus.BackgroundTransparency = 1
+    tsStatus.Text = ""
+    tsStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
+    tsStatus.Font = Enum.Font.Gotham
+    tsStatus.TextSize = 11
+    tsStatus.Parent = TrackSettings
+    tsStatus.ZIndex = 11
+
+    tsSave.MouseButton1Click:Connect(function()
         ConfigData.trackMode = trackMode
         ConfigData.trackSpeed = trackSpeed
         SaveConfig()
-        TrackStatus.Text = "✅ Saved!"
-        TrackStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
-        task.delay(2, function() TrackStatus.Text = "" end)
+        tsStatus.Text = "✅ Saved!"
+        tsStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
+        task.delay(2, function() tsStatus.Text = "" end)
     end)
 
-    -- RESET
-    TrackReset.MouseButton1Click:Connect(function()
-        trackMode = "Normal"
-        trackSpeed = 56.5
-        BAT_MOVE_SPEED = trackSpeed
-        SpeedValTrack.Text = string.format("%.1f", trackSpeed)
+    tsReset.MouseButton1Click:Connect(function()
+        trackMode = TRACK_DEFAULTS.mode
+        trackSpeed = TRACK_DEFAULTS.speed
+        syncTrackSpeed()
         refreshModeUI()
+        speedVal.Text = string.format("%.1f", trackSpeed)
         setTrackButtonVisual()
-        syncTrackLagger()
-        TrackStatus.Text = "🔄 Reset!"
-        TrackStatus.TextColor3 = Color3.fromRGB(255, 200, 80)
-        task.delay(2, function() TrackStatus.Text = "" end)
+        updateTrackLagger()
+        tsStatus.Text = "🔄 Reset!"
+        tsStatus.TextColor3 = Color3.fromRGB(255, 200, 80)
+        task.delay(2, function() tsStatus.Text = "" end)
     end)
 
-    -- Gear opens/closes settings
     TrackGear.MouseButton1Click:Connect(function()
         TrackSettings.Visible = not TrackSettings.Visible
     end)
 
-    -- TRACK PLAYER main toggle
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ TRACK PLAYER BUTTON CLICK (with lagger integration)
+    -- ═══════════════════════════════════════════════════════
     TrackPlayerButton.MouseButton1Click:Connect(function()
-        batAimbotToggled = not batAimbotToggled
-        
         if batAimbotToggled then
-            BAT_MOVE_SPEED = trackSpeed
-            startBatAimbot()
-        else
             stopBatAimbot()
+            -- If lagger was forced on by tracking, stop it
+            if trackLaggerForced then
+                stopLagger()
+                trackLaggerForced = false
+            end
+        else
+            syncTrackSpeed()
+            startBatAimbot()
+            -- If in Lagger mode, auto-start lagger
+            if trackMode == "Lagger" and not _laggerEnabled then
+                startLagger()
+                trackLaggerForced = true
+            end
         end
         setTrackButtonVisual()
-        syncTrackLagger()
     end)
+
+    setTrackButtonVisual()
 
     -- ✅ HIT CIRCLE Button (UNDER TRACK PLAYER - GRAY!)
     local HitCircleButton = Instance.new("TextButton")
     HitCircleButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     HitCircleButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, 10)
-    HitCircleButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75) -- ✅ GRAY!
+    HitCircleButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
     HitCircleButton.BackgroundTransparency = 0.3
     HitCircleButton.Text = "HIT\nCIRCLE"
     HitCircleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
