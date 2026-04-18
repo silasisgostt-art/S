@@ -1,14 +1,14 @@
 -- TIM CHEESE DUELS
 
 --[[
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+══════════════════════════════════════════════════════════════
                 TIM CHEESE DUELS
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-âœ… Speed, Unwalk, Inf Jump, Ragdoll TP, Drop Brainrot
-âœ… FPS, Optimizer, Hitbox, auto buttons, right-side controls
-âœ… Draggable small GUI buttons
-âœ… Config auto-loads on join
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+══════════════════════════════════════════════════════════════
+✅ Speed, Unwalk, Inf Jump, Ragdoll TP, Drop Brainrot
+✅ FPS, Optimizer, Hitbox, auto buttons, right-side controls
+✅ Draggable small GUI buttons
+✅ Config auto-loads on join
+══════════════════════════════════════════════════════════════
 ]]
 
 repeat task.wait() until game:IsLoaded()
@@ -37,9 +37,9 @@ end
 if player.Character then setupCharacter(player.Character) end
 player.CharacterAdded:Connect(setupCharacter)
 
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
 -- CONFIG SAVE/LOAD SYSTEM (AUTO-LOADS!)
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
 
 local CONFIG_FILE = "timcheeseduels_config.json"
 
@@ -80,14 +80,14 @@ local function SaveConfig()
             writefile(CONFIG_FILE, HttpService:JSONEncode(ConfigData))
         end)
         if success then
-            print("[TIM CHEESE DUELS] âœ… Config saved!")
+            print("[TIM CHEESE DUELS] ✅ Config saved!")
             return true
         else
-            warn("[TIM CHEESE DUELS] âŒ Save failed:", err)
+            warn("[TIM CHEESE DUELS] ❌ Save failed:", err)
             return false
         end
     else
-        warn("[TIM CHEESE DUELS] âš ï¸ writefile not available")
+        warn("[TIM CHEESE DUELS] ⚠️ writefile not available")
         return false
     end
 end
@@ -100,20 +100,20 @@ local function LoadConfig()
         if success and data then
             ConfigData = data
             buttonsLocked = ConfigData.buttonsLocked or false
-            print("[TIM CHEESE DUELS] âœ… Config loaded!")
+            print("[TIM CHEESE DUELS] ✅ Config loaded!")
             return true
         end
     end
     return false
 end
 
--- âœ… LOAD CONFIG ON START!
+-- ✅ LOAD CONFIG ON START!
 LoadConfig()
 buttonsLocked = ConfigData.buttonsLocked or false
 
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
 -- SPEED BOOSTER (EXACT 57.9/29.6/25.8 - CONNECTED!)
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
 
 SpeedBooster = {
     Enabled = ConfigData.speedEnabled or false,
@@ -173,9 +173,9 @@ local function stopSpeedBooster()
     if SpeedBooster.JumpConn then SpeedBooster.JumpConn:Disconnect() SpeedBooster.JumpConn = nil end
 end
 
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
 -- AUTO PLAY PATH SYSTEM (EXACT FROM YESTERDAY!)
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
 
 local pathActive = false
 local lastFlatVel = Vector3.zero
@@ -348,9 +348,9 @@ local function stopStealPath()
     if hrpLocal then hrpLocal.AssemblyLinearVelocity = Vector3.zero end
 end
 
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
 -- UNWALK
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
 
 local UnwalkEnabled = false
 local savedAnimate = nil
@@ -380,9 +380,9 @@ local function stopUnwalk()
     end
 end
 
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
 -- SPIN BOT
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
 
 local SpinBotEnabled = false
 local spinBAV = nil
@@ -421,9 +421,9 @@ local function stopSpinBot()
     cleanupSpinBot()
 end
 
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
 -- INF JUMP
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
 
 local InfJumpEnabled = false
 local INF_JUMP_POWER = 50
@@ -457,9 +457,9 @@ local function stopInfJump()
     end
 end
 
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
--- âœ… FOV SYSTEM (MAX 120 - ACTUALLY WORKS NOW!)
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
+-- ✅ FOV SYSTEM (MAX 120 - ACTUALLY WORKS NOW!)
+-- ═══════════════════════════════════════════════════════
 
 fovValue = ConfigData.fovValue or 120
 fovEnabled = ConfigData.fovEnabled or false
@@ -468,10 +468,10 @@ local camera = workspace.CurrentCamera
 
 local function updateFOV()
     if fovEnabled then
-        -- âœ… DIRECT CAMERA FOV UPDATE - THIS ACTUALLY WORKS!
+        -- ✅ DIRECT CAMERA FOV UPDATE - THIS ACTUALLY WORKS!
         camera.FieldOfView = fovValue
         
-        -- âœ… LOCK IT IN PLACE WITH RENDERSTEP
+        -- ✅ LOCK IT IN PLACE WITH RENDERSTEP
         if not fovConnection then
             fovConnection = RunService.RenderStepped:Connect(function()
                 if fovEnabled and camera then
@@ -480,7 +480,7 @@ local function updateFOV()
             end)
         end
     else
-        -- âœ… DISCONNECT AND RESET
+        -- ✅ DISCONNECT AND RESET
         if fovConnection then 
             fovConnection:Disconnect() 
             fovConnection = nil 
@@ -489,9 +489,9 @@ local function updateFOV()
     end
 end
 
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
 -- INSTA STEAL (ALWAYS ON - 0.2s DURATION)
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
 
 InstaSteal = {
     Radius = ConfigData.stealRadius or 9,
@@ -695,7 +695,7 @@ local function executeInternalStealAsync(prompt)
         end
         
         local startTime = tick()
-        local duration = 0.2 -- âœ… 0.2 seconds!
+        local duration = 0.2 -- ✅ 0.2 seconds!
         
         while tick() - startTime < duration do
             local progress = (tick() - startTime) / duration
@@ -754,11 +754,11 @@ local function autoStealLoop()
 end
 
 initializeScanner()
-autoStealLoop() -- âœ… STARTS IMMEDIATELY!
+autoStealLoop() -- ✅ STARTS IMMEDIATELY!
 
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
 -- FPS BOOSTER, OPTIMIZER, HITBOX, ANTI DEATH/RAGDOLL, FLOAT
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
 
 local fpsBoosterActive = false
 
@@ -960,9 +960,9 @@ local function disableAntiRagdoll()
     AntiRagdollConns = {}
 end
 
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
 -- RAGDOLL TP
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
 
 local RAGDOLL_COORDS = {
     right = {
@@ -1059,9 +1059,9 @@ if player.Character then
     RagdollTP.currentHumanoid = player.Character:FindFirstChildOfClass("Humanoid")
 end
 
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
 -- DROP BRAINROT
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
 
 local dropBusy = false
 local FLOAT_DROP_HEIGHT = 20
@@ -1157,9 +1157,9 @@ local function stopFloat()
     end
 end
 
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
 -- TRACK PLAYER (BAT AIMBOT)
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
 
 -- IMPROVED BAT AIMBOT (restored original follow, better TP up/down prediction)
 local batAimbotToggled = false
@@ -1305,9 +1305,9 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
 -- HIT CIRCLE
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
 
 local hitCircleEnabled = false
 local hitCircleConn = nil
@@ -1374,9 +1374,9 @@ local function stopHitCircle()
     end
 end
 
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
 -- GUI SIZES
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
 
 local selectedDevice = nil
 local GUI_SIZES = {
@@ -1385,9 +1385,9 @@ local GUI_SIZES = {
     iPhone = {Width = 260, Height = 360}
 }
 
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
 -- MAIN SCREENGUI
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "TimCheeseDuelsGUI"
@@ -1520,9 +1520,9 @@ task.spawn(function()
     end
 end)
 
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
--- âœ… SMALL GUI CREATOR WITH GREEN DOT!
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
+-- ✅ SMALL GUI CREATOR WITH GREEN DOT!
+-- ═══════════════════════════════════════════════════════
 
 local SmallGUIInstances = {}
 
@@ -1536,7 +1536,7 @@ local function createSmallGUI(name, yPosition)
     SmallGUI.BorderSizePixel = 0
     SmallGUI.Visible = false
     SmallGUI.Active = true
-    SmallGUI.Draggable = true  -- âœ… DRAGGABLE!
+    SmallGUI.Draggable = true  -- ✅ DRAGGABLE!
     SmallGUI.Parent = ScreenGui
 
     local Corner = Instance.new("UICorner")
@@ -1574,7 +1574,7 @@ local function createSmallGUI(name, yPosition)
         pcall(function() WaveGrad.Rotation = (WaveGrad.Rotation + 140 * dt) % 360 end)
     end)
 
-    -- âœ… GREEN DOT!
+    -- ✅ GREEN DOT!
     local GreenDot = Instance.new("Frame")
     GreenDot.Size = UDim2.new(0, 7, 0, 7)
     GreenDot.Position = UDim2.new(0, 5, 0.5, -3)
@@ -1597,12 +1597,12 @@ local function createSmallGUI(name, yPosition)
     Label.TextXAlignment = Enum.TextXAlignment.Left
     Label.Parent = SmallGUI
 
-    -- âœ… CLICK BUTTON (smaller, on right side only - doesn't block dragging!)
+    -- ✅ CLICK BUTTON (smaller, on right side only - doesn't block dragging!)
     local Button = Instance.new("TextButton")
     Button.Size = UDim2.new(0, 20, 1, 0)
     Button.Position = UDim2.new(1, -20, 0, 0)
     Button.BackgroundTransparency = 1
-    Button.Text = "âš¡"
+    Button.Text = "⚡"
     Button.TextColor3 = Color3.fromRGB(220, 220, 220)
     Button.Font = Enum.Font.GothamBold
     Button.TextSize = 12 -- Smaller icon
@@ -1671,16 +1671,16 @@ local function refreshSmallButtonPositions()
     end
 end
 
--- âœ… CREATE ALL SMALL GUIs WITH GREEN DOTS!
+-- ✅ CREATE ALL SMALL GUIs WITH GREEN DOTS!
 local SmallSpeedGUI, SmallSpeedButton, SpeedDot = createSmallGUI("Speed", 100)
 local SmallUnwalkGUI, SmallUnwalkButton, UnwalkDot = createSmallGUI("Unwalk", 145)
 local SmallSpinBotGUI, SmallSpinBotButton, SpinDot = createSmallGUI("Spin Bot", 190)
 local SmallInfJumpGUI, SmallInfJumpButton, InfJumpDot = createSmallGUI("Inf Jump", 235)
 local SmallFloatGUI, SmallFloatButton, FloatDot = createSmallGUI("Float Up", 280)
 local SmallFOVGUI, SmallFOVButton, FOVDot = createSmallGUI("FOV", 325)
-local SmallAntiRagGUI, SmallAntiRagButton, AntiRagDot = createSmallGUI("Anti Ragdoll", 370) -- âœ… Standalone!
-local SmallRagdollTPGUI, SmallRagdollTPButton, RagdollTPDot = createSmallGUI("Ragdoll TP", 415) -- âœ… NEW!
-local SmallDropGUI, SmallDropButton, DropDot = createSmallGUI("Drop Brainrot", 460) -- âœ… NEW!
+local SmallAntiRagGUI, SmallAntiRagButton, AntiRagDot = createSmallGUI("Anti Ragdoll", 370) -- ✅ Standalone!
+local SmallRagdollTPGUI, SmallRagdollTPButton, RagdollTPDot = createSmallGUI("Ragdoll TP", 415) -- ✅ NEW!
+local SmallDropGUI, SmallDropButton, DropDot = createSmallGUI("Drop Brainrot", 460) -- ✅ NEW!
 SmallTPDownGUI, SmallTPDownButton, TPDownDot = createSmallGUI("TP Down", 505)
 SmallTPUpGUI, SmallTPUpButton, TPUpDot = createSmallGUI("TP Up", 550)
 
@@ -1840,23 +1840,23 @@ end)
 
 updateSpinBotScreenState()
 
--- âœ… SPEED SMALL GUI TOGGLE
+-- ✅ SPEED SMALL GUI TOGGLE
 SmallSpeedButton.MouseButton1Click:Connect(function()
     SpeedBooster.Enabled = not SpeedBooster.Enabled
     
     if SpeedBooster.Enabled then
         SmallSpeedGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        SpeedDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0) -- âœ… GREEN DOT!
+        SpeedDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0) -- ✅ GREEN DOT!
         startSpeedBooster()
     else
         SmallSpeedGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        SpeedDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100) -- âœ… GRAY DOT!
+        SpeedDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100) -- ✅ GRAY DOT!
         stopSpeedBooster()
     end
     SaveConfig()
 end)
 
--- âœ… UNWALK SMALL GUI TOGGLE
+-- ✅ UNWALK SMALL GUI TOGGLE
 SmallUnwalkButton.MouseButton1Click:Connect(function()
     UnwalkEnabled = not UnwalkEnabled
     
@@ -1871,7 +1871,7 @@ SmallUnwalkButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- âœ… SPIN BOT SMALL GUI TOGGLE
+-- ✅ SPIN BOT SMALL GUI TOGGLE
 SmallSpinBotButton.MouseButton1Click:Connect(function()
     SpinBotEnabled = not SpinBotEnabled
     if SpinBotEnabled then
@@ -1885,13 +1885,13 @@ SmallSpinBotButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- âœ… TP DOWN SMALL GUI BUTTON
+-- ✅ TP DOWN SMALL GUI BUTTON
 SmallTPDownButton.MouseButton1Click:Connect(function()
     tpDownToGround()
     SaveConfig()
 end)
 
--- âœ… TP UP SMALL GUI TOGGLE
+-- ✅ TP UP SMALL GUI TOGGLE
 SmallTPUpButton.MouseButton1Click:Connect(function()
     TPUpEnabled = not TPUpEnabled
     if TPUpEnabled then
@@ -1915,7 +1915,7 @@ SmallTPUpButton.MouseButton1Click:Connect(function()
     refreshSmallButtonPositions()
 end)
 
--- âœ… INF JUMP SMALL GUI TOGGLE
+-- ✅ INF JUMP SMALL GUI TOGGLE
 SmallInfJumpButton.MouseButton1Click:Connect(function()
     InfJumpEnabled = not InfJumpEnabled
     
@@ -1930,7 +1930,7 @@ SmallInfJumpButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- âœ… FLOAT UP SMALL GUI TOGGLE
+-- ✅ FLOAT UP SMALL GUI TOGGLE
 SmallFloatButton.MouseButton1Click:Connect(function()
     floatEnabled = not floatEnabled
     
@@ -1945,7 +1945,7 @@ SmallFloatButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- âœ… FOV SMALL GUI TOGGLE
+-- ✅ FOV SMALL GUI TOGGLE
 SmallFOVButton.MouseButton1Click:Connect(function()
     fovEnabled = not fovEnabled
     
@@ -1962,7 +1962,7 @@ SmallFOVButton.MouseButton1Click:Connect(function()
     SaveConfig()
 end)
 
--- âœ… ANTI RAGDOLL SMALL GUI TOGGLE (Advanced version!)
+-- ✅ ANTI RAGDOLL SMALL GUI TOGGLE (Advanced version!)
 local AntiRagdollEnabled = false
 
 SmallAntiRagButton.MouseButton1Click:Connect(function()
@@ -1979,7 +1979,7 @@ SmallAntiRagButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- âœ… RAGDOLL TP SMALL GUI TOGGLE (NEW!)
+-- ✅ RAGDOLL TP SMALL GUI TOGGLE (NEW!)
 SmallRagdollTPButton.MouseButton1Click:Connect(function()
     RagdollTP.enabled = not RagdollTP.enabled
     
@@ -1994,7 +1994,7 @@ SmallRagdollTPButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- âœ… DROP BRAINROT SMALL GUI TOGGLE - SEPARATE STANDALONE TOGGLE!
+-- ✅ DROP BRAINROT SMALL GUI TOGGLE - SEPARATE STANDALONE TOGGLE!
 local DropBrainrotEnabled = false
 local dropBrainrotLoop = nil
 
@@ -2032,9 +2032,9 @@ SmallDropButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
 -- STEAL BAR (ALWAYS VISIBLE - INSTA STEAL ON)
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
 
 local StealBarContainer = Instance.new("Frame")
 StealBarContainer.Name = "StealBarContainer"
@@ -2108,25 +2108,25 @@ ProgressFillCorner.CornerRadius = UDim.new(1, 0)
 ProgressFillCorner.Parent = ProgressBarFill
 
 local MinusArea = Instance.new("TextButton")
-MinusArea.Size = UDim2.new(0, 30, 0, 25)
-MinusArea.Position = UDim2.new(1, -100, 0, 0)
+MinusArea.Size = UDim2.new(0, 10, 0, 8)
+MinusArea.Position = UDim2.new(1, -55, 0, 8)
 MinusArea.BackgroundTransparency = 0.4
 MinusArea.BackgroundColor3 = Color3.fromRGB(240,240,240)
 MinusArea.Text = "-"
 MinusArea.TextColor3 = Color3.fromRGB(30,30,30)
 MinusArea.Font = Enum.Font.GothamBold
-MinusArea.TextSize = 18
+MinusArea.TextSize = 6
 MinusArea.Parent = StealBarContainer
 
 local PlusArea = Instance.new("TextButton")
-PlusArea.Size = UDim2.new(0, 30, 0, 25)
-PlusArea.Position = UDim2.new(1, -30, 0, 0)
+PlusArea.Size = UDim2.new(0, 10, 0, 8)
+PlusArea.Position = UDim2.new(1, -25, 0, 8)
 PlusArea.BackgroundTransparency = 0.4
 PlusArea.BackgroundColor3 = Color3.fromRGB(240,240,240)
 PlusArea.Text = "+"
 PlusArea.TextColor3 = Color3.fromRGB(30,30,30)
 PlusArea.Font = Enum.Font.GothamBold
-PlusArea.TextSize = 18
+PlusArea.TextSize = 6
 PlusArea.Parent = StealBarContainer
 
 MinusArea.MouseButton1Click:Connect(function()
@@ -2143,9 +2143,9 @@ PlusArea.MouseButton1Click:Connect(function()
     end
 end)
 
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
 -- DEVICE SELECTION SCREEN
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
 
 local DeviceSelectFrame = Instance.new("Frame")
 DeviceSelectFrame.Name = "DeviceSelect"
@@ -2230,13 +2230,13 @@ local function createDeviceButton(deviceName, icon, yPos)
     return Button
 end
 
-local PCButton = createDeviceButton("PC", "ðŸ’»", 80)
-local iPadButton = createDeviceButton("iPad", "ðŸ“±", 145)
-local iPhoneButton = createDeviceButton("iPhone", "ðŸ“±", 210)
+local PCButton = createDeviceButton("PC", "💻", 80)
+local iPadButton = createDeviceButton("iPad", "📱", 145)
+local iPhoneButton = createDeviceButton("iPhone", "📱", 210)
 
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
 -- MAIN GUI CREATION
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
 
 local MainFrame
 local currentTab = "Main"
@@ -2291,7 +2291,7 @@ local function createMainGUI(device)
     LogoIcon.Size = UDim2.new(0, 40, 0, 40)
     LogoIcon.Position = UDim2.new(0, 10, 0.5, -20)
     LogoIcon.BackgroundTransparency = 1
-    LogoIcon.Text = "ðŸ§€"
+    LogoIcon.Text = "🧀"
     LogoIcon.TextSize = logoSize
     LogoIcon.Font = Enum.Font.GothamBold
     LogoIcon.Parent = Header
@@ -2380,10 +2380,10 @@ local function createMainGUI(device)
         return TabButton
     end
 
-    local MainTab = createTab("ðŸ›¡ï¸", "Main", 1)
-    local MISCTab = createTab("ðŸ”§", "MISC", 2)
-    local SettingsTab = createTab("âš™ï¸", "Settings", 3)
-    local CreditsTab = createTab("â­", "Info", 4)
+    local MainTab = createTab("🛡️", "Main", 1)
+    local MISCTab = createTab("🔧", "MISC", 2)
+    local SettingsTab = createTab("⚙️", "Settings", 3)
+    local CreditsTab = createTab("⭐", "Info", 4)
 
     local ContentContainer = Instance.new("Frame")
     ContentContainer.Size = UDim2.new(1, -sidebarWidth - 20, 1, -70)
@@ -2450,9 +2450,9 @@ local function createMainGUI(device)
 
     switchTab("Main")
 
-    -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-    -- âœ… MAIN TAB CONTENT (WITH SETTINGS BUTTONS NEXT TO FEATURES!)
-    -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ MAIN TAB CONTENT (WITH SETTINGS BUTTONS NEXT TO FEATURES!)
+    -- ═══════════════════════════════════════════════════════
 
     local function createMainButton(name, order, callback, hasSettings)
         local Container = Instance.new("Frame")
@@ -2493,7 +2493,7 @@ local function createMainGUI(device)
             SettingsButton.Size = UDim2.new(0, 50, 0, 50)
             SettingsButton.Position = UDim2.new(1, -50, 0, 0)
             SettingsButton.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
-            SettingsButton.Text = "âš™ï¸"
+            SettingsButton.Text = "⚙️"
             SettingsButton.TextColor3 = Color3.fromRGB(255, 255, 255)
             SettingsButton.Font = Enum.Font.GothamBold
             SettingsButton.TextSize = device == "iPhone" and 16 or 20
@@ -2509,7 +2509,7 @@ local function createMainGUI(device)
         return Container, Button, Label
     end
 
-    -- âœ… SPEED BOOSTER WITH SETTINGS BUTTON!
+    -- ✅ SPEED BOOSTER WITH SETTINGS BUTTON!
     local SpeedContainer, SpeedSettingsBtn, SpeedMainBtn, SpeedLabel = createMainButton("Speed Booster", 1, function()
         SmallSpeedGUI.Visible = true
         SpeedLabel.Text = "Speed Booster"
@@ -2524,7 +2524,7 @@ local function createMainGUI(device)
         refreshSmallButtonPositions()
     end, true)
 
-    -- âœ… SPEED SETTINGS POPUP (NEXT TO BUTTON!)
+    -- ✅ SPEED SETTINGS POPUP (NEXT TO BUTTON!)
     local SpeedSettingsGUI = Instance.new("Frame")
     SpeedSettingsGUI.Name = "SpeedSettingsGUI"
     SpeedSettingsGUI.Size = UDim2.new(0, 200, 0, 150)
@@ -2675,7 +2675,7 @@ local function createMainGUI(device)
         SpeedSettingsGUI.Visible = not SpeedSettingsGUI.Visible
     end)
 
-    -- âœ… TP DOWN (under Speed)
+    -- ✅ TP DOWN (under Speed)
     local TPDownContainer, TPDownBtn, TPDownLabel = createMainButton("TP Down", 2, function()
         SmallTPDownGUI.Visible = true
         SmallTPDownGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
@@ -2685,7 +2685,7 @@ local function createMainGUI(device)
         refreshSmallButtonPositions()
     end)
 
-    -- âœ… UNWALK, SPIN, INF JUMP (NO SETTINGS)
+    -- ✅ UNWALK, SPIN, INF JUMP (NO SETTINGS)
     local UnwalkContainer, UnwalkBtn, UnwalkLabel = createMainButton("Unwalk", 3, function()
         SmallUnwalkGUI.Visible = true
         if UnwalkEnabled then
@@ -2726,7 +2726,7 @@ local function createMainGUI(device)
         refreshSmallButtonPositions()
     end)
 
-    -- âœ… FOV WITH SETTINGS BUTTON!
+    -- ✅ FOV WITH SETTINGS BUTTON!
     local FOVContainer, FOVSettingsBtn, FOVBtn, FOVLabel = createMainButton("FOV Changer", 6, function()
         SmallFOVGUI.Visible = true
         if fovEnabled then
@@ -2741,7 +2741,7 @@ local function createMainGUI(device)
         refreshSmallButtonPositions()
     end, true)
     
-    -- âœ… ANTI RAGDOLL (NO SETTINGS)
+    -- ✅ ANTI RAGDOLL (NO SETTINGS)
     local AntiRagContainer, AntiRagBtn, AntiRagLabel = createMainButton("Anti Ragdoll", 7, function()
         SmallAntiRagGUI.Visible = true
         if AntiRagdollEnabled then
@@ -2756,7 +2756,7 @@ local function createMainGUI(device)
         refreshSmallButtonPositions()
     end)
     
-    -- âœ… RAGDOLL TP (NO SETTINGS)
+    -- ✅ RAGDOLL TP (NO SETTINGS)
     local RagdollTPContainer, RagdollTPBtn, RagdollTPLabel = createMainButton("Ragdoll TP", 8, function()
         SmallRagdollTPGUI.Visible = true
         if RagdollTP.enabled then
@@ -2771,7 +2771,7 @@ local function createMainGUI(device)
         refreshSmallButtonPositions()
     end)
     
-    -- âœ… DROP BRAINROT (NO SETTINGS)
+    -- ✅ DROP BRAINROT (NO SETTINGS)
     local DropContainer, DropBtn, DropLabel = createMainButton("Drop Brainrot", 9, function()
         SmallDropGUI.Visible = true
         if DropBrainrotEnabled then
@@ -2786,7 +2786,7 @@ local function createMainGUI(device)
         refreshSmallButtonPositions()
     end)
 
-    -- âœ… TP UP (teleport up on jump) main button
+    -- ✅ TP UP (teleport up on jump) main button
     local TPUpContainer, TPUpBtn, TPUpLabel = createMainButton("TP Up", 10, function()
         SmallTPUpGUI.Visible = true
         TPUpBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
@@ -2800,7 +2800,7 @@ local function createMainGUI(device)
         refreshSmallButtonPositions()
     end)
 
-    -- âœ… FOV SETTINGS POPUP (NEXT TO BUTTON!)
+    -- ✅ FOV SETTINGS POPUP (NEXT TO BUTTON!)
     local FOVSettingsGUI = Instance.new("Frame")
     FOVSettingsGUI.Name = "FOVSettingsGUI"
     FOVSettingsGUI.Size = UDim2.new(0, 200, 0, 100)
@@ -2856,7 +2856,7 @@ local function createMainGUI(device)
     FOVBoxCorner.CornerRadius = UDim.new(0, 6)
     FOVBoxCorner.Parent = fovSliderBox
 
-    -- âœ… FOV ACTUALLY UPDATES!
+    -- ✅ FOV ACTUALLY UPDATES!
     fovSliderBox.FocusLost:Connect(function()
         local val = tonumber(fovSliderBox.Text)
         if val then
@@ -2875,7 +2875,7 @@ local function createMainGUI(device)
         FOVSettingsGUI.Visible = not FOVSettingsGUI.Visible
     end)
     
-    -- âš ï¸ FOV WARNING LABEL
+    -- ⚠️ FOV WARNING LABEL
     local FOVWarning = Instance.new("Frame")
     FOVWarning.Size = UDim2.new(1, 0, 0, 35)
     FOVWarning.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
@@ -2892,40 +2892,40 @@ local function createMainGUI(device)
     WarnLabel.Size = UDim2.new(1, -10, 1, 0)
     WarnLabel.Position = UDim2.new(0, 5, 0, 0)
     WarnLabel.BackgroundTransparency = 1
-    WarnLabel.Text = "âš ï¸ Must use âš™ï¸ FOV settings or it won't work!"
+    WarnLabel.Text = "⚠️ Must use ⚙️ FOV settings or it won't work!"
     WarnLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
     WarnLabel.Font = Enum.Font.GothamBold
     WarnLabel.TextSize = device == "iPhone" and 9 or 11
     WarnLabel.TextWrapped = true
     WarnLabel.Parent = FOVWarning
 
-    -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    -- ═══════════════════════════════════════════════════════
     -- MISC TAB CONTENT (NO SMALL GUIS)
-    -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    -- ═══════════════════════════════════════════════════════
     
-    -- âœ… AUTO-ENABLE ALL MISC FEATURES ON SCRIPT LOAD!
+    -- ✅ AUTO-ENABLE ALL MISC FEATURES ON SCRIPT LOAD!
     task.spawn(function()
         task.wait(1)
         
-        -- âœ… FPS Booster
+        -- ✅ FPS Booster
         enableFPSBooster()
         if fpsButton then
             fpsButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
         end
         
-        -- âœ… Optimizer
+        -- ✅ Optimizer
         enableOptimizer()
         if optimizerButton then
             optimizerButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
         end
         
-        -- âœ… Hitbox Expander
+        -- ✅ Hitbox Expander
         enableHitbox()
         if hitboxButton then
             hitboxButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
         end
         
-        -- âœ… Anti Death
+        -- ✅ Anti Death
         AntiDeathEnabled = true
         if not AntiDeath.Conn then
             AntiDeath.Conn = RunService.Heartbeat:Connect(function()
@@ -2940,7 +2940,7 @@ local function createMainGUI(device)
             antiDeathButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
         end
         
-        print("[TIM CHEESE DUELS] âœ… Auto-enabled ALL MISC: FPS Booster, Optimizer, Hitbox, Anti Death")
+        print("[TIM CHEESE DUELS] ✅ Auto-enabled ALL MISC: FPS Booster, Optimizer, Hitbox, Anti Death")
     end)
 
     local function createMISCButton(name, order, callback)
@@ -3032,15 +3032,15 @@ local function createMainGUI(device)
         refreshSmallButtonPositions()
     end)
 
-    -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    -- ═══════════════════════════════════════════════════════
     -- SETTINGS TAB CONTENT
-    -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    -- ═══════════════════════════════════════════════════════
 
     -- Settings tab no longer needs manual config buttons. Settings will auto-save on change.
 
-    -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    -- ═══════════════════════════════════════════════════════
     -- CREDITS TAB CONTENT
-    -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    -- ═══════════════════════════════════════════════════════
 
     local CreditsTitle = Instance.new("TextLabel")
     CreditsTitle.Size = UDim2.new(1, 0, 0, 40)
@@ -3066,7 +3066,7 @@ local function createMainGUI(device)
     CreditsCorner.CornerRadius = UDim.new(0, 10)
     CreditsCorner.Parent = CreditsText
     
-    -- âœ… TUTORIAL SECTION
+    -- ✅ TUTORIAL SECTION
     local TutorialTitle = Instance.new("TextLabel")
     TutorialTitle.Size = UDim2.new(1, 0, 0, 40)
     TutorialTitle.BackgroundTransparency = 1
@@ -3097,38 +3097,38 @@ local function initializeGUI(device)
     selectedDevice = device
     DeviceSelectFrame:Destroy()
 
-    -- âœ… AUTO-ENABLE MAIN TAB FEATURES FOR ALL DEVICES (PC, iPad, iPhone)
+    -- ✅ AUTO-ENABLE MAIN TAB FEATURES FOR ALL DEVICES (PC, iPad, iPhone)
     task.spawn(function()
         task.wait(1.5) -- Wait for GUI to fully load
         
-        -- âœ… Speed Booster - AUTO ON + SHOW SMALL GUI
+        -- ✅ Speed Booster - AUTO ON + SHOW SMALL GUI
         SpeedBooster.Enabled = true
         SmallSpeedGUI.Visible = true
         SmallSpeedGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
         SpeedDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
         startSpeedBooster()
         
-        -- âœ… Unwalk - AUTO ON + SHOW SMALL GUI
+        -- ✅ Unwalk - AUTO ON + SHOW SMALL GUI
         UnwalkEnabled = true
         SmallUnwalkGUI.Visible = true
         SmallUnwalkGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
         UnwalkDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
         startUnwalk()
         
-        -- âšª Spin Bot - SHOW AS ON-SCREEN BUTTON
+        -- ⚪ Spin Bot - SHOW AS ON-SCREEN BUTTON
         SmallSpinBotGUI.Visible = true
         SmallSpinBotGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
         SpinDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
         
-        -- âšª Inf Jump - SHOW AS ON-SCREEN BUTTON
+        -- ⚪ Inf Jump - SHOW AS ON-SCREEN BUTTON
         SmallInfJumpGUI.Visible = true
         SmallInfJumpGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
         InfJumpDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
         
-        -- âšª Float Up - HIDDEN (user must turn on from Main tab or MISC)
+        -- ⚪ Float Up - HIDDEN (user must turn on from Main tab or MISC)
         SmallFloatGUI.Visible = false
         
-        -- âšª FOV - SHOW AS ON-SCREEN BUTTON
+        -- ⚪ FOV - SHOW AS ON-SCREEN BUTTON
         SmallFOVGUI.Visible = true
         if ConfigData.fovEnabled then
             SmallFOVGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
@@ -3138,25 +3138,25 @@ local function initializeGUI(device)
             FOVDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
         end
         
-        -- âœ… Anti Ragdoll - AUTO ON + SHOW SMALL GUI
+        -- ✅ Anti Ragdoll - AUTO ON + SHOW SMALL GUI
         AntiRagdollEnabled = true
         SmallAntiRagGUI.Visible = true
         SmallAntiRagGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
         AntiRagDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
         enableAntiRagdoll()
         
-        -- âœ… Ragdoll TP - AUTO ON + SHOW SMALL GUI
+        -- ✅ Ragdoll TP - AUTO ON + SHOW SMALL GUI
         RagdollTP.enabled = true
         SmallRagdollTPGUI.Visible = true
         SmallRagdollTPGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
         RagdollTPDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
         startRagdollTP()
         
-        -- âœ… Drop Brainrot - SHOW SMALL GUI but STAYS OFF (gray dot)
+        -- ✅ Drop Brainrot - SHOW SMALL GUI but STAYS OFF (gray dot)
         SmallDropGUI.Visible = true
         SmallDropGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
         DropDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        -- âœ… TP Down - show small button on screen by default
+        -- ✅ TP Down - show small button on screen by default
         SmallTPDownGUI.Visible = true
         SmallTPDownGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
         TPDownDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
@@ -3180,9 +3180,9 @@ local function initializeGUI(device)
         end
         
         refreshSmallButtonPositions()
-        print("[TIM CHEESE DUELS] âœ… Auto-enabled for "..device..": Speed, Unwalk, Anti Rag, Ragdoll TP")
-        print("[TIM CHEESE DUELS] âœ… Visible Small GUIs: Speed, Unwalk, Anti Rag, Ragdoll TP, Drop (OFF)")
-        print("[TIM CHEESE DUELS] âšª Hidden Small GUIs: Inf Jump, Spin Bot, Float, FOV (turn on from Main tab)")
+        print("[TIM CHEESE DUELS] ✅ Auto-enabled for "..device..": Speed, Unwalk, Anti Rag, Ragdoll TP")
+        print("[TIM CHEESE DUELS] ✅ Visible Small GUIs: Speed, Unwalk, Anti Rag, Ragdoll TP, Drop (OFF)")
+        print("[TIM CHEESE DUELS] ⚪ Hidden Small GUIs: Inf Jump, Spin Bot, Float, FOV (turn on from Main tab)")
     end)
 
     createMainGUI(device)
@@ -3200,7 +3200,7 @@ local function initializeGUI(device)
     -- Apply dark semi-transparent style and rounded corners to all UI
     applyWhiteHalfStyle()
 
-    -- âœ… AUTO-LOAD CONFIG ON START!
+    -- ✅ AUTO-LOAD CONFIG ON START!
     if ConfigData.speedEnabled then
         SpeedBooster.Enabled = true
         SmallSpeedGUI.Visible = true
@@ -3271,9 +3271,9 @@ function createOpenButton(device)
     end)
 end
 
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
--- âœ… AUTO LEFT/RIGHT BUTTONS (SIDE BY SIDE - GRAY!)
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
+-- ✅ AUTO LEFT/RIGHT BUTTONS (SIDE BY SIDE - GRAY!)
+-- ═══════════════════════════════════════════════════════
 
 local AutoLeftSmallGUI, AutoRightSmallGUI
 
@@ -3281,7 +3281,7 @@ function createAutoButtons(device)
     local buttonSize = device == "iPhone" and 55 or 70
     local yOffset = buttonSize + 10
 
-    -- âœ… AUTO LEFT Button (GRAY!)
+    -- ✅ AUTO LEFT Button (GRAY!)
     local AutoLeftButton = Instance.new("TextButton")
     AutoLeftButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     AutoLeftButton.Position = UDim2.new(0, 15, 0.5, -buttonSize/2 + yOffset)
@@ -3311,7 +3311,7 @@ function createAutoButtons(device)
     LeftStroke.ZIndex = 2
     LeftStroke.Parent = AutoLeftButton
 
-    -- âœ… AUTO MEDUSA Button (above Auto Right)
+    -- ✅ AUTO MEDUSA Button (above Auto Right)
     local AutoMedusaButton = Instance.new("TextButton")
     AutoMedusaButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     AutoMedusaButton.Position = UDim2.new(0, 15 + buttonSize + 10, 0.5, -buttonSize*1.5 + yOffset - 10)
@@ -3484,7 +3484,7 @@ function createAutoButtons(device)
     RightStroke.ZIndex = 2
     RightStroke.Parent = AutoRightButton
 
-    -- âœ… AUTO LEFT CLICK (WITH PATH!)
+    -- ✅ AUTO LEFT CLICK (WITH PATH!)
     AutoLeftButton.MouseButton1Click:Connect(function()
         if pathActive then
             stopStealPath()
@@ -3494,11 +3494,11 @@ function createAutoButtons(device)
             stopStealPath()
             AutoLeftButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
             AutoRightButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-            startStealPath(stealPath2) -- âœ… LEFT PATH!
+            startStealPath(stealPath2) -- ✅ LEFT PATH!
         end
     end)
 
-    -- âœ… AUTO RIGHT CLICK (WITH PATH!)
+    -- ✅ AUTO RIGHT CLICK (WITH PATH!)
     AutoRightButton.MouseButton1Click:Connect(function()
         if pathActive then
             stopStealPath()
@@ -3508,19 +3508,19 @@ function createAutoButtons(device)
             stopStealPath()
             AutoLeftButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
             AutoRightButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-            startStealPath(stealPath1) -- âœ… RIGHT PATH!
+            startStealPath(stealPath1) -- ✅ RIGHT PATH!
         end
     end)
 end
 
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
--- âœ… TRACK PLAYER & HIT CIRCLE (RIGHT SIDE - GRAY!)
--- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ═══════════════════════════════════════════════════════
+-- ✅ TRACK PLAYER & HIT CIRCLE (RIGHT SIDE - GRAY!)
+-- ═══════════════════════════════════════════════════════
 
 function createRightButtons(device)
     local buttonSize = device == "iPhone" and 38 or 48
 
-    -- âœ… DESYNC Button (ABOVE TRACK PLAYER)
+    -- ✅ DESYNC Button (ABOVE TRACK PLAYER)
     local DesyncButton = Instance.new("TextButton")
     DesyncButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     DesyncButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize*2 - 20)
@@ -3560,7 +3560,7 @@ function createRightButtons(device)
         if ConfigData and ConfigData.stealSpeed then return ConfigData.stealSpeed end
         return 29.6
     end
-        -- âœ… LAGGER Button (TOP)
+        -- ✅ LAGGER Button (TOP)
         local LaggerButton = Instance.new("TextButton")
         LaggerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
         LaggerButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize*3 - 30)
@@ -3683,21 +3683,21 @@ function createRightButtons(device)
             end
         end)
 
-        -- âš™ Lagger Gear Button
+        -- ⚙ Lagger Gear Button
         local LaggerGear = Instance.new("TextButton")
         LaggerGear.Size = UDim2.new(0, 18, 0, 18)
         LaggerGear.Position = UDim2.new(1, -16, 0, -2)
         LaggerGear.BackgroundTransparency = 1
-        LaggerGear.Text = "âš™"
+        LaggerGear.Text = "⚙"
         LaggerGear.TextColor3 = Color3.fromRGB(200, 200, 200)
         LaggerGear.Font = Enum.Font.GothamBold
         LaggerGear.TextSize = 14
         LaggerGear.ZIndex = 3
         LaggerGear.Parent = LaggerButton
 
-        -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        -- âœ… LAGGER SETTINGS PANEL
-        -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        -- ═══════════════════════════════════════════════════════
+        -- ✅ LAGGER SETTINGS PANEL
+        -- ═══════════════════════════════════════════════════════
 
         local LaggerSettings = Instance.new("Frame")
         LaggerSettings.Name = "LaggerSettings"
@@ -3738,7 +3738,7 @@ function createRightButtons(device)
         local LSTitle = Instance.new("TextLabel")
         LSTitle.Size = UDim2.new(1, 0, 0, 30)
         LSTitle.BackgroundTransparency = 1
-        LSTitle.Text = "âš™ Lagger Settings"
+        LSTitle.Text = "⚙ Lagger Settings"
         LSTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
         LSTitle.Font = Enum.Font.GothamBold
         LSTitle.TextSize = 14
@@ -3749,7 +3749,7 @@ function createRightButtons(device)
         LSClose.Size = UDim2.new(0, 24, 0, 24)
         LSClose.Position = UDim2.new(1, -28, 0, 3)
         LSClose.BackgroundTransparency = 1
-        LSClose.Text = "âœ•"
+        LSClose.Text = "✕"
         LSClose.TextColor3 = Color3.fromRGB(255, 80, 80)
         LSClose.Font = Enum.Font.GothamBold
         LSClose.TextSize = 14
@@ -3826,7 +3826,7 @@ function createRightButtons(device)
         LSSave.Size = UDim2.new(0.44, 0, 0, 28)
         LSSave.Position = UDim2.new(0.03, 0, 0, 130)
         LSSave.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
-        LSSave.Text = "ðŸ’¾ Save"
+        LSSave.Text = "💾 Save"
         LSSave.TextColor3 = Color3.fromRGB(255, 255, 255)
         LSSave.Font = Enum.Font.GothamBold
         LSSave.TextSize = 12
@@ -3838,7 +3838,7 @@ function createRightButtons(device)
         LSReset.Size = UDim2.new(0.44, 0, 0, 28)
         LSReset.Position = UDim2.new(0.53, 0, 0, 130)
         LSReset.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-        LSReset.Text = "ðŸ”„ Reset"
+        LSReset.Text = "🔄 Reset"
         LSReset.TextColor3 = Color3.fromRGB(255, 255, 255)
         LSReset.Font = Enum.Font.GothamBold
         LSReset.TextSize = 12
@@ -3864,7 +3864,7 @@ function createRightButtons(device)
             ConfigData.laggerTries = LAGGER_CONFIG.Tries
             ConfigData.laggerLoopWait = LAGGER_CONFIG.LoopWaitTime
             SaveConfig()
-            LSStatus.Text = "âœ… Saved!"
+            LSStatus.Text = "✅ Saved!"
             LSStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
             task.delay(2, function() LSStatus.Text = "" end)
         end)
@@ -3875,7 +3875,7 @@ function createRightButtons(device)
             LAGGER_CONFIG.LoopWaitTime = DEFAULT_LAGGER.LoopWaitTime
             LaggerSettings.Visible = false
             LaggerSettings.Visible = true -- refresh
-            LSStatus.Text = "ðŸ”„ Reset!"
+            LSStatus.Text = "🔄 Reset!"
             LSStatus.TextColor3 = Color3.fromRGB(255, 200, 80)
             task.delay(2, function() LSStatus.Text = "" end)
         end)
@@ -3919,7 +3919,7 @@ function createRightButtons(device)
         end
     end)
 
-    -- âœ… TRACK PLAYER Button (RIGHT SIDE - GRAY!)
+    -- ✅ TRACK PLAYER Button (RIGHT SIDE - GRAY!)
     local TrackPlayerButton = Instance.new("TextButton")
     TrackPlayerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     TrackPlayerButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize - 10)
@@ -3961,7 +3961,7 @@ function createRightButtons(device)
         end
     end)
 
-    -- âœ… HIT CIRCLE Button (UNDER TRACK PLAYER - GRAY!)
+    -- ✅ HIT CIRCLE Button (UNDER TRACK PLAYER - GRAY!)
     local HitCircleButton = Instance.new("TextButton")
     HitCircleButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     HitCircleButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, 10)
@@ -4003,9 +4003,9 @@ function createRightButtons(device)
         end
     end)
 
-    -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-    -- âœ… JUKE BUTTON (BELOW HIT CIRCLE) WITH SETTINGS GEAR
-    -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ JUKE BUTTON (BELOW HIT CIRCLE) WITH SETTINGS GEAR
+    -- ═══════════════════════════════════════════════════════
 
     local jukeFloatY = 5
     local jukeTPDelay = 0.35
@@ -4042,21 +4042,21 @@ function createRightButtons(device)
     JukeStroke.ZIndex = 2
     JukeStroke.Parent = JukeButton
 
-    -- âš™ Gear Settings Button (top-right corner of JUKE)
+    -- ⚙ Gear Settings Button (top-right corner of JUKE)
     local JukeGear = Instance.new("TextButton")
     JukeGear.Size = UDim2.new(0, 18, 0, 18)
     JukeGear.Position = UDim2.new(1, -16, 0, -2)
     JukeGear.BackgroundTransparency = 1
-    JukeGear.Text = "âš™"
+    JukeGear.Text = "⚙"
     JukeGear.TextColor3 = Color3.fromRGB(200, 200, 200)
     JukeGear.Font = Enum.Font.GothamBold
     JukeGear.TextSize = 14
     JukeGear.ZIndex = 3
     JukeGear.Parent = JukeButton
 
-    -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-    -- âœ… JUKE SETTINGS PANEL
-    -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ JUKE SETTINGS PANEL
+    -- ═══════════════════════════════════════════════════════
 
     local JukeSettings = Instance.new("Frame")
     JukeSettings.Name = "JukeSettings"
@@ -4105,7 +4105,7 @@ function createRightButtons(device)
     local JSTitle = Instance.new("TextLabel")
     JSTitle.Size = UDim2.new(1, 0, 0, 30)
     JSTitle.BackgroundTransparency = 1
-    JSTitle.Text = "âš™ Hub Settings"
+    JSTitle.Text = "⚙ Hub Settings"
     JSTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
     JSTitle.Font = Enum.Font.GothamBold
     JSTitle.TextSize = 14
@@ -4117,7 +4117,7 @@ function createRightButtons(device)
     JSClose.Size = UDim2.new(0, 24, 0, 24)
     JSClose.Position = UDim2.new(1, -28, 0, 3)
     JSClose.BackgroundTransparency = 1
-    JSClose.Text = "âœ•"
+    JSClose.Text = "✕"
     JSClose.TextColor3 = Color3.fromRGB(255, 80, 80)
     JSClose.Font = Enum.Font.GothamBold
     JSClose.TextSize = 14
@@ -4296,9 +4296,9 @@ function createRightButtons(device)
         SpeedValLabel.Text = tostring(jukeFloatSpeed)
     end)
 
-    -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-    -- âœ… BUTTON SIZE +/- (resizes right-side buttons)
-    -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ BUTTON SIZE +/- (resizes right-side buttons)
+    -- ═══════════════════════════════════════════════════════
 
     local allRightButtons = {DesyncButton, LaggerButton, TrackPlayerButton, HitCircleButton, JukeButton}
 
@@ -4371,9 +4371,9 @@ function createRightButtons(device)
         relayoutRightButtons(buttonSize)
     end)
 
-    -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-    -- âœ… LEFT BUTTON SIZE +/- (resizes left-side buttons)
-    -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ LEFT BUTTON SIZE +/- (resizes left-side buttons)
+    -- ═══════════════════════════════════════════════════════
 
     local leftBtnSize = device == "iPhone" and 55 or 70
     local leftYOffset = leftBtnSize + 10
@@ -4459,9 +4459,9 @@ function createRightButtons(device)
         relayoutLeftButtons(leftBtnSize)
     end)
 
-    -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-    -- âœ… SMALL GUI SIZE +/- (resizes top small GUI buttons)
-    -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ SMALL GUI SIZE +/- (resizes top small GUI buttons)
+    -- ═══════════════════════════════════════════════════════
 
     local smallGuiWidth = 80
     local smallGuiHeight = 20
@@ -4537,9 +4537,9 @@ function createRightButtons(device)
         resizeSmallGUIs(smallGuiWidth, smallGuiHeight)
     end)
 
-    -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-    -- âœ… SAVE & RESET BUTTONS
-    -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ SAVE & RESET BUTTONS
+    -- ═══════════════════════════════════════════════════════
 
     local DEFAULT_JUKE = {floatY = 5, tpDelay = 0.35, floatSpeed = 40, btnSize = device == "iPhone" and 38 or 48, leftBtnSize = device == "iPhone" and 55 or 70, smallW = 80, smallH = 20}
 
@@ -4547,7 +4547,7 @@ function createRightButtons(device)
     SaveBtn.Size = UDim2.new(0.44, 0, 0, 28)
     SaveBtn.Position = UDim2.new(0.03, 0, 0, 220)
     SaveBtn.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
-    SaveBtn.Text = "ðŸ’¾ Save"
+    SaveBtn.Text = "💾 Save"
     SaveBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     SaveBtn.Font = Enum.Font.GothamBold
     SaveBtn.TextSize = 12
@@ -4559,7 +4559,7 @@ function createRightButtons(device)
     ResetBtn.Size = UDim2.new(0.44, 0, 0, 28)
     ResetBtn.Position = UDim2.new(0.53, 0, 0, 220)
     ResetBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-    ResetBtn.Text = "ðŸ”„ Reset"
+    ResetBtn.Text = "🔄 Reset"
     ResetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     ResetBtn.Font = Enum.Font.GothamBold
     ResetBtn.TextSize = 12
@@ -4587,7 +4587,7 @@ function createRightButtons(device)
         ConfigData.smallGuiWidth = smallGuiWidth
         ConfigData.smallGuiHeight = smallGuiHeight
         SaveConfig()
-        SaveStatus.Text = "âœ… Saved!"
+        SaveStatus.Text = "✅ Saved!"
         SaveStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
         task.delay(2, function() SaveStatus.Text = "" end)
     end)
@@ -4609,7 +4609,7 @@ function createRightButtons(device)
         relayoutRightButtons(buttonSize)
         relayoutLeftButtons(leftBtnSize)
         resizeSmallGUIs(smallGuiWidth, smallGuiHeight)
-        SaveStatus.Text = "ðŸ”„ Reset to defaults!"
+        SaveStatus.Text = "🔄 Reset to defaults!"
         SaveStatus.TextColor3 = Color3.fromRGB(255, 200, 80)
         task.delay(2, function() SaveStatus.Text = "" end)
     end)
@@ -4632,9 +4632,9 @@ function createRightButtons(device)
         JukeSettings.Visible = not JukeSettings.Visible
     end)
 
-    -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-    -- âœ… JUKE LOGIC: Float up, spam tool, wait, then TP down
-    -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ JUKE LOGIC: Float up, spam tool, wait, then TP down
+    -- ═══════════════════════════════════════════════════════
 
     JukeButton.MouseButton1Click:Connect(function()
         if jukeActive then return end
@@ -4683,24 +4683,24 @@ function createRightButtons(device)
     end)
 end
 
-print("â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•")
+print("══════════════════════════════════════════════")
 print("   TIM CHEESE DUELS LOADED")
-print("â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•")
-print("âœ… VISIBLE SMALL GUIs (5):")
+print("══════════════════════════════════════════════")
+print("✅ VISIBLE SMALL GUIs (5):")
 print("   Speed (ON), Unwalk (ON), Anti Rag (ON),")
 print("   Ragdoll TP (ON), Drop Brainrot (OFF)")
-print("âœ… AUTO-ENABLED MAIN:")
+print("✅ AUTO-ENABLED MAIN:")
 print("   Speed, Unwalk, Anti Rag, Ragdoll TP")
-print("âœ… AUTO-ENABLED MISC:")
+print("✅ AUTO-ENABLED MISC:")
 print("   FPS, Optimizer, Hitbox, Anti Death")
-print("âšª Hidden until you turn on:")
+print("⚪ Hidden until you turn on:")
 print("   Inf Jump, Spin Bot, Float, FOV")
-print("âœ… WORKS ON: PC, iPad, iPhone!")
-print("â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•")
+print("✅ WORKS ON: PC, iPad, iPhone!")
+print("══════════════════════════════════════════════")
 
 game:GetService("Players").PlayerRemoving:Connect(function(plr)
     if plr == player then
         SaveConfig()
-        print("[TIM CHEESE DUELS] âœ… Auto-saved config on leave!")
+        print("[TIM CHEESE DUELS] ✅ Auto-saved config on leave!")
     end
 end)
