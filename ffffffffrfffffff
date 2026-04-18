@@ -3880,7 +3880,7 @@ function createRightButtons(device)
     -- ═══════════════════════════════════════════════════════
     local TrackSettings = Instance.new("Frame")
     TrackSettings.Name = "TrackSettings"
-    TrackSettings.Size = UDim2.new(0, 230, 0, 210)
+    TrackSettings.Size = UDim2.new(0, 230, 0, 200)
     TrackSettings.Position = UDim2.new(0.5, -115, 0.32, 0)
     TrackSettings.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
     TrackSettings.BackgroundTransparency = 0.05
@@ -3896,12 +3896,14 @@ function createRightButtons(device)
 
     -- Title
     local tsTitle = Instance.new("TextLabel")
-    tsTitle.Size = UDim2.new(1, 0, 0, 28)
+    tsTitle.Size = UDim2.new(1, -30, 0, 28)
+    tsTitle.Position = UDim2.new(0, 5, 0, 0)
     tsTitle.BackgroundTransparency = 1
     tsTitle.Text = "⚙ Track Settings"
     tsTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
     tsTitle.Font = Enum.Font.GothamBold
     tsTitle.TextSize = 13
+    tsTitle.TextXAlignment = Enum.TextXAlignment.Left
     tsTitle.Parent = TrackSettings
     tsTitle.ZIndex = 11
 
@@ -3920,149 +3922,34 @@ function createRightButtons(device)
 
     -- ── TAB BUTTONS ──
     local normalTab = Instance.new("TextButton")
-    normalTab.Size = UDim2.new(0.47, 0, 0, 26)
+    normalTab.Size = UDim2.new(0.48, 0, 0, 28)
     normalTab.Position = UDim2.new(0.02, 0, 0, 30)
-    normalTab.BackgroundColor3 = Color3.fromRGB(50, 160, 80)
+    normalTab.Font = Enum.Font.GothamBold
+    normalTab.TextSize = 12
     normalTab.Text = "🟢 Normal"
     normalTab.TextColor3 = Color3.fromRGB(255, 255, 255)
-    normalTab.Font = Enum.Font.GothamBold
-    normalTab.TextSize = 11
     normalTab.Parent = TrackSettings
     normalTab.ZIndex = 11
     Instance.new("UICorner", normalTab).CornerRadius = UDim.new(0, 8)
 
     local laggerTab = Instance.new("TextButton")
-    laggerTab.Size = UDim2.new(0.47, 0, 0, 26)
-    laggerTab.Position = UDim2.new(0.51, 0, 0, 30)
-    laggerTab.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-    laggerTab.Text = "🔴 Lagger"
-    laggerTab.TextColor3 = Color3.fromRGB(180, 180, 180)
+    laggerTab.Size = UDim2.new(0.48, 0, 0, 28)
+    laggerTab.Position = UDim2.new(0.50, 0, 0, 30)
     laggerTab.Font = Enum.Font.GothamBold
-    laggerTab.TextSize = 11
+    laggerTab.TextSize = 12
+    laggerTab.Text = "🔴 Lagger"
+    laggerTab.TextColor3 = Color3.fromRGB(255, 255, 255)
     laggerTab.Parent = TrackSettings
     laggerTab.ZIndex = 11
     Instance.new("UICorner", laggerTab).CornerRadius = UDim.new(0, 8)
 
-    -- ── TAB CONTENT AREA ──
-    local tabContent = Instance.new("Frame")
-    tabContent.Size = UDim2.new(1, -16, 0, 80)
-    tabContent.Position = UDim2.new(0, 8, 0, 62)
-    tabContent.BackgroundColor3 = Color3.fromRGB(32, 32, 45)
-    tabContent.BackgroundTransparency = 0.3
-    tabContent.Parent = TrackSettings
-    tabContent.ZIndex = 11
-    Instance.new("UICorner", tabContent).CornerRadius = UDim.new(0, 8)
-
-    -- Mode indicator label (inside tab content)
-    local modeIndicator = Instance.new("TextLabel")
-    modeIndicator.Size = UDim2.new(1, 0, 0, 20)
-    modeIndicator.Position = UDim2.new(0, 0, 0, 4)
-    modeIndicator.BackgroundTransparency = 1
-    modeIndicator.Text = trackMode == "Lagger" and "🔴 Lagger Mode — uses lagger while tracking" or "🟢 Normal Mode — no lagger"
-    modeIndicator.TextColor3 = trackMode == "Lagger" and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(100, 255, 120)
-    modeIndicator.Font = Enum.Font.Gotham
-    modeIndicator.TextSize = 10
-    modeIndicator.Parent = tabContent
-    modeIndicator.ZIndex = 12
-
-    -- Speed label
-    local speedLbl = Instance.new("TextLabel")
-    speedLbl.Size = UDim2.new(0.45, 0, 0, 22)
-    speedLbl.Position = UDim2.new(0, 8, 0, 30)
-    speedLbl.BackgroundTransparency = 1
-    speedLbl.Text = "Speed:"
-    speedLbl.TextColor3 = Color3.fromRGB(200, 200, 220)
-    speedLbl.Font = Enum.Font.Gotham
-    speedLbl.TextSize = 12
-    speedLbl.TextXAlignment = Enum.TextXAlignment.Left
-    speedLbl.Parent = tabContent
-    speedLbl.ZIndex = 12
-
-    -- Speed TextBox
-    local speedBox = Instance.new("TextBox")
-    speedBox.Size = UDim2.new(0, 70, 0, 24)
-    speedBox.Position = UDim2.new(1, -84, 0, 29)
-    speedBox.BackgroundColor3 = Color3.fromRGB(45, 45, 58)
-    speedBox.Text = string.format("%.1f", trackSpeed)
-    speedBox.TextColor3 = Color3.fromRGB(80, 210, 140)
-    speedBox.PlaceholderText = "speed"
-    speedBox.Font = Enum.Font.GothamBold
-    speedBox.TextSize = 13
-    speedBox.ClearTextOnFocus = false
-    speedBox.Parent = tabContent
-    speedBox.ZIndex = 12
-    Instance.new("UICorner", speedBox).CornerRadius = UDim.new(0, 6)
-    local speedBoxStroke = Instance.new("UIStroke", speedBox)
-    speedBoxStroke.Color = Color3.fromRGB(80, 210, 140)
-    speedBoxStroke.Thickness = 1
-
-    speedBox.FocusLost:Connect(function(enterPressed)
-        local val = tonumber(speedBox.Text)
-        if val then
-            trackSpeed = math.clamp(val, 1, 500)
-            speedBox.Text = string.format("%.1f", trackSpeed)
-            syncTrackSpeed()
-        else
-            speedBox.Text = string.format("%.1f", trackSpeed)
-        end
-    end)
-
-    -- Speed +/- buttons next to textbox
-    local spdMinus = Instance.new("TextButton")
-    spdMinus.Size = UDim2.new(0, 22, 0, 22)
-    spdMinus.Position = UDim2.new(0, 8, 0, 56)
-    spdMinus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-    spdMinus.Text = "- 5"
-    spdMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
-    spdMinus.Font = Enum.Font.GothamBold
-    spdMinus.TextSize = 10
-    spdMinus.Parent = tabContent
-    spdMinus.ZIndex = 12
-    Instance.new("UICorner", spdMinus).CornerRadius = UDim.new(0, 6)
-
-    local spdPlus = Instance.new("TextButton")
-    spdPlus.Size = UDim2.new(0, 22, 0, 22)
-    spdPlus.Position = UDim2.new(0, 34, 0, 56)
-    spdPlus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-    spdPlus.Text = "+ 5"
-    spdPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
-    spdPlus.Font = Enum.Font.GothamBold
-    spdPlus.TextSize = 10
-    spdPlus.Parent = tabContent
-    spdPlus.ZIndex = 12
-    Instance.new("UICorner", spdPlus).CornerRadius = UDim.new(0, 6)
-
-    spdMinus.MouseButton1Click:Connect(function()
-        trackSpeed = math.max(1, trackSpeed - 5)
-        syncTrackSpeed()
-        speedBox.Text = string.format("%.1f", trackSpeed)
-    end)
-    spdPlus.MouseButton1Click:Connect(function()
-        trackSpeed = math.min(500, trackSpeed + 5)
-        syncTrackSpeed()
-        speedBox.Text = string.format("%.1f", trackSpeed)
-    end)
-
-    -- ── TAB SWITCHING ──
     local function refreshTabUI()
         if trackMode == "Normal" then
             normalTab.BackgroundColor3 = Color3.fromRGB(50, 160, 80)
-            normalTab.TextColor3 = Color3.fromRGB(255, 255, 255)
             laggerTab.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-            laggerTab.TextColor3 = Color3.fromRGB(180, 180, 180)
-            modeIndicator.Text = "🟢 Normal Mode — no lagger"
-            modeIndicator.TextColor3 = Color3.fromRGB(100, 255, 120)
-            speedBoxStroke.Color = Color3.fromRGB(80, 210, 140)
-            speedBox.TextColor3 = Color3.fromRGB(80, 210, 140)
         else
             normalTab.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-            normalTab.TextColor3 = Color3.fromRGB(180, 180, 180)
             laggerTab.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
-            laggerTab.TextColor3 = Color3.fromRGB(255, 255, 255)
-            modeIndicator.Text = "🔴 Lagger Mode — uses lagger while tracking"
-            modeIndicator.TextColor3 = Color3.fromRGB(255, 100, 100)
-            speedBoxStroke.Color = Color3.fromRGB(200, 80, 80)
-            speedBox.TextColor3 = Color3.fromRGB(255, 120, 80)
         end
     end
     refreshTabUI()
@@ -4073,7 +3960,6 @@ function createRightButtons(device)
         setTrackButtonVisual()
         updateTrackLagger()
     end)
-
     laggerTab.MouseButton1Click:Connect(function()
         trackMode = "Lagger"
         refreshTabUI()
@@ -4081,10 +3967,55 @@ function createRightButtons(device)
         updateTrackLagger()
     end)
 
+    -- ── SPEED LABEL ──
+    local speedLabel = Instance.new("TextLabel")
+    speedLabel.Size = UDim2.new(0.45, 0, 0, 25)
+    speedLabel.Position = UDim2.new(0, 10, 0, 68)
+    speedLabel.BackgroundTransparency = 1
+    speedLabel.Text = "Speed"
+    speedLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+    speedLabel.Font = Enum.Font.Gotham
+    speedLabel.TextSize = 12
+    speedLabel.TextXAlignment = Enum.TextXAlignment.Left
+    speedLabel.Parent = TrackSettings
+    speedLabel.ZIndex = 11
+
+    -- ── SPEED TEXTBOX ──
+    local speedBox = Instance.new("TextBox")
+    speedBox.Size = UDim2.new(0, 80, 0, 26)
+    speedBox.Position = UDim2.new(1, -90, 0, 68)
+    speedBox.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+    speedBox.Text = string.format("%.1f", trackSpeed)
+    speedBox.PlaceholderText = "speed"
+    speedBox.TextColor3 = Color3.fromRGB(80, 210, 140)
+    speedBox.Font = Enum.Font.GothamBold
+    speedBox.TextSize = 13
+    speedBox.ClearTextOnFocus = false
+    speedBox.Parent = TrackSettings
+    speedBox.ZIndex = 11
+    Instance.new("UICorner", speedBox).CornerRadius = UDim.new(0, 6)
+    local speedBoxStroke = Instance.new("UIStroke", speedBox)
+    speedBoxStroke.Color = Color3.fromRGB(80, 210, 140)
+    speedBoxStroke.Thickness = 1
+
+    speedBox.FocusLost:Connect(function(enterPressed)
+        local num = tonumber(speedBox.Text)
+        if num then
+            trackSpeed = math.clamp(num, 1, 500)
+            syncTrackSpeed()
+            speedBox.Text = string.format("%.1f", trackSpeed)
+            speedBox.TextColor3 = Color3.fromRGB(80, 210, 140)
+        else
+            speedBox.Text = string.format("%.1f", trackSpeed)
+            speedBox.TextColor3 = Color3.fromRGB(255, 80, 80)
+            task.delay(0.5, function() speedBox.TextColor3 = Color3.fromRGB(80, 210, 140) end)
+        end
+    end)
+
     -- ── SAVE / RESET ──
     local tsSave = Instance.new("TextButton")
     tsSave.Size = UDim2.new(0.44, 0, 0, 28)
-    tsSave.Position = UDim2.new(0.03, 0, 0, 150)
+    tsSave.Position = UDim2.new(0.03, 0, 0, 108)
     tsSave.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
     tsSave.Text = "💾 Save"
     tsSave.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -4096,7 +4027,7 @@ function createRightButtons(device)
 
     local tsReset = Instance.new("TextButton")
     tsReset.Size = UDim2.new(0.44, 0, 0, 28)
-    tsReset.Position = UDim2.new(0.53, 0, 0, 150)
+    tsReset.Position = UDim2.new(0.53, 0, 0, 108)
     tsReset.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
     tsReset.Text = "🔄 Reset"
     tsReset.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -4108,7 +4039,7 @@ function createRightButtons(device)
 
     local tsStatus = Instance.new("TextLabel")
     tsStatus.Size = UDim2.new(1, 0, 0, 20)
-    tsStatus.Position = UDim2.new(0, 0, 0, 182)
+    tsStatus.Position = UDim2.new(0, 0, 0, 142)
     tsStatus.BackgroundTransparency = 1
     tsStatus.Text = ""
     tsStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
@@ -4809,3 +4740,65 @@ function createRightButtons(device)
         local r = c and c:FindFirstChild("HumanoidRootPart")
         if not r then return end
         jukeActive = true
+        JukeButton.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+
+        local startPos = r.Position
+        local targetY = startPos.Y + jukeFloatY
+
+        -- Float up using velocity + spam tool activate
+        local floatConn
+        floatConn = RunService.Heartbeat:Connect(function()
+            if not jukeActive then if floatConn then floatConn:Disconnect() end return end
+            local rr = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+            if not rr then if floatConn then floatConn:Disconnect() end return end
+
+            -- Spam activate held tool
+            local char = player.Character
+            if char then
+                local tool = char:FindFirstChildOfClass("Tool")
+                if tool then
+                    pcall(function() tool:Activate() end)
+                end
+            end
+
+            if rr.Position.Y >= targetY then
+                rr.AssemblyLinearVelocity = Vector3.new(rr.AssemblyLinearVelocity.X, 0, rr.AssemblyLinearVelocity.Z)
+                floatConn:Disconnect()
+                -- Wait delay then TP down
+                task.delay(jukeTPDelay, function()
+                    local rrr = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                    if rrr then
+                        rrr.CFrame = CFrame.new(startPos.X, startPos.Y, startPos.Z)
+                        rrr.AssemblyLinearVelocity = Vector3.zero
+                    end
+                    jukeActive = false
+                    JukeButton.BackgroundColor3 = Color3.fromRGB(70, 70, 75)
+                end)
+                return
+            end
+            rr.AssemblyLinearVelocity = Vector3.new(rr.AssemblyLinearVelocity.X, jukeFloatSpeed, rr.AssemblyLinearVelocity.Z)
+        end)
+    end)
+end
+
+print("══════════════════════════════════════════════")
+print("   TIM CHEESE DUELS LOADED")
+print("══════════════════════════════════════════════")
+print("✅ VISIBLE SMALL GUIs (5):")
+print("   Speed (ON), Unwalk (ON), Anti Rag (ON),")
+print("   Ragdoll TP (ON), Drop Brainrot (OFF)")
+print("✅ AUTO-ENABLED MAIN:")
+print("   Speed, Unwalk, Anti Rag, Ragdoll TP")
+print("✅ AUTO-ENABLED MISC:")
+print("   FPS, Optimizer, Hitbox, Anti Death")
+print("⚪ Hidden until you turn on:")
+print("   Inf Jump, Spin Bot, Float, FOV")
+print("✅ WORKS ON: PC, iPad, iPhone!")
+print("══════════════════════════════════════════════")
+
+game:GetService("Players").PlayerRemoving:Connect(function(plr)
+    if plr == player then
+        SaveConfig()
+        print("[TIM CHEESE DUELS] ✅ Auto-saved config on leave!")
+    end
+end)
