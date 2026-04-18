@@ -3583,6 +3583,193 @@ function createRightButtons(device)
                 stopLaggerLoop()
             end
         end)
+
+        -- ⚙ Lagger Gear Button
+        local LaggerGear = Instance.new("TextButton")
+        LaggerGear.Size = UDim2.new(0, 18, 0, 18)
+        LaggerGear.Position = UDim2.new(1, -16, 0, -2)
+        LaggerGear.BackgroundTransparency = 1
+        LaggerGear.Text = "⚙"
+        LaggerGear.TextColor3 = Color3.fromRGB(200, 200, 200)
+        LaggerGear.Font = Enum.Font.GothamBold
+        LaggerGear.TextSize = 14
+        LaggerGear.ZIndex = 3
+        LaggerGear.Parent = LaggerButton
+
+        -- ═══════════════════════════════════════════════════════
+        -- ✅ LAGGER SETTINGS PANEL
+        -- ═══════════════════════════════════════════════════════
+
+        local LaggerSettings = Instance.new("Frame")
+        LaggerSettings.Name = "LaggerSettings"
+        LaggerSettings.Size = UDim2.new(0, 210, 0, 200)
+        LaggerSettings.Position = UDim2.new(0.5, -105, 0.3, 0)
+        LaggerSettings.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+        LaggerSettings.BackgroundTransparency = 0.1
+        LaggerSettings.Visible = false
+        LaggerSettings.Active = true
+        LaggerSettings.Draggable = true
+        LaggerSettings.Parent = ScreenGui
+        LaggerSettings.ZIndex = 10
+
+        Instance.new("UICorner", LaggerSettings).CornerRadius = UDim.new(0, 12)
+        local LSStroke = Instance.new("UIStroke", LaggerSettings)
+        LSStroke.Color = Color3.fromRGB(255, 80, 80)
+        LSStroke.Thickness = 2
+
+        local LSTitle = Instance.new("TextLabel")
+        LSTitle.Size = UDim2.new(1, 0, 0, 30)
+        LSTitle.BackgroundTransparency = 1
+        LSTitle.Text = "⚙ Lagger Settings"
+        LSTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+        LSTitle.Font = Enum.Font.GothamBold
+        LSTitle.TextSize = 14
+        LSTitle.Parent = LaggerSettings
+        LSTitle.ZIndex = 11
+
+        local LSClose = Instance.new("TextButton")
+        LSClose.Size = UDim2.new(0, 24, 0, 24)
+        LSClose.Position = UDim2.new(1, -28, 0, 3)
+        LSClose.BackgroundTransparency = 1
+        LSClose.Text = "✕"
+        LSClose.TextColor3 = Color3.fromRGB(255, 80, 80)
+        LSClose.Font = Enum.Font.GothamBold
+        LSClose.TextSize = 14
+        LSClose.Parent = LaggerSettings
+        LSClose.ZIndex = 11
+        LSClose.MouseButton1Click:Connect(function() LaggerSettings.Visible = false end)
+
+        -- Helper to create a lagger setting row
+        local function createLaggerRow(labelText, yPos, getValue, setValue, step, minVal)
+            local lbl = Instance.new("TextLabel")
+            lbl.Size = UDim2.new(0.55, 0, 0, 25)
+            lbl.Position = UDim2.new(0, 10, 0, yPos)
+            lbl.BackgroundTransparency = 1
+            lbl.Text = labelText
+            lbl.TextColor3 = Color3.fromRGB(200, 200, 220)
+            lbl.Font = Enum.Font.Gotham
+            lbl.TextSize = 11
+            lbl.TextXAlignment = Enum.TextXAlignment.Left
+            lbl.Parent = LaggerSettings
+            lbl.ZIndex = 11
+
+            local valLbl = Instance.new("TextLabel")
+            valLbl.Size = UDim2.new(0, 50, 0, 25)
+            valLbl.Position = UDim2.new(1, -100, 0, yPos)
+            valLbl.BackgroundTransparency = 1
+            valLbl.Text = tostring(getValue())
+            valLbl.TextColor3 = Color3.fromRGB(255, 100, 100)
+            valLbl.Font = Enum.Font.GothamBold
+            valLbl.TextSize = 12
+            valLbl.Parent = LaggerSettings
+            valLbl.ZIndex = 11
+
+            local minus = Instance.new("TextButton")
+            minus.Size = UDim2.new(0, 22, 0, 22)
+            minus.Position = UDim2.new(1, -48, 0, yPos + 2)
+            minus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+            minus.Text = "-"
+            minus.TextColor3 = Color3.fromRGB(255, 255, 255)
+            minus.Font = Enum.Font.GothamBold
+            minus.TextSize = 14
+            minus.Parent = LaggerSettings
+            minus.ZIndex = 11
+            Instance.new("UICorner", minus).CornerRadius = UDim.new(0, 6)
+
+            local plus = Instance.new("TextButton")
+            plus.Size = UDim2.new(0, 22, 0, 22)
+            plus.Position = UDim2.new(1, -22, 0, yPos + 2)
+            plus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+            plus.Text = "+"
+            plus.TextColor3 = Color3.fromRGB(255, 255, 255)
+            plus.Font = Enum.Font.GothamBold
+            plus.TextSize = 14
+            plus.Parent = LaggerSettings
+            plus.ZIndex = 11
+            Instance.new("UICorner", plus).CornerRadius = UDim.new(0, 6)
+
+            minus.MouseButton1Click:Connect(function()
+                setValue(math.max(minVal, getValue() - step))
+                valLbl.Text = tostring(getValue())
+            end)
+            plus.MouseButton1Click:Connect(function()
+                setValue(getValue() + step)
+                valLbl.Text = tostring(getValue())
+            end)
+            return valLbl
+        end
+
+        createLaggerRow("Table Increase", 35, function() return LAGGER_CONFIG.TableIncrease end, function(v) LAGGER_CONFIG.TableIncrease = v end, 10, 10)
+        createLaggerRow("Tries", 65, function() return LAGGER_CONFIG.Tries end, function(v) LAGGER_CONFIG.Tries = v end, 1, 1)
+        createLaggerRow("Loop Wait (s)", 95, function() return LAGGER_CONFIG.LoopWaitTime end, function(v) LAGGER_CONFIG.LoopWaitTime = v end, 0.05, 0.05)
+
+        -- Save & Reset for Lagger
+        local LSSave = Instance.new("TextButton")
+        LSSave.Size = UDim2.new(0.44, 0, 0, 28)
+        LSSave.Position = UDim2.new(0.03, 0, 0, 130)
+        LSSave.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
+        LSSave.Text = "💾 Save"
+        LSSave.TextColor3 = Color3.fromRGB(255, 255, 255)
+        LSSave.Font = Enum.Font.GothamBold
+        LSSave.TextSize = 12
+        LSSave.Parent = LaggerSettings
+        LSSave.ZIndex = 11
+        Instance.new("UICorner", LSSave).CornerRadius = UDim.new(0, 8)
+
+        local LSReset = Instance.new("TextButton")
+        LSReset.Size = UDim2.new(0.44, 0, 0, 28)
+        LSReset.Position = UDim2.new(0.53, 0, 0, 130)
+        LSReset.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+        LSReset.Text = "🔄 Reset"
+        LSReset.TextColor3 = Color3.fromRGB(255, 255, 255)
+        LSReset.Font = Enum.Font.GothamBold
+        LSReset.TextSize = 12
+        LSReset.Parent = LaggerSettings
+        LSReset.ZIndex = 11
+        Instance.new("UICorner", LSReset).CornerRadius = UDim.new(0, 8)
+
+        local LSStatus = Instance.new("TextLabel")
+        LSStatus.Size = UDim2.new(1, 0, 0, 20)
+        LSStatus.Position = UDim2.new(0, 0, 0, 162)
+        LSStatus.BackgroundTransparency = 1
+        LSStatus.Text = ""
+        LSStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
+        LSStatus.Font = Enum.Font.Gotham
+        LSStatus.TextSize = 11
+        LSStatus.Parent = LaggerSettings
+        LSStatus.ZIndex = 11
+
+        local DEFAULT_LAGGER = isMobile and {TableIncrease = 290, Tries = 1, LoopWaitTime = 0.85} or {TableIncrease = 265, Tries = 1, LoopWaitTime = 0.05}
+
+        LSSave.MouseButton1Click:Connect(function()
+            ConfigData.laggerTableIncrease = LAGGER_CONFIG.TableIncrease
+            ConfigData.laggerTries = LAGGER_CONFIG.Tries
+            ConfigData.laggerLoopWait = LAGGER_CONFIG.LoopWaitTime
+            SaveConfig()
+            LSStatus.Text = "✅ Saved!"
+            LSStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
+            task.delay(2, function() LSStatus.Text = "" end)
+        end)
+
+        LSReset.MouseButton1Click:Connect(function()
+            LAGGER_CONFIG.TableIncrease = DEFAULT_LAGGER.TableIncrease
+            LAGGER_CONFIG.Tries = DEFAULT_LAGGER.Tries
+            LAGGER_CONFIG.LoopWaitTime = DEFAULT_LAGGER.LoopWaitTime
+            LaggerSettings.Visible = false
+            LaggerSettings.Visible = true -- refresh
+            LSStatus.Text = "🔄 Reset!"
+            LSStatus.TextColor3 = Color3.fromRGB(255, 200, 80)
+            task.delay(2, function() LSStatus.Text = "" end)
+        end)
+
+        -- Load saved lagger settings
+        if ConfigData.laggerTableIncrease then LAGGER_CONFIG.TableIncrease = ConfigData.laggerTableIncrease end
+        if ConfigData.laggerTries then LAGGER_CONFIG.Tries = ConfigData.laggerTries end
+        if ConfigData.laggerLoopWait then LAGGER_CONFIG.LoopWaitTime = ConfigData.laggerLoopWait end
+
+        LaggerGear.MouseButton1Click:Connect(function()
+            LaggerSettings.Visible = not LaggerSettings.Visible
+        end)
     local function getHumanoid()
         local char = player.Character or player.CharacterAdded:Wait()
         return char:WaitForChild("Humanoid")
@@ -3728,8 +3915,8 @@ function createRightButtons(device)
 
     local JukeSettings = Instance.new("Frame")
     JukeSettings.Name = "JukeSettings"
-    JukeSettings.Size = UDim2.new(0, 200, 0, 160)
-    JukeSettings.Position = UDim2.new(0.5, -100, 0.5, -80)
+    JukeSettings.Size = UDim2.new(0, 210, 0, 380)
+    JukeSettings.Position = UDim2.new(0.5, -105, 0.5, -140)
     JukeSettings.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
     JukeSettings.BackgroundTransparency = 0.1
     JukeSettings.Visible = false
@@ -3751,7 +3938,7 @@ function createRightButtons(device)
     local JSTitle = Instance.new("TextLabel")
     JSTitle.Size = UDim2.new(1, 0, 0, 30)
     JSTitle.BackgroundTransparency = 1
-    JSTitle.Text = "⚙ Juke Settings"
+    JSTitle.Text = "⚙ Hub Settings"
     JSTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
     JSTitle.Font = Enum.Font.GothamBold
     JSTitle.TextSize = 14
@@ -3942,13 +4129,344 @@ function createRightButtons(device)
         SpeedValLabel.Text = tostring(jukeFloatSpeed)
     end)
 
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ BUTTON SIZE +/- (resizes right-side buttons)
+    -- ═══════════════════════════════════════════════════════
+
+    local allRightButtons = {DesyncButton, LaggerButton, TrackPlayerButton, HitCircleButton, JukeButton}
+
+    local BtnSizeLabel = Instance.new("TextLabel")
+    BtnSizeLabel.Size = UDim2.new(0.55, 0, 0, 25)
+    BtnSizeLabel.Position = UDim2.new(0, 10, 0, 125)
+    BtnSizeLabel.BackgroundTransparency = 1
+    BtnSizeLabel.Text = "Right Btn Size"
+    BtnSizeLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+    BtnSizeLabel.Font = Enum.Font.Gotham
+    BtnSizeLabel.TextSize = 11
+    BtnSizeLabel.TextXAlignment = Enum.TextXAlignment.Left
+    BtnSizeLabel.Parent = JukeSettings
+    BtnSizeLabel.ZIndex = 11
+
+    local BtnSizeValLabel = Instance.new("TextLabel")
+    BtnSizeValLabel.Size = UDim2.new(0, 40, 0, 25)
+    BtnSizeValLabel.Position = UDim2.new(1, -90, 0, 125)
+    BtnSizeValLabel.BackgroundTransparency = 1
+    BtnSizeValLabel.Text = tostring(buttonSize)
+    BtnSizeValLabel.TextColor3 = Color3.fromRGB(138, 43, 226)
+    BtnSizeValLabel.Font = Enum.Font.GothamBold
+    BtnSizeValLabel.TextSize = 13
+    BtnSizeValLabel.Parent = JukeSettings
+    BtnSizeValLabel.ZIndex = 11
+
+    local BtnSizeMinus = Instance.new("TextButton")
+    BtnSizeMinus.Size = UDim2.new(0, 22, 0, 22)
+    BtnSizeMinus.Position = UDim2.new(1, -48, 0, 127)
+    BtnSizeMinus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    BtnSizeMinus.Text = "-"
+    BtnSizeMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    BtnSizeMinus.Font = Enum.Font.GothamBold
+    BtnSizeMinus.TextSize = 14
+    BtnSizeMinus.Parent = JukeSettings
+    BtnSizeMinus.ZIndex = 11
+    Instance.new("UICorner", BtnSizeMinus).CornerRadius = UDim.new(0, 6)
+
+    local BtnSizePlus = Instance.new("TextButton")
+    BtnSizePlus.Size = UDim2.new(0, 22, 0, 22)
+    BtnSizePlus.Position = UDim2.new(1, -22, 0, 127)
+    BtnSizePlus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    BtnSizePlus.Text = "+"
+    BtnSizePlus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    BtnSizePlus.Font = Enum.Font.GothamBold
+    BtnSizePlus.TextSize = 14
+    BtnSizePlus.Parent = JukeSettings
+    BtnSizePlus.ZIndex = 11
+    Instance.new("UICorner", BtnSizePlus).CornerRadius = UDim.new(0, 6)
+
+    local function relayoutRightButtons(newSize)
+        for _, btn in ipairs(allRightButtons) do
+            btn.Size = UDim2.new(0, newSize, 0, newSize)
+        end
+        LaggerButton.Position = UDim2.new(1, -newSize - 15, 0.5, -newSize*3 - 30)
+        DesyncButton.Position = UDim2.new(1, -newSize - 15, 0.5, -newSize*2 - 20)
+        TrackPlayerButton.Position = UDim2.new(1, -newSize - 15, 0.5, -newSize - 10)
+        HitCircleButton.Position = UDim2.new(1, -newSize - 15, 0.5, 10)
+        JukeButton.Position = UDim2.new(1, -newSize - 15, 0.5, newSize + 20)
+    end
+
+    BtnSizeMinus.MouseButton1Click:Connect(function()
+        buttonSize = math.max(24, buttonSize - 4)
+        BtnSizeValLabel.Text = tostring(buttonSize)
+        relayoutRightButtons(buttonSize)
+    end)
+    BtnSizePlus.MouseButton1Click:Connect(function()
+        buttonSize = math.min(80, buttonSize + 4)
+        BtnSizeValLabel.Text = tostring(buttonSize)
+        relayoutRightButtons(buttonSize)
+    end)
+
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ LEFT BUTTON SIZE +/- (resizes left-side buttons)
+    -- ═══════════════════════════════════════════════════════
+
+    local leftBtnSize = device == "iPhone" and 55 or 70
+    local leftYOffset = leftBtnSize + 10
+
+    local LeftBtnLabel = Instance.new("TextLabel")
+    LeftBtnLabel.Size = UDim2.new(0.55, 0, 0, 25)
+    LeftBtnLabel.Position = UDim2.new(0, 10, 0, 155)
+    LeftBtnLabel.BackgroundTransparency = 1
+    LeftBtnLabel.Text = "Left Btn Size"
+    LeftBtnLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+    LeftBtnLabel.Font = Enum.Font.Gotham
+    LeftBtnLabel.TextSize = 11
+    LeftBtnLabel.TextXAlignment = Enum.TextXAlignment.Left
+    LeftBtnLabel.Parent = JukeSettings
+    LeftBtnLabel.ZIndex = 11
+
+    local LeftBtnValLabel = Instance.new("TextLabel")
+    LeftBtnValLabel.Size = UDim2.new(0, 40, 0, 25)
+    LeftBtnValLabel.Position = UDim2.new(1, -90, 0, 155)
+    LeftBtnValLabel.BackgroundTransparency = 1
+    LeftBtnValLabel.Text = tostring(leftBtnSize)
+    LeftBtnValLabel.TextColor3 = Color3.fromRGB(138, 43, 226)
+    LeftBtnValLabel.Font = Enum.Font.GothamBold
+    LeftBtnValLabel.TextSize = 13
+    LeftBtnValLabel.Parent = JukeSettings
+    LeftBtnValLabel.ZIndex = 11
+
+    local LeftBtnMinus = Instance.new("TextButton")
+    LeftBtnMinus.Size = UDim2.new(0, 22, 0, 22)
+    LeftBtnMinus.Position = UDim2.new(1, -48, 0, 157)
+    LeftBtnMinus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    LeftBtnMinus.Text = "-"
+    LeftBtnMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    LeftBtnMinus.Font = Enum.Font.GothamBold
+    LeftBtnMinus.TextSize = 14
+    LeftBtnMinus.Parent = JukeSettings
+    LeftBtnMinus.ZIndex = 11
+    Instance.new("UICorner", LeftBtnMinus).CornerRadius = UDim.new(0, 6)
+
+    local LeftBtnPlus = Instance.new("TextButton")
+    LeftBtnPlus.Size = UDim2.new(0, 22, 0, 22)
+    LeftBtnPlus.Position = UDim2.new(1, -22, 0, 157)
+    LeftBtnPlus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    LeftBtnPlus.Text = "+"
+    LeftBtnPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    LeftBtnPlus.Font = Enum.Font.GothamBold
+    LeftBtnPlus.TextSize = 14
+    LeftBtnPlus.Parent = JukeSettings
+    LeftBtnPlus.ZIndex = 11
+    Instance.new("UICorner", LeftBtnPlus).CornerRadius = UDim.new(0, 6)
+
+    -- Collect left-side buttons from ScreenGui
+    local function getLeftButtons()
+        local btns = {}
+        for _, child in ipairs(ScreenGui:GetChildren()) do
+            if child:IsA("TextButton") then
+                local txt = child.Text or ""
+                if txt:find("AUTO") or txt:find("MEDUSA") then
+                    table.insert(btns, child)
+                end
+            end
+        end
+        return btns
+    end
+
+    local function relayoutLeftButtons(newSize)
+        leftBtnSize = newSize
+        leftYOffset = newSize + 10
+        local leftBtns = getLeftButtons()
+        for _, btn in ipairs(leftBtns) do
+            btn.Size = UDim2.new(0, newSize, 0, newSize)
+        end
+    end
+
+    LeftBtnMinus.MouseButton1Click:Connect(function()
+        leftBtnSize = math.max(30, leftBtnSize - 5)
+        LeftBtnValLabel.Text = tostring(leftBtnSize)
+        relayoutLeftButtons(leftBtnSize)
+    end)
+    LeftBtnPlus.MouseButton1Click:Connect(function()
+        leftBtnSize = math.min(100, leftBtnSize + 5)
+        LeftBtnValLabel.Text = tostring(leftBtnSize)
+        relayoutLeftButtons(leftBtnSize)
+    end)
+
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ SMALL GUI SIZE +/- (resizes top small GUI buttons)
+    -- ═══════════════════════════════════════════════════════
+
+    local smallGuiWidth = 80
+    local smallGuiHeight = 20
+
+    local SmallGuiLabel = Instance.new("TextLabel")
+    SmallGuiLabel.Size = UDim2.new(0.55, 0, 0, 25)
+    SmallGuiLabel.Position = UDim2.new(0, 10, 0, 185)
+    SmallGuiLabel.BackgroundTransparency = 1
+    SmallGuiLabel.Text = "Small GUI Size"
+    SmallGuiLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+    SmallGuiLabel.Font = Enum.Font.Gotham
+    SmallGuiLabel.TextSize = 11
+    SmallGuiLabel.TextXAlignment = Enum.TextXAlignment.Left
+    SmallGuiLabel.Parent = JukeSettings
+    SmallGuiLabel.ZIndex = 11
+
+    local SmallGuiValLabel = Instance.new("TextLabel")
+    SmallGuiValLabel.Size = UDim2.new(0, 40, 0, 25)
+    SmallGuiValLabel.Position = UDim2.new(1, -90, 0, 185)
+    SmallGuiValLabel.BackgroundTransparency = 1
+    SmallGuiValLabel.Text = tostring(smallGuiWidth)
+    SmallGuiValLabel.TextColor3 = Color3.fromRGB(138, 43, 226)
+    SmallGuiValLabel.Font = Enum.Font.GothamBold
+    SmallGuiValLabel.TextSize = 13
+    SmallGuiValLabel.Parent = JukeSettings
+    SmallGuiValLabel.ZIndex = 11
+
+    local SmallGuiMinus = Instance.new("TextButton")
+    SmallGuiMinus.Size = UDim2.new(0, 22, 0, 22)
+    SmallGuiMinus.Position = UDim2.new(1, -48, 0, 187)
+    SmallGuiMinus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    SmallGuiMinus.Text = "-"
+    SmallGuiMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SmallGuiMinus.Font = Enum.Font.GothamBold
+    SmallGuiMinus.TextSize = 14
+    SmallGuiMinus.Parent = JukeSettings
+    SmallGuiMinus.ZIndex = 11
+    Instance.new("UICorner", SmallGuiMinus).CornerRadius = UDim.new(0, 6)
+
+    local SmallGuiPlus = Instance.new("TextButton")
+    SmallGuiPlus.Size = UDim2.new(0, 22, 0, 22)
+    SmallGuiPlus.Position = UDim2.new(1, -22, 0, 187)
+    SmallGuiPlus.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    SmallGuiPlus.Text = "+"
+    SmallGuiPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SmallGuiPlus.Font = Enum.Font.GothamBold
+    SmallGuiPlus.TextSize = 14
+    SmallGuiPlus.Parent = JukeSettings
+    SmallGuiPlus.ZIndex = 11
+    Instance.new("UICorner", SmallGuiPlus).CornerRadius = UDim.new(0, 6)
+
+    local function resizeSmallGUIs(w, h)
+        smallGuiWidth = w
+        smallGuiHeight = h
+        for _, entry in pairs(SmallGUIInstances) do
+            if entry.Frame then
+                entry.Frame.Size = UDim2.new(0, w, 0, h)
+            end
+        end
+        if refreshSmallButtonPositions then refreshSmallButtonPositions() end
+    end
+
+    SmallGuiMinus.MouseButton1Click:Connect(function()
+        smallGuiWidth = math.max(50, smallGuiWidth - 10)
+        smallGuiHeight = math.max(14, smallGuiHeight - 2)
+        SmallGuiValLabel.Text = tostring(smallGuiWidth)
+        resizeSmallGUIs(smallGuiWidth, smallGuiHeight)
+    end)
+    SmallGuiPlus.MouseButton1Click:Connect(function()
+        smallGuiWidth = math.min(160, smallGuiWidth + 10)
+        smallGuiHeight = math.min(40, smallGuiHeight + 2)
+        SmallGuiValLabel.Text = tostring(smallGuiWidth)
+        resizeSmallGUIs(smallGuiWidth, smallGuiHeight)
+    end)
+
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ SAVE & RESET BUTTONS
+    -- ═══════════════════════════════════════════════════════
+
+    local DEFAULT_JUKE = {floatY = 5, tpDelay = 0.35, floatSpeed = 40, btnSize = device == "iPhone" and 38 or 48, leftBtnSize = device == "iPhone" and 55 or 70, smallW = 80, smallH = 20}
+
+    local SaveBtn = Instance.new("TextButton")
+    SaveBtn.Size = UDim2.new(0.44, 0, 0, 28)
+    SaveBtn.Position = UDim2.new(0.03, 0, 0, 220)
+    SaveBtn.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
+    SaveBtn.Text = "💾 Save"
+    SaveBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SaveBtn.Font = Enum.Font.GothamBold
+    SaveBtn.TextSize = 12
+    SaveBtn.Parent = JukeSettings
+    SaveBtn.ZIndex = 11
+    Instance.new("UICorner", SaveBtn).CornerRadius = UDim.new(0, 8)
+
+    local ResetBtn = Instance.new("TextButton")
+    ResetBtn.Size = UDim2.new(0.44, 0, 0, 28)
+    ResetBtn.Position = UDim2.new(0.53, 0, 0, 220)
+    ResetBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+    ResetBtn.Text = "🔄 Reset"
+    ResetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ResetBtn.Font = Enum.Font.GothamBold
+    ResetBtn.TextSize = 12
+    ResetBtn.Parent = JukeSettings
+    ResetBtn.ZIndex = 11
+    Instance.new("UICorner", ResetBtn).CornerRadius = UDim.new(0, 8)
+
+    local SaveStatus = Instance.new("TextLabel")
+    SaveStatus.Size = UDim2.new(1, 0, 0, 20)
+    SaveStatus.Position = UDim2.new(0, 0, 0, 252)
+    SaveStatus.BackgroundTransparency = 1
+    SaveStatus.Text = ""
+    SaveStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
+    SaveStatus.Font = Enum.Font.Gotham
+    SaveStatus.TextSize = 11
+    SaveStatus.Parent = JukeSettings
+    SaveStatus.ZIndex = 11
+
+    SaveBtn.MouseButton1Click:Connect(function()
+        ConfigData.jukeFloatY = jukeFloatY
+        ConfigData.jukeTPDelay = jukeTPDelay
+        ConfigData.jukeFloatSpeed = jukeFloatSpeed
+        ConfigData.jukeBtnSize = buttonSize
+        ConfigData.leftBtnSize = leftBtnSize
+        ConfigData.smallGuiWidth = smallGuiWidth
+        ConfigData.smallGuiHeight = smallGuiHeight
+        SaveConfig()
+        SaveStatus.Text = "✅ Saved!"
+        SaveStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
+        task.delay(2, function() SaveStatus.Text = "" end)
+    end)
+
+    ResetBtn.MouseButton1Click:Connect(function()
+        jukeFloatY = DEFAULT_JUKE.floatY
+        jukeTPDelay = DEFAULT_JUKE.tpDelay
+        jukeFloatSpeed = DEFAULT_JUKE.floatSpeed
+        buttonSize = DEFAULT_JUKE.btnSize
+        leftBtnSize = DEFAULT_JUKE.leftBtnSize
+        smallGuiWidth = DEFAULT_JUKE.smallW
+        smallGuiHeight = DEFAULT_JUKE.smallH
+        FloatValLabel.Text = tostring(jukeFloatY)
+        DelayValLabel.Text = string.format("%.2f", jukeTPDelay)
+        SpeedValLabel.Text = tostring(jukeFloatSpeed)
+        BtnSizeValLabel.Text = tostring(buttonSize)
+        LeftBtnValLabel.Text = tostring(leftBtnSize)
+        SmallGuiValLabel.Text = tostring(smallGuiWidth)
+        relayoutRightButtons(buttonSize)
+        relayoutLeftButtons(leftBtnSize)
+        resizeSmallGUIs(smallGuiWidth, smallGuiHeight)
+        SaveStatus.Text = "🔄 Reset to defaults!"
+        SaveStatus.TextColor3 = Color3.fromRGB(255, 200, 80)
+        task.delay(2, function() SaveStatus.Text = "" end)
+    end)
+
+    -- Load saved settings if available
+    if ConfigData.jukeFloatY then jukeFloatY = ConfigData.jukeFloatY; FloatValLabel.Text = tostring(jukeFloatY) end
+    if ConfigData.jukeTPDelay then jukeTPDelay = ConfigData.jukeTPDelay; DelayValLabel.Text = string.format("%.2f", jukeTPDelay) end
+    if ConfigData.jukeFloatSpeed then jukeFloatSpeed = ConfigData.jukeFloatSpeed; SpeedValLabel.Text = tostring(jukeFloatSpeed) end
+    if ConfigData.jukeBtnSize then buttonSize = ConfigData.jukeBtnSize; BtnSizeValLabel.Text = tostring(buttonSize); relayoutRightButtons(buttonSize) end
+    if ConfigData.leftBtnSize then leftBtnSize = ConfigData.leftBtnSize; LeftBtnValLabel.Text = tostring(leftBtnSize); relayoutLeftButtons(leftBtnSize) end
+    if ConfigData.smallGuiWidth and ConfigData.smallGuiHeight then
+        smallGuiWidth = ConfigData.smallGuiWidth
+        smallGuiHeight = ConfigData.smallGuiHeight
+        SmallGuiValLabel.Text = tostring(smallGuiWidth)
+        resizeSmallGUIs(smallGuiWidth, smallGuiHeight)
+    end
+
     -- Gear opens/closes settings
     JukeGear.MouseButton1Click:Connect(function()
         JukeSettings.Visible = not JukeSettings.Visible
     end)
 
     -- ═══════════════════════════════════════════════════════
-    -- ✅ JUKE LOGIC: Float up to Y, wait, then TP down
+    -- ✅ JUKE LOGIC: Float up, spam tool, wait, then TP down
     -- ═══════════════════════════════════════════════════════
 
     JukeButton.MouseButton1Click:Connect(function()
@@ -3962,12 +4480,22 @@ function createRightButtons(device)
         local startPos = r.Position
         local targetY = startPos.Y + jukeFloatY
 
-        -- Float up using velocity
+        -- Float up using velocity + spam tool activate
         local floatConn
         floatConn = RunService.Heartbeat:Connect(function()
             if not jukeActive then if floatConn then floatConn:Disconnect() end return end
             local rr = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
             if not rr then if floatConn then floatConn:Disconnect() end return end
+
+            -- Spam activate held tool
+            local char = player.Character
+            if char then
+                local tool = char:FindFirstChildOfClass("Tool")
+                if tool then
+                    pcall(function() tool:Activate() end)
+                end
+            end
+
             if rr.Position.Y >= targetY then
                 rr.AssemblyLinearVelocity = Vector3.new(rr.AssemblyLinearVelocity.X, 0, rr.AssemblyLinearVelocity.Z)
                 floatConn:Disconnect()
