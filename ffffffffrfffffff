@@ -1440,7 +1440,7 @@ local function applyWhiteHalfStyle()
                 -- Black base stroke
                 local blackStroke = Instance.new("UIStroke")
                 blackStroke.Color = Color3.fromRGB(0, 0, 0)
-                blackStroke.Thickness = 5
+                blackStroke.Thickness = 4
                 blackStroke.Transparency = 0
                 blackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
                 blackStroke.Parent = v
@@ -1448,8 +1448,8 @@ local function applyWhiteHalfStyle()
                 -- White animated wave stroke
                 local waveStroke = Instance.new("UIStroke")
                 waveStroke.Color = Color3.fromRGB(255, 255, 255)
-                waveStroke.Thickness = 2.8
-                waveStroke.Transparency = 0.3
+                waveStroke.Thickness = 2.5
+                waveStroke.Transparency = 0.35
                 waveStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
                 waveStroke.ZIndex = 2
                 waveStroke.Parent = v
@@ -1458,18 +1458,18 @@ local function applyWhiteHalfStyle()
                 waveGrad.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
                 waveGrad.Transparency = NumberSequence.new({
                     NumberSequenceKeypoint.new(0, 1),
-                    NumberSequenceKeypoint.new(0.45, 0),
-                    NumberSequenceKeypoint.new(0.55, 0),
+                    NumberSequenceKeypoint.new(0.4, 0),
+                    NumberSequenceKeypoint.new(0.6, 0),
                     NumberSequenceKeypoint.new(1, 1)
                 })
                 waveGrad.Rotation = math.random(0, 360)
                 waveGrad.Parent = waveStroke
 
-                TweenService:Create(waveStroke, pulseInfo, {Thickness = 4.5, Transparency = 0.05}):Play()
+                TweenService:Create(waveStroke, pulseInfo, {Thickness = 4.2, Transparency = 0.08}):Play()
 
                 RunService.Heartbeat:Connect(function(dt)
                     pcall(function()
-                        waveGrad.Rotation = (waveGrad.Rotation + 180 * dt) % 360
+                        waveGrad.Rotation = (waveGrad.Rotation + 140 * dt) % 360
                     end)
                 end)
 
@@ -1545,14 +1545,14 @@ local function createSmallGUI(name, yPosition)
 
     local Stroke = Instance.new("UIStroke")
     Stroke.Color = Color3.fromRGB(0, 0, 0)
-    Stroke.Thickness = 5
+    Stroke.Thickness = 4
     Stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     Stroke.Parent = SmallGUI
 
     local WaveStroke = Instance.new("UIStroke")
     WaveStroke.Color = Color3.fromRGB(255, 255, 255)
-    WaveStroke.Thickness = 2.8
-    WaveStroke.Transparency = 0.3
+    WaveStroke.Thickness = 2.5
+    WaveStroke.Transparency = 0.35
     WaveStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     WaveStroke.ZIndex = 2
     WaveStroke.Parent = SmallGUI
@@ -1561,17 +1561,17 @@ local function createSmallGUI(name, yPosition)
     WaveGrad.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
     WaveGrad.Transparency = NumberSequence.new({
         NumberSequenceKeypoint.new(0, 1),
-        NumberSequenceKeypoint.new(0.45, 0),
-        NumberSequenceKeypoint.new(0.55, 0),
+        NumberSequenceKeypoint.new(0.4, 0),
+        NumberSequenceKeypoint.new(0.6, 0),
         NumberSequenceKeypoint.new(1, 1)
     })
     WaveGrad.Rotation = 0
     WaveGrad.Parent = WaveStroke
 
     local pulseSmall = TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
-    TweenService:Create(WaveStroke, pulseSmall, {Thickness = 4.5, Transparency = 0.05}):Play()
+    TweenService:Create(WaveStroke, pulseSmall, {Thickness = 4.2, Transparency = 0.08}):Play()
     RunService.Heartbeat:Connect(function(dt)
-        pcall(function() WaveGrad.Rotation = (WaveGrad.Rotation + 180 * dt) % 360 end)
+        pcall(function() WaveGrad.Rotation = (WaveGrad.Rotation + 140 * dt) % 360 end)
     end)
 
     -- ✅ GREEN DOT!
@@ -3299,14 +3299,14 @@ function createAutoButtons(device)
 
     local LeftBlackStroke = Instance.new("UIStroke")
     LeftBlackStroke.Color = Color3.fromRGB(0, 0, 0)
-    LeftBlackStroke.Thickness = 5
+    LeftBlackStroke.Thickness = 4
     LeftBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     LeftBlackStroke.Parent = AutoLeftButton
 
     local LeftStroke = Instance.new("UIStroke")
     LeftStroke.Color = Color3.fromRGB(255, 255, 255)
-    LeftStroke.Thickness = 2.8
-    LeftStroke.Transparency = 0.3
+    LeftStroke.Thickness = 2.5
+    LeftStroke.Transparency = 0.35
     LeftStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     LeftStroke.ZIndex = 2
     LeftStroke.Parent = AutoLeftButton
@@ -3329,14 +3329,14 @@ function createAutoButtons(device)
 
     local MedusaBlackStroke = Instance.new("UIStroke")
     MedusaBlackStroke.Color = Color3.fromRGB(0, 0, 0)
-    MedusaBlackStroke.Thickness = 5
+    MedusaBlackStroke.Thickness = 4
     MedusaBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     MedusaBlackStroke.Parent = AutoMedusaButton
 
     local MedusaStroke = Instance.new("UIStroke")
     MedusaStroke.Color = Color3.fromRGB(255, 255, 255)
-    MedusaStroke.Thickness = 2.8
-    MedusaStroke.Transparency = 0.3
+    MedusaStroke.Thickness = 2.5
+    MedusaStroke.Transparency = 0.35
     MedusaStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     MedusaStroke.ZIndex = 2
     MedusaStroke.Parent = AutoMedusaButton
@@ -3472,14 +3472,14 @@ function createAutoButtons(device)
 
     local RightBlackStroke = Instance.new("UIStroke")
     RightBlackStroke.Color = Color3.fromRGB(0, 0, 0)
-    RightBlackStroke.Thickness = 5
+    RightBlackStroke.Thickness = 4
     RightBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     RightBlackStroke.Parent = AutoRightButton
 
     local RightStroke = Instance.new("UIStroke")
     RightStroke.Color = Color3.fromRGB(255, 255, 255)
-    RightStroke.Thickness = 2.8
-    RightStroke.Transparency = 0.3
+    RightStroke.Thickness = 2.5
+    RightStroke.Transparency = 0.35
     RightStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     RightStroke.ZIndex = 2
     RightStroke.Parent = AutoRightButton
@@ -3520,13 +3520,15 @@ end
 function createRightButtons(device)
     local buttonSize = device == "iPhone" and 38 or 48
 
-    -- Forward declarations for buttons created later
-    local SpeedBypassButton, DanceButton
+    -- 2-row grid layout constants
+    local gridPad = 4
+    local gridMarginR = 10
+    local gridMarginB = 60
 
     -- ✅ DESYNC Button
     local DesyncButton = Instance.new("TextButton")
     DesyncButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    DesyncButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize*2 - 20)
+    DesyncButton.Position = UDim2.new(1, -gridMarginR - buttonSize*2 - gridPad, 1, -gridMarginB - buttonSize*2 - gridPad)
     DesyncButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     DesyncButton.BackgroundTransparency = 0
     DesyncButton.Text = "DESYNC"
@@ -3541,22 +3543,23 @@ function createRightButtons(device)
 
     local DesyncBlackStroke = Instance.new("UIStroke")
     DesyncBlackStroke.Color = Color3.fromRGB(0, 0, 0)
-    DesyncBlackStroke.Thickness = 5
+    DesyncBlackStroke.Thickness = 4
     DesyncBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     DesyncBlackStroke.Parent = DesyncButton
 
     local DesyncStroke = Instance.new("UIStroke")
     DesyncStroke.Color = Color3.fromRGB(255, 255, 255)
-    DesyncStroke.Thickness = 2.8
-    DesyncStroke.Transparency = 0.3
+    DesyncStroke.Thickness = 2.5
+    DesyncStroke.Transparency = 0.35
     DesyncStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     DesyncStroke.ZIndex = 2
     DesyncStroke.Parent = DesyncButton
 
-    -- Desync logic (Royal's Desync V1.2)
+    -- Desync logic
     local desyncEnabled = false
     local laggerEnabled = false
     local animConnection
+    local prevSpeed, prevJump, prevBypass, prevSpin, prevPath, prevAimbot
     local function getStealSpeed()
         if SpeedBooster and SpeedBooster.StealSpeed then return SpeedBooster.StealSpeed end
         if ConfigData and ConfigData.stealSpeed then return ConfigData.stealSpeed end
@@ -3565,7 +3568,7 @@ function createRightButtons(device)
         -- ✅ LAGGER Button (TOP)
         local LaggerButton = Instance.new("TextButton")
         LaggerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-        LaggerButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize*3 - 30)
+        LaggerButton.Position = UDim2.new(1, -gridMarginR - buttonSize*3 - gridPad*2, 1, -gridMarginB - buttonSize*2 - gridPad)
         LaggerButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
         LaggerButton.BackgroundTransparency = 0
         LaggerButton.Text = "LAGGER"
@@ -3580,14 +3583,14 @@ function createRightButtons(device)
 
         local LaggerBlackStroke = Instance.new("UIStroke")
         LaggerBlackStroke.Color = Color3.fromRGB(0, 0, 0)
-        LaggerBlackStroke.Thickness = 5
+        LaggerBlackStroke.Thickness = 4
         LaggerBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
         LaggerBlackStroke.Parent = LaggerButton
 
         local LaggerStroke = Instance.new("UIStroke")
         LaggerStroke.Color = Color3.fromRGB(255, 255, 255)
-        LaggerStroke.Thickness = 2.8
-        LaggerStroke.Transparency = 0.3
+        LaggerStroke.Thickness = 2.5
+        LaggerStroke.Transparency = 0.35
         LaggerStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
         LaggerStroke.ZIndex = 2
         LaggerStroke.Parent = LaggerButton
@@ -3716,26 +3719,26 @@ function createRightButtons(device)
         Instance.new("UICorner", LaggerSettings).CornerRadius = UDim.new(0, 8)
         local LSBlackStroke = Instance.new("UIStroke", LaggerSettings)
         LSBlackStroke.Color = Color3.fromRGB(0, 0, 0)
-        LSBlackStroke.Thickness = 5
+        LSBlackStroke.Thickness = 4
         LSBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
         local LSStroke = Instance.new("UIStroke", LaggerSettings)
         LSStroke.Color = Color3.fromRGB(255, 255, 255)
-        LSStroke.Thickness = 2.8
-        LSStroke.Transparency = 0.3
+        LSStroke.Thickness = 2.5
+        LSStroke.Transparency = 0.35
         LSStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
         LSStroke.ZIndex = 2
         local LSWaveGrad = Instance.new("UIGradient")
         LSWaveGrad.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
         LSWaveGrad.Transparency = NumberSequence.new({
             NumberSequenceKeypoint.new(0, 1),
-            NumberSequenceKeypoint.new(0.45, 0),
-            NumberSequenceKeypoint.new(0.55, 0),
+            NumberSequenceKeypoint.new(0.4, 0),
+            NumberSequenceKeypoint.new(0.6, 0),
             NumberSequenceKeypoint.new(1, 1)
         })
         LSWaveGrad.Rotation = 0
         LSWaveGrad.Parent = LSStroke
-        TweenService:Create(LSStroke, TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Thickness = 4.5, Transparency = 0.05}):Play()
-        RunService.Heartbeat:Connect(function(dt) pcall(function() LSWaveGrad.Rotation = (LSWaveGrad.Rotation + 180 * dt) % 360 end) end)
+        TweenService:Create(LSStroke, TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Thickness = 4.2, Transparency = 0.08}):Play()
+        RunService.Heartbeat:Connect(function(dt) pcall(function() LSWaveGrad.Rotation = (LSWaveGrad.Rotation + 140 * dt) % 360 end) end)
 
         local LSTitle = Instance.new("TextLabel")
         LSTitle.Size = UDim2.new(1, 0, 0, 30)
@@ -3897,163 +3900,34 @@ function createRightButtons(device)
     local function stopAnims(hum)
         for _, track in pairs(hum:GetPlayingAnimationTracks()) do track:Stop() end
     end
-
-    local desyncGhost = nil
-    local desyncHeartbeat = nil
-    local desyncSpeedConn = nil
-    local desyncJumpConn = nil
-    local desyncOrigPos = nil
-    local DESYNC_SPEED = 65
-
-    local function cleanupDesync()
-        if animConnection then animConnection:Disconnect() animConnection = nil end
-        if desyncHeartbeat then desyncHeartbeat:Disconnect() desyncHeartbeat = nil end
-        if desyncSpeedConn then desyncSpeedConn:Disconnect() desyncSpeedConn = nil end
-        if desyncJumpConn then desyncJumpConn:Disconnect() desyncJumpConn = nil end
-        if desyncGhost then pcall(function() desyncGhost:Destroy() end) desyncGhost = nil end
-        -- Restore real character visibility
-        local char = player.Character
-        if char then
-            for _, part in pairs(char:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.Transparency = part.Name == "HumanoidRootPart" and 1 or 0
-                elseif part:IsA("Decal") or part:IsA("Texture") then
-                    part.Transparency = 0
-                end
-            end
-            -- Teleport real char back to ghost position if ghost exists
-            local root = char:FindFirstChild("HumanoidRootPart")
-            if root and desyncOrigPos then
-                root.CFrame = desyncOrigPos
+    local function setOtherPlayersDesync(state)
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= player and plr.Character and plr.Character:FindFirstChild("Humanoid") then
+                if raknet and raknet.desync then pcall(function() raknet.desync(state, plr) end) end
             end
         end
-        desyncOrigPos = nil
     end
-
     DesyncButton.MouseButton1Click:Connect(function()
         desyncEnabled = not desyncEnabled
         local humanoid = getHumanoid()
-        local char = player.Character
-        local root = char and char:FindFirstChild("HumanoidRootPart")
-
-        if desyncEnabled and char and root then
+        if desyncEnabled then
             DesyncButton.BackgroundColor3 = Color3.fromRGB(120, 60, 255)
-
-            -- Stop animations on real character (server side frozen)
             stopAnims(humanoid)
+            if animConnection then animConnection:Disconnect() animConnection = nil end
             animConnection = humanoid.AnimationPlayed:Connect(function(t) t:Stop() end)
-
-            -- Save position
-            desyncOrigPos = root.CFrame
-
-            -- Create ghost clone (local only - visible to you)
-            desyncGhost = char:Clone()
-            desyncGhost.Name = "DesyncGhost"
-            -- Remove scripts/server objects from ghost
-            for _, obj in pairs(desyncGhost:GetDescendants()) do
-                if obj:IsA("Script") or obj:IsA("LocalScript") or obj:IsA("ModuleScript") then
-                    obj:Destroy()
-                end
-            end
-            local ghostHum = desyncGhost:FindFirstChildOfClass("Humanoid")
-            if ghostHum then
-                ghostHum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
-            end
-            desyncGhost.Parent = workspace
-
-            -- Make real character invisible (but still exists on server)
-            for _, part in pairs(char:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.Transparency = 1
-                elseif part:IsA("Decal") or part:IsA("Texture") then
-                    part.Transparency = 1
-                end
-            end
-
-            -- Anchor real character in place (server sees you frozen here)
-            root.Anchored = true
-
-            -- Ghost speed bypass movement
-            local ghostRoot = desyncGhost:FindFirstChild("HumanoidRootPart")
-            if ghostRoot then
-                ghostRoot.Anchored = false
-
-                -- Lock camera to ghost
-                workspace.CurrentCamera.CameraSubject = desyncGhost:FindFirstChildOfClass("Humanoid") or ghostRoot
-
-                desyncHeartbeat = RunService.Heartbeat:Connect(function()
-                    pcall(function()
-                        if not desyncGhost or not ghostRoot or not ghostRoot.Parent then return end
-                        local moveDir = humanoid.MoveDirection
-                        if moveDir.Magnitude > 0 then
-                            ghostRoot.CFrame = ghostRoot.CFrame + Vector3.new(moveDir.X * DESYNC_SPEED * 0.016, 0, moveDir.Z * DESYNC_SPEED * 0.016)
-                        end
-                        -- Apply gravity
-                        local rayParams = RaycastParams.new()
-                        rayParams.FilterDescendantsInstances = {desyncGhost, char}
-                        rayParams.FilterType = Enum.RaycastFilterType.Exclude
-                        local rayResult = workspace:Raycast(ghostRoot.Position, Vector3.new(0, -50, 0), rayParams)
-                        if rayResult then
-                            local targetY = rayResult.Position.Y + 3
-                            if ghostRoot.Position.Y > targetY + 0.5 then
-                                ghostRoot.CFrame = ghostRoot.CFrame + Vector3.new(0, -0.5, 0)
-                            elseif ghostRoot.Position.Y < targetY - 0.5 then
-                                ghostRoot.CFrame = CFrame.new(ghostRoot.Position.X, targetY, ghostRoot.Position.Z) * (ghostRoot.CFrame - ghostRoot.CFrame.Position)
-                            end
-                        end
-                        -- Face movement direction
-                        if moveDir.Magnitude > 0 then
-                            ghostRoot.CFrame = CFrame.new(ghostRoot.Position, ghostRoot.Position + Vector3.new(moveDir.X, 0, moveDir.Z))
-                        end
-                        -- Update desyncOrigPos so we return to ghost pos on disable
-                        desyncOrigPos = ghostRoot.CFrame
-                    end)
-                end)
-
-                -- Ghost jump
-                desyncJumpConn = UserInputService.JumpRequest:Connect(function()
-                    pcall(function()
-                        if desyncEnabled and ghostRoot and ghostRoot.Parent then
-                            ghostRoot.CFrame = ghostRoot.CFrame + Vector3.new(0, 8, 0)
-                        end
-                    end)
-                end)
-            end
-
-            if raknet and raknet.desync then pcall(function() raknet.desync(true) end) end
+            if raknet and raknet.desync then raknet.desync(true) end
+            print("leak by Lacsy on dc\nLeak Royals desync by Lacsy")
         else
             DesyncButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-
-            -- Unanchor real character before restoring
-            local char2 = player.Character
-            local root2 = char2 and char2:FindFirstChild("HumanoidRootPart")
-            if root2 then root2.Anchored = false end
-
-            -- Restore camera
-            pcall(function()
-                workspace.CurrentCamera.CameraSubject = player.Character:FindFirstChildOfClass("Humanoid")
-            end)
-
-            cleanupDesync()
-            desyncEnabled = false
-
-            if raknet and raknet.desync then pcall(function() raknet.desync(false) end) end
-        end
-    end)
-
-    -- Auto-cleanup on death/respawn
-    player.CharacterAdded:Connect(function()
-        if desyncEnabled then
-            desyncEnabled = false
-            DesyncButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-            cleanupDesync()
+            if animConnection then animConnection:Disconnect() animConnection = nil end
+            if raknet and raknet.desync then raknet.desync(false) end
         end
     end)
 
     -- ✅ TRACK PLAYER Button (RIGHT SIDE - GRAY!)
     local TrackPlayerButton = Instance.new("TextButton")
     TrackPlayerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    TrackPlayerButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize - 10)
+    TrackPlayerButton.Position = UDim2.new(1, -gridMarginR - buttonSize, 1, -gridMarginB - buttonSize*2 - gridPad)
     TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     TrackPlayerButton.BackgroundTransparency = 0
     TrackPlayerButton.Text = "TRACK\nPLAYER"
@@ -4068,14 +3942,14 @@ function createRightButtons(device)
 
     local TrackBlackStroke = Instance.new("UIStroke")
     TrackBlackStroke.Color = Color3.fromRGB(0, 0, 0)
-    TrackBlackStroke.Thickness = 5
+    TrackBlackStroke.Thickness = 4
     TrackBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     TrackBlackStroke.Parent = TrackPlayerButton
 
     local TrackStroke = Instance.new("UIStroke")
     TrackStroke.Color = Color3.fromRGB(255, 255, 255)
-    TrackStroke.Thickness = 2.8
-    TrackStroke.Transparency = 0.3
+    TrackStroke.Thickness = 2.5
+    TrackStroke.Transparency = 0.35
     TrackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     TrackStroke.ZIndex = 2
     TrackStroke.Parent = TrackPlayerButton
@@ -4095,7 +3969,7 @@ function createRightButtons(device)
     -- ✅ HIT CIRCLE Button (UNDER TRACK PLAYER - GRAY!)
     local HitCircleButton = Instance.new("TextButton")
     HitCircleButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    HitCircleButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, 0)
+    HitCircleButton.Position = UDim2.new(1, -gridMarginR - buttonSize*2 - gridPad, 1, -gridMarginB - buttonSize)
     HitCircleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     HitCircleButton.BackgroundTransparency = 0
     HitCircleButton.Text = "HIT\nCIRCLE"
@@ -4110,14 +3984,14 @@ function createRightButtons(device)
 
     local HitBlackStroke = Instance.new("UIStroke")
     HitBlackStroke.Color = Color3.fromRGB(0, 0, 0)
-    HitBlackStroke.Thickness = 5
+    HitBlackStroke.Thickness = 4
     HitBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     HitBlackStroke.Parent = HitCircleButton
 
     local HitStroke = Instance.new("UIStroke")
     HitStroke.Color = Color3.fromRGB(255, 255, 255)
-    HitStroke.Thickness = 2.8
-    HitStroke.Transparency = 0.3
+    HitStroke.Thickness = 2.5
+    HitStroke.Transparency = 0.35
     HitStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     HitStroke.ZIndex = 2
     HitStroke.Parent = HitCircleButton
@@ -4146,7 +4020,7 @@ function createRightButtons(device)
     -- JUKE Button
     local JukeButton = Instance.new("TextButton")
     JukeButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    JukeButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, buttonSize*2 + 20)
+    JukeButton.Position = UDim2.new(1, -gridMarginR - buttonSize, 1, -gridMarginB - buttonSize)
     JukeButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     JukeButton.BackgroundTransparency = 0
     JukeButton.Text = "JUKE"
@@ -4161,14 +4035,14 @@ function createRightButtons(device)
 
     local JukeBlackStroke = Instance.new("UIStroke")
     JukeBlackStroke.Color = Color3.fromRGB(0, 0, 0)
-    JukeBlackStroke.Thickness = 5
+    JukeBlackStroke.Thickness = 4
     JukeBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     JukeBlackStroke.Parent = JukeButton
 
     local JukeStroke = Instance.new("UIStroke")
     JukeStroke.Color = Color3.fromRGB(255, 255, 255)
-    JukeStroke.Thickness = 2.8
-    JukeStroke.Transparency = 0.3
+    JukeStroke.Thickness = 2.5
+    JukeStroke.Transparency = 0.35
     JukeStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     JukeStroke.ZIndex = 2
     JukeStroke.Parent = JukeButton
@@ -4207,14 +4081,14 @@ function createRightButtons(device)
 
     local JSBlackStroke = Instance.new("UIStroke")
     JSBlackStroke.Color = Color3.fromRGB(0, 0, 0)
-    JSBlackStroke.Thickness = 5
+    JSBlackStroke.Thickness = 4
     JSBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     JSBlackStroke.Parent = JukeSettings
 
     local JSStroke = Instance.new("UIStroke")
     JSStroke.Color = Color3.fromRGB(255, 255, 255)
-    JSStroke.Thickness = 2.8
-    JSStroke.Transparency = 0.3
+    JSStroke.Thickness = 2.5
+    JSStroke.Transparency = 0.35
     JSStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     JSStroke.ZIndex = 2
     JSStroke.Parent = JukeSettings
@@ -4223,14 +4097,14 @@ function createRightButtons(device)
     JSWaveGrad.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
     JSWaveGrad.Transparency = NumberSequence.new({
         NumberSequenceKeypoint.new(0, 1),
-        NumberSequenceKeypoint.new(0.45, 0),
-        NumberSequenceKeypoint.new(0.55, 0),
+        NumberSequenceKeypoint.new(0.4, 0),
+        NumberSequenceKeypoint.new(0.6, 0),
         NumberSequenceKeypoint.new(1, 1)
     })
     JSWaveGrad.Rotation = 0
     JSWaveGrad.Parent = JSStroke
-    TweenService:Create(JSStroke, TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Thickness = 4.5, Transparency = 0.05}):Play()
-    RunService.Heartbeat:Connect(function(dt) pcall(function() JSWaveGrad.Rotation = (JSWaveGrad.Rotation + 180 * dt) % 360 end) end)
+    TweenService:Create(JSStroke, TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Thickness = 4.2, Transparency = 0.08}):Play()
+    RunService.Heartbeat:Connect(function(dt) pcall(function() JSWaveGrad.Rotation = (JSWaveGrad.Rotation + 140 * dt) % 360 end) end)
 
     -- Title
     local JSTitle = Instance.new("TextLabel")
@@ -4432,7 +4306,6 @@ function createRightButtons(device)
     -- ═══════════════════════════════════════════════════════
 
     local allRightButtons = {DesyncButton, LaggerButton, TrackPlayerButton, HitCircleButton, JukeButton}
-    -- SpeedBypassButton and DanceButton added after creation below
 
     local BtnSizeLabel = Instance.new("TextLabel")
     BtnSizeLabel.Size = UDim2.new(0.55, 0, 0, 25)
@@ -4485,14 +4358,13 @@ function createRightButtons(device)
         for _, btn in ipairs(allRightButtons) do
             btn.Size = UDim2.new(0, newSize, 0, newSize)
         end
-        -- Single column layout, right side
-        LaggerButton.Position = UDim2.new(1, -newSize - 15, 0.5, -newSize*3 - 30)
-        DesyncButton.Position = UDim2.new(1, -newSize - 15, 0.5, -newSize*2 - 20)
-        TrackPlayerButton.Position = UDim2.new(1, -newSize - 15, 0.5, -newSize - 10)
-        HitCircleButton.Position = UDim2.new(1, -newSize - 15, 0.5, 0)
-        SpeedBypassButton.Position = UDim2.new(1, -newSize - 15, 0.5, newSize + 10)
-        JukeButton.Position = UDim2.new(1, -newSize - 15, 0.5, newSize*2 + 20)
-        DanceButton.Position = UDim2.new(1, -newSize - 15, 0.5, newSize*3 + 30)
+        -- Row 1 (top): LAGGER, DESYNC, TRACK
+        LaggerButton.Position = UDim2.new(1, -gridMarginR - newSize*3 - gridPad*2, 1, -gridMarginB - newSize*2 - gridPad)
+        DesyncButton.Position = UDim2.new(1, -gridMarginR - newSize*2 - gridPad, 1, -gridMarginB - newSize*2 - gridPad)
+        TrackPlayerButton.Position = UDim2.new(1, -gridMarginR - newSize, 1, -gridMarginB - newSize*2 - gridPad)
+        -- Row 2 (bottom): HIT CIRCLE, JUKE
+        HitCircleButton.Position = UDim2.new(1, -gridMarginR - newSize*2 - gridPad, 1, -gridMarginB - newSize)
+        JukeButton.Position = UDim2.new(1, -gridMarginR - newSize, 1, -gridMarginB - newSize)
     end
 
     BtnSizeMinus.MouseButton1Click:Connect(function()
@@ -4816,400 +4688,9 @@ function createRightButtons(device)
             rr.AssemblyLinearVelocity = Vector3.new(rr.AssemblyLinearVelocity.X, jukeFloatSpeed, rr.AssemblyLinearVelocity.Z)
         end)
     end)
-
-    -- ═══════════════════════════════════════════════════════
-    -- ✅ SPEED BYPASS BUTTON (Row 2, Col 1) WITH SETTINGS
-    -- ═══════════════════════════════════════════════════════
-
-    local speedBypassEnabled = false
-    local speedBypassAmount = 65
-    local speedBypassLagOn = false
-    local speedBypassLagAmount = 0
-
-    SpeedBypassButton = Instance.new("TextButton")
-    table.insert(allRightButtons, SpeedBypassButton)
-    SpeedBypassButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    SpeedBypassButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, buttonSize + 10)
-    SpeedBypassButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    SpeedBypassButton.BackgroundTransparency = 0
-    SpeedBypassButton.Text = "SPEED\nBYP"
-    SpeedBypassButton.TextColor3 = Color3.fromRGB(220, 220, 220)
-    SpeedBypassButton.Font = Enum.Font.GothamBold
-    SpeedBypassButton.TextSize = device == "iPhone" and 8 or 10
-    SpeedBypassButton.Parent = ScreenGui
-
-    local SBCorner = Instance.new("UICorner")
-    SBCorner.CornerRadius = UDim.new(0, 8)
-    SBCorner.Parent = SpeedBypassButton
-
-    local SBBlackStroke = Instance.new("UIStroke")
-    SBBlackStroke.Color = Color3.fromRGB(0, 0, 0)
-    SBBlackStroke.Thickness = 5
-    SBBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    SBBlackStroke.Parent = SpeedBypassButton
-
-    local SBStroke = Instance.new("UIStroke")
-    SBStroke.Color = Color3.fromRGB(255, 255, 255)
-    SBStroke.Thickness = 2.8
-    SBStroke.Transparency = 0.3
-    SBStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    SBStroke.ZIndex = 2
-    SBStroke.Parent = SpeedBypassButton
-
-    SpeedBypassButton.MouseButton1Click:Connect(function()
-        speedBypassEnabled = not speedBypassEnabled
-        if speedBypassEnabled then
-            SpeedBypassButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        else
-            SpeedBypassButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-        end
-    end)
-
-    -- ⚙ Speed Bypass Gear Button
-    local SBGear = Instance.new("TextButton")
-    SBGear.Size = UDim2.new(0, 18, 0, 18)
-    SBGear.Position = UDim2.new(1, -16, 0, -2)
-    SBGear.BackgroundTransparency = 1
-    SBGear.Text = "⚙"
-    SBGear.TextColor3 = Color3.fromRGB(200, 200, 200)
-    SBGear.Font = Enum.Font.GothamBold
-    SBGear.TextSize = 14
-    SBGear.ZIndex = 3
-    SBGear.Parent = SpeedBypassButton
-
-    -- ═══════════════════════════════════════════════════════
-    -- ✅ SPEED BYPASS SETTINGS PANEL
-    -- ═══════════════════════════════════════════════════════
-
-    local SBSettings = Instance.new("Frame")
-    SBSettings.Name = "SpeedBypassSettings"
-    SBSettings.Size = UDim2.new(0, 210, 0, 200)
-    SBSettings.Position = UDim2.new(0.5, -105, 0.5, -100)
-    SBSettings.BackgroundColor3 = Color3.fromRGB(14, 14, 14)
-    SBSettings.BackgroundTransparency = 0.05
-    SBSettings.Visible = false
-    SBSettings.Active = true
-    SBSettings.Draggable = true
-    SBSettings.Parent = ScreenGui
-    SBSettings.ZIndex = 10
-
-    local SBSCorner = Instance.new("UICorner")
-    SBSCorner.CornerRadius = UDim.new(0, 8)
-    SBSCorner.Parent = SBSettings
-
-    local SBSBlackStroke = Instance.new("UIStroke")
-    SBSBlackStroke.Color = Color3.fromRGB(0, 0, 0)
-    SBSBlackStroke.Thickness = 5
-    SBSBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    SBSBlackStroke.Parent = SBSettings
-
-    local SBSStroke = Instance.new("UIStroke")
-    SBSStroke.Color = Color3.fromRGB(255, 255, 255)
-    SBSStroke.Thickness = 2.8
-    SBSStroke.Transparency = 0.3
-    SBSStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    SBSStroke.ZIndex = 2
-    SBSStroke.Parent = SBSettings
-
-    local SBSWaveGrad = Instance.new("UIGradient")
-    SBSWaveGrad.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
-    SBSWaveGrad.Transparency = NumberSequence.new({
-        NumberSequenceKeypoint.new(0, 1),
-        NumberSequenceKeypoint.new(0.45, 0),
-        NumberSequenceKeypoint.new(0.55, 0),
-        NumberSequenceKeypoint.new(1, 1)
-    })
-    SBSWaveGrad.Rotation = 0
-    SBSWaveGrad.Parent = SBSStroke
-    TweenService:Create(SBSStroke, TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Thickness = 4.5, Transparency = 0.05}):Play()
-    RunService.Heartbeat:Connect(function(dt) pcall(function() SBSWaveGrad.Rotation = (SBSWaveGrad.Rotation + 180 * dt) % 360 end) end)
-
-    -- Title
-    local SBSTitle = Instance.new("TextLabel")
-    SBSTitle.Size = UDim2.new(1, 0, 0, 30)
-    SBSTitle.BackgroundTransparency = 1
-    SBSTitle.Text = "⚙ Speed Bypass"
-    SBSTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-    SBSTitle.Font = Enum.Font.GothamBold
-    SBSTitle.TextSize = 14
-    SBSTitle.Parent = SBSettings
-    SBSTitle.ZIndex = 11
-
-    -- Close X
-    local SBSClose = Instance.new("TextButton")
-    SBSClose.Size = UDim2.new(0, 24, 0, 24)
-    SBSClose.Position = UDim2.new(1, -28, 0, 3)
-    SBSClose.BackgroundTransparency = 1
-    SBSClose.Text = "✕"
-    SBSClose.TextColor3 = Color3.fromRGB(255, 80, 80)
-    SBSClose.Font = Enum.Font.GothamBold
-    SBSClose.TextSize = 14
-    SBSClose.Parent = SBSettings
-    SBSClose.ZIndex = 11
-    SBSClose.MouseButton1Click:Connect(function() SBSettings.Visible = false end)
-
-    -- Speed Label + Value + -/+
-    local SBSpeedLabel = Instance.new("TextLabel")
-    SBSpeedLabel.Size = UDim2.new(0.55, 0, 0, 25)
-    SBSpeedLabel.Position = UDim2.new(0, 10, 0, 35)
-    SBSpeedLabel.BackgroundTransparency = 1
-    SBSpeedLabel.Text = "Speed"
-    SBSpeedLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
-    SBSpeedLabel.Font = Enum.Font.Gotham
-    SBSpeedLabel.TextSize = 11
-    SBSpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
-    SBSpeedLabel.Parent = SBSettings
-    SBSpeedLabel.ZIndex = 11
-
-    local SBSpeedVal = Instance.new("TextLabel")
-    SBSpeedVal.Size = UDim2.new(0, 40, 0, 25)
-    SBSpeedVal.Position = UDim2.new(1, -90, 0, 35)
-    SBSpeedVal.BackgroundTransparency = 1
-    SBSpeedVal.Text = tostring(speedBypassAmount)
-    SBSpeedVal.TextColor3 = Color3.fromRGB(138, 43, 226)
-    SBSpeedVal.Font = Enum.Font.GothamBold
-    SBSpeedVal.TextSize = 13
-    SBSpeedVal.Parent = SBSettings
-    SBSpeedVal.ZIndex = 11
-
-    local SBSpeedMinus = Instance.new("TextButton")
-    SBSpeedMinus.Size = UDim2.new(0, 22, 0, 22)
-    SBSpeedMinus.Position = UDim2.new(1, -48, 0, 37)
-    SBSpeedMinus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    SBSpeedMinus.Text = "-"
-    SBSpeedMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
-    SBSpeedMinus.Font = Enum.Font.GothamBold
-    SBSpeedMinus.TextSize = 14
-    SBSpeedMinus.Parent = SBSettings
-    SBSpeedMinus.ZIndex = 11
-    Instance.new("UICorner", SBSpeedMinus).CornerRadius = UDim.new(0, 6)
-
-    local SBSpeedPlus = Instance.new("TextButton")
-    SBSpeedPlus.Size = UDim2.new(0, 22, 0, 22)
-    SBSpeedPlus.Position = UDim2.new(1, -22, 0, 37)
-    SBSpeedPlus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    SBSpeedPlus.Text = "+"
-    SBSpeedPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
-    SBSpeedPlus.Font = Enum.Font.GothamBold
-    SBSpeedPlus.TextSize = 14
-    SBSpeedPlus.Parent = SBSettings
-    SBSpeedPlus.ZIndex = 11
-    Instance.new("UICorner", SBSpeedPlus).CornerRadius = UDim.new(0, 6)
-
-    SBSpeedMinus.MouseButton1Click:Connect(function()
-        speedBypassAmount = math.max(16, speedBypassAmount - 5)
-        SBSpeedVal.Text = tostring(speedBypassAmount)
-    end)
-    SBSpeedPlus.MouseButton1Click:Connect(function()
-        speedBypassAmount = math.min(200, speedBypassAmount + 5)
-        SBSpeedVal.Text = tostring(speedBypassAmount)
-    end)
-
-    -- Lag Toggle
-    local SBLagToggle = Instance.new("TextButton")
-    SBLagToggle.Size = UDim2.new(0, 190, 0, 26)
-    SBLagToggle.Position = UDim2.new(0, 10, 0, 70)
-    SBLagToggle.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    SBLagToggle.Text = "Lag: OFF"
-    SBLagToggle.TextColor3 = Color3.fromRGB(220, 220, 220)
-    SBLagToggle.Font = Enum.Font.GothamBold
-    SBLagToggle.TextSize = 12
-    SBLagToggle.Parent = SBSettings
-    SBLagToggle.ZIndex = 11
-    Instance.new("UICorner", SBLagToggle).CornerRadius = UDim.new(0, 6)
-
-    SBLagToggle.MouseButton1Click:Connect(function()
-        speedBypassLagOn = not speedBypassLagOn
-        SBLagToggle.Text = speedBypassLagOn and "Lag: ON" or "Lag: OFF"
-        SBLagToggle.BackgroundColor3 = speedBypassLagOn and Color3.fromRGB(255, 80, 80) or Color3.fromRGB(30, 30, 30)
-    end)
-
-    -- Lag Amount Label + Value + -/+
-    local SBLagLabel = Instance.new("TextLabel")
-    SBLagLabel.Size = UDim2.new(0.55, 0, 0, 25)
-    SBLagLabel.Position = UDim2.new(0, 10, 0, 105)
-    SBLagLabel.BackgroundTransparency = 1
-    SBLagLabel.Text = "Lag Amount"
-    SBLagLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
-    SBLagLabel.Font = Enum.Font.Gotham
-    SBLagLabel.TextSize = 11
-    SBLagLabel.TextXAlignment = Enum.TextXAlignment.Left
-    SBLagLabel.Parent = SBSettings
-    SBLagLabel.ZIndex = 11
-
-    local SBLagVal = Instance.new("TextLabel")
-    SBLagVal.Size = UDim2.new(0, 40, 0, 25)
-    SBLagVal.Position = UDim2.new(1, -90, 0, 105)
-    SBLagVal.BackgroundTransparency = 1
-    SBLagVal.Text = tostring(math.floor(speedBypassLagAmount * 100)) .. "%"
-    SBLagVal.TextColor3 = Color3.fromRGB(138, 43, 226)
-    SBLagVal.Font = Enum.Font.GothamBold
-    SBLagVal.TextSize = 13
-    SBLagVal.Parent = SBSettings
-    SBLagVal.ZIndex = 11
-
-    local SBLagMinus = Instance.new("TextButton")
-    SBLagMinus.Size = UDim2.new(0, 22, 0, 22)
-    SBLagMinus.Position = UDim2.new(1, -48, 0, 107)
-    SBLagMinus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    SBLagMinus.Text = "-"
-    SBLagMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
-    SBLagMinus.Font = Enum.Font.GothamBold
-    SBLagMinus.TextSize = 14
-    SBLagMinus.Parent = SBSettings
-    SBLagMinus.ZIndex = 11
-    Instance.new("UICorner", SBLagMinus).CornerRadius = UDim.new(0, 6)
-
-    local SBLagPlus = Instance.new("TextButton")
-    SBLagPlus.Size = UDim2.new(0, 22, 0, 22)
-    SBLagPlus.Position = UDim2.new(1, -22, 0, 107)
-    SBLagPlus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    SBLagPlus.Text = "+"
-    SBLagPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
-    SBLagPlus.Font = Enum.Font.GothamBold
-    SBLagPlus.TextSize = 14
-    SBLagPlus.Parent = SBSettings
-    SBLagPlus.ZIndex = 11
-    Instance.new("UICorner", SBLagPlus).CornerRadius = UDim.new(0, 6)
-
-    SBLagMinus.MouseButton1Click:Connect(function()
-        speedBypassLagAmount = math.max(0, speedBypassLagAmount - 0.1)
-        SBLagVal.Text = tostring(math.floor(speedBypassLagAmount * 100)) .. "%"
-    end)
-    SBLagPlus.MouseButton1Click:Connect(function()
-        speedBypassLagAmount = math.min(1, speedBypassLagAmount + 0.1)
-        SBLagVal.Text = tostring(math.floor(speedBypassLagAmount * 100)) .. "%"
-    end)
-
-    SBGear.MouseButton1Click:Connect(function()
-        SBSettings.Visible = not SBSettings.Visible
-    end)
-
-    -- Speed Bypass RenderStepped: real velocity override
-    RunService.RenderStepped:Connect(function()
-        if not speedBypassEnabled then return end
-        local char = player.Character
-        if not char then return end
-        local root = char:FindFirstChild("HumanoidRootPart")
-        local hum = char:FindFirstChildOfClass("Humanoid")
-        if root and hum and hum.MoveDirection.Magnitude > 0 then
-            local dir = hum.MoveDirection.Unit
-            local curY = root.AssemblyLinearVelocity.Y
-            root.AssemblyLinearVelocity = Vector3.new(
-                dir.X * speedBypassAmount,
-                curY,
-                dir.Z * speedBypassAmount
-            )
-        end
-    end)
-
-    -- Speed Bypass Lag: frame-blocking lag
-    RunService.RenderStepped:Connect(function()
-        if speedBypassLagOn and speedBypassLagAmount > 0 then
-            local t = tick()
-            local blockTime = speedBypassLagAmount * 0.1
-            while tick() - t < blockTime do end
-        end
-    end)
-
-    -- ═══════════════════════════════════════════════════════
-    -- ✅ DANCE BUTTON (Row 3, Col 0 - BOTTOM)
-    -- ═══════════════════════════════════════════════════════
-
-    local DANCE_ANIM_IDS = {
-        "rbxassetid://10714345951",  -- Popular dance 1
-        "rbxassetid://10714360391",  -- Popular dance 2
-        "rbxassetid://10714349773",  -- Popular dance 3
-        "rbxassetid://5917459365",   -- Shuffling
-        "rbxassetid://3333499508",   -- Robot dance
-        "rbxassetid://5918726674",   -- Tiktok dance
-        "rbxassetid://5915779043",   -- Hype dance
-        "rbxassetid://5915693819",   -- Orange justice
-        "rbxassetid://10714362429",  -- Groove
-        "rbxassetid://10714356094",  -- Wave dance
-        "rbxassetid://4841405708",   -- Salsa
-        "rbxassetid://3695898382",   -- Spin dance
-    }
-    local currentDanceTrack = nil
-
-    DanceButton = Instance.new("TextButton")
-    table.insert(allRightButtons, DanceButton)
-    DanceButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    DanceButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, buttonSize*3 + 30)
-    DanceButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    DanceButton.BackgroundTransparency = 0
-    DanceButton.Text = "DANCE"
-    DanceButton.TextColor3 = Color3.fromRGB(220, 220, 220)
-    DanceButton.Font = Enum.Font.GothamBold
-    DanceButton.TextSize = device == "iPhone" and 9 or 12
-    DanceButton.Parent = ScreenGui
-
-    local DanceCorner = Instance.new("UICorner")
-    DanceCorner.CornerRadius = UDim.new(0, 8)
-    DanceCorner.Parent = DanceButton
-
-    local DanceBlackStroke = Instance.new("UIStroke")
-    DanceBlackStroke.Color = Color3.fromRGB(0, 0, 0)
-    DanceBlackStroke.Thickness = 5
-    DanceBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    DanceBlackStroke.Parent = DanceButton
-
-    local DanceStroke = Instance.new("UIStroke")
-    DanceStroke.Color = Color3.fromRGB(255, 255, 255)
-    DanceStroke.Thickness = 2.8
-    DanceStroke.Transparency = 0.3
-    DanceStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    DanceStroke.ZIndex = 2
-    DanceStroke.Parent = DanceButton
-
-    DanceButton.MouseButton1Click:Connect(function()
-        local char = player.Character
-        if not char then return end
-        local hum = char:FindFirstChildOfClass("Humanoid")
-        if not hum then return end
-
-        -- Stop current dance if playing
-        if currentDanceTrack and currentDanceTrack.IsPlaying then
-            currentDanceTrack:Stop()
-            currentDanceTrack:Destroy()
-            currentDanceTrack = nil
-            DanceButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-            return
-        end
-
-        -- Pick a random dance and play it
-        local animId = DANCE_ANIM_IDS[math.random(1, #DANCE_ANIM_IDS)]
-        local anim = Instance.new("Animation")
-        anim.AnimationId = animId
-
-        local ok, track = pcall(function()
-            return hum:LoadAnimation(anim)
-        end)
-        if not ok or not track then
-            anim:Destroy()
-            return
-        end
-
-        track.Looped = true
-        track.Priority = Enum.AnimationPriority.Action
-        track:Play()
-        currentDanceTrack = track
-        DanceButton.BackgroundColor3 = Color3.fromRGB(180, 80, 255)
-
-        -- Stop dance if character dies/resets
-        local diedConn
-        diedConn = hum.Died:Connect(function()
-            if currentDanceTrack then
-                pcall(function() currentDanceTrack:Stop() currentDanceTrack:Destroy() end)
-                currentDanceTrack = nil
-            end
-            DanceButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-            if diedConn then diedConn:Disconnect() end
-        end)
-
-        anim:Destroy()
-    end)
 end
+
+print("══════════════════════════════════════════════")
 print("   TIM CHEESE DUELS LOADED")
 print("══════════════════════════════════════════════")
 print("✅ VISIBLE SMALL GUIs (5):")
