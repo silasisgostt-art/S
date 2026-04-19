@@ -1599,13 +1599,13 @@ local function createSmallGUI(name, yPosition)
 
     -- ✅ CLICK BUTTON (smaller, on right side only - doesn't block dragging!)
     local Button = Instance.new("TextButton")
-    Button.Size = UDim2.new(0, 20, 1, 0)
-    Button.Position = UDim2.new(1, -20, 0, 0)
+    Button.Size = UDim2.new(0, 18, 0, 18) -- Make button square and fit inside
+    Button.Position = UDim2.new(1, -19, 0.5, -9) -- Center vertically, right align
     Button.BackgroundTransparency = 1
-    Button.Text = "⚡"
+    Button.Text = "⚙" -- Gear icon
     Button.TextColor3 = Color3.fromRGB(220, 220, 220)
     Button.Font = Enum.Font.GothamBold
-    Button.TextSize = 12 -- Smaller icon
+    Button.TextSize = 13 -- Fit gear icon perfectly
     Button.ZIndex = 2
     Button.Parent = SmallGUI
 
@@ -3690,13 +3690,13 @@ function createRightButtons(device)
 
         -- ⚙ Lagger Gear Button
         local LaggerGear = Instance.new("TextButton")
-        LaggerGear.Size = UDim2.new(1, 0, 1, 0) -- Fill parent
-        LaggerGear.Position = UDim2.new(0, 0, 0, 0)
+        LaggerGear.Size = UDim2.new(0, 18, 0, 18)
+        LaggerGear.Position = UDim2.new(1, -16, 0, -2)
         LaggerGear.BackgroundTransparency = 1
         LaggerGear.Text = "⚙"
         LaggerGear.TextColor3 = Color3.fromRGB(200, 200, 200)
         LaggerGear.Font = Enum.Font.GothamBold
-        LaggerGear.TextScaled = true
+        LaggerGear.TextSize = 14
         LaggerGear.ZIndex = 3
         LaggerGear.Parent = LaggerButton
 
@@ -4049,13 +4049,13 @@ function createRightButtons(device)
 
     -- ⚙ Gear Settings Button (top-right corner of JUKE)
     local JukeGear = Instance.new("TextButton")
-    JukeGear.Size = UDim2.new(1, 0, 1, 0) -- Fill parent
-    JukeGear.Position = UDim2.new(0, 0, 0, 0)
+    JukeGear.Size = UDim2.new(0, 18, 0, 18)
+    JukeGear.Position = UDim2.new(1, -16, 0, -2)
     JukeGear.BackgroundTransparency = 1
     JukeGear.Text = "⚙"
     JukeGear.TextColor3 = Color3.fromRGB(200, 200, 200)
     JukeGear.Font = Enum.Font.GothamBold
-    JukeGear.TextScaled = true
+    JukeGear.TextSize = 14
     JukeGear.ZIndex = 3
     JukeGear.Parent = JukeButton
 
