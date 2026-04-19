@@ -1599,13 +1599,15 @@ local function createSmallGUI(name, yPosition)
 
     -- ✅ CLICK BUTTON (smaller, on right side only - doesn't block dragging!)
     local Button = Instance.new("TextButton")
-    Button.Size = UDim2.new(0, 18, 0, 18) -- Make button square and fit inside
-    Button.Position = UDim2.new(1, -19, 0.5, -9) -- Center vertically, right align
+    Button.Size = UDim2.new(0, 18, 0, 18)
+    Button.Position = UDim2.new(1, -19, 0.5, -9)
     Button.BackgroundTransparency = 1
-    Button.Text = "⚙" -- Gear icon
+    Button.Text = "⚡"
     Button.TextColor3 = Color3.fromRGB(220, 220, 220)
     Button.Font = Enum.Font.GothamBold
-    Button.TextSize = 13 -- Fit gear icon perfectly
+    Button.TextSize = 9
+    Button.TextScaled = false
+    Button.ClipsDescendants = true
     Button.ZIndex = 2
     Button.Parent = SmallGUI
 
