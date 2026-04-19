@@ -1168,20 +1168,22 @@ local function stopFloat()
 end
 
 -- ═══════════════════════════════════════════════════════
--- TRACK PLAYER (BAT AIMBOT)
+-- TRACK PLAYER (CLONE FOLLOW - GLUED BEHIND TARGET!)
 -- ═══════════════════════════════════════════════════════
 
--- IMPROVED BAT AIMBOT (restored original follow, better TP up/down prediction)
 local batAimbotToggled = false
-local BAT_MOVE_SPEED = 56.5
 local BAT_ENGAGE_RANGE = 20
-local BAT_LOOP_TIME = 0.3
+local BAT_LOOP_TIME = 0.25
+local BAT_INSIDE_OFFSET = -1.2  -- negative = forward INTO their body
 local lastEquipTick_bat = 0
 local lastUseTick_bat = 0
 local lookConnection_bat = nil
+local followConnection_bat = nil
 local attachment_bat = nil
 local alignOrientation_bat = nil
-local BAT_LOOK_DISTANCE = 50
+local BAT_LOOK_DISTANCE = 80
+local lastTargetPosition_bat = nil
+local lastTargetVelocity_bat = Vector3.zero
 
 local function nearestPlayer_bat()
     if not hrp then return nil, math.huge end
@@ -1230,23 +1232,12 @@ local function startLookAt()
     alignOrientation_bat.Responsiveness = 1000
     alignOrientation_bat.RigidityEnabled = true
     alignOrientation_bat.Parent = hrp
-    -- Restore original follow/lock logic, but add vertical prediction for TP up/down
-    local lastTargetPos = nil
+
     lookConnection_bat = RunService.RenderStepped:Connect(function()
         if not hrp or not alignOrientation_bat then return end
         local target = closestLookTarget()
         if not target then return end
-        local predictY = target.Position.Y
-        -- If target is moving up/down fast (TP), predict further in that direction
-        if lastTargetPos then
-            local dy = target.Position.Y - lastTargetPos.Y
-            if math.abs(dy) > 2 then
-                predictY = target.Position.Y + dy * 0.7
-            end
-        end
-        lastTargetPos = target.Position
-        local lookPos = Vector3.new(target.Position.X, predictY, target.Position.Z)
-        alignOrientation_bat.CFrame = CFrame.lookAt(hrp.Position, lookPos)
+        alignOrientation_bat.CFrame = CFrame.lookAt(hrp.Position, target.Position)
     end)
 end
 
@@ -1260,6 +1251,9 @@ end
 local function stopBatAimbot()
     batAimbotToggled = false
     stopLookAt()
+    if followConnection_bat then followConnection_bat:Disconnect() followConnection_bat = nil end
+    lastTargetPosition_bat = nil
+    lastTargetVelocity_bat = Vector3.zero
     if hrp then
         hrp.AssemblyLinearVelocity = Vector3.zero
     end
@@ -1270,50 +1264,78 @@ local function startBatAimbot()
     batAimbotToggled = true
     if not character or not hrp or not hum then return end
     startLookAt()
-end
+    lastTargetPosition_bat = nil
+    lastTargetVelocity_bat = Vector3.zero
 
-local function equipBat_target()
-    if not hum then return end
-    local batTool = player.Backpack:FindFirstChild("Bat") or character:FindFirstChild("Bat")
-    if batTool then
-        hum:EquipTool(batTool)
-        return batTool
-    end
-end
+    -- ✅ CLONE FOLLOW: RenderStepped for zero-lag, CFrame snap behind target
+    followConnection_bat = RunService.RenderStepped:Connect(function(dt)
+        if not batAimbotToggled or not character or not hrp or not hum then return end
+        hrp.CanCollide = false
 
-RunService.Heartbeat:Connect(function()
-    if not batAimbotToggled or not character or not hrp or not hum then return end
+        local target, distance = nearestPlayer_bat()
+        if not target then return end
 
-    hrp.CanCollide = false
-
-    local target, distance = nearestPlayer_bat()
-    if not target then return end
-
-    -- Predict target movement for anti-dodge/anti-jump
-    local predictedPos = target.Position
-    local targetHum = target.Parent and target.Parent:FindFirstChildOfClass("Humanoid")
-    if targetHum and targetHum.FloorMaterial == Enum.Material.Air then
-        -- If jumping, predict upward movement
-        predictedPos = predictedPos + Vector3.new(0, targetHum.Jump and 4 or 2, 0)
-    end
-
-    local moveDir = (predictedPos - hrp.Position).Unit
-    hrp.AssemblyLinearVelocity = moveDir * BAT_MOVE_SPEED
-
-    if distance <= BAT_ENGAGE_RANGE then
-        if tick() - lastEquipTick_bat >= BAT_LOOP_TIME then
-            equipBat_target()
-            lastEquipTick_bat = tick()
+        -- Calculate target's velocity from position delta
+        local targetPos = target.Position
+        local targetVel = Vector3.zero
+        if lastTargetPosition_bat then
+            targetVel = (targetPos - lastTargetPosition_bat) / math.max(dt, 0.001)
         end
-        if tick() - lastUseTick_bat >= BAT_LOOP_TIME then
-            local batTool = character:FindFirstChild("Bat")
-            if batTool then
-                batTool:Activate()
+        -- Smooth the velocity estimation
+        lastTargetVelocity_bat = lastTargetVelocity_bat:Lerp(targetVel, 0.5)
+        lastTargetPosition_bat = targetPos
+
+        -- Predict where target will be next frame
+        local predictedPos = targetPos + lastTargetVelocity_bat * dt * 2
+
+        -- Position INSIDE the target body, slightly forward
+        local targetLookVector = target.CFrame.LookVector
+        local insidePos = predictedPos + (targetLookVector * BAT_INSIDE_OFFSET)
+        -- Match target's Y exactly (glued to same height)
+        insidePos = Vector3.new(insidePos.X, predictedPos.Y, insidePos.Z)
+
+        local toGoal = insidePos - hrp.Position
+        local goalDist = toGoal.Magnitude
+
+        if goalDist < 0.5 then
+            -- Very close: snap CFrame directly INTO target + copy velocity
+            hrp.CFrame = CFrame.new(insidePos) * CFrame.Angles(0, math.atan2(-targetLookVector.X, -targetLookVector.Z), 0)
+            hrp.AssemblyLinearVelocity = lastTargetVelocity_bat
+        elseif goalDist < 6 then
+            -- Close: CFrame lerp into target body
+            local alpha = math.clamp(goalDist / 3, 0.3, 1)
+            local lerpPos = hrp.Position:Lerp(insidePos, alpha)
+            hrp.CFrame = CFrame.new(lerpPos) * CFrame.Angles(0, math.atan2(-targetLookVector.X, -targetLookVector.Z), 0)
+            hrp.AssemblyLinearVelocity = lastTargetVelocity_bat + toGoal.Unit * goalDist * 15
+        else
+            -- Far away: pure velocity rush + CFrame nudge to close gap fast
+            local rushSpeed = math.max(goalDist * 8, 80)
+            hrp.AssemblyLinearVelocity = toGoal.Unit * rushSpeed + Vector3.new(0, lastTargetVelocity_bat.Y, 0)
+            -- CFrame nudge to prevent rubber-banding
+            if goalDist > 15 then
+                hrp.CFrame = CFrame.new(insidePos) * CFrame.Angles(0, math.atan2(-targetLookVector.X, -targetLookVector.Z), 0)
             end
-            lastUseTick_bat = tick()
         end
-    end
-end)
+
+        -- Equip and swing bat when close enough
+        if distance <= BAT_ENGAGE_RANGE then
+            if tick() - lastEquipTick_bat >= BAT_LOOP_TIME then
+                pcall(function()
+                    local batTool = player.Backpack:FindFirstChild("Bat") or character:FindFirstChild("Bat")
+                    if batTool then hum:EquipTool(batTool) end
+                end)
+                lastEquipTick_bat = tick()
+            end
+            if tick() - lastUseTick_bat >= BAT_LOOP_TIME then
+                pcall(function()
+                    local batTool = character:FindFirstChild("Bat")
+                    if batTool then batTool:Activate() end
+                end)
+                lastUseTick_bat = tick()
+            end
+        end
+    end)
+end
 
 -- ═══════════════════════════════════════════════════════
 -- HIT CIRCLE
