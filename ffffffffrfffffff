@@ -4143,8 +4143,8 @@ function createRightButtons(device)
     -- ═══════════════════════════════════════════════════════
     local TrackSettings = Instance.new("Frame")
     TrackSettings.Name = "TrackSettings"
-    TrackSettings.Size = UDim2.new(0, 220, 0, 140)
-    TrackSettings.Position = UDim2.new(0.5, -110, 0.35, 0)
+    TrackSettings.Size = UDim2.new(0, 200, 0, 120)
+    TrackSettings.Position = UDim2.new(0.5, -100, 0.35, 0)
     TrackSettings.BackgroundColor3 = Color3.fromRGB(10, 10, 14)
     TrackSettings.BackgroundTransparency = 0.05
     TrackSettings.Visible = false
@@ -4159,7 +4159,7 @@ function createRightButtons(device)
     TSStroke.Thickness = 1.5
 
     local TSTitle = Instance.new("TextLabel", TrackSettings)
-    TSTitle.Size = UDim2.new(1, 0, 0, 26)
+    TSTitle.Size = UDim2.new(1, 0, 0, 24)
     TSTitle.BackgroundTransparency = 1
     TSTitle.Text = "🎯 TRACK SETTINGS"
     TSTitle.TextColor3 = Color3.fromRGB(130, 90, 220)
@@ -4167,130 +4167,90 @@ function createRightButtons(device)
     TSTitle.TextSize = 12
     TSTitle.ZIndex = 11
 
-    -- Track Speed Slider
-    local tsSliderHolder = Instance.new("Frame", TrackSettings)
-    tsSliderHolder.Size = UDim2.new(1, -20, 0, 34)
-    tsSliderHolder.Position = UDim2.new(0, 10, 0, 30)
-    tsSliderHolder.BackgroundTransparency = 1
-    tsSliderHolder.ZIndex = 11
+    -- Track Speed TextBox Row
+    local TRACK_CATCH_MULT = 50
 
-    local tsSliderLabel = Instance.new("TextLabel", tsSliderHolder)
-    tsSliderLabel.Size = UDim2.new(1, 0, 0, 14)
-    tsSliderLabel.BackgroundTransparency = 1
-    tsSliderLabel.Text = "Track Speed: " .. math.floor(BAT_ENGAGE_RANGE)
-    tsSliderLabel.Font = Enum.Font.Gotham
-    tsSliderLabel.TextSize = 11
-    tsSliderLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
-    tsSliderLabel.TextXAlignment = Enum.TextXAlignment.Left
-    tsSliderLabel.ZIndex = 11
+    local tsRow = Instance.new("Frame", TrackSettings)
+    tsRow.Size = UDim2.new(1, -20, 0, 26)
+    tsRow.Position = UDim2.new(0, 10, 0, 28)
+    tsRow.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+    tsRow.BorderSizePixel = 0
+    tsRow.ZIndex = 11
+    Instance.new("UICorner", tsRow).CornerRadius = UDim.new(0, 6)
 
-    local tsBar = Instance.new("Frame", tsSliderHolder)
-    tsBar.Size = UDim2.new(1, 0, 0, 6)
-    tsBar.Position = UDim2.new(0, 0, 0, 20)
-    tsBar.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-    tsBar.BorderSizePixel = 0
-    tsBar.ZIndex = 11
-    Instance.new("UICorner", tsBar).CornerRadius = UDim.new(1, 0)
+    local tsLbl = Instance.new("TextLabel", tsRow)
+    tsLbl.Size = UDim2.new(1, -60, 1, 0)
+    tsLbl.Position = UDim2.new(0, 8, 0, 0)
+    tsLbl.BackgroundTransparency = 1
+    tsLbl.Text = "Track Speed"
+    tsLbl.TextColor3 = Color3.fromRGB(220, 220, 220)
+    tsLbl.Font = Enum.Font.GothamBold
+    tsLbl.TextSize = 11
+    tsLbl.TextXAlignment = Enum.TextXAlignment.Left
+    tsLbl.ZIndex = 12
 
-    -- Catch-up multiplier stored here (controls how aggressively it sticks)
-    local TRACK_CATCH_MULT = 50 -- default
+    local tsBox = Instance.new("TextBox", tsRow)
+    tsBox.Size = UDim2.new(0, 46, 0, 20)
+    tsBox.Position = UDim2.new(1, -52, 0.5, -10)
+    tsBox.BackgroundColor3 = Color3.fromRGB(35, 35, 48)
+    tsBox.Text = tostring(TRACK_CATCH_MULT)
+    tsBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    tsBox.PlaceholderText = "50"
+    tsBox.Font = Enum.Font.GothamBold
+    tsBox.TextSize = 11
+    tsBox.ClearTextOnFocus = false
+    tsBox.ZIndex = 13
+    Instance.new("UICorner", tsBox).CornerRadius = UDim.new(0, 4)
 
-    local tsInitRel = math.clamp((TRACK_CATCH_MULT - 20) / 180, 0, 1)
-    local tsFill = Instance.new("Frame", tsBar)
-    tsFill.Size = UDim2.fromScale(tsInitRel, 1)
-    tsFill.BackgroundColor3 = Color3.fromRGB(130, 90, 220)
-    tsFill.BorderSizePixel = 0
-    tsFill.ZIndex = 12
-    Instance.new("UICorner", tsFill).CornerRadius = UDim.new(1, 0)
-
-    local tsKnob = Instance.new("Frame", tsBar)
-    tsKnob.Size = UDim2.fromOffset(12, 12)
-    tsKnob.AnchorPoint = Vector2.new(0.5, 0.5)
-    tsKnob.Position = UDim2.new(tsInitRel, 0, 0.5, 0)
-    tsKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    tsKnob.ZIndex = 13
-    Instance.new("UICorner", tsKnob).CornerRadius = UDim.new(1, 0)
-
-    local tsDragging = false
-    local function tsUpdate(x)
-        local rel = math.clamp((x - tsBar.AbsolutePosition.X) / tsBar.AbsoluteSize.X, 0, 1)
-        tsFill.Size = UDim2.fromScale(rel, 1)
-        tsKnob.Position = UDim2.new(rel, 0, 0.5, 0)
-        TRACK_CATCH_MULT = math.floor(20 + rel * 180)
-        tsSliderLabel.Text = "Track Speed: " .. TRACK_CATCH_MULT
-    end
-    tsBar.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            tsDragging = true; tsUpdate(input.Position.X)
+    tsBox.FocusLost:Connect(function()
+        local val = tonumber(tsBox.Text)
+        if val then
+            TRACK_CATCH_MULT = math.clamp(math.floor(val), 1, 999)
         end
-    end)
-    tsKnob.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            tsDragging = true
-        end
-    end)
-    UserInputService.InputChanged:Connect(function(input)
-        if tsDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-            tsUpdate(input.Position.X)
-        end
-    end)
-    UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            tsDragging = false
-        end
+        tsBox.Text = tostring(TRACK_CATCH_MULT)
     end)
 
-    -- Auto-Lagger Toggle
-    local lagToggleRow = Instance.new("Frame", TrackSettings)
-    lagToggleRow.Size = UDim2.new(1, -20, 0, 30)
-    lagToggleRow.Position = UDim2.new(0, 10, 0, 72)
-    lagToggleRow.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-    lagToggleRow.BorderSizePixel = 0
-    lagToggleRow.ZIndex = 11
-    Instance.new("UICorner", lagToggleRow).CornerRadius = UDim.new(0, 6)
+    -- Auto-Lagger ON/OFF Button
+    local lagRow = Instance.new("Frame", TrackSettings)
+    lagRow.Size = UDim2.new(1, -20, 0, 26)
+    lagRow.Position = UDim2.new(0, 10, 0, 60)
+    lagRow.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+    lagRow.BorderSizePixel = 0
+    lagRow.ZIndex = 11
+    Instance.new("UICorner", lagRow).CornerRadius = UDim.new(0, 6)
 
-    local lagToggleLbl = Instance.new("TextLabel", lagToggleRow)
-    lagToggleLbl.Size = UDim2.new(1, -50, 1, 0)
-    lagToggleLbl.Position = UDim2.new(0, 8, 0, 0)
-    lagToggleLbl.BackgroundTransparency = 1
-    lagToggleLbl.Text = "Auto Lagger"
-    lagToggleLbl.TextColor3 = Color3.fromRGB(220, 220, 220)
-    lagToggleLbl.Font = Enum.Font.GothamBold
-    lagToggleLbl.TextSize = 11
-    lagToggleLbl.TextXAlignment = Enum.TextXAlignment.Left
-    lagToggleLbl.ZIndex = 12
+    local lagLbl = Instance.new("TextLabel", lagRow)
+    lagLbl.Size = UDim2.new(1, -60, 1, 0)
+    lagLbl.Position = UDim2.new(0, 8, 0, 0)
+    lagLbl.BackgroundTransparency = 1
+    lagLbl.Text = "Auto Lagger"
+    lagLbl.TextColor3 = Color3.fromRGB(220, 220, 220)
+    lagLbl.Font = Enum.Font.GothamBold
+    lagLbl.TextSize = 11
+    lagLbl.TextXAlignment = Enum.TextXAlignment.Left
+    lagLbl.ZIndex = 12
 
-    local lagSwBg = Instance.new("Frame", lagToggleRow)
-    lagSwBg.Size = UDim2.new(0, 36, 0, 18)
-    lagSwBg.Position = UDim2.new(1, -42, 0.5, -9)
-    lagSwBg.BackgroundColor3 = Color3.fromRGB(130, 90, 220)
-    lagSwBg.BorderSizePixel = 0
-    lagSwBg.ZIndex = 12
-    Instance.new("UICorner", lagSwBg).CornerRadius = UDim.new(1, 0)
+    local lagOnOff = Instance.new("TextButton", lagRow)
+    lagOnOff.Size = UDim2.new(0, 36, 0, 20)
+    lagOnOff.Position = UDim2.new(1, -42, 0.5, -10)
+    lagOnOff.BackgroundColor3 = trackAutoLagger and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(60, 30, 30)
+    lagOnOff.Text = trackAutoLagger and "ON" or "OFF"
+    lagOnOff.TextColor3 = Color3.fromRGB(255, 255, 255)
+    lagOnOff.Font = Enum.Font.GothamBold
+    lagOnOff.TextSize = 10
+    lagOnOff.ZIndex = 13
+    Instance.new("UICorner", lagOnOff).CornerRadius = UDim.new(0, 4)
 
-    local lagSwCircle = Instance.new("Frame", lagSwBg)
-    lagSwCircle.Size = UDim2.new(0, 14, 0, 14)
-    lagSwCircle.Position = UDim2.new(1, -16, 0.5, -7)
-    lagSwCircle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    lagSwCircle.BorderSizePixel = 0
-    lagSwCircle.ZIndex = 13
-    Instance.new("UICorner", lagSwCircle).CornerRadius = UDim.new(1, 0)
-
-    local lagToggleBtn = Instance.new("TextButton", lagToggleRow)
-    lagToggleBtn.Size = UDim2.new(1, 0, 1, 0)
-    lagToggleBtn.BackgroundTransparency = 1
-    lagToggleBtn.Text = ""
-    lagToggleBtn.ZIndex = 14
-    lagToggleBtn.MouseButton1Click:Connect(function()
+    lagOnOff.MouseButton1Click:Connect(function()
         trackAutoLagger = not trackAutoLagger
-        TweenService:Create(lagSwBg, TweenInfo.new(0.18), {BackgroundColor3 = trackAutoLagger and Color3.fromRGB(130, 90, 220) or Color3.fromRGB(35, 35, 48)}):Play()
-        TweenService:Create(lagSwCircle, TweenInfo.new(0.18, Enum.EasingStyle.Back), {Position = trackAutoLagger and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)}):Play()
+        lagOnOff.Text = trackAutoLagger and "ON" or "OFF"
+        TweenService:Create(lagOnOff, TweenInfo.new(0.15), {BackgroundColor3 = trackAutoLagger and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(60, 30, 30)}):Play()
     end)
 
     -- Close button
     local tsClose = Instance.new("TextButton", TrackSettings)
-    tsClose.Size = UDim2.new(1, -20, 0, 22)
-    tsClose.Position = UDim2.new(0, 10, 0, 108)
+    tsClose.Size = UDim2.new(1, -20, 0, 20)
+    tsClose.Position = UDim2.new(0, 10, 0, 92)
     tsClose.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
     tsClose.Text = "CLOSE"
     tsClose.TextColor3 = Color3.fromRGB(180, 180, 180)
