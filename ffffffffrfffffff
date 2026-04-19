@@ -1537,6 +1537,7 @@ local function createSmallGUI(name, yPosition)
     SmallGUI.Visible = false
     SmallGUI.Active = true
     SmallGUI.Draggable = true  -- ✅ DRAGGABLE!
+    SmallGUI.ClipsDescendants = true  -- ✅ Clips flash effect!
     SmallGUI.Parent = ScreenGui
 
     local Corner = Instance.new("UICorner")
@@ -1609,6 +1610,39 @@ local function createSmallGUI(name, yPosition)
     Button.ZIndex = 2
     Button.Parent = SmallGUI
 
+    -- ✅ FLASH / SHINE OVERLAY (sweeps across the button!)
+    local Flash = Instance.new("Frame")
+    Flash.Size = UDim2.new(0.3, 0, 1, 0)
+    Flash.Position = UDim2.new(-0.3, 0, 0, 0)
+    Flash.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Flash.BackgroundTransparency = 0.82
+    Flash.BorderSizePixel = 0
+    Flash.ZIndex = 3
+    Flash.ClipsDescendants = false
+    Flash.Parent = SmallGUI
+    Instance.new("UICorner", Flash).CornerRadius = UDim.new(0, 8)
+
+    local flashGrad = Instance.new("UIGradient", Flash)
+    flashGrad.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 1),
+        NumberSequenceKeypoint.new(0.35, 0),
+        NumberSequenceKeypoint.new(0.65, 0),
+        NumberSequenceKeypoint.new(1, 1)
+    })
+    flashGrad.Rotation = 75
+
+    -- Loop the flash sweep every 3 seconds
+    task.spawn(function()
+        while task.wait(3) do
+            pcall(function()
+                Flash.Position = UDim2.new(-0.3, 0, 0, 0)
+                TweenService:Create(Flash, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                    Position = UDim2.new(1, 0, 0, 0)
+                }):Play()
+            end)
+        end
+    end)
+
     SmallGUIInstances[name] = {Frame = SmallGUI, Label = Label, Button = Button, Dot = GreenDot}
 
     return SmallGUI, Button, GreenDot
@@ -1637,24 +1671,21 @@ local function refreshSmallButtonPositions()
         end
     end
 
-    -- Arrange first 8 buttons in 2 rows of 4 above the Dance button
-    local columns = 4
-    local rows = 2
-    local buttonHeight = 30
-    local gapX = 10
-    local gapY = 10
-    local sidePadding = 10
-    local bottomPadding = 120 -- Distance from bottom (Dance button area)
+    -- Arrange buttons in 2 rows at the TOP of screen
+    local columns = math.min(math.ceil(#visibleFrames / 2), 6)
+    if columns < 1 then columns = 1 end
+    local buttonHeight = 26
+    local gapX = 6
+    local gapY = 5
+    local topPadding = 6
     local viewport = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1280, 720)
-    local availableWidth = math.max(400, viewport.X - sidePadding * 2)
-    local buttonWidth = math.floor((availableWidth - gapX * (columns - 1)) / columns)
-    buttonWidth = math.clamp(buttonWidth, 70, 150)
+    local buttonWidth = math.clamp(math.floor((viewport.X - 20 - gapX * (columns - 1)) / columns), 60, 130)
     local totalWidth = columns * buttonWidth + (columns - 1) * gapX
-    local startX = math.max(sidePadding, math.floor((viewport.X - totalWidth) / 2))
-    local startY = viewport.Y - bottomPadding - (rows * buttonHeight + (rows - 1) * gapY)
+    local startX = math.max(10, math.floor((viewport.X - totalWidth) / 2))
+    local startY = topPadding
 
     for index, frame in ipairs(visibleFrames) do
-        if index > 8 then
+        if index > columns * 2 then
             frame.Visible = false
             continue
         end
@@ -3618,12 +3649,12 @@ end
 -- ═══════════════════════════════════════════════════════
 
 function createRightButtons(device)
-    local buttonSize = device == "iPhone" and 38 or 48
+    local buttonSize = device == "iPhone" and 34 or 42
 
-    -- 2-row grid layout constants
-    local gridPad = 4
-    local gridMarginR = 10
-    local gridMarginB = 160
+    -- 2-row grid layout constants (tighter)
+    local gridPad = 3
+    local gridMarginR = 8
+    local gridMarginB = 155
 
     -- ✅ DESYNC Button
     local DesyncButton = Instance.new("TextButton")
@@ -3788,15 +3819,15 @@ function createRightButtons(device)
             end
         end)
 
-        -- ⚙ Lagger Gear Button
+        -- ⚙ Lagger Gear Button (tiny)
         local LaggerGear = Instance.new("TextButton")
-        LaggerGear.Size = UDim2.new(0, 18, 0, 18)
-        LaggerGear.Position = UDim2.new(1, -16, 0, -2)
+        LaggerGear.Size = UDim2.new(0, 12, 0, 12)
+        LaggerGear.Position = UDim2.new(1, -13, 0, 1)
         LaggerGear.BackgroundTransparency = 1
         LaggerGear.Text = "⚙"
-        LaggerGear.TextColor3 = Color3.fromRGB(200, 200, 200)
+        LaggerGear.TextColor3 = Color3.fromRGB(180, 180, 180)
         LaggerGear.Font = Enum.Font.GothamBold
-        LaggerGear.TextSize = 14
+        LaggerGear.TextSize = 9
         LaggerGear.ZIndex = 3
         LaggerGear.Parent = LaggerButton
 
@@ -4147,15 +4178,15 @@ function createRightButtons(device)
     JukeStroke.ZIndex = 2
     JukeStroke.Parent = JukeButton
 
-    -- ⚙ Gear Settings Button (top-right corner of JUKE)
+    -- ⚙ Gear Settings Button (tiny, top-right corner of JUKE)
     local JukeGear = Instance.new("TextButton")
-    JukeGear.Size = UDim2.new(0, 18, 0, 18)
-    JukeGear.Position = UDim2.new(1, -16, 0, -2)
+    JukeGear.Size = UDim2.new(0, 12, 0, 12)
+    JukeGear.Position = UDim2.new(1, -13, 0, 1)
     JukeGear.BackgroundTransparency = 1
     JukeGear.Text = "⚙"
-    JukeGear.TextColor3 = Color3.fromRGB(200, 200, 200)
+    JukeGear.TextColor3 = Color3.fromRGB(180, 180, 180)
     JukeGear.Font = Enum.Font.GothamBold
-    JukeGear.TextSize = 14
+    JukeGear.TextSize = 9
     JukeGear.ZIndex = 3
     JukeGear.Parent = JukeButton
 
