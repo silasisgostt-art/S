@@ -128,33 +128,35 @@ local function startSpeedBooster()
     if SpeedBooster.HeartbeatConn then SpeedBooster.HeartbeatConn:Disconnect() end
     if SpeedBooster.JumpConn then SpeedBooster.JumpConn:Disconnect() end
     
-    SpeedBooster.HeartbeatConn = RunService.Heartbeat:Connect(function()
+    -- ✅ 5ue7 VELOCITY BYPASS: RenderStepped + pure AssemblyLinearVelocity
+    SpeedBooster.HeartbeatConn = RunService.RenderStepped:Connect(function()
         if not SpeedBooster.Enabled then return end
         local c = player.Character
         local h = c and c:FindFirstChildOfClass("Humanoid")
         local r = c and c:FindFirstChild("HumanoidRootPart")
         if not h or not r then return end
         
-        local carry = false
-        local a = h:FindFirstChildOfClass("Animator")
-        if a then
-            for _, t in pairs(a:GetPlayingAnimationTracks()) do
-                if string.find(t.Animation.AnimationId, "71186871415348") then
-                    carry = true
-                    break
+        if h.MoveDirection.Magnitude > 0 then
+            local carry = false
+            local a = h:FindFirstChildOfClass("Animator")
+            if a then
+                for _, t in pairs(a:GetPlayingAnimationTracks()) do
+                    if string.find(t.Animation.AnimationId, "71186871415348") then
+                        carry = true
+                        break
+                    end
                 end
             end
-        end
-        
-        if h.MoveDirection.Magnitude > 0 then
+            
             local vel = carry and SpeedBooster.StealSpeed or SpeedBooster.NormalSpeed
-            -- True bypass: if lag-back detected, use CFrame teleport
-            if math.abs(r.AssemblyLinearVelocity.X) < 1 and math.abs(r.AssemblyLinearVelocity.Z) < 1 and h.MoveDirection.Magnitude > 0.1 then
-                r.CFrame = r.CFrame + Vector3.new(h.MoveDirection.X * 2, 0, h.MoveDirection.Z * 2)
-                r.AssemblyLinearVelocity = Vector3.zero
-            else
-                r.AssemblyLinearVelocity = Vector3.new(h.MoveDirection.X * vel, r.AssemblyLinearVelocity.Y, h.MoveDirection.Z * vel)
-            end
+            local dir = h.MoveDirection.Unit
+            local currentY = r.AssemblyLinearVelocity.Y
+            
+            r.AssemblyLinearVelocity = Vector3.new(
+                dir.X * vel,
+                currentY,
+                dir.Z * vel
+            )
         end
     end)
     
