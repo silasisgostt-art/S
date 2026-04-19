@@ -1267,7 +1267,7 @@ local function startBatAimbot()
     lastTargetPosition_bat = nil
     lastTargetVelocity_bat = Vector3.zero
 
-    -- ✅ CLONE FOLLOW: RenderStepped for zero-lag, CFrame snap behind target
+    -- ✅ CLONE FOLLOW: Pure velocity-based (replicates to server!)
     followConnection_bat = RunService.RenderStepped:Connect(function(dt)
         if not batAimbotToggled or not character or not hrp or not hum then return end
         hrp.CanCollide = false
@@ -1281,40 +1281,30 @@ local function startBatAimbot()
         if lastTargetPosition_bat then
             targetVel = (targetPos - lastTargetPosition_bat) / math.max(dt, 0.001)
         end
-        -- Smooth the velocity estimation
         lastTargetVelocity_bat = lastTargetVelocity_bat:Lerp(targetVel, 0.5)
         lastTargetPosition_bat = targetPos
 
-        -- Predict where target will be next frame
-        local predictedPos = targetPos + lastTargetVelocity_bat * dt * 2
-
-        -- Position INSIDE the target body, slightly forward
+        -- Goal position: INSIDE the target body, slightly forward
         local targetLookVector = target.CFrame.LookVector
-        local insidePos = predictedPos + (targetLookVector * BAT_INSIDE_OFFSET)
-        -- Match target's Y exactly (glued to same height)
-        insidePos = Vector3.new(insidePos.X, predictedPos.Y, insidePos.Z)
+        local goalPos = targetPos + (targetLookVector * BAT_INSIDE_OFFSET)
+        goalPos = Vector3.new(goalPos.X, targetPos.Y, goalPos.Z)
 
-        local toGoal = insidePos - hrp.Position
+        local toGoal = goalPos - hrp.Position
         local goalDist = toGoal.Magnitude
 
-        if goalDist < 0.5 then
-            -- Very close: snap CFrame directly INTO target + copy velocity
-            hrp.CFrame = CFrame.new(insidePos) * CFrame.Angles(0, math.atan2(-targetLookVector.X, -targetLookVector.Z), 0)
-            hrp.AssemblyLinearVelocity = lastTargetVelocity_bat
-        elseif goalDist < 6 then
-            -- Close: CFrame lerp into target body
-            local alpha = math.clamp(goalDist / 3, 0.3, 1)
-            local lerpPos = hrp.Position:Lerp(insidePos, alpha)
-            hrp.CFrame = CFrame.new(lerpPos) * CFrame.Angles(0, math.atan2(-targetLookVector.X, -targetLookVector.Z), 0)
-            hrp.AssemblyLinearVelocity = lastTargetVelocity_bat + toGoal.Unit * goalDist * 15
+        -- PURE VELOCITY (server sees this!) - aggressive multiplier to stay glued
+        -- The closer we are, the more we match target speed; farther = rush harder
+        if goalDist < 1 then
+            -- Inside body: match target velocity exactly to move with them
+            hrp.AssemblyLinearVelocity = lastTargetVelocity_bat + toGoal * 60
+        elseif goalDist < 8 then
+            -- Close: strong velocity pull into target + match their movement
+            local catchUp = toGoal.Unit * math.max(goalDist * 50, 80)
+            hrp.AssemblyLinearVelocity = lastTargetVelocity_bat + catchUp
         else
-            -- Far away: pure velocity rush + CFrame nudge to close gap fast
-            local rushSpeed = math.max(goalDist * 8, 80)
+            -- Far: maximum rush speed
+            local rushSpeed = math.max(goalDist * 12, 120)
             hrp.AssemblyLinearVelocity = toGoal.Unit * rushSpeed + Vector3.new(0, lastTargetVelocity_bat.Y, 0)
-            -- CFrame nudge to prevent rubber-banding
-            if goalDist > 15 then
-                hrp.CFrame = CFrame.new(insidePos) * CFrame.Angles(0, math.atan2(-targetLookVector.X, -targetLookVector.Z), 0)
-            end
         end
 
         -- Equip and swing bat when close enough
