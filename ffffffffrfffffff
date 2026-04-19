@@ -1294,19 +1294,16 @@ local function startBatAimbot()
 
         local toGoal = goalPos - hrp.Position
         local goalDist = toGoal.Magnitude
+        local sm = BAT_TRACK_SPEED_MULT or 1
 
         -- PURE VELOCITY (server sees this!) - aggressive multiplier to stay glued
-        -- The closer we are, the more we match target speed; farther = rush harder
         if goalDist < 1 then
-            -- Inside body: match target velocity exactly to move with them
-            hrp.AssemblyLinearVelocity = lastTargetVelocity_bat + toGoal * 60
+            hrp.AssemblyLinearVelocity = (lastTargetVelocity_bat + toGoal * 60) * sm
         elseif goalDist < 8 then
-            -- Close: strong velocity pull into target + match their movement
             local catchUp = toGoal.Unit * math.max(goalDist * 50, 80)
-            hrp.AssemblyLinearVelocity = lastTargetVelocity_bat + catchUp
+            hrp.AssemblyLinearVelocity = (lastTargetVelocity_bat + catchUp) * sm
         else
-            -- Far: maximum rush speed
-            local rushSpeed = math.max(goalDist * 12, 120)
+            local rushSpeed = math.max(goalDist * 12, 120) * sm
             hrp.AssemblyLinearVelocity = toGoal.Unit * rushSpeed + Vector3.new(0, lastTargetVelocity_bat.Y, 0)
         end
 
@@ -3816,6 +3813,20 @@ function createRightButtons(device)
             laggerThread = coroutine.create(startLaggerLoop)
             coroutine.resume(laggerThread)
         end
+        -- Hook lagger controls for Track Player auto-lagger
+        startLaggerFromTrack = function()
+            if not laggerEnabled then
+                laggerEnabled = true
+                LaggerButton.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+                startLagger()
+            end
+        end
+        stopLaggerFromTrack = function()
+            if laggerEnabled then
+                LaggerButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+                stopLaggerLoop()
+            end
+        end
         LaggerButton.MouseButton1Click:Connect(function()
             laggerEnabled = not laggerEnabled
             if laggerEnabled then
@@ -4099,10 +4110,175 @@ function createRightButtons(device)
         if batAimbotToggled then
             startBatAimbot()
             TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+            -- Auto-enable lagger if toggle is on
+            if trackAutoLagger and startLaggerFromTrack then
+                startLaggerFromTrack()
+            end
         else
             stopBatAimbot()
             TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            -- Auto-disable lagger
+            if trackAutoLagger and stopLaggerFromTrack then
+                stopLaggerFromTrack()
+            end
         end
+    end)
+
+    -- ⚙ Track Player Gear Button (tiny)
+    local TrackGear = Instance.new("TextButton")
+    TrackGear.Size = UDim2.new(0, 12, 0, 12)
+    TrackGear.Position = UDim2.new(1, -13, 0, 1)
+    TrackGear.BackgroundTransparency = 1
+    TrackGear.Text = "⚙"
+    TrackGear.TextColor3 = Color3.fromRGB(180, 180, 180)
+    TrackGear.Font = Enum.Font.GothamBold
+    TrackGear.TextSize = 9
+    TrackGear.ZIndex = 3
+    TrackGear.Parent = TrackPlayerButton
+
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ TRACK PLAYER SETTINGS PANEL
+    -- ═══════════════════════════════════════════════════════
+    local TrackSettings = Instance.new("Frame")
+    TrackSettings.Name = "TrackSettings"
+    TrackSettings.Size = UDim2.new(0, 220, 0, 140)
+    TrackSettings.Position = UDim2.new(0.5, -110, 0.35, 0)
+    TrackSettings.BackgroundColor3 = Color3.fromRGB(10, 10, 14)
+    TrackSettings.BackgroundTransparency = 0.05
+    TrackSettings.Visible = false
+    TrackSettings.Active = true
+    TrackSettings.Draggable = true
+    TrackSettings.Parent = ScreenGui
+    TrackSettings.ZIndex = 10
+
+    Instance.new("UICorner", TrackSettings).CornerRadius = UDim.new(0, 10)
+    local TSStroke = Instance.new("UIStroke", TrackSettings)
+    TSStroke.Color = Color3.fromRGB(130, 90, 220)
+    TSStroke.Thickness = 1.5
+
+    local TSTitle = Instance.new("TextLabel", TrackSettings)
+    TSTitle.Size = UDim2.new(1, 0, 0, 26)
+    TSTitle.BackgroundTransparency = 1
+    TSTitle.Text = "🎯 TRACK SETTINGS"
+    TSTitle.TextColor3 = Color3.fromRGB(130, 90, 220)
+    TSTitle.Font = Enum.Font.GothamBold
+    TSTitle.TextSize = 12
+    TSTitle.ZIndex = 11
+
+    -- Speed slider (0.5x - 3x)
+    local tsSpeedHolder = Instance.new("Frame", TrackSettings)
+    tsSpeedHolder.Size = UDim2.new(1, -20, 0, 36)
+    tsSpeedHolder.Position = UDim2.new(0, 10, 0, 30)
+    tsSpeedHolder.BackgroundTransparency = 1
+    tsSpeedHolder.ZIndex = 11
+
+    local tsSpeedLbl = Instance.new("TextLabel", tsSpeedHolder)
+    tsSpeedLbl.Size = UDim2.new(1, 0, 0, 14)
+    tsSpeedLbl.BackgroundTransparency = 1
+    tsSpeedLbl.Text = "Track Speed: 1.0x"
+    tsSpeedLbl.Font = Enum.Font.Gotham
+    tsSpeedLbl.TextSize = 11
+    tsSpeedLbl.TextColor3 = Color3.fromRGB(220, 220, 220)
+    tsSpeedLbl.TextXAlignment = Enum.TextXAlignment.Left
+    tsSpeedLbl.ZIndex = 11
+
+    local tsBar = Instance.new("Frame", tsSpeedHolder)
+    tsBar.Size = UDim2.new(1, 0, 0, 6)
+    tsBar.Position = UDim2.new(0, 0, 0, 20)
+    tsBar.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+    tsBar.BorderSizePixel = 0
+    tsBar.ZIndex = 11
+    Instance.new("UICorner", tsBar).CornerRadius = UDim.new(1, 0)
+
+    local initRel = math.clamp((BAT_TRACK_SPEED_MULT - 0.5) / 2.5, 0, 1)
+    local tsFill = Instance.new("Frame", tsBar)
+    tsFill.Size = UDim2.fromScale(initRel, 1)
+    tsFill.BackgroundColor3 = Color3.fromRGB(130, 90, 220)
+    tsFill.BorderSizePixel = 0
+    tsFill.ZIndex = 12
+    Instance.new("UICorner", tsFill).CornerRadius = UDim.new(1, 0)
+
+    local tsKnob = Instance.new("Frame", tsBar)
+    tsKnob.Size = UDim2.fromOffset(12, 12)
+    tsKnob.AnchorPoint = Vector2.new(0.5, 0.5)
+    tsKnob.Position = UDim2.new(initRel, 0, 0.5, 0)
+    tsKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    tsKnob.ZIndex = 13
+    Instance.new("UICorner", tsKnob).CornerRadius = UDim.new(1, 0)
+
+    local tsDragging = false
+    local function tsUpdate(x)
+        local rel = math.clamp((x - tsBar.AbsolutePosition.X) / tsBar.AbsoluteSize.X, 0, 1)
+        tsFill.Size = UDim2.fromScale(rel, 1)
+        tsKnob.Position = UDim2.new(rel, 0, 0.5, 0)
+        BAT_TRACK_SPEED_MULT = 0.5 + rel * 2.5
+        tsSpeedLbl.Text = "Track Speed: " .. string.format("%.1f", BAT_TRACK_SPEED_MULT) .. "x"
+    end
+
+    tsBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            tsDragging = true; tsUpdate(input.Position.X)
+        end
+    end)
+    tsKnob.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            tsDragging = true
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if tsDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            tsUpdate(input.Position.X)
+        end
+    end)
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            tsDragging = false
+        end
+    end)
+
+    -- Auto-Lagger toggle
+    local lagToggleBtn = Instance.new("TextButton", TrackSettings)
+    lagToggleBtn.Size = UDim2.new(1, -20, 0, 28)
+    lagToggleBtn.Position = UDim2.new(0, 10, 0, 76)
+    lagToggleBtn.BackgroundColor3 = trackAutoLagger and Color3.fromRGB(130, 90, 220) or Color3.fromRGB(40, 40, 50)
+    lagToggleBtn.Text = trackAutoLagger and "Auto Lagger: ON" or "Auto Lagger: OFF"
+    lagToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    lagToggleBtn.Font = Enum.Font.GothamBold
+    lagToggleBtn.TextSize = 11
+    lagToggleBtn.ZIndex = 11
+    Instance.new("UICorner", lagToggleBtn).CornerRadius = UDim.new(0, 6)
+
+    lagToggleBtn.MouseButton1Click:Connect(function()
+        trackAutoLagger = not trackAutoLagger
+        lagToggleBtn.Text = trackAutoLagger and "Auto Lagger: ON" or "Auto Lagger: OFF"
+        lagToggleBtn.BackgroundColor3 = trackAutoLagger and Color3.fromRGB(130, 90, 220) or Color3.fromRGB(40, 40, 50)
+        -- If tracking is active, toggle lagger immediately
+        if batAimbotToggled then
+            if trackAutoLagger and startLaggerFromTrack then
+                startLaggerFromTrack()
+            elseif not trackAutoLagger and stopLaggerFromTrack then
+                stopLaggerFromTrack()
+            end
+        end
+    end)
+
+    -- Close button
+    local tsClose = Instance.new("TextButton", TrackSettings)
+    tsClose.Size = UDim2.new(1, -20, 0, 22)
+    tsClose.Position = UDim2.new(0, 10, 0, 110)
+    tsClose.BackgroundColor3 = Color3.fromRGB(60, 30, 30)
+    tsClose.Text = "CLOSE"
+    tsClose.TextColor3 = Color3.fromRGB(255, 255, 255)
+    tsClose.Font = Enum.Font.GothamBold
+    tsClose.TextSize = 10
+    tsClose.ZIndex = 11
+    Instance.new("UICorner", tsClose).CornerRadius = UDim.new(0, 6)
+    tsClose.MouseButton1Click:Connect(function()
+        TrackSettings.Visible = false
+    end)
+
+    TrackGear.MouseButton1Click:Connect(function()
+        TrackSettings.Visible = not TrackSettings.Visible
     end)
 
     -- ✅ HIT CIRCLE Button (UNDER TRACK PLAYER - GRAY!)
