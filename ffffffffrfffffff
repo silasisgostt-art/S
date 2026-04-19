@@ -1531,22 +1531,23 @@ end)
 local SmallGUIInstances = {}
 
 -- ✅ CONTAINER BOX for top small GUI buttons
-local TopButtonBox = Instance.new("Frame")
-TopButtonBox.Name = "TopButtonBox"
-TopButtonBox.Size = UDim2.new(0, 400, 0, 28)
-TopButtonBox.Position = UDim2.new(0.5, -200, 0, 3)
-TopButtonBox.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
-TopButtonBox.BackgroundTransparency = 0.15
-TopButtonBox.BorderSizePixel = 0
-TopButtonBox.Active = true
-TopButtonBox.Draggable = true
-TopButtonBox.ClipsDescendants = false
-TopButtonBox.Parent = ScreenGui
-Instance.new("UICorner", TopButtonBox).CornerRadius = UDim.new(0, 10)
-local topBoxStroke = Instance.new("UIStroke", TopButtonBox)
-topBoxStroke.Color = Color3.fromRGB(130, 90, 220)
-topBoxStroke.Thickness = 1.5
-topBoxStroke.Transparency = 0.3
+local SmallButtonBox = Instance.new("Frame")
+SmallButtonBox.Name = "SmallButtonBox"
+SmallButtonBox.Size = UDim2.new(0, 400, 0, 28)
+SmallButtonBox.Position = UDim2.new(0.5, -200, 0, 3)
+SmallButtonBox.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+SmallButtonBox.BackgroundTransparency = 0.15
+SmallButtonBox.BorderSizePixel = 0
+SmallButtonBox.Active = true
+SmallButtonBox.Draggable = true
+SmallButtonBox.ClipsDescendants = false
+SmallButtonBox.Visible = false
+SmallButtonBox.Parent = ScreenGui
+Instance.new("UICorner", SmallButtonBox).CornerRadius = UDim.new(0, 10)
+local smallBoxStroke = Instance.new("UIStroke", SmallButtonBox)
+smallBoxStroke.Color = Color3.fromRGB(130, 90, 220)
+smallBoxStroke.Thickness = 1.5
+smallBoxStroke.Transparency = 0.3
 
 local function createSmallGUI(name, yPosition)
     local SmallGUI = Instance.new("Frame")
@@ -1560,7 +1561,7 @@ local function createSmallGUI(name, yPosition)
     SmallGUI.Active = false
     SmallGUI.Draggable = false
     SmallGUI.ClipsDescendants = true  -- ✅ Clips flash effect!
-    SmallGUI.Parent = TopButtonBox
+    SmallGUI.Parent = SmallButtonBox
 
     local Corner = Instance.new("UICorner")
     Corner.CornerRadius = UDim.new(0, 8)
@@ -1693,29 +1694,33 @@ local function refreshSmallButtonPositions()
         end
     end
 
-    -- Arrange buttons in 1 row inside TopButtonBox
-    local count = #visibleFrames
-    if count < 1 then
-        TopButtonBox.Visible = false
-        return
-    end
-    TopButtonBox.Visible = true
+    -- Show/hide the container box
+    SmallButtonBox.Visible = #visibleFrames > 0
 
-    local gapX = 3
-    local padX = 5
-    local padY = 5
+    -- Single row layout inside SmallButtonBox
     local buttonHeight = 16
-    local buttonWidth = 62
+    local gapX = 4
+    local padX = 6
+    local padY = 6
+    local count = #visibleFrames
+    if count < 1 then return end
+    local viewport = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1280, 720)
+    local buttonWidth = math.clamp(math.floor((viewport.X - padX*2 - gapX * (count - 1)) / count), 40, 80)
     local totalWidth = count * buttonWidth + (count - 1) * gapX + padX * 2
-    local totalHeight = buttonHeight + padY * 2
+    local boxHeight = buttonHeight + padY * 2
 
-    TopButtonBox.Size = UDim2.new(0, totalWidth, 0, totalHeight)
-    TopButtonBox.Position = UDim2.new(0.5, -math.floor(totalWidth / 2), 0, 3)
+    SmallButtonBox.Size = UDim2.new(0, totalWidth, 0, boxHeight)
+    SmallButtonBox.Position = UDim2.new(0.5, -math.floor(totalWidth / 2), 0, 3)
 
     for index, frame in ipairs(visibleFrames) do
         frame.Size = UDim2.new(0, buttonWidth, 0, buttonHeight)
         local col = index - 1
-        frame.Position = UDim2.new(0, padX + col * (buttonWidth + gapX), 0, padY)
+        frame.Position = UDim2.new(
+            0,
+            padX + col * (buttonWidth + gapX),
+            0,
+            padY
+        )
         frame.Visible = true
     end
 end
@@ -3895,7 +3900,7 @@ function createRightButtons(device)
         LaggerGear.Text = "⚙"
         LaggerGear.TextColor3 = Color3.fromRGB(180, 180, 180)
         LaggerGear.Font = Enum.Font.GothamBold
-        LaggerGear.TextSize = 6
+        LaggerGear.TextSize = 7
         LaggerGear.ZIndex = 3
         LaggerGear.Parent = LaggerButton
 
@@ -4183,7 +4188,7 @@ function createRightButtons(device)
     TrackGear.Text = "⚙"
     TrackGear.TextColor3 = Color3.fromRGB(180, 180, 180)
     TrackGear.Font = Enum.Font.GothamBold
-    TrackGear.TextSize = 6
+    TrackGear.TextSize = 7
     TrackGear.ZIndex = 3
     TrackGear.Parent = TrackPlayerButton
 
@@ -4446,7 +4451,7 @@ function createRightButtons(device)
     JukeGear.Text = "⚙"
     JukeGear.TextColor3 = Color3.fromRGB(180, 180, 180)
     JukeGear.Font = Enum.Font.GothamBold
-    JukeGear.TextSize = 6
+    JukeGear.TextSize = 7
     JukeGear.ZIndex = 3
     JukeGear.Parent = JukeButton
 
@@ -4740,14 +4745,14 @@ function createRightButtons(device)
 
     -- ⚙ Speed Bypass Gear
     local SpeedBypassGear = Instance.new("TextButton")
-    SpeedBypassGear.Size = UDim2.new(0, 8, 0, 8)
-    SpeedBypassGear.Position = UDim2.new(1, -9, 0, 1)
+    SpeedBypassGear.Size = UDim2.new(0, 10, 0, 10)
+    SpeedBypassGear.Position = UDim2.new(1, -11, 0, 1)
     SpeedBypassGear.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
     SpeedBypassGear.BackgroundTransparency = 0.3
     SpeedBypassGear.Text = "⚙"
     SpeedBypassGear.TextColor3 = Color3.fromRGB(255, 220, 100)
     SpeedBypassGear.Font = Enum.Font.GothamBold
-    SpeedBypassGear.TextSize = 6
+    SpeedBypassGear.TextSize = 8
     SpeedBypassGear.ZIndex = 5
     SpeedBypassGear.Parent = SpeedBypassButton
     Instance.new("UICorner", SpeedBypassGear).CornerRadius = UDim.new(0, 6)
