@@ -3690,13 +3690,13 @@ function createRightButtons(device)
 
         -- ⚙ Lagger Gear Button
         local LaggerGear = Instance.new("TextButton")
-        LaggerGear.Size = UDim2.new(0, 18, 0, 18)
-        LaggerGear.Position = UDim2.new(1, -16, 0, -2)
+        LaggerGear.Size = UDim2.new(1, 0, 1, 0) -- Fill parent
+        LaggerGear.Position = UDim2.new(0, 0, 0, 0)
         LaggerGear.BackgroundTransparency = 1
         LaggerGear.Text = "⚙"
         LaggerGear.TextColor3 = Color3.fromRGB(200, 200, 200)
         LaggerGear.Font = Enum.Font.GothamBold
-        LaggerGear.TextSize = 14
+        LaggerGear.TextScaled = true
         LaggerGear.ZIndex = 3
         LaggerGear.Parent = LaggerButton
 
@@ -4049,13 +4049,13 @@ function createRightButtons(device)
 
     -- ⚙ Gear Settings Button (top-right corner of JUKE)
     local JukeGear = Instance.new("TextButton")
-    JukeGear.Size = UDim2.new(0, 18, 0, 18)
-    JukeGear.Position = UDim2.new(1, -16, 0, -2)
+    JukeGear.Size = UDim2.new(1, 0, 1, 0) -- Fill parent
+    JukeGear.Position = UDim2.new(0, 0, 0, 0)
     JukeGear.BackgroundTransparency = 1
     JukeGear.Text = "⚙"
     JukeGear.TextColor3 = Color3.fromRGB(200, 200, 200)
     JukeGear.Font = Enum.Font.GothamBold
-    JukeGear.TextSize = 14
+    JukeGear.TextScaled = true
     JukeGear.ZIndex = 3
     JukeGear.Parent = JukeButton
 
