@@ -1175,6 +1175,9 @@ local batAimbotToggled = false
 local BAT_ENGAGE_RANGE = 20
 local BAT_LOOP_TIME = 0.25
 local BAT_INSIDE_OFFSET = -1.2  -- negative = forward INTO their body
+local BAT_TRACK_SPEED_MULT = 1.0  -- Track speed multiplier (slider)
+local trackAutoLagger = true  -- Auto-enable lagger when tracking
+local startLaggerFromTrack, stopLaggerFromTrack  -- forward-declared lagger hooks
 local lastEquipTick_bat = 0
 local lastUseTick_bat = 0
 local lookConnection_bat = nil
