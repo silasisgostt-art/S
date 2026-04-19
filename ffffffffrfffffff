@@ -128,7 +128,7 @@ local function startSpeedBooster()
     if SpeedBooster.HeartbeatConn then SpeedBooster.HeartbeatConn:Disconnect() end
     if SpeedBooster.JumpConn then SpeedBooster.JumpConn:Disconnect() end
     
-    -- ✅ 5ue7 VELOCITY BYPASS: RenderStepped + pure AssemblyLinearVelocity
+    -- ✅ 5ue7 VELOCITY BYPASS: RenderStepped + pure AssemblyLinearVelocity + Bypass Power
     SpeedBooster.HeartbeatConn = RunService.RenderStepped:Connect(function()
         if not SpeedBooster.Enabled then return end
         local c = player.Character
@@ -152,11 +152,19 @@ local function startSpeedBooster()
             local dir = h.MoveDirection.Unit
             local currentY = r.AssemblyLinearVelocity.Y
             
+            -- Apply pure velocity (5ue7 method)
             r.AssemblyLinearVelocity = Vector3.new(
                 dir.X * vel,
                 currentY,
                 dir.Z * vel
             )
+            
+            -- Bypass Power: micro CFrame nudge to fight server corrections
+            local bp = SpeedBooster.BypassPower or 0
+            if bp > 0 then
+                local nudge = (bp / 100) * 1.5
+                r.CFrame = r.CFrame + Vector3.new(dir.X * nudge, 0, dir.Z * nudge)
+            end
         end
     end)
     
@@ -2276,7 +2284,6 @@ local currentTab = "Main"
 local tabButtons = {}
 local contentFrames = {}
 
-local normalSpeedBox, stealSpeedBox
 local fovSliderBox
 
 local function createMainGUI(device)
@@ -2618,151 +2625,135 @@ local function createMainGUI(device)
         refreshSmallButtonPositions()
     end, true)
 
-    -- ✅ SPEED SETTINGS POPUP (NEXT TO BUTTON!)
+    -- ✅ SPEED SETTINGS POPUP (5ue7 STYLE SLIDERS!)
     local SpeedSettingsGUI = Instance.new("Frame")
     SpeedSettingsGUI.Name = "SpeedSettingsGUI"
-    SpeedSettingsGUI.Size = UDim2.new(0, 200, 0, 150)
-    SpeedSettingsGUI.Position = UDim2.new(0.5, -100, 0.5, -75)
-    SpeedSettingsGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-    SpeedSettingsGUI.BackgroundTransparency = 0.1
+    SpeedSettingsGUI.Size = UDim2.new(0, 230, 0, 220)
+    SpeedSettingsGUI.Position = UDim2.new(0.5, -115, 0.5, -110)
+    SpeedSettingsGUI.BackgroundColor3 = Color3.fromRGB(10, 10, 14)
+    SpeedSettingsGUI.BackgroundTransparency = 0.05
     SpeedSettingsGUI.BorderSizePixel = 0
     SpeedSettingsGUI.Visible = false
     SpeedSettingsGUI.Active = true
     SpeedSettingsGUI.Draggable = true
     SpeedSettingsGUI.Parent = ScreenGui
 
-    local SpeedCorner = Instance.new("UICorner")
-    SpeedCorner.CornerRadius = UDim.new(0, 12)
-    SpeedCorner.Parent = SpeedSettingsGUI
+    Instance.new("UICorner", SpeedSettingsGUI).CornerRadius = UDim.new(0, 10)
+    local SpeedStroke = Instance.new("UIStroke", SpeedSettingsGUI)
+    SpeedStroke.Color = Color3.fromRGB(130, 90, 220)
+    SpeedStroke.Thickness = 1.5
 
-    local SpeedStroke = Instance.new("UIStroke")
-    SpeedStroke.Color = Color3.fromRGB(255, 255, 255)
-    SpeedStroke.Thickness = 2
-    SpeedStroke.Parent = SpeedSettingsGUI
-
-    local SpeedTitle = Instance.new("TextLabel")
-    SpeedTitle.Size = UDim2.new(1, 0, 0, 30)
+    local SpeedTitle = Instance.new("TextLabel", SpeedSettingsGUI)
+    SpeedTitle.Size = UDim2.new(1, 0, 0, 28)
     SpeedTitle.BackgroundTransparency = 1
-    SpeedTitle.Text = "SPEED SETTINGS"
-    SpeedTitle.TextColor3 = Color3.fromRGB(255, 200, 100)
+    SpeedTitle.Text = "⚡ SPEED SETTINGS"
+    SpeedTitle.TextColor3 = Color3.fromRGB(130, 90, 220)
     SpeedTitle.Font = Enum.Font.GothamBold
-    SpeedTitle.TextSize = 14
-    SpeedTitle.Parent = SpeedSettingsGUI
+    SpeedTitle.TextSize = 13
 
-    local NormalLabel = Instance.new("TextLabel")
-    NormalLabel.Size = UDim2.new(0.6, 0, 0, 25)
-    NormalLabel.Position = UDim2.new(0, 10, 0, 35)
-    NormalLabel.BackgroundTransparency = 1
-    NormalLabel.Text = "Normal Speed:"
-    NormalLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    NormalLabel.Font = Enum.Font.Gotham
-    NormalLabel.TextSize = 12
-    NormalLabel.TextXAlignment = Enum.TextXAlignment.Left
-    NormalLabel.Parent = SpeedSettingsGUI
+    -- Slider factory for speed settings
+    local function createSpeedSlider(parent, yPos, labelText, minVal, maxVal, defaultVal, onChange)
+        local holder = Instance.new("Frame", parent)
+        holder.Size = UDim2.new(1, -20, 0, 36)
+        holder.Position = UDim2.new(0, 10, 0, yPos)
+        holder.BackgroundTransparency = 1
 
-    normalSpeedBox = Instance.new("TextBox")
-    normalSpeedBox.Size = UDim2.new(0, 60, 0, 25)
-    normalSpeedBox.Position = UDim2.new(1, -70, 0, 35)
-    normalSpeedBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-    normalSpeedBox.Text = tostring(SpeedBooster.NormalSpeed)
-    normalSpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-    normalSpeedBox.Font = Enum.Font.GothamBold
-    normalSpeedBox.TextSize = 12
-    normalSpeedBox.Parent = SpeedSettingsGUI
+        local lbl = Instance.new("TextLabel", holder)
+        lbl.Size = UDim2.new(1, 0, 0, 14)
+        lbl.BackgroundTransparency = 1
+        lbl.Text = labelText .. ": " .. math.floor(defaultVal)
+        lbl.Font = Enum.Font.Gotham
+        lbl.TextSize = 11
+        lbl.TextColor3 = Color3.fromRGB(220, 220, 220)
+        lbl.TextXAlignment = Enum.TextXAlignment.Left
 
-    local NormalCorner = Instance.new("UICorner")
-    NormalCorner.CornerRadius = UDim.new(0, 6)
-    NormalCorner.Parent = normalSpeedBox
+        local bar = Instance.new("Frame", holder)
+        bar.Size = UDim2.new(1, 0, 0, 6)
+        bar.Position = UDim2.new(0, 0, 0, 20)
+        bar.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+        bar.BorderSizePixel = 0
+        Instance.new("UICorner", bar).CornerRadius = UDim.new(1, 0)
 
-    local StealLabel = Instance.new("TextLabel")
-    StealLabel.Size = UDim2.new(0.6, 0, 0, 25)
-    StealLabel.Position = UDim2.new(0, 10, 0, 65)
-    StealLabel.BackgroundTransparency = 1
-    StealLabel.Text = "Steal Speed:"
-    StealLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    StealLabel.Font = Enum.Font.Gotham
-    StealLabel.TextSize = 12
-    StealLabel.TextXAlignment = Enum.TextXAlignment.Left
-    StealLabel.Parent = SpeedSettingsGUI
+        local fill = Instance.new("Frame", bar)
+        local initRel = math.clamp((defaultVal - minVal) / (maxVal - minVal), 0, 1)
+        fill.Size = UDim2.fromScale(initRel, 1)
+        fill.BackgroundColor3 = Color3.fromRGB(130, 90, 220)
+        fill.BorderSizePixel = 0
+        Instance.new("UICorner", fill).CornerRadius = UDim.new(1, 0)
 
-    stealSpeedBox = Instance.new("TextBox")
-    stealSpeedBox.Size = UDim2.new(0, 60, 0, 25)
-    stealSpeedBox.Position = UDim2.new(1, -70, 0, 65)
-    stealSpeedBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-    stealSpeedBox.Text = tostring(SpeedBooster.StealSpeed)
-    stealSpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-    stealSpeedBox.Font = Enum.Font.GothamBold
-    stealSpeedBox.TextSize = 12
-    stealSpeedBox.Parent = SpeedSettingsGUI
+        local knob = Instance.new("Frame", bar)
+        knob.Size = UDim2.fromOffset(12, 12)
+        knob.AnchorPoint = Vector2.new(0.5, 0.5)
+        knob.Position = UDim2.new(initRel, 0, 0.5, 0)
+        knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        knob.ZIndex = 3
+        Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
 
-    local StealCorner = Instance.new("UICorner")
-    StealCorner.CornerRadius = UDim.new(0, 6)
-    StealCorner.Parent = stealSpeedBox
+        local dragging = false
 
-    local JumpLabel = Instance.new("TextLabel")
-    JumpLabel.Size = UDim2.new(0.6, 0, 0, 25)
-    JumpLabel.Position = UDim2.new(0, 10, 0, 95)
-    JumpLabel.BackgroundTransparency = 1
-    JumpLabel.Text = "Jump Power:"
-    JumpLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    JumpLabel.Font = Enum.Font.Gotham
-    JumpLabel.TextSize = 12
-    JumpLabel.TextXAlignment = Enum.TextXAlignment.Left
-    JumpLabel.Parent = SpeedSettingsGUI
-
-    local JumpPowerBox = Instance.new("TextBox")
-    JumpPowerBox.Size = UDim2.new(0, 60, 0, 25)
-    JumpPowerBox.Position = UDim2.new(1, -70, 0, 95)
-    JumpPowerBox.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
-    JumpPowerBox.Text = tostring(SpeedBooster.JumpPower)
-    JumpPowerBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-    JumpPowerBox.Font = Enum.Font.GothamBold
-    JumpPowerBox.TextSize = 12
-    JumpPowerBox.ClearTextOnFocus = false
-    JumpPowerBox.Parent = SpeedSettingsGUI
-
-    local JumpCorner = Instance.new("UICorner")
-    JumpCorner.CornerRadius = UDim.new(0, 6)
-    JumpCorner.Parent = JumpPowerBox
-
-    JumpPowerBox.FocusLost:Connect(function()
-        local value = tonumber(JumpPowerBox.Text)
-        if value then
-            SpeedBooster.JumpPower = value
-            SaveConfig()
-        else
-            JumpPowerBox.Text = tostring(SpeedBooster.JumpPower)
+        local function update(x)
+            local rel = math.clamp((x - bar.AbsolutePosition.X) / bar.AbsoluteSize.X, 0, 1)
+            fill.Size = UDim2.fromScale(rel, 1)
+            knob.Position = UDim2.new(rel, 0, 0.5, 0)
+            local val = math.floor(minVal + rel * (maxVal - minVal))
+            lbl.Text = labelText .. ": " .. val
+            if onChange then onChange(val) end
         end
+
+        bar.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                dragging = true
+                update(input.Position.X)
+            end
+        end)
+        knob.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                dragging = true
+            end
+        end)
+        holder.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                dragging = true
+                update(input.Position.X)
+            end
+        end)
+
+        UserInputService.InputChanged:Connect(function(input)
+            if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                update(input.Position.X)
+            end
+        end)
+        UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                if dragging then
+                    dragging = false
+                    SaveConfig()
+                end
+            end
+        end)
+
+        return lbl
+    end
+
+    -- Normal Speed slider (16 - 100)
+    createSpeedSlider(SpeedSettingsGUI, 32, "Speed", 16, 100, SpeedBooster.NormalSpeed, function(val)
+        SpeedBooster.NormalSpeed = val
     end)
 
-    normalSpeedBox.FocusLost:Connect(function()
-        local value = tonumber(normalSpeedBox.Text)
-        if value then
-            SpeedBooster.NormalSpeed = value
-            if SpeedBooster.Enabled then
-                stopSpeedBooster()
-                task.wait(0.1)
-                startSpeedBooster()
-            end
-            SaveConfig()
-        else
-            normalSpeedBox.Text = tostring(SpeedBooster.NormalSpeed)
-        end
+    -- Steal Speed slider (10 - 60)
+    createSpeedSlider(SpeedSettingsGUI, 76, "Steal Speed", 10, 60, SpeedBooster.StealSpeed, function(val)
+        SpeedBooster.StealSpeed = val
     end)
 
-    stealSpeedBox.FocusLost:Connect(function()
-        local value = tonumber(stealSpeedBox.Text)
-        if value then
-            SpeedBooster.StealSpeed = value
-            if SpeedBooster.Enabled then
-                stopSpeedBooster()
-                task.wait(0.1)
-                startSpeedBooster()
-            end
-            SaveConfig()
-        else
-            stealSpeedBox.Text = tostring(SpeedBooster.StealSpeed)
-        end
+    -- Jump Power slider (10 - 80)
+    createSpeedSlider(SpeedSettingsGUI, 120, "Jump Power", 10, 80, SpeedBooster.JumpPower, function(val)
+        SpeedBooster.JumpPower = val
+    end)
+
+    -- Bypass Power slider (0 - 100%) — controls CFrame micro-teleport strength
+    SpeedBooster.BypassPower = 0
+    createSpeedSlider(SpeedSettingsGUI, 164, "Bypass Power", 0, 100, 0, function(val)
+        SpeedBooster.BypassPower = val
     end)
 
     SpeedSettingsBtn.MouseButton1Click:Connect(function()
