@@ -1280,11 +1280,12 @@ local function startBatAimbot()
 
         -- Fly at target at set speed (full 3D direction)
         local followSpeed = (_G._trackFollowSpeed and _G._trackFollowSpeed()) or 58
-        if dist > 2 then
+        if dist > 3.2 then
             local dir = toTarget.Unit
             hrp.AssemblyLinearVelocity = dir * followSpeed
         else
-            -- Close enough: match position, zero out velocity
+            -- Within 3.2 studs: spam CFrame TP to lock onto player
+            hrp.CFrame = CFrame.new(targetPos)
             hrp.AssemblyLinearVelocity = Vector3.zero
         end
 
