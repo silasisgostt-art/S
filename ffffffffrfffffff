@@ -1530,22 +1530,39 @@ end)
 
 local SmallGUIInstances = {}
 
+-- ✅ CONTAINER BOX for top-of-screen small buttons (one row)
+local TopButtonBox = Instance.new("Frame")
+TopButtonBox.Name = "TopButtonBox"
+TopButtonBox.Size = UDim2.new(0, 400, 0, 24)
+TopButtonBox.Position = UDim2.new(0.5, -200, 0, 3)
+TopButtonBox.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+TopButtonBox.BackgroundTransparency = 0.15
+TopButtonBox.BorderSizePixel = 0
+TopButtonBox.Active = true
+TopButtonBox.Draggable = true
+TopButtonBox.Visible = false
+TopButtonBox.Parent = ScreenGui
+Instance.new("UICorner", TopButtonBox).CornerRadius = UDim.new(0, 6)
+local topBoxStroke = Instance.new("UIStroke", TopButtonBox)
+topBoxStroke.Color = Color3.fromRGB(60, 50, 80)
+topBoxStroke.Thickness = 1
+topBoxStroke.Transparency = 0.4
+
 local function createSmallGUI(name, yPosition)
     local SmallGUI = Instance.new("Frame")
     SmallGUI.Name = "Small"..name.."GUI"
     SmallGUI.Size = UDim2.new(0, 62, 0, 16) -- Tiny top buttons
-    SmallGUI.Position = UDim2.new(0.5, -40, 0, yPosition)
-    SmallGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    SmallGUI.Position = UDim2.new(0, 0, 0, 0)
+    SmallGUI.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
     SmallGUI.BackgroundTransparency = 0
     SmallGUI.BorderSizePixel = 0
     SmallGUI.Visible = false
     SmallGUI.Active = true
-    SmallGUI.Draggable = true  -- ✅ DRAGGABLE!
-    SmallGUI.ClipsDescendants = true  -- ✅ Clips flash effect!
-    SmallGUI.Parent = ScreenGui
+    SmallGUI.ClipsDescendants = true
+    SmallGUI.Parent = TopButtonBox
 
     local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 8)
+    Corner.CornerRadius = UDim.new(0, 3)
     Corner.Parent = SmallGUI
 
     local Stroke = Instance.new("UIStroke")
@@ -1675,33 +1692,28 @@ local function refreshSmallButtonPositions()
         end
     end
 
-    -- Arrange buttons in 2 rows at the TOP of screen (tiny)
-    local columns = math.min(math.ceil(#visibleFrames / 2), 6)
-    if columns < 1 then columns = 1 end
+    -- Show/hide the top box based on whether any buttons are visible
+    TopButtonBox.Visible = (#visibleFrames > 0)
+    if #visibleFrames == 0 then return end
+
+    -- Arrange in a SINGLE ROW inside TopButtonBox
+    local count = #visibleFrames
     local buttonHeight = 16
-    local gapX = 4
-    local gapY = 3
-    local topPadding = 4
+    local gapX = 3
+    local padX = 4
+    local padY = 4
     local viewport = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1280, 720)
-    local buttonWidth = math.clamp(math.floor((viewport.X - 16 - gapX * (columns - 1)) / columns), 50, 90)
-    local totalWidth = columns * buttonWidth + (columns - 1) * gapX
-    local startX = math.max(10, math.floor((viewport.X - totalWidth) / 2))
-    local startY = topPadding
+    local buttonWidth = math.clamp(math.floor((viewport.X - padX*2 - gapX * (count - 1)) / count), 50, 90)
+    local totalWidth = count * buttonWidth + (count - 1) * gapX + padX * 2
+    local boxHeight = buttonHeight + padY * 2
+
+    TopButtonBox.Size = UDim2.new(0, totalWidth, 0, boxHeight)
+    TopButtonBox.Position = UDim2.new(0.5, -math.floor(totalWidth/2), 0, 3)
 
     for index, frame in ipairs(visibleFrames) do
-        if index > columns * 2 then
-            frame.Visible = false
-            continue
-        end
         frame.Size = UDim2.new(0, buttonWidth, 0, buttonHeight)
-        local row = math.floor((index - 1) / columns)
-        local col = (index - 1) % columns
-        frame.Position = UDim2.new(
-            0,
-            startX + col * (buttonWidth + gapX),
-            0,
-            startY + row * (buttonHeight + gapY)
-        )
+        local col = index - 1
+        frame.Position = UDim2.new(0, padX + col * (buttonWidth + gapX), 0, padY)
         frame.Visible = true
     end
 end
@@ -3438,7 +3450,7 @@ function createAutoButtons(device)
     AutoLeftButton.Parent = ScreenGui
 
     local LeftCorner = Instance.new("UICorner")
-    LeftCorner.CornerRadius = UDim.new(0, 8)
+    LeftCorner.CornerRadius = UDim.new(0, 4)
     LeftCorner.Parent = AutoLeftButton
 
     local LeftBlackStroke = Instance.new("UIStroke")
@@ -3448,7 +3460,7 @@ function createAutoButtons(device)
     LeftBlackStroke.Parent = AutoLeftButton
 
     local LeftStroke = Instance.new("UIStroke")
-    LeftStroke.Color = Color3.fromRGB(255, 255, 255)
+    LeftStroke.Color = Color3.fromRGB(80, 80, 90)
     LeftStroke.Thickness = 2.5
     LeftStroke.Transparency = 0.35
     LeftStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -3468,7 +3480,7 @@ function createAutoButtons(device)
     AutoMedusaButton.Parent = ScreenGui
 
     local MedusaCorner = Instance.new("UICorner")
-    MedusaCorner.CornerRadius = UDim.new(0, 8)
+    MedusaCorner.CornerRadius = UDim.new(0, 4)
     MedusaCorner.Parent = AutoMedusaButton
 
     local MedusaBlackStroke = Instance.new("UIStroke")
@@ -3478,7 +3490,7 @@ function createAutoButtons(device)
     MedusaBlackStroke.Parent = AutoMedusaButton
 
     local MedusaStroke = Instance.new("UIStroke")
-    MedusaStroke.Color = Color3.fromRGB(255, 255, 255)
+    MedusaStroke.Color = Color3.fromRGB(80, 80, 90)
     MedusaStroke.Thickness = 2.5
     MedusaStroke.Transparency = 0.35
     MedusaStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -3611,7 +3623,7 @@ function createAutoButtons(device)
     AutoRightButton.Parent = ScreenGui
 
     local RightCorner = Instance.new("UICorner")
-    RightCorner.CornerRadius = UDim.new(0, 8)
+    RightCorner.CornerRadius = UDim.new(0, 4)
     RightCorner.Parent = AutoRightButton
 
     local RightBlackStroke = Instance.new("UIStroke")
@@ -3621,7 +3633,7 @@ function createAutoButtons(device)
     RightBlackStroke.Parent = AutoRightButton
 
     local RightStroke = Instance.new("UIStroke")
-    RightStroke.Color = Color3.fromRGB(255, 255, 255)
+    RightStroke.Color = Color3.fromRGB(80, 80, 90)
     RightStroke.Thickness = 2.5
     RightStroke.Transparency = 0.35
     RightStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -3683,11 +3695,11 @@ function createRightButtons(device)
     ButtonBox.Active = true
     ButtonBox.Draggable = true
     ButtonBox.Parent = ScreenGui
-    Instance.new("UICorner", ButtonBox).CornerRadius = UDim.new(0, 10)
+    Instance.new("UICorner", ButtonBox).CornerRadius = UDim.new(0, 6)
     local boxStroke = Instance.new("UIStroke", ButtonBox)
-    boxStroke.Color = Color3.fromRGB(130, 90, 220)
+    boxStroke.Color = Color3.fromRGB(60, 50, 80)
     boxStroke.Thickness = 1.5
-    boxStroke.Transparency = 0.3
+    boxStroke.Transparency = 0.4
 
     -- Helper: grid position inside box (row 0-1, col 0-3)
     local function gridPos(row, col)
@@ -3709,7 +3721,7 @@ function createRightButtons(device)
     DesyncButton.Parent = ButtonBox
 
     local DesyncCorner = Instance.new("UICorner")
-    DesyncCorner.CornerRadius = UDim.new(0, 8)
+    DesyncCorner.CornerRadius = UDim.new(0, 4)
     DesyncCorner.Parent = DesyncButton
 
     local DesyncBlackStroke = Instance.new("UIStroke")
@@ -3719,7 +3731,7 @@ function createRightButtons(device)
     DesyncBlackStroke.Parent = DesyncButton
 
     local DesyncStroke = Instance.new("UIStroke")
-    DesyncStroke.Color = Color3.fromRGB(255, 255, 255)
+    DesyncStroke.Color = Color3.fromRGB(80, 80, 90)
     DesyncStroke.Thickness = 2.5
     DesyncStroke.Transparency = 0.35
     DesyncStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -3749,7 +3761,7 @@ function createRightButtons(device)
         LaggerButton.Parent = ButtonBox
 
         local LaggerCorner = Instance.new("UICorner")
-        LaggerCorner.CornerRadius = UDim.new(0, 8)
+    LaggerCorner.CornerRadius = UDim.new(0, 4)
         LaggerCorner.Parent = LaggerButton
 
         local LaggerBlackStroke = Instance.new("UIStroke")
@@ -3759,7 +3771,7 @@ function createRightButtons(device)
         LaggerBlackStroke.Parent = LaggerButton
 
         local LaggerStroke = Instance.new("UIStroke")
-        LaggerStroke.Color = Color3.fromRGB(255, 255, 255)
+        LaggerStroke.Color = Color3.fromRGB(80, 80, 90)
         LaggerStroke.Thickness = 2.5
         LaggerStroke.Transparency = 0.35
         LaggerStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -4122,7 +4134,7 @@ function createRightButtons(device)
     TrackPlayerButton.Parent = ButtonBox
 
     local TrackCorner = Instance.new("UICorner")
-    TrackCorner.CornerRadius = UDim.new(0, 8)
+    TrackCorner.CornerRadius = UDim.new(0, 4)
     TrackCorner.Parent = TrackPlayerButton
 
     local TrackBlackStroke = Instance.new("UIStroke")
@@ -4132,7 +4144,7 @@ function createRightButtons(device)
     TrackBlackStroke.Parent = TrackPlayerButton
 
     local TrackStroke = Instance.new("UIStroke")
-    TrackStroke.Color = Color3.fromRGB(255, 255, 255)
+    TrackStroke.Color = Color3.fromRGB(80, 80, 90)
     TrackStroke.Thickness = 2.5
     TrackStroke.Transparency = 0.35
     TrackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -4356,7 +4368,7 @@ function createRightButtons(device)
     HitCircleButton.Parent = ButtonBox
 
     local HitCorner = Instance.new("UICorner")
-    HitCorner.CornerRadius = UDim.new(0, 8)
+    HitCorner.CornerRadius = UDim.new(0, 4)
     HitCorner.Parent = HitCircleButton
 
     local HitBlackStroke = Instance.new("UIStroke")
@@ -4366,7 +4378,7 @@ function createRightButtons(device)
     HitBlackStroke.Parent = HitCircleButton
 
     local HitStroke = Instance.new("UIStroke")
-    HitStroke.Color = Color3.fromRGB(255, 255, 255)
+    HitStroke.Color = Color3.fromRGB(80, 80, 90)
     HitStroke.Thickness = 2.5
     HitStroke.Transparency = 0.35
     HitStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -4407,7 +4419,7 @@ function createRightButtons(device)
     JukeButton.Parent = ButtonBox
 
     local JukeCorner = Instance.new("UICorner")
-    JukeCorner.CornerRadius = UDim.new(0, 8)
+    JukeCorner.CornerRadius = UDim.new(0, 4)
     JukeCorner.Parent = JukeButton
 
     local JukeBlackStroke = Instance.new("UIStroke")
@@ -4417,7 +4429,7 @@ function createRightButtons(device)
     JukeBlackStroke.Parent = JukeButton
 
     local JukeStroke = Instance.new("UIStroke")
-    JukeStroke.Color = Color3.fromRGB(255, 255, 255)
+    JukeStroke.Color = Color3.fromRGB(80, 80, 90)
     JukeStroke.Thickness = 2.5
     JukeStroke.Transparency = 0.35
     JukeStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -4694,7 +4706,7 @@ function createRightButtons(device)
     SpeedBypassButton.Parent = ButtonBox
 
     local SpeedBypassCorner = Instance.new("UICorner")
-    SpeedBypassCorner.CornerRadius = UDim.new(0, 8)
+    SpeedBypassCorner.CornerRadius = UDim.new(0, 4)
     SpeedBypassCorner.Parent = SpeedBypassButton
 
     local SpeedBypassBlack = Instance.new("UIStroke")
@@ -4704,9 +4716,9 @@ function createRightButtons(device)
     SpeedBypassBlack.Parent = SpeedBypassButton
 
     local SpeedBypassStroke = Instance.new("UIStroke")
-    SpeedBypassStroke.Color = Color3.fromRGB(255, 200, 50)
+    SpeedBypassStroke.Color = Color3.fromRGB(80, 80, 90)
     SpeedBypassStroke.Thickness = 2.5
-    SpeedBypassStroke.Transparency = 0.2
+    SpeedBypassStroke.Transparency = 0.35
     SpeedBypassStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     SpeedBypassStroke.ZIndex = 2
     SpeedBypassStroke.Parent = SpeedBypassButton
@@ -4724,19 +4736,17 @@ function createRightButtons(device)
         end
     end)
 
-    -- ⚙ Speed Bypass Gear
+    -- ⚙ Speed Bypass Gear (small, matches other gears)
     local SpeedBypassGear = Instance.new("TextButton")
-    SpeedBypassGear.Size = UDim2.new(0, 24, 0, 24)
-    SpeedBypassGear.Position = UDim2.new(1, -22, 0, -4)
-    SpeedBypassGear.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-    SpeedBypassGear.BackgroundTransparency = 0.3
+    SpeedBypassGear.Size = UDim2.new(0, 12, 0, 12)
+    SpeedBypassGear.Position = UDim2.new(1, -13, 0, 1)
+    SpeedBypassGear.BackgroundTransparency = 1
     SpeedBypassGear.Text = "⚙"
-    SpeedBypassGear.TextColor3 = Color3.fromRGB(255, 220, 100)
+    SpeedBypassGear.TextColor3 = Color3.fromRGB(180, 180, 180)
     SpeedBypassGear.Font = Enum.Font.GothamBold
-    SpeedBypassGear.TextSize = 16
+    SpeedBypassGear.TextSize = 9
     SpeedBypassGear.ZIndex = 5
     SpeedBypassGear.Parent = SpeedBypassButton
-    Instance.new("UICorner", SpeedBypassGear).CornerRadius = UDim.new(0, 6)
 
     -- ── SPEED BYPASS SETTINGS PANEL ──
     local SpeedBypassSettings = Instance.new("Frame")
