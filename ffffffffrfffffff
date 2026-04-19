@@ -1531,7 +1531,7 @@ local SmallGUIInstances = {}
 local function createSmallGUI(name, yPosition)
     local SmallGUI = Instance.new("Frame")
     SmallGUI.Name = "Small"..name.."GUI"
-    SmallGUI.Size = UDim2.new(0, 80, 0, 20) -- Smaller width and height
+    SmallGUI.Size = UDim2.new(0, 62, 0, 16) -- Tiny top buttons
     SmallGUI.Position = UDim2.new(0.5, -40, 0, yPosition)
     SmallGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     SmallGUI.BackgroundTransparency = 0
@@ -1579,8 +1579,8 @@ local function createSmallGUI(name, yPosition)
 
     -- ✅ GREEN DOT!
     local GreenDot = Instance.new("Frame")
-    GreenDot.Size = UDim2.new(0, 7, 0, 7)
-    GreenDot.Position = UDim2.new(0, 5, 0.5, -3)
+    GreenDot.Size = UDim2.new(0, 5, 0, 5)
+    GreenDot.Position = UDim2.new(0, 3, 0.5, -2)
     GreenDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100) -- GRAY by default
     GreenDot.BorderSizePixel = 0
     GreenDot.Parent = SmallGUI
@@ -1590,25 +1590,25 @@ local function createSmallGUI(name, yPosition)
     DotCorner.Parent = GreenDot
 
     local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(1, -32, 1, 0)
-    Label.Position = UDim2.new(0, 18, 0, 0)
+    Label.Size = UDim2.new(1, -22, 1, 0)
+    Label.Position = UDim2.new(0, 12, 0, 0)
     Label.BackgroundTransparency = 1
     Label.Text = name
     Label.TextColor3 = Color3.fromRGB(220, 220, 220)
     Label.Font = Enum.Font.GothamBold
-    Label.TextSize = 9 -- Smaller text
+    Label.TextSize = 7 -- Tiny text
     Label.TextXAlignment = Enum.TextXAlignment.Left
     Label.Parent = SmallGUI
 
     -- ✅ CLICK BUTTON (smaller, on right side only - doesn't block dragging!)
     local Button = Instance.new("TextButton")
-    Button.Size = UDim2.new(0, 20, 1, 0)
-    Button.Position = UDim2.new(1, -20, 0, 0)
+    Button.Size = UDim2.new(0, 14, 1, 0)
+    Button.Position = UDim2.new(1, -14, 0, 0)
     Button.BackgroundTransparency = 1
     Button.Text = "⚡"
     Button.TextColor3 = Color3.fromRGB(220, 220, 220)
     Button.Font = Enum.Font.GothamBold
-    Button.TextSize = 12 -- Smaller icon
+    Button.TextSize = 8 -- Tiny icon
     Button.ZIndex = 2
     Button.Parent = SmallGUI
 
@@ -1673,15 +1673,15 @@ local function refreshSmallButtonPositions()
         end
     end
 
-    -- Arrange buttons in 2 rows at the TOP of screen
+    -- Arrange buttons in 2 rows at the TOP of screen (tiny)
     local columns = math.min(math.ceil(#visibleFrames / 2), 6)
     if columns < 1 then columns = 1 end
-    local buttonHeight = 26
-    local gapX = 6
-    local gapY = 5
-    local topPadding = 6
+    local buttonHeight = 16
+    local gapX = 4
+    local gapY = 3
+    local topPadding = 4
     local viewport = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1280, 720)
-    local buttonWidth = math.clamp(math.floor((viewport.X - 20 - gapX * (columns - 1)) / columns), 60, 130)
+    local buttonWidth = math.clamp(math.floor((viewport.X - 16 - gapX * (columns - 1)) / columns), 50, 90)
     local totalWidth = columns * buttonWidth + (columns - 1) * gapX
     local startX = math.max(10, math.floor((viewport.X - totalWidth) / 2))
     local startY = topPadding
