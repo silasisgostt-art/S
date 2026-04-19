@@ -1292,18 +1292,17 @@ local function startBatAimbot()
         local toGoal = goalPos - hrp.Position
         local goalDist = toGoal.Magnitude
 
-        -- PURE VELOCITY (server sees this!) - uses Track Speed from settings
-        local catchMult = (_G._trackCatchMult and _G._trackCatchMult()) or 50
+        -- PURE VELOCITY (server sees this!) - follow at set speed (studs/sec)
+        local followSpeed = (_G._trackFollowSpeed and _G._trackFollowSpeed()) or 58
         if goalDist < 1 then
-            -- Inside body: match target velocity exactly to move with them
-            hrp.AssemblyLinearVelocity = lastTargetVelocity_bat + toGoal * (catchMult * 1.2)
+            -- Inside body: match target velocity + small correction to stay glued
+            hrp.AssemblyLinearVelocity = lastTargetVelocity_bat + toGoal * 60
         elseif goalDist < 8 then
-            -- Close: strong velocity pull into target + match their movement
-            local catchUp = toGoal.Unit * math.max(goalDist * catchMult, 80)
-            hrp.AssemblyLinearVelocity = lastTargetVelocity_bat + catchUp
+            -- Close: move toward target at follow speed + match their movement
+            hrp.AssemblyLinearVelocity = lastTargetVelocity_bat + toGoal.Unit * followSpeed
         else
-            -- Far: maximum rush speed
-            local rushSpeed = math.max(goalDist * (catchMult * 0.24), 120)
+            -- Far: rush at follow speed (scales up a bit with distance so you catch up)
+            local rushSpeed = math.max(followSpeed, goalDist * 3)
             hrp.AssemblyLinearVelocity = toGoal.Unit * rushSpeed + Vector3.new(0, lastTargetVelocity_bat.Y, 0)
         end
 
@@ -4167,8 +4166,8 @@ function createRightButtons(device)
     TSTitle.TextSize = 12
     TSTitle.ZIndex = 11
 
-    -- Track Speed TextBox Row
-    local TRACK_CATCH_MULT = 50
+    -- Track Speed TextBox Row (studs/sec like walk speed)
+    local TRACK_FOLLOW_SPEED = 58
 
     local tsRow = Instance.new("Frame", TrackSettings)
     tsRow.Size = UDim2.new(1, -20, 0, 26)
@@ -4182,7 +4181,7 @@ function createRightButtons(device)
     tsLbl.Size = UDim2.new(1, -60, 1, 0)
     tsLbl.Position = UDim2.new(0, 8, 0, 0)
     tsLbl.BackgroundTransparency = 1
-    tsLbl.Text = "Track Speed"
+    tsLbl.Text = "Follow Speed"
     tsLbl.TextColor3 = Color3.fromRGB(220, 220, 220)
     tsLbl.Font = Enum.Font.GothamBold
     tsLbl.TextSize = 11
@@ -4193,9 +4192,9 @@ function createRightButtons(device)
     tsBox.Size = UDim2.new(0, 46, 0, 20)
     tsBox.Position = UDim2.new(1, -52, 0.5, -10)
     tsBox.BackgroundColor3 = Color3.fromRGB(35, 35, 48)
-    tsBox.Text = tostring(TRACK_CATCH_MULT)
+    tsBox.Text = tostring(TRACK_FOLLOW_SPEED)
     tsBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-    tsBox.PlaceholderText = "50"
+    tsBox.PlaceholderText = "58"
     tsBox.Font = Enum.Font.GothamBold
     tsBox.TextSize = 11
     tsBox.ClearTextOnFocus = false
@@ -4205,9 +4204,9 @@ function createRightButtons(device)
     tsBox.FocusLost:Connect(function()
         local val = tonumber(tsBox.Text)
         if val then
-            TRACK_CATCH_MULT = math.clamp(math.floor(val), 1, 999)
+            TRACK_FOLLOW_SPEED = math.clamp(math.floor(val), 1, 999)
         end
-        tsBox.Text = tostring(TRACK_CATCH_MULT)
+        tsBox.Text = tostring(TRACK_FOLLOW_SPEED)
     end)
 
     -- Auto-Lagger ON/OFF Button
@@ -4266,8 +4265,8 @@ function createRightButtons(device)
         TrackSettings.Visible = not TrackSettings.Visible
     end)
 
-    -- Expose TRACK_CATCH_MULT to the follow loop
-    _G._trackCatchMult = function() return TRACK_CATCH_MULT end
+    -- Expose TRACK_FOLLOW_SPEED to the follow loop
+    _G._trackFollowSpeed = function() return TRACK_FOLLOW_SPEED end
 
     -- ✅ HIT CIRCLE Button (UNDER TRACK PLAYER - GRAY!)
     local HitCircleButton = Instance.new("TextButton")
