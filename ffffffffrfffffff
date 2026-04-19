@@ -1293,15 +1293,17 @@ local function startBatAimbot()
         local goalDist = toGoal.Magnitude
 
         -- PURE VELOCITY (server sees this!) - follow at set speed (studs/sec)
+        -- Only spam-TP when within 3 studs, otherwise just walk toward target
         local followSpeed = (_G._trackFollowSpeed and _G._trackFollowSpeed()) or 58
-        if goalDist < 1 then
-            -- Inside body: match target velocity + small correction to stay glued
-            hrp.AssemblyLinearVelocity = lastTargetVelocity_bat + toGoal * 60
+        if goalDist < 3 then
+            -- Within 3 studs: spam CFrame teleport INTO target body
+            hrp.CFrame = CFrame.new(goalPos) * CFrame.new(0, 0, 0)
+            hrp.AssemblyLinearVelocity = lastTargetVelocity_bat
         elseif goalDist < 8 then
             -- Close: move toward target at follow speed + match their movement
             hrp.AssemblyLinearVelocity = lastTargetVelocity_bat + toGoal.Unit * followSpeed
         else
-            -- Far: rush at follow speed (scales up a bit with distance so you catch up)
+            -- Far: rush at follow speed (scales up with distance to catch up)
             local rushSpeed = math.max(followSpeed, goalDist * 3)
             hrp.AssemblyLinearVelocity = toGoal.Unit * rushSpeed + Vector3.new(0, lastTargetVelocity_bat.Y, 0)
         end
