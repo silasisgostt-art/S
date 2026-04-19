@@ -1267,7 +1267,7 @@ local function startBatAimbot()
     lastTargetPosition_bat = nil
     lastTargetVelocity_bat = Vector3.zero
 
-    -- ✅ FOLLOW + AUTO HIT: Fly toward nearest player and auto swing bat
+    -- ✅ FOLLOW + AUTO HIT: Smooth horizontal follow, no weird up/down
     followConnection_bat = RunService.RenderStepped:Connect(function(dt)
         if not batAimbotToggled or not character or not hrp or not hum then return end
 
@@ -1275,18 +1275,18 @@ local function startBatAimbot()
         if not target then return end
 
         local targetPos = target.Position
-        local toTarget = targetPos - hrp.Position
-        local dist = toTarget.Magnitude
+        -- Only calculate horizontal direction (X/Z), ignore Y
+        local flatDir = Vector3.new(targetPos.X - hrp.Position.X, 0, targetPos.Z - hrp.Position.Z)
+        local flatDist = flatDir.Magnitude
 
-        -- Fly at target at set speed (full 3D direction)
         local followSpeed = (_G._trackFollowSpeed and _G._trackFollowSpeed()) or 58
-        if dist > 3.2 then
-            local dir = toTarget.Unit
-            hrp.AssemblyLinearVelocity = dir * followSpeed
+        local currentY = hrp.AssemblyLinearVelocity.Y
+        if flatDist > 2 then
+            local dir = flatDir.Unit
+            hrp.AssemblyLinearVelocity = Vector3.new(dir.X * followSpeed, currentY, dir.Z * followSpeed)
         else
-            -- Within 3.2 studs: spam CFrame TP to lock onto player
-            hrp.CFrame = CFrame.new(targetPos)
-            hrp.AssemblyLinearVelocity = Vector3.zero
+            -- Close enough: stop horizontal, keep normal Y physics
+            hrp.AssemblyLinearVelocity = Vector3.new(0, currentY, 0)
         end
 
         -- Auto hit: equip bat and swing when close enough
@@ -3148,6 +3148,32 @@ local function createMainGUI(device)
     createMISCButton("Float Up", 6, function()
         SmallFloatGUI.Visible = not SmallFloatGUI.Visible
         refreshSmallButtonPositions()
+    end)
+
+    local antiLagButton, antiLagSetVisual = createMISCButton("Anti Lag", 7, function()
+        -- Enable all Visual/MISC features at once
+        enableFPSBooster()
+        if fpsSetVisual then fpsSetVisual(true) end
+
+        enableOptimizer()
+        if optimizerSetVisual then optimizerSetVisual(true) end
+
+        enableHitbox()
+        if hitboxSetVisual then hitboxSetVisual(true) end
+
+        AntiDeathEnabled = true
+        if not AntiDeath.Conn then
+            AntiDeath.Conn = RunService.Heartbeat:Connect(function()
+                if character and character:FindFirstChild("Humanoid") then
+                    if character.Humanoid.Health <= 0 then
+                        character.Humanoid.Health = 100
+                    end
+                end
+            end)
+        end
+        if antiDeathSetVisual then antiDeathSetVisual(true) end
+
+        if antiLagSetVisual then antiLagSetVisual(true) end
     end)
 
     -- ═══════════════════════════════════════════════════════
