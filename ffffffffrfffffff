@@ -1637,27 +1637,38 @@ local function refreshSmallButtonPositions()
         end
     end
 
-    -- 4x4 grid, 2 columns, right side
-    local columns = 2
-    local rows = 8
-    local buttonWidth = 110
-    local buttonHeight = 32
-    local gapX = 10
-    local gapY = 8
-    local viewport = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1280, 720)
-    local totalWidth = columns * buttonWidth + (columns - 1) * gapX
-    local totalHeight = rows * buttonHeight + (rows - 1) * gapY
-    local startX = viewport.X - totalWidth - 24 -- right side, 24px from edge
-    local startY = math.floor((viewport.Y - totalHeight) / 2)
+    -- Only use the first 8 right-side buttons for the 4x4 grid (2 columns, 4 rows)
+    local gridButtons = {}
+    for _, name in ipairs({
+        "Speed", "Unwalk", "Spin Bot", "Inf Jump",
+        "Float Up", "FOV", "Anti Ragdoll", "Ragdoll TP"
+    }) do
+        local entry = SmallGUIInstances[name]
+        if entry and entry.Frame.Visible then
+            table.insert(gridButtons, entry.Frame)
+        end
+    end
 
-    for index, frame in ipairs(visibleFrames) do
-        if index > (rows * columns) then
+    local columns = 2
+    local rows = 4
+    local buttonWidth = 110
+    local buttonHeight = 38
+    local gapX = 12
+    local gapY = 12
+    local rightPadding = 30
+    local topPadding = 80
+    local viewport = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1280, 720)
+    local startX = viewport.X - (columns * buttonWidth + (columns - 1) * gapX) - rightPadding
+    local startY = topPadding
+
+    for i, frame in ipairs(gridButtons) do
+        if i > (rows * columns) then
             frame.Visible = false
             continue
         end
+        local col = ((i - 1) % columns)
+        local row = math.floor((i - 1) / columns)
         frame.Size = UDim2.new(0, buttonWidth, 0, buttonHeight)
-        local row = (index - 1) % rows
-        local col = math.floor((index - 1) / rows)
         frame.Position = UDim2.new(
             0,
             startX + col * (buttonWidth + gapX),
@@ -1665,6 +1676,14 @@ local function refreshSmallButtonPositions()
             startY + row * (buttonHeight + gapY)
         )
         frame.Visible = true
+    end
+
+    -- Hide all other small buttons on the right
+    for _, name in ipairs({"Drop Brainrot", "TP Down", "TP Up"}) do
+        local entry = SmallGUIInstances[name]
+        if entry and entry.Frame then
+            entry.Frame.Visible = false
+        end
     end
 end
 
