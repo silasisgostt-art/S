@@ -3098,38 +3098,31 @@ local function initializeGUI(device)
     DeviceSelectFrame:Destroy()
 
     -- ✅ AUTO-ENABLE MAIN TAB FEATURES FOR ALL DEVICES (PC, iPad, iPhone)
+    -- NOTE: Button visibility is now controlled by the TIM CHEESE HUB "Buttons" tab
     task.spawn(function()
         task.wait(1.5) -- Wait for GUI to fully load
         
-        -- ✅ Speed Booster - AUTO ON + SHOW SMALL GUI
+        -- ✅ Speed Booster - AUTO ON (visibility controlled by HUB)
         SpeedBooster.Enabled = true
-        SmallSpeedGUI.Visible = true
         SmallSpeedGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
         SpeedDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
         startSpeedBooster()
         
-        -- ✅ Unwalk - AUTO ON + SHOW SMALL GUI
+        -- ✅ Unwalk - AUTO ON
         UnwalkEnabled = true
-        SmallUnwalkGUI.Visible = true
         SmallUnwalkGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
         UnwalkDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
         startUnwalk()
         
-        -- ⚪ Spin Bot - SHOW AS ON-SCREEN BUTTON
-        SmallSpinBotGUI.Visible = true
+        -- ⚪ Spin Bot - style only
         SmallSpinBotGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
         SpinDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
         
-        -- ⚪ Inf Jump - SHOW AS ON-SCREEN BUTTON
-        SmallInfJumpGUI.Visible = true
+        -- ⚪ Inf Jump - style only
         SmallInfJumpGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
         InfJumpDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
         
-        -- ⚪ Float Up - HIDDEN (user must turn on from Main tab or MISC)
-        SmallFloatGUI.Visible = false
-        
-        -- ⚪ FOV - SHOW AS ON-SCREEN BUTTON
-        SmallFOVGUI.Visible = true
+        -- ⚪ FOV - style only
         if ConfigData.fovEnabled then
             SmallFOVGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
             FOVDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
@@ -3138,33 +3131,28 @@ local function initializeGUI(device)
             FOVDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
         end
         
-        -- ✅ Anti Ragdoll - AUTO ON + SHOW SMALL GUI
+        -- ✅ Anti Ragdoll - AUTO ON
         AntiRagdollEnabled = true
-        SmallAntiRagGUI.Visible = true
         SmallAntiRagGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
         AntiRagDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
         enableAntiRagdoll()
         
-        -- ✅ Ragdoll TP - AUTO ON + SHOW SMALL GUI
+        -- ✅ Ragdoll TP - AUTO ON
         RagdollTP.enabled = true
-        SmallRagdollTPGUI.Visible = true
         SmallRagdollTPGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
         RagdollTPDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
         startRagdollTP()
         
-        -- ✅ Drop Brainrot - SHOW SMALL GUI but STAYS OFF (gray dot)
-        SmallDropGUI.Visible = true
+        -- ✅ Drop Brainrot - style only
         SmallDropGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
         DropDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        -- ✅ TP Down - show small button on screen by default
-        SmallTPDownGUI.Visible = true
+        -- TP Down - style only
         SmallTPDownGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
         TPDownDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
         
-        -- Restore TP Up / TP Down visibility from config
+        -- Restore TP Up functionality from config
         if ConfigData.tpUpEnabled then
             TPUpEnabled = true
-            SmallTPUpGUI.Visible = true
             SmallTPUpGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
             TPUpDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
             if TPUpJumpConn then TPUpJumpConn:Disconnect() TPUpJumpConn = nil end
@@ -3175,14 +3163,10 @@ local function initializeGUI(device)
                 end) end
             end)
         end
-        if ConfigData.tpDownVisible then
-            SmallTPDownGUI.Visible = true
-        end
         
         refreshSmallButtonPositions()
-        print("[TIM CHEESE DUELS] ✅ Auto-enabled for "..device..": Speed, Unwalk, Anti Rag, Ragdoll TP")
-        print("[TIM CHEESE DUELS] ✅ Visible Small GUIs: Speed, Unwalk, Anti Rag, Ragdoll TP, Drop (OFF)")
-        print("[TIM CHEESE DUELS] ⚪ Hidden Small GUIs: Inf Jump, Spin Bot, Float, FOV (turn on from Main tab)")
+        print("[TIM CHEESE DUELS] ✅ Auto-enabled: Speed, Unwalk, Anti Rag, Ragdoll TP")
+        print("[TIM CHEESE DUELS] ⚪ Button visibility controlled by TIM CHEESE HUB")
     end)
 
     createMainGUI(device)
@@ -3203,7 +3187,9 @@ local function initializeGUI(device)
     -- ✅ AUTO-LOAD CONFIG ON START!
     if ConfigData.speedEnabled then
         SpeedBooster.Enabled = true
-        SmallSpeedGUI.Visible = true
+    -- Config auto-enable (visibility controlled by HUB, just enable features)
+    if ConfigData.speedEnabled then
+        SpeedBooster.Enabled = true
         SmallSpeedGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
         SpeedDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
         startSpeedBooster()
@@ -3211,7 +3197,6 @@ local function initializeGUI(device)
     
     if ConfigData.fovEnabled then
         fovEnabled = true
-        SmallFOVGUI.Visible = true
         SmallFOVGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
         FOVDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
         updateFOV()
@@ -3269,6 +3254,7 @@ function createOpenButton(device)
             MainFrame.Visible = false
         end
     end)
+    _OpenButton = OpenButton
 end
 
 -- ═══════════════════════════════════════════════════════
@@ -3276,6 +3262,7 @@ end
 -- ═══════════════════════════════════════════════════════
 
 local AutoLeftSmallGUI, AutoRightSmallGUI
+local _AutoLeftButton, _AutoMedusaButton, _AutoRightButton, _OpenButton
 
 function createAutoButtons(device)
     local buttonSize = device == "iPhone" and 55 or 70
@@ -3310,6 +3297,7 @@ function createAutoButtons(device)
     LeftStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     LeftStroke.ZIndex = 2
     LeftStroke.Parent = AutoLeftButton
+    _AutoLeftButton = AutoLeftButton
 
     -- ✅ AUTO MEDUSA Button (above Auto Right)
     local AutoMedusaButton = Instance.new("TextButton")
@@ -3445,6 +3433,7 @@ function createAutoButtons(device)
         medusaAttacking = false
         unequipMedusa()
     end
+    _AutoMedusaButton = AutoMedusaButton
     AutoMedusaButton.MouseButton1Click:Connect(function()
         autoMedusaEnabled = not autoMedusaEnabled
         if autoMedusaEnabled then
@@ -3511,6 +3500,7 @@ function createAutoButtons(device)
             startStealPath(stealPath1) -- ✅ RIGHT PATH!
         end
     end)
+    _AutoRightButton = AutoRightButton
 end
 
 -- ═══════════════════════════════════════════════════════
@@ -5155,11 +5145,16 @@ do
     end
 
     -- Create Pages
-    for _, tab in ipairs({"Combat", "Protect", "Visual", "Settings"}) do
+    for _, tab in ipairs({"Combat", "Protect", "Visual", "Buttons", "Settings"}) do
         HCreatePage(tab)
     end
     HTabButtons["Combat"].TextColor3 = HC.TextActive
     HPages["Combat"].Visible = true
+
+    -- Fix tab sizes for 5 tabs
+    for _, btn in pairs(HTabButtons) do
+        btn.Size = UDim2.new(0.2, 0, 1, 0)
+    end
 
     -- Save Settings button
     local HSaveRow = hcreate("Frame", {
@@ -5321,6 +5316,107 @@ do
 
     HAddToggle("Visual", "Anti FPS DEVOURER", false, function(v)
         if v then hEnableAntiFPS() else hDisableAntiFPS() end
+    end)
+
+    -------------------------------------------------------------------------
+    -- BUTTONS TAB (Show/Hide all on-screen buttons)
+    -------------------------------------------------------------------------
+
+    -- Hide all on-screen buttons by default (HUB controls visibility)
+    -- Right-side buttons (local to createRightButtons, accessible here)
+    LaggerButton.Visible = false
+    DesyncButton.Visible = false
+    TrackPlayerButton.Visible = false
+    HitCircleButton.Visible = false
+    JukeButton.Visible = false
+
+    -- Auto buttons (shared vars)
+    if _AutoLeftButton then _AutoLeftButton.Visible = false end
+    if _AutoMedusaButton then _AutoMedusaButton.Visible = false end
+    if _AutoRightButton then _AutoRightButton.Visible = false end
+
+    -- Open button
+    if _OpenButton then _OpenButton.Visible = false end
+
+    -- Small GUI buttons
+    SmallSpeedGUI.Visible = false
+    SmallUnwalkGUI.Visible = false
+    SmallSpinBotGUI.Visible = false
+    SmallInfJumpGUI.Visible = false
+    SmallFloatGUI.Visible = false
+    SmallFOVGUI.Visible = false
+    SmallAntiRagGUI.Visible = false
+    SmallRagdollTPGUI.Visible = false
+    SmallDropGUI.Visible = false
+    SmallTPDownGUI.Visible = false
+    SmallTPUpGUI.Visible = false
+
+    -- Right-side button toggles
+    HAddToggle("Buttons", "Lagger", false, function(v)
+        LaggerButton.Visible = v
+    end)
+    HAddToggle("Buttons", "Desync", false, function(v)
+        DesyncButton.Visible = v
+    end)
+    HAddToggle("Buttons", "Track Player", false, function(v)
+        TrackPlayerButton.Visible = v
+    end)
+    HAddToggle("Buttons", "Hit Circle", false, function(v)
+        HitCircleButton.Visible = v
+    end)
+    HAddToggle("Buttons", "Juke", false, function(v)
+        JukeButton.Visible = v
+    end)
+
+    -- Auto button toggles
+    HAddToggle("Buttons", "Auto Left", false, function(v)
+        if _AutoLeftButton then _AutoLeftButton.Visible = v end
+    end)
+    HAddToggle("Buttons", "Auto Right", false, function(v)
+        if _AutoRightButton then _AutoRightButton.Visible = v end
+    end)
+    HAddToggle("Buttons", "Auto Medusa", false, function(v)
+        if _AutoMedusaButton then _AutoMedusaButton.Visible = v end
+    end)
+
+    -- Open button toggle
+    HAddToggle("Buttons", "Open/Close", false, function(v)
+        if _OpenButton then _OpenButton.Visible = v end
+    end)
+
+    -- Small GUI toggles
+    HAddToggle("Buttons", "Speed (Small)", false, function(v)
+        SmallSpeedGUI.Visible = v
+    end)
+    HAddToggle("Buttons", "Unwalk (Small)", false, function(v)
+        SmallUnwalkGUI.Visible = v
+    end)
+    HAddToggle("Buttons", "Spin Bot (Small)", false, function(v)
+        SmallSpinBotGUI.Visible = v
+    end)
+    HAddToggle("Buttons", "Inf Jump (Small)", false, function(v)
+        SmallInfJumpGUI.Visible = v
+    end)
+    HAddToggle("Buttons", "Float Up (Small)", false, function(v)
+        SmallFloatGUI.Visible = v
+    end)
+    HAddToggle("Buttons", "FOV (Small)", false, function(v)
+        SmallFOVGUI.Visible = v
+    end)
+    HAddToggle("Buttons", "Anti Ragdoll (Small)", false, function(v)
+        SmallAntiRagGUI.Visible = v
+    end)
+    HAddToggle("Buttons", "Ragdoll TP (Small)", false, function(v)
+        SmallRagdollTPGUI.Visible = v
+    end)
+    HAddToggle("Buttons", "Drop Brainrot (Small)", false, function(v)
+        SmallDropGUI.Visible = v
+    end)
+    HAddToggle("Buttons", "TP Down (Small)", false, function(v)
+        SmallTPDownGUI.Visible = v
+    end)
+    HAddToggle("Buttons", "TP Up (Small)", false, function(v)
+        SmallTPUpGUI.Visible = v
     end)
 
     -------------------------------------------------------------------------
