@@ -1161,7 +1161,7 @@ end
 -- TRACK PLAYER (BAT AIMBOT)
 -- ═══════════════════════════════════════════════════════
 
--- IMPROVED BAT AIMBOT (anti-trick: follows jump+TP-down players)
+-- IMPROVED BAT AIMBOT (restored original follow, better TP up/down prediction)
 local batAimbotToggled = false
 local BAT_MOVE_SPEED = 56.5
 local BAT_ENGAGE_RANGE = 20
@@ -1172,49 +1172,8 @@ local lookConnection_bat = nil
 local attachment_bat = nil
 local alignOrientation_bat = nil
 local BAT_LOOK_DISTANCE = 50
-
--- Anti-trick tracking: store recent Y positions per player to detect jump+TP-down
-local playerYHistory = {} -- [playerName] = {positions={}, lastTick=0, wasJumping=false, trickDetected=false}
-local TRICK_DETECT_DROP = 6       -- Y units of sudden drop to count as TP-down trick
-local TRICK_FOLLOW_TIME = 0.8     -- seconds to stick to target after trick detected
-local TRICK_HISTORY_SIZE = 8      -- number of Y samples to keep
-
-local function updatePlayerTracking(targetHRP, targetHum)
-    local name = targetHRP.Parent and targetHRP.Parent.Name or "?"
-    if not playerYHistory[name] then
-        playerYHistory[name] = {positions = {}, lastTick = tick(), wasJumping = false, trickDetected = false, trickTick = 0, lastY = targetHRP.Position.Y}
-    end
-    local data = playerYHistory[name]
-    local now = tick()
-    local curY = targetHRP.Position.Y
-    
-    -- Record Y position
-    table.insert(data.positions, curY)
-    if #data.positions > TRICK_HISTORY_SIZE then
-        table.remove(data.positions, 1)
-    end
-    
-    -- Detect if player was in the air (jumping)
-    local inAir = targetHum and targetHum.FloorMaterial == Enum.Material.Air
-    
-    -- Detect sudden drop (jump then TP down trick)
-    local dy = curY - data.lastY
-    if data.wasJumping and dy < -TRICK_DETECT_DROP then
-        data.trickDetected = true
-        data.trickTick = now
-    end
-    
-    -- Clear trick flag after timeout
-    if data.trickDetected and (now - data.trickTick) > TRICK_FOLLOW_TIME then
-        data.trickDetected = false
-    end
-    
-    data.wasJumping = inAir
-    data.lastY = curY
-    data.lastTick = now
-    
-    return data
-end
+local bat_lastTargetY = nil
+local bat_verticalBoost = false
 
 local function nearestPlayer_bat()
     if not hrp then return nil, math.huge end
@@ -1263,22 +1222,22 @@ local function startLookAt()
     alignOrientation_bat.Responsiveness = 1000
     alignOrientation_bat.RigidityEnabled = true
     alignOrientation_bat.Parent = hrp
-    -- Restore original follow/lock logic with anti-trick TP prediction
+    -- Restore original follow/lock logic, but add vertical prediction for TP up/down
     local lastTargetPos = nil
     lookConnection_bat = RunService.RenderStepped:Connect(function()
         if not hrp or not alignOrientation_bat then return end
         local target = closestLookTarget()
         if not target then return end
-        -- Always aim at actual current position (don't get tricked by sudden Y changes)
-        local lookPos = target.Position
-        -- Smoothly track: if target velocity is strong, lead slightly
+        local predictY = target.Position.Y
+        -- If target is moving up/down fast (TP), predict further in that direction
         if lastTargetPos then
-            local delta = target.Position - lastTargetPos
-            if delta.Magnitude > 0.5 then
-                lookPos = target.Position + delta * 0.3
+            local dy = target.Position.Y - lastTargetPos.Y
+            if math.abs(dy) > 2 then
+                predictY = target.Position.Y + dy * 0.7
             end
         end
         lastTargetPos = target.Position
+        local lookPos = Vector3.new(target.Position.X, predictY, target.Position.Z)
         alignOrientation_bat.CFrame = CFrame.lookAt(hrp.Position, lookPos)
     end)
 end
@@ -1292,6 +1251,8 @@ end
 
 local function stopBatAimbot()
     batAimbotToggled = false
+    bat_lastTargetY = nil
+    bat_verticalBoost = false
     stopLookAt()
     if hrp then
         hrp.AssemblyLinearVelocity = Vector3.zero
@@ -1320,37 +1281,77 @@ RunService.Heartbeat:Connect(function()
     hrp.CanCollide = false
 
     local target, distance = nearestPlayer_bat()
-    if not target then return end
-
-    local targetHum = target.Parent and target.Parent:FindFirstChildOfClass("Humanoid")
-    
-    -- Update anti-trick tracking for this target
-    local trackData = updatePlayerTracking(target, targetHum)
-    
-    -- Always follow the target's ACTUAL current position
-    -- This prevents being tricked by jump+TP-down: bat just stays on them
-    local predictedPos = target.Position
-    
-    -- If they're in the air (jumping), move faster toward them vertically to close the gap
-    local inAir = targetHum and targetHum.FloorMaterial == Enum.Material.Air
-    local moveSpeed = BAT_MOVE_SPEED
-    
-    if inAir or trackData.trickDetected then
-        -- Player is jumping or just did a trick (jumped then TP'd down)
-        -- Increase speed and go straight to their real position with no delay
-        moveSpeed = BAT_MOVE_SPEED * 1.3
-        -- Add velocity prediction: if they're moving, lead slightly
-        if target.AssemblyLinearVelocity.Magnitude > 3 then
-            predictedPos = predictedPos + target.AssemblyLinearVelocity * 0.15
-        end
+    if not target then
+        bat_lastTargetY = nil
+        bat_verticalBoost = false
+        return
     end
 
-    local moveDir = (predictedPos - hrp.Position)
-    if moveDir.Magnitude > 0.5 then
-        hrp.AssemblyLinearVelocity = moveDir.Unit * moveSpeed
+    -- Detect vertical teleport (TP up/down)
+    local targetY = target.Position.Y
+    local yDiff = 0
+    if bat_lastTargetY then
+        yDiff = targetY - bat_lastTargetY
+    end
+    bat_lastTargetY = targetY
+
+    -- If target moved more than 8 studs vertically in one frame = TP detected
+    if math.abs(yDiff) > 8 then
+        bat_verticalBoost = true
+    end
+
+    -- Predict target position
+    local predictedPos = target.Position
+    local targetHum = target.Parent and target.Parent:FindFirstChildOfClass("Humanoid")
+
+    -- Enhanced vertical prediction for TP up/down players
+    local myY = hrp.Position.Y
+    local verticalGap = math.abs(targetY - myY)
+
+    if bat_verticalBoost or verticalGap > 6 then
+        -- Float directly to target Y - match their height aggressively
+        local horizontalDir = Vector3.new(
+            target.Position.X - hrp.Position.X,
+            0,
+            target.Position.Z - hrp.Position.Z
+        )
+
+        -- Vertical speed scales with gap - faster when further apart
+        local verticalSpeed = math.clamp(verticalGap * 8, BAT_MOVE_SPEED, BAT_MOVE_SPEED * 3)
+        local yVel = 0
+        if targetY > myY + 1 then
+            yVel = verticalSpeed -- go up fast
+        elseif targetY < myY - 1 then
+            yVel = -verticalSpeed -- go down fast
+        else
+            bat_verticalBoost = false -- caught up, reset
+        end
+
+        -- Horizontal movement at normal speed
+        local hSpeed = BAT_MOVE_SPEED
+        if horizontalDir.Magnitude > 0.5 then
+            local hDir = horizontalDir.Unit
+            hrp.AssemblyLinearVelocity = Vector3.new(
+                hDir.X * hSpeed,
+                yVel,
+                hDir.Z * hSpeed
+            )
+        else
+            hrp.AssemblyLinearVelocity = Vector3.new(0, yVel, 0)
+        end
+
+        -- Reset boost when within range vertically
+        if verticalGap < 3 then
+            bat_verticalBoost = false
+        end
     else
-        -- Very close, match their velocity to stick to them
-        hrp.AssemblyLinearVelocity = target.AssemblyLinearVelocity
+        -- Normal tracking (original behavior with small air prediction)
+        if targetHum and targetHum.FloorMaterial == Enum.Material.Air then
+            predictedPos = predictedPos + Vector3.new(0, targetHum.Jump and 4 or 2, 0)
+        end
+
+        local moveDir = (predictedPos - hrp.Position).Unit
+        hrp.AssemblyLinearVelocity = moveDir * BAT_MOVE_SPEED
     end
 
     if distance <= BAT_ENGAGE_RANGE then
