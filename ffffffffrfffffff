@@ -3970,130 +3970,263 @@ function createRightButtons(device)
         end
     end)
 
-    -- ✅ TRACK PLAYER SETTINGS GEAR (FLOAT SPEED)
-    local TrackGearBtn = Instance.new("TextButton")
-    TrackGearBtn.Size = UDim2.new(0, 30, 0, 30)
-    TrackGearBtn.Position = UDim2.new(1, -buttonSize - 50, 0.5, -buttonSize - 10 + (buttonSize - 30) / 2)
-    TrackGearBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
-    TrackGearBtn.Text = "⚙️"
-    TrackGearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    TrackGearBtn.Font = Enum.Font.GothamBold
-    TrackGearBtn.TextSize = device == "iPhone" and 14 or 16
-    TrackGearBtn.Parent = ScreenGui
+    -- ⚙ Gear Settings Button (top-right corner of TRACK PLAYER)
+    local TrackGear = Instance.new("TextButton")
+    TrackGear.Size = UDim2.new(0, 18, 0, 18)
+    TrackGear.Position = UDim2.new(1, -16, 0, -2)
+    TrackGear.BackgroundTransparency = 1
+    TrackGear.Text = "⚙"
+    TrackGear.TextColor3 = Color3.fromRGB(200, 200, 200)
+    TrackGear.Font = Enum.Font.GothamBold
+    TrackGear.TextSize = 14
+    TrackGear.ZIndex = 3
+    TrackGear.Parent = TrackPlayerButton
 
-    local TrackGearCorner = Instance.new("UICorner")
-    TrackGearCorner.CornerRadius = UDim.new(0, 8)
-    TrackGearCorner.Parent = TrackGearBtn
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ TRACK PLAYER SETTINGS PANEL
+    -- ═══════════════════════════════════════════════════════
 
-    local TrackGearBlackStroke = Instance.new("UIStroke")
-    TrackGearBlackStroke.Color = Color3.fromRGB(0, 0, 0)
-    TrackGearBlackStroke.Thickness = 4
-    TrackGearBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    TrackGearBlackStroke.Parent = TrackGearBtn
+    local TrackSettings = Instance.new("Frame")
+    TrackSettings.Name = "TrackSettings"
+    TrackSettings.Size = UDim2.new(0, 210, 0, 160)
+    TrackSettings.Position = UDim2.new(0.5, -105, 0.5, -80)
+    TrackSettings.BackgroundColor3 = Color3.fromRGB(14, 14, 14)
+    TrackSettings.BackgroundTransparency = 0.05
+    TrackSettings.Visible = false
+    TrackSettings.Active = true
+    TrackSettings.Draggable = true
+    TrackSettings.Parent = ScreenGui
+    TrackSettings.ZIndex = 10
 
-    -- Track Player Settings Popup
-    local TrackSettingsGUI = Instance.new("Frame")
-    TrackSettingsGUI.Name = "TrackSettingsGUI"
-    TrackSettingsGUI.Size = UDim2.new(0, 200, 0, 100)
-    TrackSettingsGUI.Position = UDim2.new(0.5, -100, 0.5, -50)
-    TrackSettingsGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-    TrackSettingsGUI.BackgroundTransparency = 0.1
-    TrackSettingsGUI.BorderSizePixel = 0
-    TrackSettingsGUI.Visible = false
-    TrackSettingsGUI.Active = true
-    TrackSettingsGUI.Draggable = true
-    TrackSettingsGUI.Parent = ScreenGui
+    local TSCorner = Instance.new("UICorner")
+    TSCorner.CornerRadius = UDim.new(0, 8)
+    TSCorner.Parent = TrackSettings
 
-    local TrackSetCorner = Instance.new("UICorner")
-    TrackSetCorner.CornerRadius = UDim.new(0, 12)
-    TrackSetCorner.Parent = TrackSettingsGUI
+    local TSBlackStroke = Instance.new("UIStroke")
+    TSBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+    TSBlackStroke.Thickness = 4
+    TSBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    TSBlackStroke.Parent = TrackSettings
 
-    local TrackSetStroke = Instance.new("UIStroke")
-    TrackSetStroke.Color = Color3.fromRGB(255, 255, 255)
-    TrackSetStroke.Thickness = 2
-    TrackSetStroke.Parent = TrackSettingsGUI
+    local TSStroke = Instance.new("UIStroke")
+    TSStroke.Color = Color3.fromRGB(255, 255, 255)
+    TSStroke.Thickness = 2.5
+    TSStroke.Transparency = 0.35
+    TSStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    TSStroke.ZIndex = 2
+    TSStroke.Parent = TrackSettings
 
-    local TrackSetTitle = Instance.new("TextLabel")
-    TrackSetTitle.Size = UDim2.new(1, 0, 0, 30)
-    TrackSetTitle.BackgroundTransparency = 1
-    TrackSetTitle.Text = "TRACK PLAYER SETTINGS"
-    TrackSetTitle.TextColor3 = Color3.fromRGB(255, 200, 100)
-    TrackSetTitle.Font = Enum.Font.GothamBold
-    TrackSetTitle.TextSize = 14
-    TrackSetTitle.Parent = TrackSettingsGUI
+    local TSWaveGrad = Instance.new("UIGradient")
+    TSWaveGrad.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
+    TSWaveGrad.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 1),
+        NumberSequenceKeypoint.new(0.4, 0),
+        NumberSequenceKeypoint.new(0.6, 0),
+        NumberSequenceKeypoint.new(1, 1)
+    })
+    TSWaveGrad.Rotation = 0
+    TSWaveGrad.Parent = TSStroke
+    TweenService:Create(TSStroke, TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Thickness = 4.2, Transparency = 0.08}):Play()
+    RunService.Heartbeat:Connect(function(dt) pcall(function() TSWaveGrad.Rotation = (TSWaveGrad.Rotation + 140 * dt) % 360 end) end)
 
-    local FloatSpeedLabel = Instance.new("TextLabel")
-    FloatSpeedLabel.Size = UDim2.new(0.6, 0, 0, 25)
-    FloatSpeedLabel.Position = UDim2.new(0, 10, 0, 35)
-    FloatSpeedLabel.BackgroundTransparency = 1
-    FloatSpeedLabel.Text = "Float Speed:"
-    FloatSpeedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    FloatSpeedLabel.Font = Enum.Font.Gotham
-    FloatSpeedLabel.TextSize = 12
-    FloatSpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
-    FloatSpeedLabel.Parent = TrackSettingsGUI
+    -- Title
+    local TSTitle = Instance.new("TextLabel")
+    TSTitle.Size = UDim2.new(1, 0, 0, 30)
+    TSTitle.BackgroundTransparency = 1
+    TSTitle.Text = "⚙ Track Settings"
+    TSTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TSTitle.Font = Enum.Font.GothamBold
+    TSTitle.TextSize = 14
+    TSTitle.Parent = TrackSettings
+    TSTitle.ZIndex = 11
 
-    local FloatSpeedBox = Instance.new("TextBox")
-    FloatSpeedBox.Size = UDim2.new(0, 60, 0, 25)
-    FloatSpeedBox.Position = UDim2.new(1, -70, 0, 35)
-    FloatSpeedBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-    FloatSpeedBox.Text = tostring(BAT_FLOAT_SPEED)
-    FloatSpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-    FloatSpeedBox.Font = Enum.Font.GothamBold
-    FloatSpeedBox.TextSize = 12
-    FloatSpeedBox.ClearTextOnFocus = false
-    FloatSpeedBox.Parent = TrackSettingsGUI
+    -- Close X
+    local TSClose = Instance.new("TextButton")
+    TSClose.Size = UDim2.new(0, 24, 0, 24)
+    TSClose.Position = UDim2.new(1, -28, 0, 3)
+    TSClose.BackgroundTransparency = 1
+    TSClose.Text = "✕"
+    TSClose.TextColor3 = Color3.fromRGB(255, 80, 80)
+    TSClose.Font = Enum.Font.GothamBold
+    TSClose.TextSize = 14
+    TSClose.Parent = TrackSettings
+    TSClose.ZIndex = 11
+    TSClose.MouseButton1Click:Connect(function() TrackSettings.Visible = false end)
 
-    local FloatSpeedBoxCorner = Instance.new("UICorner")
-    FloatSpeedBoxCorner.CornerRadius = UDim.new(0, 6)
-    FloatSpeedBoxCorner.Parent = FloatSpeedBox
+    -- Float Height Label + Value
+    local TFHeightLabel = Instance.new("TextLabel")
+    TFHeightLabel.Size = UDim2.new(0.6, 0, 0, 25)
+    TFHeightLabel.Position = UDim2.new(0, 10, 0, 35)
+    TFHeightLabel.BackgroundTransparency = 1
+    TFHeightLabel.Text = "Float Height"
+    TFHeightLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+    TFHeightLabel.Font = Enum.Font.Gotham
+    TFHeightLabel.TextSize = 12
+    TFHeightLabel.TextXAlignment = Enum.TextXAlignment.Left
+    TFHeightLabel.Parent = TrackSettings
+    TFHeightLabel.ZIndex = 11
 
-    local FloatHeightLabel = Instance.new("TextLabel")
-    FloatHeightLabel.Size = UDim2.new(0.6, 0, 0, 25)
-    FloatHeightLabel.Position = UDim2.new(0, 10, 0, 65)
-    FloatHeightLabel.BackgroundTransparency = 1
-    FloatHeightLabel.Text = "Float Height:"
-    FloatHeightLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    FloatHeightLabel.Font = Enum.Font.Gotham
-    FloatHeightLabel.TextSize = 12
-    FloatHeightLabel.TextXAlignment = Enum.TextXAlignment.Left
-    FloatHeightLabel.Parent = TrackSettingsGUI
+    local TFHeightVal = Instance.new("TextLabel")
+    TFHeightVal.Size = UDim2.new(0, 40, 0, 25)
+    TFHeightVal.Position = UDim2.new(1, -90, 0, 35)
+    TFHeightVal.BackgroundTransparency = 1
+    TFHeightVal.Text = tostring(BAT_FLOAT_AMPLITUDE)
+    TFHeightVal.TextColor3 = Color3.fromRGB(138, 43, 226)
+    TFHeightVal.Font = Enum.Font.GothamBold
+    TFHeightVal.TextSize = 13
+    TFHeightVal.Parent = TrackSettings
+    TFHeightVal.ZIndex = 11
 
-    local FloatHeightBox = Instance.new("TextBox")
-    FloatHeightBox.Size = UDim2.new(0, 60, 0, 25)
-    FloatHeightBox.Position = UDim2.new(1, -70, 0, 65)
-    FloatHeightBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-    FloatHeightBox.Text = tostring(BAT_FLOAT_AMPLITUDE)
-    FloatHeightBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-    FloatHeightBox.Font = Enum.Font.GothamBold
-    FloatHeightBox.TextSize = 12
-    FloatHeightBox.ClearTextOnFocus = false
-    FloatHeightBox.Parent = TrackSettingsGUI
+    local TFHeightMinus = Instance.new("TextButton")
+    TFHeightMinus.Size = UDim2.new(0, 22, 0, 22)
+    TFHeightMinus.Position = UDim2.new(1, -48, 0, 37)
+    TFHeightMinus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    TFHeightMinus.Text = "-"
+    TFHeightMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TFHeightMinus.Font = Enum.Font.GothamBold
+    TFHeightMinus.TextSize = 14
+    TFHeightMinus.Parent = TrackSettings
+    TFHeightMinus.ZIndex = 11
+    Instance.new("UICorner", TFHeightMinus).CornerRadius = UDim.new(0, 6)
 
-    local FloatHeightBoxCorner = Instance.new("UICorner")
-    FloatHeightBoxCorner.CornerRadius = UDim.new(0, 6)
-    FloatHeightBoxCorner.Parent = FloatHeightBox
+    local TFHeightPlus = Instance.new("TextButton")
+    TFHeightPlus.Size = UDim2.new(0, 22, 0, 22)
+    TFHeightPlus.Position = UDim2.new(1, -22, 0, 37)
+    TFHeightPlus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    TFHeightPlus.Text = "+"
+    TFHeightPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TFHeightPlus.Font = Enum.Font.GothamBold
+    TFHeightPlus.TextSize = 14
+    TFHeightPlus.Parent = TrackSettings
+    TFHeightPlus.ZIndex = 11
+    Instance.new("UICorner", TFHeightPlus).CornerRadius = UDim.new(0, 6)
 
-    FloatSpeedBox.FocusLost:Connect(function()
-        local value = tonumber(FloatSpeedBox.Text)
-        if value then
-            BAT_FLOAT_SPEED = value
-        else
-            FloatSpeedBox.Text = tostring(BAT_FLOAT_SPEED)
-        end
+    TFHeightMinus.MouseButton1Click:Connect(function()
+        BAT_FLOAT_AMPLITUDE = math.max(1, BAT_FLOAT_AMPLITUDE - 1)
+        TFHeightVal.Text = tostring(BAT_FLOAT_AMPLITUDE)
+    end)
+    TFHeightPlus.MouseButton1Click:Connect(function()
+        BAT_FLOAT_AMPLITUDE = BAT_FLOAT_AMPLITUDE + 1
+        TFHeightVal.Text = tostring(BAT_FLOAT_AMPLITUDE)
     end)
 
-    FloatHeightBox.FocusLost:Connect(function()
-        local value = tonumber(FloatHeightBox.Text)
-        if value then
-            BAT_FLOAT_AMPLITUDE = value
-        else
-            FloatHeightBox.Text = tostring(BAT_FLOAT_AMPLITUDE)
-        end
+    -- Float Speed Label + Value
+    local TFSpeedLabel = Instance.new("TextLabel")
+    TFSpeedLabel.Size = UDim2.new(0.6, 0, 0, 25)
+    TFSpeedLabel.Position = UDim2.new(0, 10, 0, 65)
+    TFSpeedLabel.BackgroundTransparency = 1
+    TFSpeedLabel.Text = "Float Speed"
+    TFSpeedLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+    TFSpeedLabel.Font = Enum.Font.Gotham
+    TFSpeedLabel.TextSize = 12
+    TFSpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
+    TFSpeedLabel.Parent = TrackSettings
+    TFSpeedLabel.ZIndex = 11
+
+    local TFSpeedVal = Instance.new("TextLabel")
+    TFSpeedVal.Size = UDim2.new(0, 40, 0, 25)
+    TFSpeedVal.Position = UDim2.new(1, -90, 0, 65)
+    TFSpeedVal.BackgroundTransparency = 1
+    TFSpeedVal.Text = tostring(BAT_FLOAT_SPEED)
+    TFSpeedVal.TextColor3 = Color3.fromRGB(138, 43, 226)
+    TFSpeedVal.Font = Enum.Font.GothamBold
+    TFSpeedVal.TextSize = 13
+    TFSpeedVal.Parent = TrackSettings
+    TFSpeedVal.ZIndex = 11
+
+    local TFSpeedMinus = Instance.new("TextButton")
+    TFSpeedMinus.Size = UDim2.new(0, 22, 0, 22)
+    TFSpeedMinus.Position = UDim2.new(1, -48, 0, 67)
+    TFSpeedMinus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    TFSpeedMinus.Text = "-"
+    TFSpeedMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TFSpeedMinus.Font = Enum.Font.GothamBold
+    TFSpeedMinus.TextSize = 14
+    TFSpeedMinus.Parent = TrackSettings
+    TFSpeedMinus.ZIndex = 11
+    Instance.new("UICorner", TFSpeedMinus).CornerRadius = UDim.new(0, 6)
+
+    local TFSpeedPlus = Instance.new("TextButton")
+    TFSpeedPlus.Size = UDim2.new(0, 22, 0, 22)
+    TFSpeedPlus.Position = UDim2.new(1, -22, 0, 67)
+    TFSpeedPlus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    TFSpeedPlus.Text = "+"
+    TFSpeedPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TFSpeedPlus.Font = Enum.Font.GothamBold
+    TFSpeedPlus.TextSize = 14
+    TFSpeedPlus.Parent = TrackSettings
+    TFSpeedPlus.ZIndex = 11
+    Instance.new("UICorner", TFSpeedPlus).CornerRadius = UDim.new(0, 6)
+
+    TFSpeedMinus.MouseButton1Click:Connect(function()
+        BAT_FLOAT_SPEED = math.max(0.5, BAT_FLOAT_SPEED - 0.5)
+        TFSpeedVal.Text = tostring(BAT_FLOAT_SPEED)
+    end)
+    TFSpeedPlus.MouseButton1Click:Connect(function()
+        BAT_FLOAT_SPEED = BAT_FLOAT_SPEED + 0.5
+        TFSpeedVal.Text = tostring(BAT_FLOAT_SPEED)
     end)
 
-    TrackGearBtn.MouseButton1Click:Connect(function()
-        TrackSettingsGUI.Visible = not TrackSettingsGUI.Visible
+    -- Move Speed Label + Value
+    local TFMoveLabel = Instance.new("TextLabel")
+    TFMoveLabel.Size = UDim2.new(0.6, 0, 0, 25)
+    TFMoveLabel.Position = UDim2.new(0, 10, 0, 95)
+    TFMoveLabel.BackgroundTransparency = 1
+    TFMoveLabel.Text = "Move Speed"
+    TFMoveLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+    TFMoveLabel.Font = Enum.Font.Gotham
+    TFMoveLabel.TextSize = 12
+    TFMoveLabel.TextXAlignment = Enum.TextXAlignment.Left
+    TFMoveLabel.Parent = TrackSettings
+    TFMoveLabel.ZIndex = 11
+
+    local TFMoveVal = Instance.new("TextLabel")
+    TFMoveVal.Size = UDim2.new(0, 40, 0, 25)
+    TFMoveVal.Position = UDim2.new(1, -90, 0, 95)
+    TFMoveVal.BackgroundTransparency = 1
+    TFMoveVal.Text = tostring(BAT_MOVE_SPEED)
+    TFMoveVal.TextColor3 = Color3.fromRGB(138, 43, 226)
+    TFMoveVal.Font = Enum.Font.GothamBold
+    TFMoveVal.TextSize = 13
+    TFMoveVal.Parent = TrackSettings
+    TFMoveVal.ZIndex = 11
+
+    local TFMoveMinus = Instance.new("TextButton")
+    TFMoveMinus.Size = UDim2.new(0, 22, 0, 22)
+    TFMoveMinus.Position = UDim2.new(1, -48, 0, 97)
+    TFMoveMinus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    TFMoveMinus.Text = "-"
+    TFMoveMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TFMoveMinus.Font = Enum.Font.GothamBold
+    TFMoveMinus.TextSize = 14
+    TFMoveMinus.Parent = TrackSettings
+    TFMoveMinus.ZIndex = 11
+    Instance.new("UICorner", TFMoveMinus).CornerRadius = UDim.new(0, 6)
+
+    local TFMovePlus = Instance.new("TextButton")
+    TFMovePlus.Size = UDim2.new(0, 22, 0, 22)
+    TFMovePlus.Position = UDim2.new(1, -22, 0, 97)
+    TFMovePlus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    TFMovePlus.Text = "+"
+    TFMovePlus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TFMovePlus.Font = Enum.Font.GothamBold
+    TFMovePlus.TextSize = 14
+    TFMovePlus.Parent = TrackSettings
+    TFMovePlus.ZIndex = 11
+    Instance.new("UICorner", TFMovePlus).CornerRadius = UDim.new(0, 6)
+
+    TFMoveMinus.MouseButton1Click:Connect(function()
+        BAT_MOVE_SPEED = math.max(5, BAT_MOVE_SPEED - 5)
+        TFMoveVal.Text = tostring(BAT_MOVE_SPEED)
+    end)
+    TFMovePlus.MouseButton1Click:Connect(function()
+        BAT_MOVE_SPEED = BAT_MOVE_SPEED + 5
+        TFMoveVal.Text = tostring(BAT_MOVE_SPEED)
+    end)
+
+    -- Gear opens/closes settings panel
+    TrackGear.MouseButton1Click:Connect(function()
+        TrackSettings.Visible = not TrackSettings.Visible
     end)
 
     -- ✅ HIT CIRCLE Button (UNDER TRACK PLAYER - GRAY!)
