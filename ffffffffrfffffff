@@ -1271,10 +1271,8 @@ local function equipBat_target()
     end
 end
 
-local BAT_FLOAT_AMPLITUDE = 3.5 -- half of total range
+local BAT_FLOAT_AMPLITUDE = 7 -- studs up and down
 local BAT_FLOAT_SPEED = 3 -- oscillation speed
-local trackFloatHeight = 7  -- studs above target to float (up 7 then back down)
-local trackFloatSpeed = 3   -- oscillation speed (configurable via gear)
 
 RunService.Heartbeat:Connect(function()
     if not batAimbotToggled or not character or not hrp or not hum then return end
@@ -1284,8 +1282,8 @@ RunService.Heartbeat:Connect(function()
     local target, distance = nearestPlayer_bat()
     if not target then return end
 
-    -- Float from target's Y to target's Y + trackFloatHeight (up 7 then back down)
-    local floatOffset = (math.sin(tick() * trackFloatSpeed) + 1) / 2 * trackFloatHeight
+    -- Float up and down by 4 studs using sine wave
+    local floatOffset = math.sin(tick() * BAT_FLOAT_SPEED) * BAT_FLOAT_AMPLITUDE
 
     -- Predict target movement for anti-dodge/anti-jump
     local predictedPos = target.Position
@@ -1295,8 +1293,8 @@ RunService.Heartbeat:Connect(function()
         predictedPos = predictedPos + Vector3.new(0, targetHum.Jump and 4 or 2, 0)
     end
 
-    -- Track target's Y height + oscillating offset (0 to trackFloatHeight studs above)
-    predictedPos = Vector3.new(predictedPos.X, target.Position.Y + floatOffset, predictedPos.Z)
+    -- Add float offset to predicted position
+    predictedPos = predictedPos + Vector3.new(0, floatOffset, 0)
 
     local moveDir = (predictedPos - hrp.Position).Unit
     hrp.AssemblyLinearVelocity = moveDir * BAT_MOVE_SPEED
@@ -3985,12 +3983,12 @@ function createRightButtons(device)
     TrackGear.Parent = TrackPlayerButton
 
     -- ═══════════════════════════════════════════════════════
-    -- ✅ TRACK PLAYER SETTINGS PANEL (Height + Speed)
+    -- ✅ TRACK PLAYER SETTINGS PANEL
     -- ═══════════════════════════════════════════════════════
 
     local TrackSettings = Instance.new("Frame")
     TrackSettings.Name = "TrackSettings"
-    TrackSettings.Size = UDim2.new(0, 210, 0, 140)
+    TrackSettings.Size = UDim2.new(0, 210, 0, 150)
     TrackSettings.Position = UDim2.new(0.5, -105, 0.3, 0)
     TrackSettings.BackgroundColor3 = Color3.fromRGB(14, 14, 14)
     TrackSettings.BackgroundTransparency = 0.05
@@ -4027,7 +4025,7 @@ function createRightButtons(device)
     local TSTitle = Instance.new("TextLabel")
     TSTitle.Size = UDim2.new(1, 0, 0, 30)
     TSTitle.BackgroundTransparency = 1
-    TSTitle.Text = "⚙ Track Settings"
+    TSTitle.Text = "⚙ Track Player Settings"
     TSTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
     TSTitle.Font = Enum.Font.GothamBold
     TSTitle.TextSize = 14
@@ -4046,6 +4044,7 @@ function createRightButtons(device)
     TSClose.ZIndex = 11
     TSClose.MouseButton1Click:Connect(function() TrackSettings.Visible = false end)
 
+    -- Helper to create a track setting row
     local function createTrackRow(labelText, yPos, getValue, setValue, step, minVal)
         local lbl = Instance.new("TextLabel")
         lbl.Size = UDim2.new(0.55, 0, 0, 25)
@@ -4064,7 +4063,7 @@ function createRightButtons(device)
         valLbl.Position = UDim2.new(1, -100, 0, yPos)
         valLbl.BackgroundTransparency = 1
         valLbl.Text = tostring(getValue())
-        valLbl.TextColor3 = Color3.fromRGB(138, 43, 226)
+        valLbl.TextColor3 = Color3.fromRGB(255, 100, 100)
         valLbl.Font = Enum.Font.GothamBold
         valLbl.TextSize = 12
         valLbl.Parent = TrackSettings
@@ -4102,16 +4101,12 @@ function createRightButtons(device)
             setValue(getValue() + step)
             valLbl.Text = tostring(getValue())
         end)
+        return valLbl
     end
 
-    createTrackRow("Float Height", 35,
-        function() return trackFloatHeight end,
-        function(v) trackFloatHeight = v end,
-        1, 1)
-    createTrackRow("Float Speed", 65,
-        function() return trackFloatSpeed end,
-        function(v) trackFloatSpeed = v end,
-        1, 1)
+    createTrackRow("Float Height", 35, function() return BAT_FLOAT_AMPLITUDE end, function(v) BAT_FLOAT_AMPLITUDE = v end, 1, 1)
+    createTrackRow("Float Speed", 65, function() return BAT_FLOAT_SPEED end, function(v) BAT_FLOAT_SPEED = v end, 0.5, 0.5)
+    createTrackRow("Move Speed", 95, function() return BAT_MOVE_SPEED end, function(v) BAT_MOVE_SPEED = v end, 2, 10)
 
     TrackGear.MouseButton1Click:Connect(function()
         TrackSettings.Visible = not TrackSettings.Visible
