@@ -50,6 +50,16 @@ local function applyAntiDie()
     end)
 end
 
+-- Re-acquire on respawn
+C.lp.CharacterAdded:Connect(function(newChar)
+    char = newChar
+    hum = newChar:WaitForChild("Humanoid")
+    hrp = newChar:WaitForChild("HumanoidRootPart")
+    if Config.AntiDie then
+        task.defer(applyAntiDie)
+    end
+end)
+
 -- Draggable Logic
 local function makeDraggable(frame)
     local dragging, dragInput, dragStart, startPos
@@ -70,19 +80,35 @@ end
 -- UI Construction
 local sg = Instance.new("ScreenGui", C.CG)
 sg.Name = "TimCheeseHub"
+sg.ResetOnSpawn = false
 
--- Small Float button
-local floatBtn = Instance.new("TextButton", sg)
-floatBtn.Size = UDim2.new(0, 70, 0, 35)
-floatBtn.Position = UDim2.new(0.5, -50, 0.4, 0)
+-- Box container for Float + Gear
+local box = Instance.new("Frame", sg)
+box.Size = UDim2.new(0, 108, 0, 42)
+box.Position = UDim2.new(0.5, -54, 0.4, 0)
+box.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+box.Active = true
+Instance.new("UICorner", box).CornerRadius = UDim.new(0, 8)
+makeDraggable(box)
+
+-- RGB outline
+local boxStroke = Instance.new("UIStroke", box)
+boxStroke.Thickness = 2.5
+boxStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+C.RS.RenderStepped:Connect(function()
+    boxStroke.Color = Color3.fromHSV(tick() % 5 / 5, 1, 1)
+end)
+
+-- Float button inside box
+local floatBtn = Instance.new("TextButton", box)
+floatBtn.Size = UDim2.new(0, 70, 0, 30)
+floatBtn.Position = UDim2.new(0, 6, 0.5, -15)
 floatBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 floatBtn.Text = "Float"
 floatBtn.TextColor3 = Color3.new(1, 1, 1)
 floatBtn.Font = Enum.Font.GothamBold
 floatBtn.TextSize = 14
-floatBtn.Active = true
-Instance.new("UICorner", floatBtn).CornerRadius = UDim.new(0, 8)
-makeDraggable(floatBtn)
+Instance.new("UICorner", floatBtn).CornerRadius = UDim.new(0, 6)
 
 local function updateFloatBtn()
     floatBtn.BackgroundColor3 = Config.Float and Color3.fromRGB(45, 130, 45) or Color3.fromRGB(35, 35, 35)
@@ -95,26 +121,33 @@ floatBtn.MouseButton1Click:Connect(function()
     saveSettings()
 end)
 
--- Gear button next to Float
-local gearBtn = Instance.new("TextButton", sg)
-gearBtn.Size = UDim2.new(0, 28, 0, 35)
-gearBtn.Position = UDim2.new(0.5, 22, 0.4, 0)
+-- Gear button inside box (next to float)
+local gearBtn = Instance.new("TextButton", box)
+gearBtn.Size = UDim2.new(0, 26, 0, 30)
+gearBtn.Position = UDim2.new(0, 78, 0.5, -15)
 gearBtn.BackgroundColor3 = Color3.fromRGB(28, 28, 28)
 gearBtn.Text = "⚙"
 gearBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
 gearBtn.Font = Enum.Font.GothamBold
 gearBtn.TextSize = 16
-Instance.new("UICorner", gearBtn).CornerRadius = UDim.new(0, 8)
+Instance.new("UICorner", gearBtn).CornerRadius = UDim.new(0, 6)
 
 -- Settings panel
 local settingsPanel = Instance.new("Frame", sg)
 settingsPanel.Size = UDim2.new(0, 170, 0, 140)
-settingsPanel.Position = UDim2.new(0.5, -85, 0.4, 42)
+settingsPanel.Position = UDim2.new(0.5, -85, 0.4, 48)
 settingsPanel.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
 settingsPanel.Visible = false
 settingsPanel.Active = true
 Instance.new("UICorner", settingsPanel).CornerRadius = UDim.new(0, 8)
 makeDraggable(settingsPanel)
+
+local spStroke = Instance.new("UIStroke", settingsPanel)
+spStroke.Thickness = 2.5
+spStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+C.RS.RenderStepped:Connect(function()
+    spStroke.Color = Color3.fromHSV(tick() % 5 / 5, 1, 1)
+end)
 
 local stitle = Instance.new("TextLabel", settingsPanel)
 stitle.Size, stitle.Text = UDim2.new(1, 0, 0, 24), "Settings"
