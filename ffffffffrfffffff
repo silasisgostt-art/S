@@ -1271,9 +1271,8 @@ local function equipBat_target()
     end
 end
 
-local BAT_FLOAT_AMPLITUDE = 7 -- studs up and down
+local BAT_FLOAT_AMPLITUDE = 4 -- studs up and down
 local BAT_FLOAT_SPEED = 3 -- oscillation speed
-local BAT_TRACK_SPEED = 56.5 -- track move speed
 
 RunService.Heartbeat:Connect(function()
     if not batAimbotToggled or not character or not hrp or not hum then return end
@@ -1298,7 +1297,7 @@ RunService.Heartbeat:Connect(function()
     predictedPos = predictedPos + Vector3.new(0, floatOffset, 0)
 
     local moveDir = (predictedPos - hrp.Position).Unit
-    hrp.AssemblyLinearVelocity = moveDir * BAT_TRACK_SPEED
+    hrp.AssemblyLinearVelocity = moveDir * BAT_MOVE_SPEED
 
     if distance <= BAT_ENGAGE_RANGE then
         if tick() - lastEquipTick_bat >= BAT_LOOP_TIME then
@@ -3971,71 +3970,6 @@ function createRightButtons(device)
         end
     end)
 
-    -- ✅ TRACK PLAYER GEAR: Float Height, Float Speed, Track Speed
-    local gearYStart = TrackPlayerButton.Position.Y.Offset + buttonSize + 5
-    local gearX = TrackPlayerButton.Position.X.Offset -- same X column
-    local gearW = math.floor(buttonSize * 0.45)
-    local gearH = 22
-    local gearSpacing = 26
-    local gearFontSize = device == "iPhone" and 8 or 10
-
-    local function makeGearRow(labelText, yOff, getValue, onMinus, onPlus)
-        local lbl = Instance.new("TextLabel")
-        lbl.Size = UDim2.new(0, buttonSize, 0, 12)
-        lbl.Position = UDim2.new(1, gearX, 0.5, yOff)
-        lbl.BackgroundTransparency = 1
-        lbl.Text = labelText .. ": " .. tostring(getValue())
-        lbl.TextColor3 = Color3.fromRGB(220, 220, 220)
-        lbl.Font = Enum.Font.GothamBold
-        lbl.TextSize = gearFontSize
-        lbl.Parent = ScreenGui
-
-        local minusBtn = Instance.new("TextButton")
-        minusBtn.Size = UDim2.new(0, gearW, 0, gearH)
-        minusBtn.Position = UDim2.new(1, gearX, 0.5, yOff + 13)
-        minusBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        minusBtn.Text = "-"
-        minusBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
-        minusBtn.Font = Enum.Font.GothamBold
-        minusBtn.TextSize = 14
-        minusBtn.Parent = ScreenGui
-        Instance.new("UICorner", minusBtn).CornerRadius = UDim.new(0, 6)
-
-        local plusBtn = Instance.new("TextButton")
-        plusBtn.Size = UDim2.new(0, gearW, 0, gearH)
-        plusBtn.Position = UDim2.new(1, gearX + buttonSize - gearW, 0.5, yOff + 13)
-        plusBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        plusBtn.Text = "+"
-        plusBtn.TextColor3 = Color3.fromRGB(100, 255, 100)
-        plusBtn.Font = Enum.Font.GothamBold
-        plusBtn.TextSize = 14
-        plusBtn.Parent = ScreenGui
-        Instance.new("UICorner", plusBtn).CornerRadius = UDim.new(0, 6)
-
-        minusBtn.MouseButton1Click:Connect(function()
-            onMinus()
-            lbl.Text = labelText .. ": " .. tostring(getValue())
-        end)
-        plusBtn.MouseButton1Click:Connect(function()
-            onPlus()
-            lbl.Text = labelText .. ": " .. tostring(getValue())
-        end)
-
-        return lbl
-    end
-
-    makeGearRow("Height", gearYStart, function() return BAT_FLOAT_AMPLITUDE end,
-        function() BAT_FLOAT_AMPLITUDE = math.max(0, BAT_FLOAT_AMPLITUDE - 1) end,
-        function() BAT_FLOAT_AMPLITUDE = BAT_FLOAT_AMPLITUDE + 1 end)
-
-    makeGearRow("F-Speed", gearYStart + gearSpacing + gearH, function() return BAT_FLOAT_SPEED end,
-        function() BAT_FLOAT_SPEED = math.max(0.5, BAT_FLOAT_SPEED - 0.5) end,
-        function() BAT_FLOAT_SPEED = BAT_FLOAT_SPEED + 0.5 end)
-
-    makeGearRow("Speed", gearYStart + (gearSpacing + gearH) * 2, function() return BAT_TRACK_SPEED end,
-        function() BAT_TRACK_SPEED = math.max(5, BAT_TRACK_SPEED - 5) end,
-        function() BAT_TRACK_SPEED = BAT_TRACK_SPEED + 5 end)
-
     -- ✅ HIT CIRCLE Button (UNDER TRACK PLAYER - GRAY!)
     local HitCircleButton = Instance.new("TextButton")
     HitCircleButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
@@ -4711,50 +4645,62 @@ function createRightButtons(device)
     -- ✅ JUKE LOGIC: Float up, spam tool, wait, then TP down
     -- ═══════════════════════════════════════════════════════
 
+    local jukeSpamConn = nil
+
     JukeButton.MouseButton1Click:Connect(function()
-        if jukeActive then return end
-        local c = player.Character
-        local r = c and c:FindFirstChild("HumanoidRootPart")
-        if not r then return end
-        jukeActive = true
-        JukeButton.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+        if not jukeActive then
+            local c = player.Character
+            local r = c and c:FindFirstChild("HumanoidRootPart")
+            if not r then return end
+            jukeActive = true
+            JukeButton.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
 
-        local startPos = r.Position
-        local targetY = startPos.Y + jukeFloatY
+            local startPos = r.Position
+            local targetY = startPos.Y + jukeFloatY
 
-        -- Float up using velocity + spam tool activate
-        local floatConn
-        floatConn = RunService.Heartbeat:Connect(function()
-            if not jukeActive then if floatConn then floatConn:Disconnect() end return end
-            local rr = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-            if not rr then if floatConn then floatConn:Disconnect() end return end
-
-            -- Spam activate held tool
-            local char = player.Character
-            if char then
-                local tool = char:FindFirstChildOfClass("Tool")
-                if tool then
-                    pcall(function() tool:Activate() end)
+            -- Spam activate held tool continuously while juke is on
+            jukeSpamConn = RunService.Heartbeat:Connect(function()
+                if not jukeActive then
+                    if jukeSpamConn then jukeSpamConn:Disconnect() jukeSpamConn = nil end
+                    return
                 end
-            end
-
-            if rr.Position.Y >= targetY then
-                rr.AssemblyLinearVelocity = Vector3.new(rr.AssemblyLinearVelocity.X, 0, rr.AssemblyLinearVelocity.Z)
-                floatConn:Disconnect()
-                -- Wait delay then TP down
-                task.delay(jukeTPDelay, function()
-                    local rrr = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-                    if rrr then
-                        rrr.CFrame = CFrame.new(startPos.X, startPos.Y, startPos.Z)
-                        rrr.AssemblyLinearVelocity = Vector3.zero
+                local char = player.Character
+                if char then
+                    local tool = char:FindFirstChildOfClass("Tool")
+                    if tool then
+                        pcall(function() tool:Activate() end)
                     end
-                    jukeActive = false
-                    JukeButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-                end)
-                return
-            end
-            rr.AssemblyLinearVelocity = Vector3.new(rr.AssemblyLinearVelocity.X, jukeFloatSpeed, rr.AssemblyLinearVelocity.Z)
-        end)
+                end
+            end)
+
+            -- Float up using velocity
+            local floatConn
+            floatConn = RunService.Heartbeat:Connect(function()
+                if not jukeActive then if floatConn then floatConn:Disconnect() end return end
+                local rr = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                if not rr then if floatConn then floatConn:Disconnect() end return end
+
+                if rr.Position.Y >= targetY then
+                    rr.AssemblyLinearVelocity = Vector3.new(rr.AssemblyLinearVelocity.X, 0, rr.AssemblyLinearVelocity.Z)
+                    floatConn:Disconnect()
+                    -- Wait delay then TP down
+                    task.delay(jukeTPDelay, function()
+                        local rrr = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                        if rrr then
+                            rrr.CFrame = CFrame.new(startPos.X, startPos.Y, startPos.Z)
+                            rrr.AssemblyLinearVelocity = Vector3.zero
+                        end
+                    end)
+                    return
+                end
+                rr.AssemblyLinearVelocity = Vector3.new(rr.AssemblyLinearVelocity.X, jukeFloatSpeed, rr.AssemblyLinearVelocity.Z)
+            end)
+        else
+            -- Turn off juke
+            jukeActive = false
+            if jukeSpamConn then jukeSpamConn:Disconnect() jukeSpamConn = nil end
+            JukeButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        end
     end)
 end
 
