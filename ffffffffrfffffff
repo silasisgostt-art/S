@@ -1271,6 +1271,9 @@ local function equipBat_target()
     end
 end
 
+local BAT_FLOAT_AMPLITUDE = 4 -- studs up and down
+local BAT_FLOAT_SPEED = 3 -- oscillation speed
+
 RunService.Heartbeat:Connect(function()
     if not batAimbotToggled or not character or not hrp or not hum then return end
 
@@ -1278,6 +1281,9 @@ RunService.Heartbeat:Connect(function()
 
     local target, distance = nearestPlayer_bat()
     if not target then return end
+
+    -- Float up and down by 4 studs using sine wave
+    local floatOffset = math.sin(tick() * BAT_FLOAT_SPEED) * BAT_FLOAT_AMPLITUDE
 
     -- Predict target movement for anti-dodge/anti-jump
     local predictedPos = target.Position
@@ -1287,10 +1293,11 @@ RunService.Heartbeat:Connect(function()
         predictedPos = predictedPos + Vector3.new(0, targetHum.Jump and 4 or 2, 0)
     end
 
+    -- Add float offset to predicted position
+    predictedPos = predictedPos + Vector3.new(0, floatOffset, 0)
+
     local moveDir = (predictedPos - hrp.Position).Unit
-    -- Float up and down 4 studs while tracking
-    local floatY = math.sin(tick() * 3) * 12
-    hrp.AssemblyLinearVelocity = Vector3.new(moveDir.X * BAT_MOVE_SPEED, floatY, moveDir.Z * BAT_MOVE_SPEED)
+    hrp.AssemblyLinearVelocity = moveDir * BAT_MOVE_SPEED
 
     if distance <= BAT_ENGAGE_RANGE then
         if tick() - lastEquipTick_bat >= BAT_LOOP_TIME then
