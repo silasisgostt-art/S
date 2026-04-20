@@ -13,7 +13,7 @@ local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local Settings = {
     InvisToggleKey = "V",          -- Key to toggle invis steal
     InvisStealAngle = 233,         -- Rotation angle (180-360)
-    SinkSliderValue = 5,           -- Depth offset (0.5-10)
+    SinkSliderValue = 6,           -- Depth offset (0.5-10)
     AutoRecoverLagback = true,     -- Auto fix lagback detection
     ShowInvisPanel = true,         -- Show GUI panel
     PanelPosition = {X = 0.8578125, Y = 0.17260276361454258}, -- Panel position
