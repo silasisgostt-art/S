@@ -1282,7 +1282,7 @@ RunService.Heartbeat:Connect(function()
     local target, distance = nearestPlayer_bat()
     if not target then return end
 
-    -- Float up and down by 4 studs using sine wave
+    -- Float up and down using sine wave
     local floatOffset = math.sin(tick() * BAT_FLOAT_SPEED) * BAT_FLOAT_AMPLITUDE
 
     -- Predict target movement for anti-dodge/anti-jump
@@ -3970,146 +3970,91 @@ function createRightButtons(device)
         end
     end)
 
-    -- ⚙ Track Player Gear Button
-    local TrackGear = Instance.new("TextButton")
-    TrackGear.Size = UDim2.new(0, 18, 0, 18)
-    TrackGear.Position = UDim2.new(1, -16, 0, -2)
-    TrackGear.BackgroundTransparency = 1
-    TrackGear.Text = "⚙"
-    TrackGear.TextColor3 = Color3.fromRGB(200, 200, 200)
-    TrackGear.Font = Enum.Font.GothamBold
-    TrackGear.TextSize = 14
-    TrackGear.ZIndex = 3
-    TrackGear.Parent = TrackPlayerButton
+    -- ✅ TRACK PLAYER GEAR: Float Height Input
+    local TrackHeightBox = Instance.new("TextBox")
+    TrackHeightBox.Size = UDim2.new(0, buttonSize / 2 - 2, 0, 22)
+    TrackHeightBox.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize - 10 + buttonSize + 4)
+    TrackHeightBox.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    TrackHeightBox.Text = tostring(BAT_FLOAT_AMPLITUDE)
+    TrackHeightBox.PlaceholderText = "H"
+    TrackHeightBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TrackHeightBox.Font = Enum.Font.GothamBold
+    TrackHeightBox.TextSize = 10
+    TrackHeightBox.ClearTextOnFocus = false
+    TrackHeightBox.Parent = ScreenGui
+    Instance.new("UICorner", TrackHeightBox).CornerRadius = UDim.new(0, 6)
 
-    -- ═══════════════════════════════════════════════════════
-    -- ✅ TRACK PLAYER SETTINGS PANEL
-    -- ═══════════════════════════════════════════════════════
+    local TrackHeightLabel = Instance.new("TextLabel")
+    TrackHeightLabel.Size = UDim2.new(0, buttonSize / 2 - 2, 0, 12)
+    TrackHeightLabel.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize - 10 + buttonSize + 4 - 12)
+    TrackHeightLabel.BackgroundTransparency = 1
+    TrackHeightLabel.Text = "HEIGHT"
+    TrackHeightLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    TrackHeightLabel.Font = Enum.Font.GothamBold
+    TrackHeightLabel.TextSize = 8
+    TrackHeightLabel.Parent = ScreenGui
 
-    local TrackSettings = Instance.new("Frame")
-    TrackSettings.Name = "TrackSettings"
-    TrackSettings.Size = UDim2.new(0, 210, 0, 150)
-    TrackSettings.Position = UDim2.new(0.5, -105, 0.3, 0)
-    TrackSettings.BackgroundColor3 = Color3.fromRGB(14, 14, 14)
-    TrackSettings.BackgroundTransparency = 0.05
-    TrackSettings.Visible = false
-    TrackSettings.Active = true
-    TrackSettings.Draggable = true
-    TrackSettings.Parent = ScreenGui
-    TrackSettings.ZIndex = 10
+    TrackHeightBox.FocusLost:Connect(function()
+        local v = tonumber(TrackHeightBox.Text)
+        if v then BAT_FLOAT_AMPLITUDE = v else TrackHeightBox.Text = tostring(BAT_FLOAT_AMPLITUDE) end
+    end)
 
-    Instance.new("UICorner", TrackSettings).CornerRadius = UDim.new(0, 8)
-    local TSBlackStroke = Instance.new("UIStroke", TrackSettings)
-    TSBlackStroke.Color = Color3.fromRGB(0, 0, 0)
-    TSBlackStroke.Thickness = 4
-    TSBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    local TSStroke = Instance.new("UIStroke", TrackSettings)
-    TSStroke.Color = Color3.fromRGB(255, 255, 255)
-    TSStroke.Thickness = 2.5
-    TSStroke.Transparency = 0.35
-    TSStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    TSStroke.ZIndex = 2
-    local TSWaveGrad = Instance.new("UIGradient")
-    TSWaveGrad.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
-    TSWaveGrad.Transparency = NumberSequence.new({
-        NumberSequenceKeypoint.new(0, 1),
-        NumberSequenceKeypoint.new(0.4, 0),
-        NumberSequenceKeypoint.new(0.6, 0),
-        NumberSequenceKeypoint.new(1, 1)
-    })
-    TSWaveGrad.Rotation = 0
-    TSWaveGrad.Parent = TSStroke
-    TweenService:Create(TSStroke, TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Thickness = 4.2, Transparency = 0.08}):Play()
-    RunService.Heartbeat:Connect(function(dt) pcall(function() TSWaveGrad.Rotation = (TSWaveGrad.Rotation + 140 * dt) % 360 end) end)
+    -- ✅ TRACK PLAYER GEAR: Float Speed Input
+    local TrackSpeedBox = Instance.new("TextBox")
+    TrackSpeedBox.Size = UDim2.new(0, buttonSize / 2 - 2, 0, 22)
+    TrackSpeedBox.Position = UDim2.new(1, -buttonSize - 15 + buttonSize / 2 + 2, 0.5, -buttonSize - 10 + buttonSize + 4)
+    TrackSpeedBox.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    TrackSpeedBox.Text = tostring(BAT_FLOAT_SPEED)
+    TrackSpeedBox.PlaceholderText = "S"
+    TrackSpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TrackSpeedBox.Font = Enum.Font.GothamBold
+    TrackSpeedBox.TextSize = 10
+    TrackSpeedBox.ClearTextOnFocus = false
+    TrackSpeedBox.Parent = ScreenGui
+    Instance.new("UICorner", TrackSpeedBox).CornerRadius = UDim.new(0, 6)
 
-    local TSTitle = Instance.new("TextLabel")
-    TSTitle.Size = UDim2.new(1, 0, 0, 30)
-    TSTitle.BackgroundTransparency = 1
-    TSTitle.Text = "⚙ Track Player Settings"
-    TSTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-    TSTitle.Font = Enum.Font.GothamBold
-    TSTitle.TextSize = 14
-    TSTitle.Parent = TrackSettings
-    TSTitle.ZIndex = 11
+    local TrackSpeedLabel = Instance.new("TextLabel")
+    TrackSpeedLabel.Size = UDim2.new(0, buttonSize / 2 - 2, 0, 12)
+    TrackSpeedLabel.Position = UDim2.new(1, -buttonSize - 15 + buttonSize / 2 + 2, 0.5, -buttonSize - 10 + buttonSize + 4 - 12)
+    TrackSpeedLabel.BackgroundTransparency = 1
+    TrackSpeedLabel.Text = "SPEED"
+    TrackSpeedLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    TrackSpeedLabel.Font = Enum.Font.GothamBold
+    TrackSpeedLabel.TextSize = 8
+    TrackSpeedLabel.Parent = ScreenGui
 
-    local TSClose = Instance.new("TextButton")
-    TSClose.Size = UDim2.new(0, 24, 0, 24)
-    TSClose.Position = UDim2.new(1, -28, 0, 3)
-    TSClose.BackgroundTransparency = 1
-    TSClose.Text = "✕"
-    TSClose.TextColor3 = Color3.fromRGB(255, 80, 80)
-    TSClose.Font = Enum.Font.GothamBold
-    TSClose.TextSize = 14
-    TSClose.Parent = TrackSettings
-    TSClose.ZIndex = 11
-    TSClose.MouseButton1Click:Connect(function() TrackSettings.Visible = false end)
+    TrackSpeedBox.FocusLost:Connect(function()
+        local v = tonumber(TrackSpeedBox.Text)
+        if v then BAT_FLOAT_SPEED = v else TrackSpeedBox.Text = tostring(BAT_FLOAT_SPEED) end
+    end)
 
-    -- Helper to create a track setting row
-    local function createTrackRow(labelText, yPos, getValue, setValue, step, minVal)
-        local lbl = Instance.new("TextLabel")
-        lbl.Size = UDim2.new(0.55, 0, 0, 25)
-        lbl.Position = UDim2.new(0, 10, 0, yPos)
-        lbl.BackgroundTransparency = 1
-        lbl.Text = labelText
-        lbl.TextColor3 = Color3.fromRGB(220, 220, 220)
-        lbl.Font = Enum.Font.Gotham
-        lbl.TextSize = 11
-        lbl.TextXAlignment = Enum.TextXAlignment.Left
-        lbl.Parent = TrackSettings
-        lbl.ZIndex = 11
+    -- ✅ TRACK PLAYER GEAR: Move Speed Input
+    local TrackMoveSpeedBox = Instance.new("TextBox")
+    TrackMoveSpeedBox.Size = UDim2.new(0, buttonSize, 0, 22)
+    TrackMoveSpeedBox.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize - 10 + buttonSize + 4 + 24)
+    TrackMoveSpeedBox.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    TrackMoveSpeedBox.Text = tostring(BAT_MOVE_SPEED)
+    TrackMoveSpeedBox.PlaceholderText = "Move Spd"
+    TrackMoveSpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TrackMoveSpeedBox.Font = Enum.Font.GothamBold
+    TrackMoveSpeedBox.TextSize = 10
+    TrackMoveSpeedBox.ClearTextOnFocus = false
+    TrackMoveSpeedBox.Parent = ScreenGui
+    Instance.new("UICorner", TrackMoveSpeedBox).CornerRadius = UDim.new(0, 6)
 
-        local valLbl = Instance.new("TextLabel")
-        valLbl.Size = UDim2.new(0, 50, 0, 25)
-        valLbl.Position = UDim2.new(1, -100, 0, yPos)
-        valLbl.BackgroundTransparency = 1
-        valLbl.Text = tostring(getValue())
-        valLbl.TextColor3 = Color3.fromRGB(255, 100, 100)
-        valLbl.Font = Enum.Font.GothamBold
-        valLbl.TextSize = 12
-        valLbl.Parent = TrackSettings
-        valLbl.ZIndex = 11
+    local TrackMoveSpeedLabel = Instance.new("TextLabel")
+    TrackMoveSpeedLabel.Size = UDim2.new(0, buttonSize, 0, 12)
+    TrackMoveSpeedLabel.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize - 10 + buttonSize + 4 + 24 - 12)
+    TrackMoveSpeedLabel.BackgroundTransparency = 1
+    TrackMoveSpeedLabel.Text = "MOVE SPD"
+    TrackMoveSpeedLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    TrackMoveSpeedLabel.Font = Enum.Font.GothamBold
+    TrackMoveSpeedLabel.TextSize = 8
+    TrackMoveSpeedLabel.Parent = ScreenGui
 
-        local minus = Instance.new("TextButton")
-        minus.Size = UDim2.new(0, 22, 0, 22)
-        minus.Position = UDim2.new(1, -48, 0, yPos + 2)
-        minus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-        minus.Text = "-"
-        minus.TextColor3 = Color3.fromRGB(255, 255, 255)
-        minus.Font = Enum.Font.GothamBold
-        minus.TextSize = 14
-        minus.Parent = TrackSettings
-        minus.ZIndex = 11
-        Instance.new("UICorner", minus).CornerRadius = UDim.new(0, 6)
-
-        local plus = Instance.new("TextButton")
-        plus.Size = UDim2.new(0, 22, 0, 22)
-        plus.Position = UDim2.new(1, -22, 0, yPos + 2)
-        plus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-        plus.Text = "+"
-        plus.TextColor3 = Color3.fromRGB(255, 255, 255)
-        plus.Font = Enum.Font.GothamBold
-        plus.TextSize = 14
-        plus.Parent = TrackSettings
-        plus.ZIndex = 11
-        Instance.new("UICorner", plus).CornerRadius = UDim.new(0, 6)
-
-        minus.MouseButton1Click:Connect(function()
-            setValue(math.max(minVal, getValue() - step))
-            valLbl.Text = tostring(getValue())
-        end)
-        plus.MouseButton1Click:Connect(function()
-            setValue(getValue() + step)
-            valLbl.Text = tostring(getValue())
-        end)
-        return valLbl
-    end
-
-    createTrackRow("Float Height", 35, function() return BAT_FLOAT_AMPLITUDE end, function(v) BAT_FLOAT_AMPLITUDE = v end, 1, 1)
-    createTrackRow("Float Speed", 65, function() return BAT_FLOAT_SPEED end, function(v) BAT_FLOAT_SPEED = v end, 0.5, 0.5)
-    createTrackRow("Move Speed", 95, function() return BAT_MOVE_SPEED end, function(v) BAT_MOVE_SPEED = v end, 2, 10)
-
-    TrackGear.MouseButton1Click:Connect(function()
-        TrackSettings.Visible = not TrackSettings.Visible
+    TrackMoveSpeedBox.FocusLost:Connect(function()
+        local v = tonumber(TrackMoveSpeedBox.Text)
+        if v then BAT_MOVE_SPEED = v else TrackMoveSpeedBox.Text = tostring(BAT_MOVE_SPEED) end
     end)
 
     -- ✅ HIT CIRCLE Button (UNDER TRACK PLAYER - GRAY!)
