@@ -1282,9 +1282,6 @@ RunService.Heartbeat:Connect(function()
     local target, distance = nearestPlayer_bat()
     if not target then return end
 
-    -- Float up and down by 4 studs using sine wave
-    local floatOffset = math.sin(tick() * BAT_FLOAT_SPEED) * BAT_FLOAT_AMPLITUDE
-
     -- Predict target movement for anti-dodge/anti-jump
     local predictedPos = target.Position
     local targetHum = target.Parent and target.Parent:FindFirstChildOfClass("Humanoid")
@@ -1293,11 +1290,18 @@ RunService.Heartbeat:Connect(function()
         predictedPos = predictedPos + Vector3.new(0, targetHum.Jump and 4 or 2, 0)
     end
 
-    -- Add float offset to predicted position
-    predictedPos = predictedPos + Vector3.new(0, floatOffset, 0)
+    -- ✅ SPLIT HORIZONTAL + VERTICAL TRACKING (tracks up/down properly!)
+    -- Horizontal: move toward target XZ at full speed
+    local hrpPos = hrp.Position
+    local xzDir = Vector3.new(predictedPos.X - hrpPos.X, 0, predictedPos.Z - hrpPos.Z)
+    local xzDist = xzDir.Magnitude
+    local xzVelocity = xzDist > 0.5 and (xzDir.Unit * BAT_MOVE_SPEED) or Vector3.zero
 
-    local moveDir = (predictedPos - hrp.Position).Unit
-    hrp.AssemblyLinearVelocity = moveDir * BAT_MOVE_SPEED
+    -- Vertical: track target Y with full speed (up and down)
+    local yDiff = predictedPos.Y - hrpPos.Y
+    local yVelocity = math.clamp(yDiff * 12, -BAT_MOVE_SPEED, BAT_MOVE_SPEED)
+
+    hrp.AssemblyLinearVelocity = Vector3.new(xzVelocity.X, yVelocity, xzVelocity.Z)
 
     if distance <= BAT_ENGAGE_RANGE then
         if tick() - lastEquipTick_bat >= BAT_LOOP_TIME then
