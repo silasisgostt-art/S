@@ -3098,31 +3098,38 @@ local function initializeGUI(device)
     DeviceSelectFrame:Destroy()
 
     -- ✅ AUTO-ENABLE MAIN TAB FEATURES FOR ALL DEVICES (PC, iPad, iPhone)
-    -- NOTE: Button visibility is now controlled by the TIM CHEESE HUB "Buttons" tab
     task.spawn(function()
         task.wait(1.5) -- Wait for GUI to fully load
         
-        -- ✅ Speed Booster - AUTO ON (visibility controlled by HUB)
+        -- ✅ Speed Booster - AUTO ON + SHOW SMALL GUI
         SpeedBooster.Enabled = true
+        SmallSpeedGUI.Visible = true
         SmallSpeedGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
         SpeedDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
         startSpeedBooster()
         
-        -- ✅ Unwalk - AUTO ON
+        -- ✅ Unwalk - AUTO ON + SHOW SMALL GUI
         UnwalkEnabled = true
+        SmallUnwalkGUI.Visible = true
         SmallUnwalkGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
         UnwalkDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
         startUnwalk()
         
-        -- ⚪ Spin Bot - style only
+        -- ⚪ Spin Bot - SHOW AS ON-SCREEN BUTTON
+        SmallSpinBotGUI.Visible = true
         SmallSpinBotGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
         SpinDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
         
-        -- ⚪ Inf Jump - style only
+        -- ⚪ Inf Jump - SHOW AS ON-SCREEN BUTTON
+        SmallInfJumpGUI.Visible = true
         SmallInfJumpGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
         InfJumpDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
         
-        -- ⚪ FOV - style only
+        -- ⚪ Float Up - HIDDEN (user must turn on from Main tab or MISC)
+        SmallFloatGUI.Visible = false
+        
+        -- ⚪ FOV - SHOW AS ON-SCREEN BUTTON
+        SmallFOVGUI.Visible = true
         if ConfigData.fovEnabled then
             SmallFOVGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
             FOVDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
@@ -3131,28 +3138,33 @@ local function initializeGUI(device)
             FOVDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
         end
         
-        -- ✅ Anti Ragdoll - AUTO ON
+        -- ✅ Anti Ragdoll - AUTO ON + SHOW SMALL GUI
         AntiRagdollEnabled = true
+        SmallAntiRagGUI.Visible = true
         SmallAntiRagGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
         AntiRagDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
         enableAntiRagdoll()
         
-        -- ✅ Ragdoll TP - AUTO ON
+        -- ✅ Ragdoll TP - AUTO ON + SHOW SMALL GUI
         RagdollTP.enabled = true
+        SmallRagdollTPGUI.Visible = true
         SmallRagdollTPGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
         RagdollTPDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
         startRagdollTP()
         
-        -- ✅ Drop Brainrot - style only
+        -- ✅ Drop Brainrot - SHOW SMALL GUI but STAYS OFF (gray dot)
+        SmallDropGUI.Visible = true
         SmallDropGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
         DropDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        -- TP Down - style only
+        -- ✅ TP Down - show small button on screen by default
+        SmallTPDownGUI.Visible = true
         SmallTPDownGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
         TPDownDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
         
-        -- Restore TP Up functionality from config
+        -- Restore TP Up / TP Down visibility from config
         if ConfigData.tpUpEnabled then
             TPUpEnabled = true
+            SmallTPUpGUI.Visible = true
             SmallTPUpGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
             TPUpDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
             if TPUpJumpConn then TPUpJumpConn:Disconnect() TPUpJumpConn = nil end
@@ -3163,10 +3175,14 @@ local function initializeGUI(device)
                 end) end
             end)
         end
+        if ConfigData.tpDownVisible then
+            SmallTPDownGUI.Visible = true
+        end
         
         refreshSmallButtonPositions()
-        print("[TIM CHEESE DUELS] ✅ Auto-enabled: Speed, Unwalk, Anti Rag, Ragdoll TP")
-        print("[TIM CHEESE DUELS] ⚪ Button visibility controlled by TIM CHEESE HUB")
+        print("[TIM CHEESE DUELS] ✅ Auto-enabled for "..device..": Speed, Unwalk, Anti Rag, Ragdoll TP")
+        print("[TIM CHEESE DUELS] ✅ Visible Small GUIs: Speed, Unwalk, Anti Rag, Ragdoll TP, Drop (OFF)")
+        print("[TIM CHEESE DUELS] ⚪ Hidden Small GUIs: Inf Jump, Spin Bot, Float, FOV (turn on from Main tab)")
     end)
 
     createMainGUI(device)
@@ -3187,9 +3203,7 @@ local function initializeGUI(device)
     -- ✅ AUTO-LOAD CONFIG ON START!
     if ConfigData.speedEnabled then
         SpeedBooster.Enabled = true
-    -- Config auto-enable (visibility controlled by HUB, just enable features)
-    if ConfigData.speedEnabled then
-        SpeedBooster.Enabled = true
+        SmallSpeedGUI.Visible = true
         SmallSpeedGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
         SpeedDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
         startSpeedBooster()
@@ -3197,6 +3211,7 @@ local function initializeGUI(device)
     
     if ConfigData.fovEnabled then
         fovEnabled = true
+        SmallFOVGUI.Visible = true
         SmallFOVGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
         FOVDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
         updateFOV()
@@ -3254,7 +3269,6 @@ function createOpenButton(device)
             MainFrame.Visible = false
         end
     end)
-    _OpenButton = OpenButton
 end
 
 -- ═══════════════════════════════════════════════════════
@@ -3262,7 +3276,6 @@ end
 -- ═══════════════════════════════════════════════════════
 
 local AutoLeftSmallGUI, AutoRightSmallGUI
-local _AutoLeftButton, _AutoMedusaButton, _AutoRightButton, _OpenButton
 
 function createAutoButtons(device)
     local buttonSize = device == "iPhone" and 55 or 70
@@ -3297,7 +3310,6 @@ function createAutoButtons(device)
     LeftStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     LeftStroke.ZIndex = 2
     LeftStroke.Parent = AutoLeftButton
-    _AutoLeftButton = AutoLeftButton
 
     -- ✅ AUTO MEDUSA Button (above Auto Right)
     local AutoMedusaButton = Instance.new("TextButton")
@@ -3433,7 +3445,6 @@ function createAutoButtons(device)
         medusaAttacking = false
         unequipMedusa()
     end
-    _AutoMedusaButton = AutoMedusaButton
     AutoMedusaButton.MouseButton1Click:Connect(function()
         autoMedusaEnabled = not autoMedusaEnabled
         if autoMedusaEnabled then
@@ -3500,7 +3511,6 @@ function createAutoButtons(device)
             startStealPath(stealPath1) -- ✅ RIGHT PATH!
         end
     end)
-    _AutoRightButton = AutoRightButton
 end
 
 -- ═══════════════════════════════════════════════════════
@@ -3540,16 +3550,399 @@ function createRightButtons(device)
     DesyncStroke.ZIndex = 2
     DesyncStroke.Parent = DesyncButton
 
-    -- Desync logic
+    -- Invisible Steal (Desync) logic
     local desyncEnabled = false
     local laggerEnabled = false
-    local animConnection
-    local prevSpeed, prevJump, prevBypass, prevSpin, prevPath, prevAimbot
-    local function getStealSpeed()
-        if SpeedBooster and SpeedBooster.StealSpeed then return SpeedBooster.StealSpeed end
-        if ConfigData and ConfigData.stealSpeed then return ConfigData.stealSpeed end
-        return 29.6
+    local desyncAnimPlaying = false
+    local desyncTracks = {}
+    local desyncClone = nil
+    local desyncOldRoot = nil
+    local desyncHip = nil
+    local desyncConnection = nil
+    local desyncFolderConns = {}
+    local desyncServerGhosts = {}
+    local desyncGhostEnabled = true
+    local desyncLagbackCount = 0
+    local desyncLagbackWindowStart = 0
+    local desyncLastLagbackTime = 0
+    local desyncErrorOrbActive = false
+    local desyncErrorOrb = nil
+    local desyncErrorOrbConn = nil
+    local DESYNC_SETTINGS = {
+        InvisStealAngle = 233,
+        SinkSliderValue = 5,
+        AutoRecoverLagback = true,
+    }
+
+    -- Load saved desync settings
+    if ConfigData.desyncAngle then DESYNC_SETTINGS.InvisStealAngle = ConfigData.desyncAngle end
+    if ConfigData.desyncSink then DESYNC_SETTINGS.SinkSliderValue = ConfigData.desyncSink end
+    if ConfigData.desyncAutoRecover ~= nil then DESYNC_SETTINGS.AutoRecoverLagback = ConfigData.desyncAutoRecover end
+
+    local function desyncClearErrorOrb()
+        if desyncErrorOrb and desyncErrorOrb.Parent then desyncErrorOrb:Destroy() end
+        desyncErrorOrb = nil
+        desyncErrorOrbActive = false
+        if desyncErrorOrbConn then desyncErrorOrbConn:Disconnect(); desyncErrorOrbConn = nil end
     end
+
+    local function desyncCreateErrorOrb()
+        if desyncErrorOrbActive then return end
+        desyncErrorOrbActive = true
+        for _, ghost in pairs(desyncServerGhosts) do
+            if ghost and ghost.Parent then ghost:Destroy() end
+        end
+        desyncServerGhosts = {}
+        local sg = Instance.new("ScreenGui")
+        sg.Name = "DesyncErrorOrbGui"
+        sg.ResetOnSpawn = false
+        sg.Parent = player.PlayerGui
+        local fr = Instance.new("Frame")
+        fr.Size = UDim2.new(0, 500, 0, 60)
+        fr.Position = UDim2.new(0.5, -250, 0.3, 0)
+        fr.BackgroundTransparency = 1
+        fr.BorderSizePixel = 0
+        fr.Parent = sg
+        local l1 = Instance.new("TextLabel")
+        l1.Size = UDim2.new(1, 0, 0.5, 0)
+        l1.BackgroundTransparency = 1
+        l1.Text = "ERROR CAUSED BY PLAYER DEATH"
+        l1.TextColor3 = Color3.fromRGB(255, 0, 0)
+        l1.TextStrokeTransparency = 0
+        l1.TextStrokeColor3 = Color3.new(0, 0, 0)
+        l1.Font = Enum.Font.SourceSansBold
+        l1.TextScaled = true
+        l1.Parent = fr
+        local l2 = Instance.new("TextLabel")
+        l2.Size = UDim2.new(1, 0, 0.5, 0)
+        l2.Position = UDim2.new(0, 0, 0.5, 0)
+        l2.BackgroundTransparency = 1
+        l2.Text = "MUST RESET TO FIX ERROR"
+        l2.TextColor3 = Color3.fromRGB(255, 0, 0)
+        l2.TextStrokeTransparency = 0
+        l2.TextStrokeColor3 = Color3.new(0, 0, 0)
+        l2.Font = Enum.Font.SourceSansBold
+        l2.TextScaled = true
+        l2.Parent = fr
+        desyncErrorOrb = sg
+    end
+
+    local function desyncCreateServerGhost(position)
+        if not desyncGhostEnabled or desyncErrorOrbActive then return end
+        local now = tick()
+        if now - desyncLastLagbackTime < 0.05 then return end
+        desyncLastLagbackTime = now
+        if now - desyncLagbackWindowStart > 1 then
+            desyncLagbackCount = 0
+            desyncLagbackWindowStart = now
+        end
+        desyncLagbackCount = desyncLagbackCount + 1
+        if desyncLagbackCount >= 7 then
+            desyncCreateErrorOrb()
+            return
+        end
+        for _, g in pairs(desyncServerGhosts) do
+            if g and g.Parent then g:Destroy() end
+        end
+        desyncServerGhosts = {}
+        local sg = Instance.new("ScreenGui")
+        sg.Name = "DesyncLagbackNotif"
+        sg.ResetOnSpawn = false
+        sg.Parent = player.PlayerGui
+        local sl = Instance.new("TextLabel")
+        sl.Size = UDim2.new(0, 500, 0, 30)
+        sl.Position = UDim2.new(0.5, -250, 0.15, 0)
+        sl.BackgroundTransparency = 1
+        sl.Text = "LAGBACK DETECTED"
+        sl.TextColor3 = Color3.fromRGB(255, 0, 0)
+        sl.TextStrokeTransparency = 0
+        sl.TextStrokeColor3 = Color3.new(0, 0, 0)
+        sl.Font = Enum.Font.SourceSansBold
+        sl.TextScaled = true
+        sl.Parent = sg
+        local sw = Instance.new("TextLabel")
+        sw.Size = UDim2.new(0, 650, 0, 25)
+        sw.Position = UDim2.new(0.5, -325, 0.15, 32)
+        sw.BackgroundTransparency = 1
+        sw.Text = "DISABLE DESYNC NOW OR ANTICHEAT WILL KILL YOU"
+        sw.TextColor3 = Color3.fromRGB(200, 200, 200)
+        sw.TextStrokeTransparency = 0
+        sw.TextStrokeColor3 = Color3.new(0, 0, 0)
+        sw.Font = Enum.Font.SourceSansBold
+        sw.TextScaled = true
+        sw.Parent = sg
+        task.delay(1.5, function()
+            if sg and sg.Parent then sg:Destroy() end
+        end)
+        local ghost = Instance.new("Part")
+        ghost.Name = "DesyncLagbackGhost"
+        ghost.Shape = Enum.PartType.Ball
+        ghost.Size = Vector3.new(3, 3, 3)
+        ghost.Color = Color3.fromRGB(255, 0, 0)
+        ghost.Material = Enum.Material.Glass
+        ghost.Transparency = 0.3
+        ghost.CanCollide = false
+        ghost.Anchored = true
+        ghost.CastShadow = false
+        ghost.Position = position + Vector3.new(0, 5, 0)
+        ghost.Parent = Workspace.CurrentCamera
+        local bb = Instance.new("BillboardGui")
+        bb.Size = UDim2.new(0, 400, 0, 60)
+        bb.StudsOffset = Vector3.new(0, 4, 0)
+        bb.AlwaysOnTop = true
+        bb.Parent = ghost
+        local bl = Instance.new("TextLabel")
+        bl.Size = UDim2.new(1, 0, 0, 25)
+        bl.BackgroundTransparency = 1
+        bl.Text = "LAGBACK DETECTED"
+        bl.TextColor3 = Color3.fromRGB(255, 0, 0)
+        bl.TextStrokeTransparency = 0
+        bl.TextStrokeColor3 = Color3.new(0, 0, 0)
+        bl.Font = Enum.Font.SourceSansBold
+        bl.TextScaled = true
+        bl.Parent = bb
+        table.insert(desyncServerGhosts, ghost)
+    end
+
+    local function desyncClearAllGhosts()
+        for _, ghost in pairs(desyncServerGhosts) do
+            pcall(function() if ghost and ghost.Parent then ghost:Destroy() end end)
+        end
+        desyncServerGhosts = {}
+        desyncClearErrorOrb()
+        desyncLagbackCount = 0
+        desyncLastLagbackTime = 0
+        pcall(function()
+            for _, gui in pairs(player.PlayerGui:GetChildren()) do
+                if gui.Name == "DesyncLagbackNotif" or gui.Name == "DesyncErrorOrbGui" then gui:Destroy() end
+            end
+        end)
+        pcall(function()
+            if Workspace.CurrentCamera then
+                for _, c in pairs(Workspace.CurrentCamera:GetChildren()) do
+                    if c.Name == "DesyncLagbackGhost" then c:Destroy() end
+                end
+            end
+        end)
+    end
+
+    local function desyncRemoveFolders()
+        local pf = Workspace:FindFirstChild(player.Name)
+        if not pf then return end
+        local dr = pf:FindFirstChild("DoubleRig")
+        if dr then
+            local rr = dr:FindFirstChild("HumanoidRootPart") or dr:FindFirstChildWhichIsA("BasePart")
+            if rr and desyncGhostEnabled then desyncCreateServerGhost(rr.Position) end
+            dr:Destroy()
+        end
+        local cs = pf:FindFirstChild("Constraints")
+        if cs then cs:Destroy() end
+        local conn = pf.ChildAdded:Connect(function(child)
+            if child.Name == "DoubleRig" then
+                task.defer(function()
+                    local rr = child:FindFirstChild("HumanoidRootPart") or child:FindFirstChildWhichIsA("BasePart")
+                    if rr and desyncGhostEnabled then desyncCreateServerGhost(rr.Position) end
+                    child:Destroy()
+                end)
+            elseif child.Name == "Constraints" then
+                child:Destroy()
+            end
+        end)
+        table.insert(desyncFolderConns, conn)
+    end
+
+    local function desyncDoClone()
+        local character = player.Character
+        if character and character:FindFirstChild("Humanoid") and character.Humanoid.Health > 0 then
+            desyncHip = character.Humanoid.HipHeight
+            desyncOldRoot = character:FindFirstChild("HumanoidRootPart")
+            if not desyncOldRoot or not desyncOldRoot.Parent then return false end
+            for _, c in pairs(desyncOldRoot:GetChildren()) do
+                if c:IsA("Attachment") and (c.Name:find("Beam") or c.Name:find("Attach")) then c:Destroy() end
+            end
+            for _, c in pairs(desyncOldRoot:GetChildren()) do
+                if c:IsA("Beam") then c:Destroy() end
+            end
+            local tmp = Instance.new("Model")
+            tmp.Parent = game
+            character.Parent = tmp
+            desyncClone = desyncOldRoot:Clone()
+            desyncClone.Parent = character
+            desyncOldRoot.Parent = Workspace.CurrentCamera
+            desyncClone.CFrame = desyncOldRoot.CFrame
+            character.PrimaryPart = desyncClone
+            character.Parent = Workspace
+            for _, v in pairs(character:GetDescendants()) do
+                if v:IsA("Weld") or v:IsA("Motor6D") then
+                    if v.Part0 == desyncOldRoot then v.Part0 = desyncClone end
+                    if v.Part1 == desyncOldRoot then v.Part1 = desyncClone end
+                end
+            end
+            tmp:Destroy()
+            return true
+        end
+        return false
+    end
+
+    local function desyncRevertClone()
+        local character = player.Character
+        if not desyncOldRoot or not desyncOldRoot:IsDescendantOf(Workspace) or not character or character.Humanoid.Health <= 0 then
+            return
+        end
+        local tmp = Instance.new("Model")
+        tmp.Parent = game
+        character.Parent = tmp
+        desyncOldRoot.Parent = character
+        character.PrimaryPart = desyncOldRoot
+        character.Parent = Workspace
+        desyncOldRoot.CanCollide = true
+        for _, v in pairs(character:GetDescendants()) do
+            if v:IsA("Weld") or v:IsA("Motor6D") then
+                if v.Part0 == desyncClone then v.Part0 = desyncOldRoot end
+                if v.Part1 == desyncClone then v.Part1 = desyncOldRoot end
+            end
+        end
+        if desyncClone then
+            local p = desyncClone.CFrame
+            desyncClone:Destroy()
+            desyncClone = nil
+            desyncOldRoot.CFrame = p
+        end
+        desyncOldRoot = nil
+        if character and character.Humanoid then
+            character.Humanoid.HipHeight = desyncHip
+        end
+        desyncClearAllGhosts()
+    end
+
+    local function desyncAnimTrickery()
+        local character = player.Character
+        if character and character:FindFirstChild("Humanoid") and character.Humanoid.Health > 0 then
+            local anim = Instance.new("Animation")
+            anim.AnimationId = "http://www.roblox.com/asset/?id=18537363391"
+            local humanoid = character.Humanoid
+            local animator = humanoid:FindFirstChild("Animator") or Instance.new("Animator", humanoid)
+            local animTrack = animator:LoadAnimation(anim)
+            animTrack.Priority = Enum.AnimationPriority.Action4
+            animTrack:Play(0, 1, 0)
+            anim:Destroy()
+            table.insert(desyncTracks, animTrack)
+            animTrack.Stopped:Connect(function()
+                if desyncAnimPlaying then desyncAnimTrickery() end
+            end)
+            task.delay(0, function()
+                animTrack.TimePosition = 0.7
+                task.delay(0.3, function()
+                    if animTrack then animTrack:AdjustSpeed(math.huge) end
+                end)
+            end)
+        end
+    end
+
+    local function desyncTurnOff()
+        desyncClearAllGhosts()
+        if not desyncAnimPlaying then return end
+        local character = player.Character
+        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+        desyncAnimPlaying = false
+        desyncEnabled = false
+        for _, t in pairs(desyncTracks) do pcall(function() t:Stop() end) end
+        desyncTracks = {}
+        if desyncConnection then desyncConnection:Disconnect(); desyncConnection = nil end
+        for _, c in ipairs(desyncFolderConns) do if c then c:Disconnect() end end
+        desyncFolderConns = {}
+        desyncRevertClone()
+        desyncClearAllGhosts()
+        if humanoid then
+            pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.GettingUp) end)
+        end
+        DesyncButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    end
+
+    local function desyncTurnOn()
+        if desyncAnimPlaying then return end
+        local character = player.Character
+        if not character then return end
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if not humanoid then return end
+        desyncAnimPlaying = true
+        desyncEnabled = true
+        DesyncButton.BackgroundColor3 = Color3.fromRGB(120, 60, 255)
+        desyncTracks = {}
+        desyncRemoveFolders()
+        local success = desyncDoClone()
+        if success then
+            task.wait(0.05)
+            desyncAnimTrickery()
+            local lastSetPosition = nil
+            local skipFrames = 5
+            desyncConnection = RunService.PreSimulation:Connect(function()
+                if character and character:FindFirstChild("Humanoid") and character.Humanoid.Health > 0 and desyncOldRoot then
+                    local root = character.PrimaryPart or character:FindFirstChild("HumanoidRootPart")
+                    if root then
+                        if skipFrames > 0 then
+                            skipFrames = skipFrames - 1
+                            lastSetPosition = nil
+                        elseif lastSetPosition and desyncGhostEnabled then
+                            local currentPos = desyncOldRoot.Position
+                            local jumpDist = (currentPos - lastSetPosition).Magnitude
+                            if jumpDist > 3 and not _G.DesyncRecoveryInProgress then
+                                lastSetPosition = nil
+                                desyncCreateServerGhost(currentPos)
+                                if DESYNC_SETTINGS.AutoRecoverLagback then
+                                    _G.DesyncRecoveryInProgress = true
+                                    task.spawn(function()
+                                        pcall(desyncTurnOff)
+                                        task.wait(0.5)
+                                        pcall(desyncTurnOn)
+                                        _G.DesyncRecoveryInProgress = false
+                                    end)
+                                end
+                            end
+                        end
+                        if desyncClone then desyncClone.CanCollide = false end
+                        for _, c in pairs(desyncOldRoot:GetChildren()) do
+                            if c:IsA("Attachment") or c:IsA("Beam") then c:Destroy() end
+                        end
+                        local rotAngle = DESYNC_SETTINGS.InvisStealAngle
+                        local sa = DESYNC_SETTINGS.SinkSliderValue * 0.5
+                        local cf = root.CFrame - Vector3.new(0, sa, 0)
+                        desyncOldRoot.CFrame = cf * CFrame.Angles(math.rad(rotAngle), 0, 0)
+                        desyncOldRoot.AssemblyLinearVelocity = root.AssemblyLinearVelocity
+                        desyncOldRoot.CanCollide = false
+                        lastSetPosition = desyncOldRoot.Position
+                    end
+                end
+            end)
+        end
+    end
+
+    -- Character respawn cleanup for desync
+    player.CharacterAdded:Connect(function(newChar)
+        desyncClearErrorOrb()
+        desyncClearAllGhosts()
+        desyncLagbackCount = 0
+        pcall(function()
+            for _, c in pairs(Workspace.CurrentCamera:GetChildren()) do
+                if c:IsA("BasePart") and c.Name == "HumanoidRootPart" then c:Destroy() end
+            end
+        end)
+        if desyncOldRoot then pcall(function() desyncOldRoot:Destroy() end); desyncOldRoot = nil end
+        if desyncClone then pcall(function() desyncClone:Destroy() end); desyncClone = nil end
+        desyncAnimPlaying = false
+        desyncEnabled = false
+        DesyncButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        task.wait(0.2)
+        local camera = Workspace.CurrentCamera
+        if camera and newChar then
+            local h = newChar:FindFirstChildOfClass("Humanoid")
+            if h then
+                camera.CameraSubject = h
+                camera.CameraType = Enum.CameraType.Custom
+            end
+        end
+    end)
+
         -- ✅ LAGGER Button (TOP)
         local LaggerButton = Instance.new("TextButton")
         LaggerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
@@ -3878,35 +4271,282 @@ function createRightButtons(device)
         LaggerGear.MouseButton1Click:Connect(function()
             LaggerSettings.Visible = not LaggerSettings.Visible
         end)
-    local function getHumanoid()
-        local char = player.Character or player.CharacterAdded:Wait()
-        return char:WaitForChild("Humanoid")
-    end
-    local function stopAnims(hum)
-        for _, track in pairs(hum:GetPlayingAnimationTracks()) do track:Stop() end
-    end
-    local function setOtherPlayersDesync(state)
-        for _, plr in ipairs(Players:GetPlayers()) do
-            if plr ~= player and plr.Character and plr.Character:FindFirstChild("Humanoid") then
-                if raknet and raknet.desync then pcall(function() raknet.desync(state, plr) end) end
-            end
-        end
-    end
     DesyncButton.MouseButton1Click:Connect(function()
-        desyncEnabled = not desyncEnabled
-        local humanoid = getHumanoid()
-        if desyncEnabled then
-            DesyncButton.BackgroundColor3 = Color3.fromRGB(120, 60, 255)
-            stopAnims(humanoid)
-            if animConnection then animConnection:Disconnect() animConnection = nil end
-            animConnection = humanoid.AnimationPlayed:Connect(function(t) t:Stop() end)
-            if raknet and raknet.desync then raknet.desync(true) end
-            print("leak by Lacsy on dc\nLeak Royals desync by Lacsy")
+        if desyncAnimPlaying then
+            desyncTurnOff()
         else
-            DesyncButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-            if animConnection then animConnection:Disconnect() animConnection = nil end
-            if raknet and raknet.desync then raknet.desync(false) end
+            desyncTurnOn()
         end
+    end)
+
+    -- ⚙ Desync Gear Button
+    local DesyncGear = Instance.new("TextButton")
+    DesyncGear.Size = UDim2.new(0, 18, 0, 18)
+    DesyncGear.Position = UDim2.new(1, -16, 0, -2)
+    DesyncGear.BackgroundTransparency = 1
+    DesyncGear.Text = "⚙"
+    DesyncGear.TextColor3 = Color3.fromRGB(200, 200, 200)
+    DesyncGear.Font = Enum.Font.GothamBold
+    DesyncGear.TextSize = 14
+    DesyncGear.ZIndex = 3
+    DesyncGear.Parent = DesyncButton
+
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ DESYNC SETTINGS PANEL (Invisible Steal)
+    -- ═══════════════════════════════════════════════════════
+
+    local DesyncSettings = Instance.new("Frame")
+    DesyncSettings.Name = "DesyncSettings"
+    DesyncSettings.Size = UDim2.new(0, 210, 0, 230)
+    DesyncSettings.Position = UDim2.new(0.5, -105, 0.3, 0)
+    DesyncSettings.BackgroundColor3 = Color3.fromRGB(14, 14, 14)
+    DesyncSettings.BackgroundTransparency = 0.05
+    DesyncSettings.Visible = false
+    DesyncSettings.Active = true
+    DesyncSettings.Draggable = true
+    DesyncSettings.Parent = ScreenGui
+    DesyncSettings.ZIndex = 10
+
+    Instance.new("UICorner", DesyncSettings).CornerRadius = UDim.new(0, 8)
+    local DSBlackStroke = Instance.new("UIStroke", DesyncSettings)
+    DSBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+    DSBlackStroke.Thickness = 5
+    DSBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    local DSStroke = Instance.new("UIStroke", DesyncSettings)
+    DSStroke.Color = Color3.fromRGB(255, 255, 255)
+    DSStroke.Thickness = 2.8
+    DSStroke.Transparency = 0.3
+    DSStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    DSStroke.ZIndex = 2
+    local DSWaveGrad = Instance.new("UIGradient")
+    DSWaveGrad.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
+    DSWaveGrad.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 1),
+        NumberSequenceKeypoint.new(0.45, 0),
+        NumberSequenceKeypoint.new(0.55, 0),
+        NumberSequenceKeypoint.new(1, 1)
+    })
+    DSWaveGrad.Rotation = 0
+    DSWaveGrad.Parent = DSStroke
+    TweenService:Create(DSStroke, TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Thickness = 4.5, Transparency = 0.05}):Play()
+    RunService.Heartbeat:Connect(function(dt) pcall(function() DSWaveGrad.Rotation = (DSWaveGrad.Rotation + 180 * dt) % 360 end) end)
+
+    local DSTitle = Instance.new("TextLabel")
+    DSTitle.Size = UDim2.new(1, 0, 0, 30)
+    DSTitle.BackgroundTransparency = 1
+    DSTitle.Text = "⚙ Desync Settings"
+    DSTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    DSTitle.Font = Enum.Font.GothamBold
+    DSTitle.TextSize = 14
+    DSTitle.Parent = DesyncSettings
+    DSTitle.ZIndex = 11
+
+    local DSClose = Instance.new("TextButton")
+    DSClose.Size = UDim2.new(0, 24, 0, 24)
+    DSClose.Position = UDim2.new(1, -28, 0, 3)
+    DSClose.BackgroundTransparency = 1
+    DSClose.Text = "✕"
+    DSClose.TextColor3 = Color3.fromRGB(255, 80, 80)
+    DSClose.Font = Enum.Font.GothamBold
+    DSClose.TextSize = 14
+    DSClose.Parent = DesyncSettings
+    DSClose.ZIndex = 11
+    DSClose.MouseButton1Click:Connect(function() DesyncSettings.Visible = false end)
+
+    -- Rotation row
+    local DSRotLbl = Instance.new("TextLabel")
+    DSRotLbl.Size = UDim2.new(0.5, 0, 0, 25)
+    DSRotLbl.Position = UDim2.new(0, 10, 0, 35)
+    DSRotLbl.BackgroundTransparency = 1
+    DSRotLbl.Text = "Rotation"
+    DSRotLbl.TextColor3 = Color3.fromRGB(220, 220, 220)
+    DSRotLbl.Font = Enum.Font.Gotham
+    DSRotLbl.TextSize = 11
+    DSRotLbl.TextXAlignment = Enum.TextXAlignment.Left
+    DSRotLbl.Parent = DesyncSettings
+    DSRotLbl.ZIndex = 11
+
+    local DSRotVal = Instance.new("TextLabel")
+    DSRotVal.Size = UDim2.new(0, 40, 0, 25)
+    DSRotVal.Position = UDim2.new(1, -90, 0, 35)
+    DSRotVal.BackgroundTransparency = 1
+    DSRotVal.Text = tostring(DESYNC_SETTINGS.InvisStealAngle)
+    DSRotVal.TextColor3 = Color3.fromRGB(138, 43, 226)
+    DSRotVal.Font = Enum.Font.GothamBold
+    DSRotVal.TextSize = 13
+    DSRotVal.Parent = DesyncSettings
+    DSRotVal.ZIndex = 11
+
+    local DSRotMinus = Instance.new("TextButton")
+    DSRotMinus.Size = UDim2.new(0, 22, 0, 22)
+    DSRotMinus.Position = UDim2.new(1, -48, 0, 37)
+    DSRotMinus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    DSRotMinus.Text = "-"
+    DSRotMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    DSRotMinus.Font = Enum.Font.GothamBold
+    DSRotMinus.TextSize = 14
+    DSRotMinus.Parent = DesyncSettings
+    DSRotMinus.ZIndex = 11
+    Instance.new("UICorner", DSRotMinus).CornerRadius = UDim.new(0, 6)
+
+    local DSRotPlus = Instance.new("TextButton")
+    DSRotPlus.Size = UDim2.new(0, 22, 0, 22)
+    DSRotPlus.Position = UDim2.new(1, -22, 0, 37)
+    DSRotPlus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    DSRotPlus.Text = "+"
+    DSRotPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    DSRotPlus.Font = Enum.Font.GothamBold
+    DSRotPlus.TextSize = 14
+    DSRotPlus.Parent = DesyncSettings
+    DSRotPlus.ZIndex = 11
+    Instance.new("UICorner", DSRotPlus).CornerRadius = UDim.new(0, 6)
+
+    DSRotMinus.MouseButton1Click:Connect(function()
+        DESYNC_SETTINGS.InvisStealAngle = math.max(180, DESYNC_SETTINGS.InvisStealAngle - 5)
+        DSRotVal.Text = tostring(DESYNC_SETTINGS.InvisStealAngle)
+    end)
+    DSRotPlus.MouseButton1Click:Connect(function()
+        DESYNC_SETTINGS.InvisStealAngle = math.min(360, DESYNC_SETTINGS.InvisStealAngle + 5)
+        DSRotVal.Text = tostring(DESYNC_SETTINGS.InvisStealAngle)
+    end)
+
+    -- Depth row
+    local DSDepthLbl = Instance.new("TextLabel")
+    DSDepthLbl.Size = UDim2.new(0.5, 0, 0, 25)
+    DSDepthLbl.Position = UDim2.new(0, 10, 0, 65)
+    DSDepthLbl.BackgroundTransparency = 1
+    DSDepthLbl.Text = "Depth"
+    DSDepthLbl.TextColor3 = Color3.fromRGB(220, 220, 220)
+    DSDepthLbl.Font = Enum.Font.Gotham
+    DSDepthLbl.TextSize = 11
+    DSDepthLbl.TextXAlignment = Enum.TextXAlignment.Left
+    DSDepthLbl.Parent = DesyncSettings
+    DSDepthLbl.ZIndex = 11
+
+    local DSDepthVal = Instance.new("TextLabel")
+    DSDepthVal.Size = UDim2.new(0, 40, 0, 25)
+    DSDepthVal.Position = UDim2.new(1, -90, 0, 65)
+    DSDepthVal.BackgroundTransparency = 1
+    DSDepthVal.Text = tostring(DESYNC_SETTINGS.SinkSliderValue)
+    DSDepthVal.TextColor3 = Color3.fromRGB(138, 43, 226)
+    DSDepthVal.Font = Enum.Font.GothamBold
+    DSDepthVal.TextSize = 13
+    DSDepthVal.Parent = DesyncSettings
+    DSDepthVal.ZIndex = 11
+
+    local DSDepthMinus = Instance.new("TextButton")
+    DSDepthMinus.Size = UDim2.new(0, 22, 0, 22)
+    DSDepthMinus.Position = UDim2.new(1, -48, 0, 67)
+    DSDepthMinus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    DSDepthMinus.Text = "-"
+    DSDepthMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    DSDepthMinus.Font = Enum.Font.GothamBold
+    DSDepthMinus.TextSize = 14
+    DSDepthMinus.Parent = DesyncSettings
+    DSDepthMinus.ZIndex = 11
+    Instance.new("UICorner", DSDepthMinus).CornerRadius = UDim.new(0, 6)
+
+    local DSDepthPlus = Instance.new("TextButton")
+    DSDepthPlus.Size = UDim2.new(0, 22, 0, 22)
+    DSDepthPlus.Position = UDim2.new(1, -22, 0, 67)
+    DSDepthPlus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    DSDepthPlus.Text = "+"
+    DSDepthPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    DSDepthPlus.Font = Enum.Font.GothamBold
+    DSDepthPlus.TextSize = 14
+    DSDepthPlus.Parent = DesyncSettings
+    DSDepthPlus.ZIndex = 11
+    Instance.new("UICorner", DSDepthPlus).CornerRadius = UDim.new(0, 6)
+
+    DSDepthMinus.MouseButton1Click:Connect(function()
+        DESYNC_SETTINGS.SinkSliderValue = math.max(0.5, DESYNC_SETTINGS.SinkSliderValue - 0.5)
+        DSDepthVal.Text = tostring(DESYNC_SETTINGS.SinkSliderValue)
+    end)
+    DSDepthPlus.MouseButton1Click:Connect(function()
+        DESYNC_SETTINGS.SinkSliderValue = math.min(10, DESYNC_SETTINGS.SinkSliderValue + 0.5)
+        DSDepthVal.Text = tostring(DESYNC_SETTINGS.SinkSliderValue)
+    end)
+
+    -- Auto Fix Lagback toggle
+    local DSAutoFixBtn = Instance.new("TextButton")
+    DSAutoFixBtn.Size = UDim2.new(0, 190, 0, 26)
+    DSAutoFixBtn.Position = UDim2.new(0, 10, 0, 100)
+    DSAutoFixBtn.BackgroundColor3 = DESYNC_SETTINGS.AutoRecoverLagback and Color3.fromRGB(50, 180, 50) or Color3.fromRGB(30, 30, 30)
+    DSAutoFixBtn.Text = "Auto Fix Lagback: " .. (DESYNC_SETTINGS.AutoRecoverLagback and "ON" or "OFF")
+    DSAutoFixBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
+    DSAutoFixBtn.Font = Enum.Font.GothamBold
+    DSAutoFixBtn.TextSize = 11
+    DSAutoFixBtn.Parent = DesyncSettings
+    DSAutoFixBtn.ZIndex = 11
+    Instance.new("UICorner", DSAutoFixBtn).CornerRadius = UDim.new(0, 6)
+
+    DSAutoFixBtn.MouseButton1Click:Connect(function()
+        DESYNC_SETTINGS.AutoRecoverLagback = not DESYNC_SETTINGS.AutoRecoverLagback
+        DSAutoFixBtn.Text = "Auto Fix Lagback: " .. (DESYNC_SETTINGS.AutoRecoverLagback and "ON" or "OFF")
+        DSAutoFixBtn.BackgroundColor3 = DESYNC_SETTINGS.AutoRecoverLagback and Color3.fromRGB(50, 180, 50) or Color3.fromRGB(30, 30, 30)
+    end)
+
+    -- Save & Reset
+    local DSSave = Instance.new("TextButton")
+    DSSave.Size = UDim2.new(0.44, 0, 0, 28)
+    DSSave.Position = UDim2.new(0.03, 0, 0, 140)
+    DSSave.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
+    DSSave.Text = "💾 Save"
+    DSSave.TextColor3 = Color3.fromRGB(255, 255, 255)
+    DSSave.Font = Enum.Font.GothamBold
+    DSSave.TextSize = 12
+    DSSave.Parent = DesyncSettings
+    DSSave.ZIndex = 11
+    Instance.new("UICorner", DSSave).CornerRadius = UDim.new(0, 8)
+
+    local DSReset = Instance.new("TextButton")
+    DSReset.Size = UDim2.new(0.44, 0, 0, 28)
+    DSReset.Position = UDim2.new(0.53, 0, 0, 140)
+    DSReset.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+    DSReset.Text = "🔄 Reset"
+    DSReset.TextColor3 = Color3.fromRGB(255, 255, 255)
+    DSReset.Font = Enum.Font.GothamBold
+    DSReset.TextSize = 12
+    DSReset.Parent = DesyncSettings
+    DSReset.ZIndex = 11
+    Instance.new("UICorner", DSReset).CornerRadius = UDim.new(0, 8)
+
+    local DSStatus = Instance.new("TextLabel")
+    DSStatus.Size = UDim2.new(1, 0, 0, 20)
+    DSStatus.Position = UDim2.new(0, 0, 0, 175)
+    DSStatus.BackgroundTransparency = 1
+    DSStatus.Text = ""
+    DSStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
+    DSStatus.Font = Enum.Font.Gotham
+    DSStatus.TextSize = 11
+    DSStatus.Parent = DesyncSettings
+    DSStatus.ZIndex = 11
+
+    DSSave.MouseButton1Click:Connect(function()
+        ConfigData.desyncAngle = DESYNC_SETTINGS.InvisStealAngle
+        ConfigData.desyncSink = DESYNC_SETTINGS.SinkSliderValue
+        ConfigData.desyncAutoRecover = DESYNC_SETTINGS.AutoRecoverLagback
+        SaveConfig()
+        DSStatus.Text = "✅ Saved!"
+        DSStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
+        task.delay(2, function() DSStatus.Text = "" end)
+    end)
+
+    DSReset.MouseButton1Click:Connect(function()
+        DESYNC_SETTINGS.InvisStealAngle = 233
+        DESYNC_SETTINGS.SinkSliderValue = 5
+        DESYNC_SETTINGS.AutoRecoverLagback = true
+        DSRotVal.Text = "233"
+        DSDepthVal.Text = "5"
+        DSAutoFixBtn.Text = "Auto Fix Lagback: ON"
+        DSAutoFixBtn.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
+        DSStatus.Text = "🔄 Reset!"
+        DSStatus.TextColor3 = Color3.fromRGB(255, 200, 80)
+        task.delay(2, function() DSStatus.Text = "" end)
+    end)
+
+    DesyncGear.MouseButton1Click:Connect(function()
+        DesyncSettings.Visible = not DesyncSettings.Visible
     end)
 
     -- ✅ TRACK PLAYER Button (RIGHT SIDE - GRAY!)
@@ -4232,1222 +4872,6 @@ function createRightButtons(device)
     -- Float Speed Label + Value
     local SpeedLabel = Instance.new("TextLabel")
     SpeedLabel.Size = UDim2.new(0.6, 0, 0, 25)
-
--------------------------------------------------------------------------
--- TIM CHEESE HUB (Second GUI - Kawatan Style)
--------------------------------------------------------------------------
-do
-    local HttpService2 = game:GetService("HttpService")
-    local HUB_CONFIG_FILE = "timcheese_hub_config.json"
-    local HubSaved = {}
-
-    if readfile and isfile and isfile(HUB_CONFIG_FILE) then
-        pcall(function()
-            HubSaved = HttpService2:JSONDecode(readfile(HUB_CONFIG_FILE))
-        end)
-    end
-
-    local function HubSaveConfig()
-        if writefile then
-            writefile(HUB_CONFIG_FILE, HttpService2:JSONEncode(HubSaved))
-        end
-    end
-
-    local UserInputService2 = game:GetService("UserInputService")
-    local Players2 = game:GetService("Players")
-    local RunService2 = game:GetService("RunService")
-    local TweenService2 = game:GetService("TweenService")
-    local CoreGui2 = game:GetService("CoreGui")
-    local Workspace2 = game:GetService("Workspace")
-    local ReplicatedStorage2 = game:GetService("ReplicatedStorage")
-
-    local lp2 = Players2.LocalPlayer
-    local HubScreenGui = Instance.new("ScreenGui")
-    HubScreenGui.Name = "TimCheeseHub"
-    HubScreenGui.Parent = CoreGui2
-    HubScreenGui.ResetOnSpawn = false
-
-    -- Color Palette (TIM CHEESE DUELS style)
-    local HC = {
-        MainBG    = Color3.fromRGB(30, 30, 30),
-        TabBG     = Color3.fromRGB(25, 25, 30),
-        Border    = Color3.fromRGB(255, 200, 100),
-        TextActive   = Color3.fromRGB(255, 200, 100),
-        TextInactive = Color3.fromRGB(150, 150, 160),
-        RowBG     = Color3.fromRGB(40, 40, 45),
-        BtnBlue   = Color3.fromRGB(255, 200, 100),
-        ActiveGreen = Color3.fromRGB(50, 200, 50),
-        Red       = Color3.fromRGB(255, 80, 80)
-    }
-
-    local function hcreate(class, props)
-        local obj = Instance.new(class)
-        for k, v in pairs(props) do if k ~= "Parent" then obj[k] = v end end
-        obj.Parent = props.Parent
-        return obj
-    end
-
-    -------------------------------------------------------------------------
-    -- SAFE FOLLOW MODULE (Lock Target)
-    -------------------------------------------------------------------------
-    local HubSafeFollow = {
-        Enabled = false,
-        Locked = false,
-        lastMove = 0,
-        gui = nil,
-        btn = nil,
-        targetChar = nil,
-        heartbeatConn = nil,
-        charAddedConn = nil,
-        att = nil,
-        lv = nil,
-        gyro = nil
-    }
-
-    local HLOCK_RADIUS = 70
-    local HLOCK_SPEED = 50
-
-    local function hCreateSafeFollowUI()
-        HubSafeFollow.gui = Instance.new("ScreenGui")
-        HubSafeFollow.gui.Name = "HubSafeFollowUI"
-        HubSafeFollow.gui.ResetOnSpawn = false
-        HubSafeFollow.gui.Enabled = false
-        HubSafeFollow.gui.Parent = CoreGui2
-
-        local savedPos = HubSaved.LockPos
-
-        HubSafeFollow.btn = Instance.new("TextButton")
-        HubSafeFollow.btn.Size = UDim2.new(0, 120, 0, 40)
-
-        if savedPos then
-            HubSafeFollow.btn.Position = UDim2.new(savedPos.XS, savedPos.XO, savedPos.YS, savedPos.YO)
-        else
-            HubSafeFollow.btn.Position = UDim2.new(0.5, -60, 0.8, 0)
-        end
-
-        HubSafeFollow.btn.Text = "LOCK"
-        HubSafeFollow.btn.Font = Enum.Font.GothamBold
-        HubSafeFollow.btn.TextSize = 14
-        HubSafeFollow.btn.TextColor3 = Color3.new(1, 1, 1)
-        HubSafeFollow.btn.BackgroundColor3 = HC.BtnBlue
-        HubSafeFollow.btn.Parent = HubSafeFollow.gui
-
-        Instance.new("UICorner", HubSafeFollow.btn).CornerRadius = UDim.new(0, 8)
-
-        -- ^ arrow
-        local toggleBtn2 = Instance.new("TextButton")
-        toggleBtn2.Size = UDim2.new(0, 18, 0, 18)
-        toggleBtn2.Position = UDim2.new(1, -20, 0, 2)
-        toggleBtn2.Text = "^"
-        toggleBtn2.Font = Enum.Font.GothamBold
-        toggleBtn2.TextSize = 14
-        toggleBtn2.TextColor3 = Color3.new(1, 1, 1)
-        toggleBtn2.BackgroundTransparency = 1
-        toggleBtn2.Parent = HubSafeFollow.btn
-
-        -- Save button
-        local hSaveBtn = Instance.new("TextButton")
-        hSaveBtn.Size = UDim2.new(0, 120, 0, 25)
-        hSaveBtn.Position = UDim2.new(0, 0, 1, 4)
-        hSaveBtn.Text = "Save"
-        hSaveBtn.Visible = false
-        hSaveBtn.Font = Enum.Font.Gotham
-        hSaveBtn.TextSize = 13
-        hSaveBtn.TextColor3 = Color3.new(1, 1, 1)
-        hSaveBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        hSaveBtn.Parent = HubSafeFollow.btn
-        Instance.new("UICorner", hSaveBtn)
-
-        toggleBtn2.MouseButton1Click:Connect(function()
-            hSaveBtn.Visible = not hSaveBtn.Visible
-        end)
-
-        hSaveBtn.MouseButton1Click:Connect(function()
-            local pos = HubSafeFollow.btn.Position
-            HubSaved.LockPos = {
-                XS = pos.X.Scale, XO = pos.X.Offset,
-                YS = pos.Y.Scale, YO = pos.Y.Offset
-            }
-            HubSaveConfig()
-        end)
-
-        -- Drag
-        local dragging, dragInput, dragStart, startPos
-        local function update(input)
-            local delta = input.Position - dragStart
-            HubSafeFollow.btn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        end
-
-        HubSafeFollow.btn.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                dragging = true
-                dragStart = input.Position
-                startPos = HubSafeFollow.btn.Position
-                input.Changed:Connect(function()
-                    if input.UserInputState == Enum.UserInputState.End then dragging = false end
-                end)
-            end
-        end)
-
-        HubSafeFollow.btn.InputChanged:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-                dragInput = input
-            end
-        end)
-
-        UserInputService2.InputChanged:Connect(function(input)
-            if input == dragInput and dragging then update(input) end
-        end)
-
-        HubSafeFollow.btn.MouseButton1Click:Connect(function()
-            HubSafeFollow.Locked = not HubSafeFollow.Locked
-            HubSafeFollow.btn.BackgroundColor3 = HubSafeFollow.Locked and HC.Red or HC.BtnBlue
-        end)
-    end
-
-    local function hGetNearestPlayer()
-        local char = lp2.Character
-        if not char then return nil end
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        if not hrp then return nil end
-        local nearest, nearestDist = nil, HLOCK_RADIUS
-        for _, p in pairs(Players2:GetPlayers()) do
-            if p ~= lp2 then
-                local pc = p.Character
-                local phrp = pc and pc:FindFirstChild("HumanoidRootPart")
-                if phrp then
-                    local d = (phrp.Position - hrp.Position).Magnitude
-                    if d <= nearestDist then nearest, nearestDist = pc, d end
-                end
-            end
-        end
-        return nearest
-    end
-
-    local function hStartSafeFollow()
-        if HubSafeFollow.heartbeatConn then HubSafeFollow.heartbeatConn:Disconnect() end
-        local char = lp2.Character
-        if not char then return end
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        if not hrp then return end
-
-        HubSafeFollow.att = Instance.new("Attachment", hrp)
-        HubSafeFollow.lv = Instance.new("LinearVelocity", hrp)
-        HubSafeFollow.lv.Attachment0 = HubSafeFollow.att
-        HubSafeFollow.lv.MaxForce = 50000
-        HubSafeFollow.lv.RelativeTo = Enum.ActuatorRelativeTo.World
-        HubSafeFollow.lv.Enabled = false
-
-        HubSafeFollow.gyro = Instance.new("AlignOrientation", hrp)
-        HubSafeFollow.gyro.Attachment0 = HubSafeFollow.att
-        HubSafeFollow.gyro.MaxTorque = 50000
-        HubSafeFollow.gyro.Responsiveness = 120
-        HubSafeFollow.gyro.Enabled = false
-
-        HubSafeFollow.heartbeatConn = RunService2.Heartbeat:Connect(function()
-            if not HubSafeFollow.Enabled or not HubSafeFollow.Locked then
-                HubSafeFollow.lv.Enabled = false
-                HubSafeFollow.gyro.Enabled = false
-                return
-            end
-            local character = lp2.Character
-            if not character then return end
-            local hrp2 = character:FindFirstChild("HumanoidRootPart")
-            if not hrp2 then return end
-            if not HubSafeFollow.targetChar or not HubSafeFollow.targetChar.Parent then
-                HubSafeFollow.targetChar = hGetNearestPlayer()
-                return
-            end
-            local trgHRP = HubSafeFollow.targetChar:FindFirstChild("HumanoidRootPart")
-            if not trgHRP then
-                HubSafeFollow.targetChar = hGetNearestPlayer()
-                return
-            end
-            HubSafeFollow.lv.Enabled = true
-            HubSafeFollow.gyro.Enabled = true
-            local frontPos = trgHRP.Position + trgHRP.CFrame.LookVector * 2.2
-            local dir = frontPos - hrp2.Position
-            if dir.Magnitude > 0.5 then
-                HubSafeFollow.lv.VectorVelocity = dir.Unit * HLOCK_SPEED
-            else
-                HubSafeFollow.lv.VectorVelocity = Vector3.zero
-            end
-            HubSafeFollow.gyro.CFrame = CFrame.lookAt(hrp2.Position, frontPos)
-        end)
-    end
-
-    local function hEnableSafeFollow()
-        if HubSafeFollow.Enabled then return end
-        HubSafeFollow.Enabled = true
-        if not HubSafeFollow.gui then hCreateSafeFollowUI() end
-        HubSafeFollow.gui.Enabled = true
-        HubSafeFollow.Locked = false
-        if HubSafeFollow.btn then HubSafeFollow.btn.BackgroundColor3 = HC.BtnBlue end
-        hStartSafeFollow()
-    end
-
-    local function hDisableSafeFollow()
-        if not HubSafeFollow.Enabled then return end
-        HubSafeFollow.Enabled = false
-        HubSafeFollow.Locked = false
-        if HubSafeFollow.gui then HubSafeFollow.gui.Enabled = false end
-        if HubSafeFollow.heartbeatConn then HubSafeFollow.heartbeatConn:Disconnect(); HubSafeFollow.heartbeatConn = nil end
-        if HubSafeFollow.lv then HubSafeFollow.lv:Destroy(); HubSafeFollow.lv = nil end
-        if HubSafeFollow.gyro then HubSafeFollow.gyro:Destroy(); HubSafeFollow.gyro = nil end
-        if HubSafeFollow.att then HubSafeFollow.att:Destroy(); HubSafeFollow.att = nil end
-        HubSafeFollow.targetChar = nil
-    end
-
-    -------------------------------------------------------------------------
-    -- ANTI TURRET
-    -------------------------------------------------------------------------
-    local HubAntiTurret = { Enabled = false, Target = nil, Conn = nil, Dist = 60, Pull = -5 }
-    local function hGetWeapon() return lp2.Backpack:FindFirstChild("Bat") or (lp2.Character and lp2.Character:FindFirstChild("Bat")) end
-
-    local function hFindTurret()
-        local char = lp2.Character
-        if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-        for _, obj in pairs(Workspace2:GetChildren()) do
-            if obj.Name:find("Sentry") and not obj.Name:lower():find("bullet") then
-                local ownerId = obj.Name:match("Sentry_(%d+)")
-                if ownerId and tonumber(ownerId) == lp2.UserId then continue end
-                local part = obj:IsA("BasePart") and obj or (obj:IsA("Model") and (obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")))
-                if part and (char.HumanoidRootPart.Position - part.Position).Magnitude <= HubAntiTurret.Dist then return obj end
-            end
-        end
-    end
-
-    -------------------------------------------------------------------------
-    -- XRAY BASE MODULE
-    -------------------------------------------------------------------------
-    local HubXrayBase = {
-        Enabled = false, OriginalTransparency = {}, Connections = {},
-        BaseKeywords = {"base", "claim"}
-    }
-
-    local function hIsPlayerBase(obj)
-        if not (obj:IsA("BasePart") or obj:IsA("MeshPart") or obj:IsA("UnionOperation")) then return false end
-        local n = obj.Name:lower()
-        local p = obj.Parent and obj.Parent.Name:lower() or ""
-        for _, keyword in ipairs(HubXrayBase.BaseKeywords) do
-            if n:find(keyword) or p:find(keyword) then return true end
-        end
-        return false
-    end
-
-    local function hApplyTransparency(obj)
-        if hIsPlayerBase(obj) then
-            if not HubXrayBase.OriginalTransparency[obj] then
-                HubXrayBase.OriginalTransparency[obj] = obj.LocalTransparencyModifier
-            end
-            obj.LocalTransparencyModifier = 0.8
-        end
-    end
-
-    local function hEnableXrayBase()
-        if HubXrayBase.Enabled then return end
-        HubXrayBase.Enabled = true
-        for _, obj in ipairs(Workspace2:GetDescendants()) do hApplyTransparency(obj) end
-        HubXrayBase.Connections.descendantAdded = Workspace2.DescendantAdded:Connect(function(obj) hApplyTransparency(obj) end)
-        HubXrayBase.Connections.characterAdded = lp2.CharacterAdded:Connect(function()
-            task.wait(0.5)
-            for _, obj in ipairs(Workspace2:GetDescendants()) do hApplyTransparency(obj) end
-        end)
-    end
-
-    local function hDisableXrayBase()
-        if not HubXrayBase.Enabled then return end
-        HubXrayBase.Enabled = false
-        for _, conn in pairs(HubXrayBase.Connections) do conn:Disconnect() end
-        HubXrayBase.Connections = {}
-        for obj, original in pairs(HubXrayBase.OriginalTransparency) do obj.LocalTransparencyModifier = original end
-        HubXrayBase.OriginalTransparency = {}
-    end
-
-    -------------------------------------------------------------------------
-    -- NO ANIMATIONS MODULE
-    -------------------------------------------------------------------------
-    local HubNoAnim = { Enabled = false, CharacterConnections = {} }
-
-    local function hDisableAnims(character)
-        local humanoid = character:FindFirstChildOfClass("Humanoid")
-        if not humanoid then return end
-        for _, track in pairs(humanoid:GetPlayingAnimationTracks()) do track:Stop() end
-        if HubNoAnim.CharacterConnections[character] then HubNoAnim.CharacterConnections[character]:Disconnect() end
-        HubNoAnim.CharacterConnections[character] = humanoid.AnimationPlayed:Connect(function(track) track:Stop() end)
-    end
-
-    local function hEnableNoAnim()
-        if HubNoAnim.Enabled then return end
-        HubNoAnim.Enabled = true
-        if lp2.Character then hDisableAnims(lp2.Character) end
-        HubNoAnim.CharacterConnections.characterAdded = lp2.CharacterAdded:Connect(function(char) hDisableAnims(char) end)
-    end
-
-    local function hDisableNoAnim()
-        if not HubNoAnim.Enabled then return end
-        HubNoAnim.Enabled = false
-        if HubNoAnim.CharacterConnections.characterAdded then
-            HubNoAnim.CharacterConnections.characterAdded:Disconnect()
-            HubNoAnim.CharacterConnections.characterAdded = nil
-        end
-        for character, conn in pairs(HubNoAnim.CharacterConnections) do
-            if character ~= "characterAdded" then conn:Disconnect(); HubNoAnim.CharacterConnections[character] = nil end
-        end
-    end
-
-    -------------------------------------------------------------------------
-    -- PLAYER ESP MODULE
-    -------------------------------------------------------------------------
-    local HubPlayerESP = {
-        Enabled = false,
-        ESP_COLOR = HC.Border,
-        Highlights = {}, Billboards = {}, Connections = {}
-    }
-
-    local function hCreateHighlight(character)
-        local h = Instance.new("Highlight")
-        h.Name = "Hub_PlayerESP_Highlight"
-        h.Adornee = character
-        h.FillColor = HubPlayerESP.ESP_COLOR
-        h.FillTransparency = 0.25
-        h.OutlineColor = HubPlayerESP.ESP_COLOR
-        h.OutlineTransparency = 0
-        h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        h.Parent = CoreGui2
-        return h
-    end
-
-    local function hCreateBillboard(character, player)
-        local hrp = character:WaitForChild("HumanoidRootPart", 5)
-        if not hrp then return nil end
-        local bb = Instance.new("BillboardGui")
-        bb.Name = "Hub_PlayerESP_Name"
-        bb.Adornee = hrp
-        bb.AlwaysOnTop = true
-        bb.Size = UDim2.new(0, 100, 0, 20)
-        bb.StudsOffsetWorldSpace = Vector3.new(0, 3, 0)
-        bb.MaxDistance = 600
-        bb.Parent = CoreGui2
-
-        local bg = Instance.new("Frame", bb)
-        bg.Size = UDim2.new(1, 0, 1, 0)
-        bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-        bg.BackgroundTransparency = 0.4
-        Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 6)
-
-        local txt = Instance.new("TextLabel", bg)
-        txt.Size = UDim2.new(1, 0, 1, 0)
-        txt.BackgroundTransparency = 1
-        txt.Font = Enum.Font.GothamSemibold
-        txt.TextSize = 13
-        txt.TextColor3 = Color3.new(1, 1, 1)
-        txt.TextStrokeTransparency = 0.2
-        txt.Text = player.DisplayName
-        return bb
-    end
-
-    local function hAttachESP(player)
-        if player == lp2 then return end
-        local function apply(character)
-            if HubPlayerESP.Highlights[player] then pcall(function() HubPlayerESP.Highlights[player]:Destroy() end) end
-            if HubPlayerESP.Billboards[player] then pcall(function() HubPlayerESP.Billboards[player]:Destroy() end) end
-            HubPlayerESP.Highlights[player] = hCreateHighlight(character)
-            HubPlayerESP.Billboards[player] = hCreateBillboard(character, player)
-        end
-        if player.Character then apply(player.Character) end
-        local conn = player.CharacterAdded:Connect(apply)
-        table.insert(HubPlayerESP.Connections, conn)
-    end
-
-    local function hRemoveESP(player)
-        if HubPlayerESP.Highlights[player] then pcall(function() HubPlayerESP.Highlights[player]:Destroy() end); HubPlayerESP.Highlights[player] = nil end
-        if HubPlayerESP.Billboards[player] then pcall(function() HubPlayerESP.Billboards[player]:Destroy() end); HubPlayerESP.Billboards[player] = nil end
-    end
-
-    local function hEnableESP()
-        if HubPlayerESP.Enabled then return end
-        HubPlayerESP.Enabled = true
-        for _, p in ipairs(Players2:GetPlayers()) do hAttachESP(p) end
-        table.insert(HubPlayerESP.Connections, Players2.PlayerAdded:Connect(function(p) hAttachESP(p) end))
-        table.insert(HubPlayerESP.Connections, Players2.PlayerRemoving:Connect(function(p) hRemoveESP(p) end))
-    end
-
-    local function hDisableESP()
-        if not HubPlayerESP.Enabled then return end
-        HubPlayerESP.Enabled = false
-        for _, h in pairs(HubPlayerESP.Highlights) do pcall(function() h:Destroy() end) end
-        for _, b in pairs(HubPlayerESP.Billboards) do pcall(function() b:Destroy() end) end
-        for _, c in ipairs(HubPlayerESP.Connections) do pcall(function() c:Disconnect() end) end
-        HubPlayerESP.Highlights = {}; HubPlayerESP.Billboards = {}; HubPlayerESP.Connections = {}
-    end
-
-    -------------------------------------------------------------------------
-    -- SPEED CUSTOMIZER MODULE
-    -------------------------------------------------------------------------
-    local HubSpeedCustomizer = {
-        Enabled = false, SpeedUI = nil,
-        SpeedValue = 58, StealValue = 29, JumpValue = 80, GravityValue = 196.2,
-        HeartbeatConn = nil, JumpConn = nil,
-        character = nil, hrp = nil, hum = nil
-    }
-
-    if HubSaved and HubSaved.SpeedConfig then
-        HubSpeedCustomizer.SpeedValue = HubSaved.SpeedConfig.Speed or 58
-        HubSpeedCustomizer.StealValue = HubSaved.SpeedConfig.Steal or 29
-        HubSpeedCustomizer.JumpValue = HubSaved.SpeedConfig.Jump or 80
-        HubSpeedCustomizer.GravityValue = HubSaved.SpeedConfig.Gravity or 196.2
-        Workspace2.Gravity = HubSpeedCustomizer.GravityValue
-    end
-
-    local function hSetupSpeedCharacter(char)
-        HubSpeedCustomizer.character = char
-        HubSpeedCustomizer.hrp = char:WaitForChild("HumanoidRootPart")
-        HubSpeedCustomizer.hum = char:WaitForChild("Humanoid")
-    end
-
-    local function hCreateSpeedUI()
-        local SpeedScreenGui = Instance.new("ScreenGui")
-        SpeedScreenGui.Name = "Hub_SpeedUI"
-        SpeedScreenGui.ResetOnSpawn = false
-        SpeedScreenGui.Parent = CoreGui2
-
-        local MainF = Instance.new("Frame")
-        MainF.Name = "SpeedMainFrame"
-        MainF.Size = UDim2.new(0, 200, 0, 180)
-
-        if HubSaved and HubSaved.SpeedPos then
-            MainF.Position = UDim2.new(HubSaved.SpeedPos.XS, HubSaved.SpeedPos.XO, HubSaved.SpeedPos.YS, HubSaved.SpeedPos.YO)
-        else
-            MainF.Position = UDim2.new(0.5, -100, 0.4, 0)
-        end
-
-        MainF.BackgroundColor3 = HC.MainBG
-        MainF.BackgroundTransparency = 0.2
-        MainF.BorderSizePixel = 0
-        MainF.Active = true
-        MainF.Draggable = true
-        MainF.Parent = SpeedScreenGui
-        Instance.new("UICorner", MainF)
-
-        local UIStk = Instance.new("UIStroke")
-        UIStk.Color = HC.Border
-        UIStk.Thickness = 2
-        UIStk.Parent = MainF
-
-        -- Header
-        local Hdr = Instance.new("Frame")
-        Hdr.Size = UDim2.new(1, -20, 0, 25)
-        Hdr.Position = UDim2.new(0, 10, 0, 5)
-        Hdr.BackgroundTransparency = 1
-        Hdr.Parent = MainF
-
-        local CollapseBtn = Instance.new("TextButton")
-        CollapseBtn.Size = UDim2.new(0, 20, 0, 20)
-        CollapseBtn.Text = "^"
-        CollapseBtn.BackgroundTransparency = 1
-        CollapseBtn.TextColor3 = Color3.new(1, 1, 1)
-        CollapseBtn.Font = Enum.Font.GothamBold
-        CollapseBtn.TextSize = 14
-        CollapseBtn.Parent = Hdr
-
-        local Title = Instance.new("TextLabel")
-        Title.Size = UDim2.new(1, -40, 1, 0)
-        Title.Position = UDim2.new(0, 20, 0, 0)
-        Title.BackgroundTransparency = 1
-        Title.Text = "Speed Customizer"
-        Title.TextColor3 = HC.Border
-        Title.TextSize = 14
-        Title.TextXAlignment = Enum.TextXAlignment.Left
-        Title.Font = Enum.Font.GothamBold
-        Title.Parent = Hdr
-
-        local ArrowBtn = Instance.new("TextButton")
-        ArrowBtn.Size = UDim2.new(0, 20, 0, 20)
-        ArrowBtn.Position = UDim2.new(1, -20, 0, 0)
-        ArrowBtn.Text = "^"
-        ArrowBtn.BackgroundTransparency = 1
-        ArrowBtn.TextColor3 = Color3.new(1, 1, 1)
-        ArrowBtn.Font = Enum.Font.GothamBold
-        ArrowBtn.TextSize = 14
-        ArrowBtn.Parent = Hdr
-
-        -- Save button
-        local SaveBtnS = Instance.new("TextButton")
-        SaveBtnS.Size = UDim2.new(1, -20, 0, 25)
-        SaveBtnS.Position = UDim2.new(0, 10, 1, 4)
-        SaveBtnS.Text = "Save"
-        SaveBtnS.Visible = false
-        SaveBtnS.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        SaveBtnS.TextColor3 = Color3.new(1, 1, 1)
-        SaveBtnS.Font = Enum.Font.Gotham
-        SaveBtnS.TextSize = 13
-        SaveBtnS.Parent = MainF
-        Instance.new("UICorner", SaveBtnS)
-
-        ArrowBtn.MouseButton1Click:Connect(function() SaveBtnS.Visible = not SaveBtnS.Visible end)
-
-        -- Toggle ON/OFF
-        local ToggleBtnS = Instance.new("TextButton")
-        ToggleBtnS.Size = UDim2.new(1, -20, 0, 25)
-        ToggleBtnS.Position = UDim2.new(0, 10, 0, 35)
-        ToggleBtnS.Text = "ON"
-        ToggleBtnS.BackgroundColor3 = HC.ActiveGreen
-        ToggleBtnS.TextColor3 = Color3.new(1, 1, 1)
-        ToggleBtnS.Font = Enum.Font.GothamBold
-        ToggleBtnS.TextSize = 14
-        ToggleBtnS.Parent = MainF
-        Instance.new("UICorner", ToggleBtnS)
-
-        local function createInputRow(text, value, pos)
-            local label = Instance.new("TextLabel")
-            label.Size = UDim2.new(0.6, 0, 0, 20)
-            label.Position = UDim2.new(0, 10, 0, pos)
-            label.BackgroundTransparency = 1
-            label.Text = text
-            label.TextColor3 = Color3.fromRGB(200, 200, 200)
-            label.TextSize = 12
-            label.Font = Enum.Font.Gotham
-            label.TextXAlignment = Enum.TextXAlignment.Left
-            label.Parent = MainF
-
-            local box = Instance.new("TextBox")
-            box.Size = UDim2.new(0, 70, 0, 20)
-            box.Position = UDim2.new(1, -80, 0, pos)
-            box.BackgroundColor3 = Color3.fromRGB(30, 35, 40)
-            box.Text = tostring(value)
-            box.TextColor3 = Color3.new(1, 1, 1)
-            box.TextSize = 14
-            box.Font = Enum.Font.GothamBold
-            box.ClearTextOnFocus = false
-            box.Parent = MainF
-            Instance.new("UICorner", box)
-            return box, label
-        end
-
-        local SpeedInput, SpeedLabel2 = createInputRow("Speed", HubSpeedCustomizer.SpeedValue, 70)
-        local StealInput, StealLabel2 = createInputRow("Steal Spd", HubSpeedCustomizer.StealValue, 100)
-        local JumpInput, JumpLabel2 = createInputRow("Jump", HubSpeedCustomizer.JumpValue, 130)
-        local GravityInput, GravityLabel2 = createInputRow("Gravity", HubSpeedCustomizer.GravityValue, 160)
-
-        local open = true
-        CollapseBtn.MouseButton1Click:Connect(function()
-            open = not open
-            SpeedInput.Visible = open; StealInput.Visible = open; JumpInput.Visible = open; GravityInput.Visible = open
-            SpeedLabel2.Visible = open; StealLabel2.Visible = open; JumpLabel2.Visible = open; GravityLabel2.Visible = open
-            MainF.Size = open and UDim2.new(0, 200, 0, 180) or UDim2.new(0, 200, 0, 70)
-        end)
-
-        SaveBtnS.MouseButton1Click:Connect(function()
-            HubSaved.SpeedConfig = {
-                Speed = HubSpeedCustomizer.SpeedValue, Steal = HubSpeedCustomizer.StealValue,
-                Jump = HubSpeedCustomizer.JumpValue, Gravity = HubSpeedCustomizer.GravityValue
-            }
-            local pos = MainF.Position
-            HubSaved.SpeedPos = { XS = pos.X.Scale, XO = pos.X.Offset, YS = pos.Y.Scale, YO = pos.Y.Offset }
-            HubSaveConfig()
-        end)
-
-        SpeedInput.FocusLost:Connect(function() local n = tonumber(SpeedInput.Text); if n then HubSpeedCustomizer.SpeedValue = n end end)
-        StealInput.FocusLost:Connect(function() local n = tonumber(StealInput.Text); if n then HubSpeedCustomizer.StealValue = n end end)
-        JumpInput.FocusLost:Connect(function() local n = tonumber(JumpInput.Text); if n then HubSpeedCustomizer.JumpValue = n end end)
-        GravityInput.FocusLost:Connect(function()
-            local n = tonumber(GravityInput.Text)
-            if n then HubSpeedCustomizer.GravityValue = n; Workspace2.Gravity = n end
-        end)
-
-        ToggleBtnS.MouseButton1Click:Connect(function()
-            HubSpeedCustomizer.Enabled = not HubSpeedCustomizer.Enabled
-            ToggleBtnS.Text = HubSpeedCustomizer.Enabled and "ON" or "OFF"
-            ToggleBtnS.BackgroundColor3 = HubSpeedCustomizer.Enabled and HC.ActiveGreen or HC.Red
-        end)
-
-        return SpeedScreenGui
-    end
-
-    local function hEnableSpeedCustomizer()
-        if not HubSpeedCustomizer.SpeedUI then HubSpeedCustomizer.SpeedUI = hCreateSpeedUI() end
-        HubSpeedCustomizer.Enabled = true
-        if lp2.Character then hSetupSpeedCharacter(lp2.Character) end
-        lp2.CharacterAdded:Connect(hSetupSpeedCharacter)
-        HubSpeedCustomizer.HeartbeatConn = RunService2.Heartbeat:Connect(function()
-            if not HubSpeedCustomizer.Enabled then return end
-            if not HubSpeedCustomizer.hrp or not HubSpeedCustomizer.hum then return end
-            local moveDir = HubSpeedCustomizer.hum.MoveDirection
-            if moveDir.Magnitude > 0 then
-                HubSpeedCustomizer.hrp.AssemblyLinearVelocity = Vector3.new(
-                    moveDir.X * HubSpeedCustomizer.SpeedValue,
-                    HubSpeedCustomizer.hrp.AssemblyLinearVelocity.Y,
-                    moveDir.Z * HubSpeedCustomizer.SpeedValue
-                )
-            end
-        end)
-    end
-
-    local function hDisableSpeedCustomizer()
-        HubSpeedCustomizer.Enabled = false
-        if HubSpeedCustomizer.SpeedUI then HubSpeedCustomizer.SpeedUI.Enabled = false end
-        if HubSpeedCustomizer.HeartbeatConn then HubSpeedCustomizer.HeartbeatConn:Disconnect(); HubSpeedCustomizer.HeartbeatConn = nil end
-    end
-
-    -------------------------------------------------------------------------
-    -- INFINITE JUMP MODULE
-    -------------------------------------------------------------------------
-    local HubInfJump = { Enabled = false, JUMP_POWER = 50, COOLDOWN = 0.15, lastJump = 0, JumpConnection = nil }
-
-    local function hHandleJumpRequest()
-        if not HubInfJump.Enabled then return end
-        local character = lp2.Character
-        local hrp = character and character:FindFirstChild("HumanoidRootPart")
-        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-        if hrp and humanoid and humanoid.FloorMaterial == Enum.Material.Air then
-            local now = tick()
-            if now - HubInfJump.lastJump >= HubInfJump.COOLDOWN then
-                HubInfJump.lastJump = now
-                hrp.Velocity = Vector3.new(hrp.Velocity.X, HubInfJump.JUMP_POWER, hrp.Velocity.Z)
-            end
-        end
-    end
-
-    local function hEnableInfJump()
-        if HubInfJump.Enabled then return end
-        HubInfJump.Enabled = true
-        HubInfJump.JumpConnection = UserInputService2.JumpRequest:Connect(hHandleJumpRequest)
-    end
-
-    local function hDisableInfJump()
-        if not HubInfJump.Enabled then return end
-        HubInfJump.Enabled = false
-        if HubInfJump.JumpConnection then HubInfJump.JumpConnection:Disconnect(); HubInfJump.JumpConnection = nil end
-    end
-
-    -------------------------------------------------------------------------
-    -- ANTI FPS DEVOURER
-    -------------------------------------------------------------------------
-    local HubAntiFPS = { Enabled = false, Conn = nil }
-
-    local function hCleanCharacter(char)
-        if not char then return end
-        for _, obj in ipairs(char:GetChildren()) do
-            if obj:IsA("Accessory") then obj:Destroy()
-            elseif obj:IsA("Shirt") or obj:IsA("Pants") or obj:IsA("ShirtGraphic") then obj:Destroy()
-            elseif obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam") then obj:Destroy()
-            end
-        end
-    end
-
-    local function hEnableAntiFPS()
-        if HubAntiFPS.Enabled then return end
-        HubAntiFPS.Enabled = true
-        for _, plr in ipairs(Players2:GetPlayers()) do
-            if plr.Character then hCleanCharacter(plr.Character) end
-            plr.CharacterAdded:Connect(function(c) if HubAntiFPS.Enabled then task.wait(0.5); hCleanCharacter(c) end end)
-        end
-        HubAntiFPS.Conn = RunService2.Heartbeat:Connect(function()
-            for _, plr in ipairs(Players2:GetPlayers()) do if plr.Character then hCleanCharacter(plr.Character) end end
-        end)
-    end
-
-    local function hDisableAntiFPS()
-        HubAntiFPS.Enabled = false
-        if HubAntiFPS.Conn then HubAntiFPS.Conn:Disconnect(); HubAntiFPS.Conn = nil end
-    end
-
-    -------------------------------------------------------------------------
-    -- AUTO GRAB
-    -------------------------------------------------------------------------
-    local HubAutoGrab = { Enabled = false, Radius = 13, Delay = 0.3, Conn = nil, LastGrab = 0 }
-
-    local function hGetNearestGrabPrompt()
-        local char = lp2.Character
-        if not char then return end
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        if not hrp then return end
-        local plots = workspace:FindFirstChild("Plots")
-        if not plots then return end
-        for _, plot in pairs(plots:GetChildren()) do
-            local podiums = plot:FindFirstChild("AnimalPodiums")
-            if podiums then
-                for _, pod in pairs(podiums:GetChildren()) do
-                    local base = pod:FindFirstChild("Base")
-                    local spawn = base and base:FindFirstChild("Spawn")
-                    if spawn and (spawn.Position - hrp.Position).Magnitude <= HubAutoGrab.Radius then
-                        local att = spawn:FindFirstChild("PromptAttachment")
-                        if att then
-                            for _, obj in pairs(att:GetChildren()) do
-                                if obj:IsA("ProximityPrompt") then return obj end
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end
-
-    local function hStartAutoGrab()
-        if HubAutoGrab.Conn then HubAutoGrab.Conn:Disconnect() end
-        HubAutoGrab.Conn = RunService2.Heartbeat:Connect(function()
-            if not HubAutoGrab.Enabled then return end
-            if os.clock() - HubAutoGrab.LastGrab < HubAutoGrab.Delay then return end
-            local prompt = hGetNearestGrabPrompt()
-            if prompt then fireproximityprompt(prompt); HubAutoGrab.LastGrab = os.clock() end
-        end)
-    end
-
-    local function hStopAutoGrab()
-        if HubAutoGrab.Conn then HubAutoGrab.Conn:Disconnect(); HubAutoGrab.Conn = nil end
-    end
-
-    -------------------------------------------------------------------------
-    -- HUB GUI (Toggle Icon + Main Frame + Tabs)
-    -------------------------------------------------------------------------
-
-    local HubToggleIcon = hcreate("TextButton", {
-        Size = UDim2.new(0, 60, 0, 60),
-        Position = UDim2.new(0.05, 0, 0.2, 0),
-        BackgroundColor3 = HC.BtnBlue,
-        Text = "",
-        Parent = HubScreenGui
-    })
-    hcreate("UICorner", { CornerRadius = UDim.new(0, 6), Parent = HubToggleIcon })
-    hcreate("UIStroke", { Color = Color3.fromRGB(255, 255, 255), Thickness = 1.2, Parent = HubToggleIcon })
-
-    local HLineContainer = Instance.new("Frame")
-    HLineContainer.Size = UDim2.new(0.6, 0, 0.5, 0)
-    HLineContainer.Position = UDim2.new(0.2, 0, 0.25, 0)
-    HLineContainer.BackgroundTransparency = 1
-    HLineContainer.Parent = HubToggleIcon
-
-    local hlayout = Instance.new("UIListLayout")
-    hlayout.FillDirection = Enum.FillDirection.Vertical
-    hlayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    hlayout.VerticalAlignment = Enum.VerticalAlignment.Center
-    hlayout.Padding = UDim.new(0, 4)
-    hlayout.Parent = HLineContainer
-
-    for i = 1, 3 do
-        local line = Instance.new("Frame")
-        line.Size = UDim2.new(1, 0, 0, 5)
-        line.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        line.BorderSizePixel = 0
-        line.Parent = HLineContainer
-        Instance.new("UICorner", line).CornerRadius = UDim.new(1, 0)
-    end
-
-    local HubMainFrame = hcreate("Frame", {
-        Size = UDim2.new(0, 220, 0, 260),
-        Position = UDim2.new(0.04, 0, 0.40, 0),
-        BackgroundColor3 = HC.MainBG,
-        BackgroundTransparency = 0.2,
-        Visible = false,
-        Parent = HubScreenGui
-    })
-    hcreate("UICorner", { CornerRadius = UDim.new(0, 12), Parent = HubMainFrame })
-
-    -- Header
-    local HHeader = hcreate("Frame", { Size = UDim2.new(1, 0, 0, 40), BackgroundTransparency = 1, Parent = HubMainFrame })
-    hcreate("TextLabel", {
-        Text = "TIM CHEESE HUB",
-        TextColor3 = HC.Border,
-        Font = "GothamBold",
-        TextSize = 16,
-        Size = UDim2.new(1, 0, 1, 0),
-        BackgroundTransparency = 1,
-        Parent = HHeader
-    })
-
-    local HTabContainer = hcreate("Frame", {
-        Size = UDim2.new(0.92, 0, 0, 30), Position = UDim2.new(0.04, 0, 0.13, 0),
-        BackgroundColor3 = HC.TabBG, Parent = HubMainFrame
-    })
-    hcreate("UICorner", { CornerRadius = UDim.new(0, 6), Parent = HTabContainer })
-    hcreate("UIListLayout", { FillDirection = "Horizontal", HorizontalAlignment = "Center", Parent = HTabContainer })
-
-    local HPageContainer = hcreate("Frame", {
-        Size = UDim2.new(1, 0, 0.75, 0), Position = UDim2.new(0, 0, 0.22, 0),
-        BackgroundTransparency = 1, Parent = HubMainFrame
-    })
-
-    local HPages = {}
-    local HTabButtons = {}
-
-    local function HCreatePage(name)
-        local Page = hcreate("ScrollingFrame", {
-            Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Visible = false,
-            ScrollBarThickness = 0, AutomaticCanvasSize = "Y", Parent = HPageContainer
-        })
-        hcreate("UIListLayout", { HorizontalAlignment = "Center", Padding = UDim.new(0, 8), Parent = Page })
-        HPages[name] = Page
-
-        local TabBtn = hcreate("TextButton", {
-            Size = UDim2.new(0.25, 0, 1, 0), BackgroundTransparency = 1, Text = name,
-            TextColor3 = HC.TextInactive, Font = "GothamBold", TextSize = 10, Parent = HTabContainer
-        })
-        TabBtn.MouseButton1Click:Connect(function()
-            for _, p in pairs(HPages) do p.Visible = false end
-            for _, b in pairs(HTabButtons) do b.TextColor3 = HC.TextInactive end
-            Page.Visible = true
-            TabBtn.TextColor3 = HC.TextActive
-        end)
-        HTabButtons[name] = TabBtn
-    end
-
-    local function HAddToggle(pageName, labelText, default, callback)
-        local active = HubSaved[labelText] ~= nil and HubSaved[labelText] or default
-
-        local Row = hcreate("Frame", {
-            Size = UDim2.new(0.92, 0, 0, 50),
-            BackgroundColor3 = HC.RowBG, BackgroundTransparency = 0.5,
-            Parent = HPages[pageName]
-        })
-        hcreate("UICorner", { CornerRadius = UDim.new(0, 8), Parent = Row })
-        hcreate("UIStroke", { Color = Color3.fromRGB(255, 255, 255), Thickness = 1, Transparency = 0, Parent = Row })
-
-        hcreate("TextLabel", {
-            Text = labelText, Size = UDim2.new(0.6, 0, 1, 0), Position = UDim2.new(0.05, 0, 0, 0),
-            TextColor3 = Color3.new(1, 1, 1), Font = "GothamBold", TextSize = 13,
-            BackgroundTransparency = 1, TextXAlignment = "Left", Parent = Row
-        })
-
-        local TglBg = hcreate("Frame", {
-            Size = UDim2.new(0, 42, 0, 20), Position = UDim2.new(0.95, -42, 0.5, -10),
-            BackgroundColor3 = active and HC.Border or Color3.fromRGB(40, 45, 55), Parent = Row
-        })
-        hcreate("UICorner", { CornerRadius = UDim.new(1, 0), Parent = TglBg })
-
-        local Circle = hcreate("Frame", {
-            Size = UDim2.new(0, 16, 0, 16),
-            Position = active and UDim2.new(0.55, 0, 0.1, 0) or UDim2.new(0.1, 0, 0.1, 0),
-            BackgroundColor3 = Color3.new(1, 1, 1), Parent = TglBg
-        })
-        hcreate("UICorner", { CornerRadius = UDim.new(1, 0), Parent = Circle })
-
-        local Btn = hcreate("TextButton", {
-            Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Text = "", Parent = Row
-        })
-
-        Btn.MouseButton1Click:Connect(function()
-            active = not active
-            TweenService2:Create(TglBg, TweenInfo.new(0.2), {
-                BackgroundColor3 = active and HC.Border or Color3.fromRGB(40, 45, 55)
-            }):Play()
-            TweenService2:Create(Circle, TweenInfo.new(0.2), {
-                Position = active and UDim2.new(0.55, 0, 0.1, 0) or UDim2.new(0.1, 0, 0.1, 0)
-            }):Play()
-            HubSaved[labelText] = active
-            HubSaveConfig()
-            callback(active)
-        end)
-
-        task.delay(1, function()
-            if active then callback(true) end
-        end)
-    end
-
-    -- Create Pages
-    for _, tab in ipairs({"Combat", "Protect", "Visual", "Buttons", "Settings"}) do
-        HCreatePage(tab)
-    end
-    HTabButtons["Combat"].TextColor3 = HC.TextActive
-    HPages["Combat"].Visible = true
-
-    -- Fix tab sizes for 5 tabs
-    for _, btn in pairs(HTabButtons) do
-        btn.Size = UDim2.new(0.2, 0, 1, 0)
-    end
-
-    -- Save Settings button
-    local HSaveRow = hcreate("Frame", {
-        Size = UDim2.new(0.92, 0, 0, 50), BackgroundColor3 = HC.RowBG, BackgroundTransparency = 0.5, Parent = HPages["Settings"]
-    })
-    hcreate("UICorner", { CornerRadius = UDim.new(0, 8), Parent = HSaveRow })
-    hcreate("UIStroke", { Color = Color3.fromRGB(255, 255, 255), Thickness = 1, Parent = HSaveRow })
-
-    local HSaveLabel = hcreate("TextLabel", {
-        Text = "SAVE SETTINGS", Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1,
-        TextColor3 = Color3.new(1, 1, 1), Font = "GothamBold", TextSize = 13, Parent = HSaveRow
-    })
-    local HSaveBtn = hcreate("TextButton", {
-        Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Text = "", Parent = HSaveRow
-    })
-    HSaveBtn.MouseButton1Click:Connect(function()
-        HSaveLabel.Text = "SAVED!"
-        local data = {}
-        for name, page in pairs(HPages) do data[name] = page.CanvasPosition.Y end
-        if writefile then writefile("hub_settings.json", HttpService2:JSONEncode(data)) end
-        task.wait(3)
-        HSaveLabel.Text = "SAVE SETTINGS"
-    end)
-
-    -------------------------------------------------------------------------
-    -- ADD ALL TOGGLES
-    -------------------------------------------------------------------------
-
-    -- COMBAT TAB
-    local hBatConn = nil
-    HAddToggle("Combat", "Auto Bat", false, function(v)
-        if v then hBatConn = RunService2.Heartbeat:Connect(function()
-            local c = lp2.Character; local b = hGetWeapon()
-            if b and c and c:FindFirstChild("Humanoid") then if b.Parent ~= c then c.Humanoid:EquipTool(b) end b:Activate() end
-        end) else if hBatConn then hBatConn:Disconnect(); hBatConn = nil end end
-    end)
-
-    local HCebo = { Conn = nil, Circle = nil, Align = nil, Attach = nil }
-    HAddToggle("Combat", "Melee Aimbot", false, function(active)
-        if active then
-            local char = lp2.Character or lp2.CharacterAdded:Wait()
-            local hrp = char:WaitForChild("HumanoidRootPart")
-            HCebo.Attach = Instance.new("Attachment", hrp)
-            HCebo.Align = Instance.new("AlignOrientation", hrp)
-            HCebo.Align.Attachment0, HCebo.Align.Mode, HCebo.Align.RigidityEnabled = HCebo.Attach, Enum.OrientationAlignmentMode.OneAttachment, true
-            HCebo.Circle = hcreate("Part", {Shape = "Cylinder", Material = "Neon", Size = Vector3.new(0.05, 14.5, 14.5), Color = Color3.new(1,0,0), CanCollide = false, Massless = true, Parent = Workspace2})
-            hcreate("Weld", {Part0 = hrp, Part1 = HCebo.Circle, C0 = CFrame.new(0, -1, 0) * CFrame.Angles(0, 0, math.rad(90)), Parent = HCebo.Circle})
-            HCebo.Conn = RunService2.RenderStepped:Connect(function()
-                local target, dmin = nil, 7.25
-                for _, p in ipairs(Players2:GetPlayers()) do if p ~= lp2 and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then local d = (p.Character.HumanoidRootPart.Position - hrp.Position).Magnitude; if d <= dmin then target, dmin = p.Character.HumanoidRootPart, d end end end
-                if target then char.Humanoid.AutoRotate, HCebo.Align.Enabled, HCebo.Align.CFrame = false, true, CFrame.lookAt(hrp.Position, Vector3.new(target.Position.X, hrp.Position.Y, target.Position.Z)); local t = char:FindFirstChild("Bat") or char:FindFirstChild("Medusa"); if t then t:Activate() end
-                else HCebo.Align.Enabled, char.Humanoid.AutoRotate = false, true end
-            end)
-        else if HCebo.Conn then HCebo.Conn:Disconnect() end; if HCebo.Circle then HCebo.Circle:Destroy() end; if HCebo.Align then HCebo.Align:Destroy() end; if HCebo.Attach then HCebo.Attach:Destroy() end; if lp2.Character and lp2.Character:FindFirstChild("Humanoid") then lp2.Character.Humanoid.AutoRotate = true end end
-    end)
-
-    HAddToggle("Combat", "Speed Customizer", false, function(v)
-        if v then hEnableSpeedCustomizer() else hDisableSpeedCustomizer() end
-    end)
-
-    HAddToggle("Combat", "Inf Jump", false, function(v)
-        if v then hEnableInfJump() else hDisableInfJump() end
-    end)
-
-    HAddToggle("Combat", "Lock Target", false, function(v)
-        if v then hEnableSafeFollow() else hDisableSafeFollow() end
-    end)
-
-    HAddToggle("Combat", "Auto Grab", false, function(v)
-        HubAutoGrab.Enabled = v
-        if v then hStartAutoGrab() else hStopAutoGrab() end
-    end)
-
-    -- PROTECT TAB
-    HAddToggle("Protect", "Optimizer", false, function(v)
-        if v then Workspace2.Terrain.WaterWaveSize = 0; game:GetService("Lighting").GlobalShadows = false
-        for _, obj in pairs(game:GetDescendants()) do if obj:IsA("BasePart") then obj.Material = Enum.Material.Plastic elseif obj:IsA("Decal") then obj.Transparency = 1 end end end
-    end)
-
-    local HAntiEffects = { Enabled = false, Watcher = nil, Keywords = {"effect","vfx","fx","particle","camera","shake","blur","flash","visual","ui","item"} }
-    HAddToggle("Protect", "Anti Bee & Disco", false, function(v)
-        HAntiEffects.Enabled = v
-        if v then HAntiEffects.Watcher = ReplicatedStorage2.DescendantAdded:Connect(function(r) if HAntiEffects.Enabled and r:IsA("RemoteEvent") then for _, k in pairs(HAntiEffects.Keywords) do if r.Name:lower():find(k) then for _, c in pairs(getconnections(r.OnClientEvent)) do if c.Disable then c:Disable() end end; break end end end end)
-        else if HAntiEffects.Watcher then HAntiEffects.Watcher:Disconnect() end end
-    end)
-
-    HAddToggle("Protect", "Anti Turret", false, function(v)
-        HubAntiTurret.Enabled = v
-        if v then HubAntiTurret.Conn = RunService2.Heartbeat:Connect(function()
-            if not HubAntiTurret.Enabled then return end
-            if HubAntiTurret.Target and HubAntiTurret.Target.Parent == Workspace2 then
-                local char = lp2.Character; local root = char and char:FindFirstChild("HumanoidRootPart")
-                if root then for _, p in pairs(HubAntiTurret.Target:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = false end end
-                local main = HubAntiTurret.Target:IsA("Model") and (HubAntiTurret.Target.PrimaryPart or HubAntiTurret.Target:FindFirstChildWhichIsA("BasePart")) or HubAntiTurret.Target
-                if main then main.CFrame = root.CFrame * CFrame.new(0, 0, HubAntiTurret.Pull) end
-                local w = hGetWeapon(); if w then if w.Parent == lp2.Backpack then char.Humanoid:EquipTool(w) end; w:Activate(); for _, r in pairs(w:GetDescendants()) do if r:IsA("RemoteEvent") then r:FireServer() end end end end
-            else HubAntiTurret.Target = hFindTurret() end
-        end) else if HubAntiTurret.Conn then HubAntiTurret.Conn:Disconnect(); HubAntiTurret.Conn = nil end; HubAntiTurret.Target = nil end
-    end)
-
-    -- VISUAL TAB
-    HAddToggle("Visual", "Xray Base", false, function(v)
-        if v then hEnableXrayBase() else hDisableXrayBase() end
-    end)
-
-    HAddToggle("Visual", "No Anim", false, function(v)
-        if v then hEnableNoAnim() else hDisableNoAnim() end
-    end)
-
-    HAddToggle("Visual", "Player ESP", false, function(v)
-        if v then hEnableESP() else hDisableESP() end
-    end)
-
-    -- Performance display
-    local HPerformanceGui, HPerfConnection
-    HAddToggle("Visual", "Show Performance", false, function(v)
-        if v then
-            if not HPerformanceGui then
-                HPerformanceGui = Instance.new("ScreenGui")
-                HPerformanceGui.Name = "HubPerformance"
-                HPerformanceGui.ResetOnSpawn = false
-                HPerformanceGui.Parent = CoreGui2
-
-                local Frame = Instance.new("Frame")
-                Frame.Size = UDim2.new(0, 260, 0, 28)
-                Frame.Position = UDim2.new(0.5, -130, 0.015, 0)
-                Frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-                Frame.BackgroundTransparency = 0.45
-                Frame.BorderSizePixel = 0
-                Frame.Parent = HPerformanceGui
-                Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 10)
-
-                local Label = Instance.new("TextLabel")
-                Label.Size = UDim2.new(1, 0, 1, 0)
-                Label.BackgroundTransparency = 1
-                Label.Font = Enum.Font.GothamBold
-                Label.TextSize = 14
-                Label.RichText = true
-                Label.TextColor3 = HC.Border
-                Label.Text = "<font color='rgb(255,200,100)'>TIM CHEESE HUB | FPS 0 PING 0ms</font>"
-                Label.Parent = Frame
-
-                local frames = 0
-                local last = tick()
-                HPerfConnection = RunService2.RenderStepped:Connect(function()
-                    frames = frames + 1
-                    if tick() - last >= 1 then
-                        local fps = frames; frames = 0; last = tick()
-                        local ping = math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue())
-                        Label.Text = "<font color='rgb(255,200,100)'>TIM CHEESE HUB | FPS " .. fps .. " PING " .. ping .. "ms</font>"
-                    end
-                end)
-            else HPerformanceGui.Enabled = true end
-        else
-            if HPerformanceGui then HPerformanceGui.Enabled = false end
-            if HPerfConnection then HPerfConnection:Disconnect(); HPerfConnection = nil end
-        end
-    end)
-
-    HAddToggle("Visual", "Anti FPS DEVOURER", false, function(v)
-        if v then hEnableAntiFPS() else hDisableAntiFPS() end
-    end)
-
-    -------------------------------------------------------------------------
-    -- BUTTONS TAB (Show/Hide all on-screen buttons)
-    -------------------------------------------------------------------------
-
-    -- Hide all on-screen buttons by default (HUB controls visibility)
-    -- Right-side buttons (local to createRightButtons, accessible here)
-    LaggerButton.Visible = false
-    DesyncButton.Visible = false
-    TrackPlayerButton.Visible = false
-    HitCircleButton.Visible = false
-    JukeButton.Visible = false
-
-    -- Auto buttons (shared vars)
-    if _AutoLeftButton then _AutoLeftButton.Visible = false end
-    if _AutoMedusaButton then _AutoMedusaButton.Visible = false end
-    if _AutoRightButton then _AutoRightButton.Visible = false end
-
-    -- Open button
-    if _OpenButton then _OpenButton.Visible = false end
-
-    -- Small GUI buttons
-    SmallSpeedGUI.Visible = false
-    SmallUnwalkGUI.Visible = false
-    SmallSpinBotGUI.Visible = false
-    SmallInfJumpGUI.Visible = false
-    SmallFloatGUI.Visible = false
-    SmallFOVGUI.Visible = false
-    SmallAntiRagGUI.Visible = false
-    SmallRagdollTPGUI.Visible = false
-    SmallDropGUI.Visible = false
-    SmallTPDownGUI.Visible = false
-    SmallTPUpGUI.Visible = false
-
-    -- Right-side button toggles
-    HAddToggle("Buttons", "Lagger", false, function(v)
-        LaggerButton.Visible = v
-    end)
-    HAddToggle("Buttons", "Desync", false, function(v)
-        DesyncButton.Visible = v
-    end)
-    HAddToggle("Buttons", "Track Player", false, function(v)
-        TrackPlayerButton.Visible = v
-    end)
-    HAddToggle("Buttons", "Hit Circle", false, function(v)
-        HitCircleButton.Visible = v
-    end)
-    HAddToggle("Buttons", "Juke", false, function(v)
-        JukeButton.Visible = v
-    end)
-
-    -- Auto button toggles
-    HAddToggle("Buttons", "Auto Left", false, function(v)
-        if _AutoLeftButton then _AutoLeftButton.Visible = v end
-    end)
-    HAddToggle("Buttons", "Auto Right", false, function(v)
-        if _AutoRightButton then _AutoRightButton.Visible = v end
-    end)
-    HAddToggle("Buttons", "Auto Medusa", false, function(v)
-        if _AutoMedusaButton then _AutoMedusaButton.Visible = v end
-    end)
-
-    -- Open button toggle
-    HAddToggle("Buttons", "Open/Close", false, function(v)
-        if _OpenButton then _OpenButton.Visible = v end
-    end)
-
-    -- Small GUI toggles
-    HAddToggle("Buttons", "Speed (Small)", false, function(v)
-        SmallSpeedGUI.Visible = v
-    end)
-    HAddToggle("Buttons", "Unwalk (Small)", false, function(v)
-        SmallUnwalkGUI.Visible = v
-    end)
-    HAddToggle("Buttons", "Spin Bot (Small)", false, function(v)
-        SmallSpinBotGUI.Visible = v
-    end)
-    HAddToggle("Buttons", "Inf Jump (Small)", false, function(v)
-        SmallInfJumpGUI.Visible = v
-    end)
-    HAddToggle("Buttons", "Float Up (Small)", false, function(v)
-        SmallFloatGUI.Visible = v
-    end)
-    HAddToggle("Buttons", "FOV (Small)", false, function(v)
-        SmallFOVGUI.Visible = v
-    end)
-    HAddToggle("Buttons", "Anti Ragdoll (Small)", false, function(v)
-        SmallAntiRagGUI.Visible = v
-    end)
-    HAddToggle("Buttons", "Ragdoll TP (Small)", false, function(v)
-        SmallRagdollTPGUI.Visible = v
-    end)
-    HAddToggle("Buttons", "Drop Brainrot (Small)", false, function(v)
-        SmallDropGUI.Visible = v
-    end)
-    HAddToggle("Buttons", "TP Down (Small)", false, function(v)
-        SmallTPDownGUI.Visible = v
-    end)
-    HAddToggle("Buttons", "TP Up (Small)", false, function(v)
-        SmallTPUpGUI.Visible = v
-    end)
-
-    -------------------------------------------------------------------------
-    -- DRAG & TOGGLE ICON
-    -------------------------------------------------------------------------
-    local function hDrag(f)
-        local d, ds, sp
-        f.InputBegan:Connect(function(i)
-            if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-                d, ds, sp = true, i.Position, f.Position
-            end
-        end)
-        UserInputService2.InputChanged:Connect(function(i)
-            if d and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
-                local delta = i.Position - ds
-                f.Position = UDim2.new(sp.X.Scale, sp.X.Offset + delta.X, sp.Y.Scale, sp.Y.Offset + delta.Y)
-            end
-        end)
-        f.InputEnded:Connect(function(i)
-            if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then d = false end
-        end)
-    end
-
-    hDrag(HubMainFrame)
-    hDrag(HubToggleIcon)
-
-    HubToggleIcon.MouseButton1Click:Connect(function()
-        HubMainFrame.Visible = not HubMainFrame.Visible
-    end)
-
-end -- end of TIM CHEESE HUB block
     SpeedLabel.Position = UDim2.new(0, 10, 0, 95)
     SpeedLabel.BackgroundTransparency = 1
     SpeedLabel.Text = "Float Speed"
