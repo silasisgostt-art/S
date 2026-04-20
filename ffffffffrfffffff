@@ -3970,6 +3970,265 @@ function createRightButtons(device)
         end
     end)
 
+    -- ⚙ Gear Settings Button (top-right corner of TRACK PLAYER)
+    local TrackGear = Instance.new("TextButton")
+    TrackGear.Size = UDim2.new(0, 18, 0, 18)
+    TrackGear.Position = UDim2.new(1, -16, 0, -2)
+    TrackGear.BackgroundTransparency = 1
+    TrackGear.Text = "⚙"
+    TrackGear.TextColor3 = Color3.fromRGB(200, 200, 200)
+    TrackGear.Font = Enum.Font.GothamBold
+    TrackGear.TextSize = 14
+    TrackGear.ZIndex = 3
+    TrackGear.Parent = TrackPlayerButton
+
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ TRACK PLAYER SETTINGS PANEL
+    -- ═══════════════════════════════════════════════════════
+
+    local TrackSettings = Instance.new("Frame")
+    TrackSettings.Name = "TrackSettings"
+    TrackSettings.Size = UDim2.new(0, 210, 0, 160)
+    TrackSettings.Position = UDim2.new(0.5, -105, 0.5, -80)
+    TrackSettings.BackgroundColor3 = Color3.fromRGB(14, 14, 14)
+    TrackSettings.BackgroundTransparency = 0.05
+    TrackSettings.Visible = false
+    TrackSettings.Active = true
+    TrackSettings.Draggable = true
+    TrackSettings.Parent = ScreenGui
+    TrackSettings.ZIndex = 10
+
+    local TSCorner = Instance.new("UICorner")
+    TSCorner.CornerRadius = UDim.new(0, 8)
+    TSCorner.Parent = TrackSettings
+
+    local TSBlackStroke = Instance.new("UIStroke")
+    TSBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+    TSBlackStroke.Thickness = 4
+    TSBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    TSBlackStroke.Parent = TrackSettings
+
+    local TSStroke = Instance.new("UIStroke")
+    TSStroke.Color = Color3.fromRGB(255, 255, 255)
+    TSStroke.Thickness = 2.5
+    TSStroke.Transparency = 0.35
+    TSStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    TSStroke.ZIndex = 2
+    TSStroke.Parent = TrackSettings
+
+    local TSWaveGrad = Instance.new("UIGradient")
+    TSWaveGrad.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
+    TSWaveGrad.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 1),
+        NumberSequenceKeypoint.new(0.4, 0),
+        NumberSequenceKeypoint.new(0.6, 0),
+        NumberSequenceKeypoint.new(1, 1)
+    })
+    TSWaveGrad.Rotation = 0
+    TSWaveGrad.Parent = TSStroke
+    TweenService:Create(TSStroke, TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Thickness = 4.2, Transparency = 0.08}):Play()
+    RunService.Heartbeat:Connect(function(dt) pcall(function() TSWaveGrad.Rotation = (TSWaveGrad.Rotation + 140 * dt) % 360 end) end)
+
+    -- Title
+    local TSTitle = Instance.new("TextLabel")
+    TSTitle.Size = UDim2.new(1, 0, 0, 30)
+    TSTitle.BackgroundTransparency = 1
+    TSTitle.Text = "⚙ Track Player Settings"
+    TSTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TSTitle.Font = Enum.Font.GothamBold
+    TSTitle.TextSize = 14
+    TSTitle.Parent = TrackSettings
+    TSTitle.ZIndex = 11
+
+    -- Close X
+    local TSClose = Instance.new("TextButton")
+    TSClose.Size = UDim2.new(0, 24, 0, 24)
+    TSClose.Position = UDim2.new(1, -28, 0, 3)
+    TSClose.BackgroundTransparency = 1
+    TSClose.Text = "✕"
+    TSClose.TextColor3 = Color3.fromRGB(255, 80, 80)
+    TSClose.Font = Enum.Font.GothamBold
+    TSClose.TextSize = 14
+    TSClose.Parent = TrackSettings
+    TSClose.ZIndex = 11
+    TSClose.MouseButton1Click:Connect(function() TrackSettings.Visible = false end)
+
+    -- Float Height Label + Value
+    local TFHeightLabel = Instance.new("TextLabel")
+    TFHeightLabel.Size = UDim2.new(0.6, 0, 0, 25)
+    TFHeightLabel.Position = UDim2.new(0, 10, 0, 35)
+    TFHeightLabel.BackgroundTransparency = 1
+    TFHeightLabel.Text = "Float Height"
+    TFHeightLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+    TFHeightLabel.Font = Enum.Font.Gotham
+    TFHeightLabel.TextSize = 12
+    TFHeightLabel.TextXAlignment = Enum.TextXAlignment.Left
+    TFHeightLabel.Parent = TrackSettings
+    TFHeightLabel.ZIndex = 11
+
+    local TFHeightVal = Instance.new("TextLabel")
+    TFHeightVal.Size = UDim2.new(0, 40, 0, 25)
+    TFHeightVal.Position = UDim2.new(1, -90, 0, 35)
+    TFHeightVal.BackgroundTransparency = 1
+    TFHeightVal.Text = tostring(BAT_FLOAT_AMPLITUDE)
+    TFHeightVal.TextColor3 = Color3.fromRGB(138, 43, 226)
+    TFHeightVal.Font = Enum.Font.GothamBold
+    TFHeightVal.TextSize = 13
+    TFHeightVal.Parent = TrackSettings
+    TFHeightVal.ZIndex = 11
+
+    local TFHeightMinus = Instance.new("TextButton")
+    TFHeightMinus.Size = UDim2.new(0, 22, 0, 22)
+    TFHeightMinus.Position = UDim2.new(1, -48, 0, 37)
+    TFHeightMinus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    TFHeightMinus.Text = "-"
+    TFHeightMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TFHeightMinus.Font = Enum.Font.GothamBold
+    TFHeightMinus.TextSize = 14
+    TFHeightMinus.Parent = TrackSettings
+    TFHeightMinus.ZIndex = 11
+    Instance.new("UICorner", TFHeightMinus).CornerRadius = UDim.new(0, 6)
+
+    local TFHeightPlus = Instance.new("TextButton")
+    TFHeightPlus.Size = UDim2.new(0, 22, 0, 22)
+    TFHeightPlus.Position = UDim2.new(1, -22, 0, 37)
+    TFHeightPlus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    TFHeightPlus.Text = "+"
+    TFHeightPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TFHeightPlus.Font = Enum.Font.GothamBold
+    TFHeightPlus.TextSize = 14
+    TFHeightPlus.Parent = TrackSettings
+    TFHeightPlus.ZIndex = 11
+    Instance.new("UICorner", TFHeightPlus).CornerRadius = UDim.new(0, 6)
+
+    TFHeightMinus.MouseButton1Click:Connect(function()
+        BAT_FLOAT_AMPLITUDE = math.max(0, BAT_FLOAT_AMPLITUDE - 1)
+        TFHeightVal.Text = tostring(BAT_FLOAT_AMPLITUDE)
+    end)
+    TFHeightPlus.MouseButton1Click:Connect(function()
+        BAT_FLOAT_AMPLITUDE = BAT_FLOAT_AMPLITUDE + 1
+        TFHeightVal.Text = tostring(BAT_FLOAT_AMPLITUDE)
+    end)
+
+    -- Float Speed Label + Value
+    local TFSpeedLabel = Instance.new("TextLabel")
+    TFSpeedLabel.Size = UDim2.new(0.6, 0, 0, 25)
+    TFSpeedLabel.Position = UDim2.new(0, 10, 0, 70)
+    TFSpeedLabel.BackgroundTransparency = 1
+    TFSpeedLabel.Text = "Float Speed"
+    TFSpeedLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+    TFSpeedLabel.Font = Enum.Font.Gotham
+    TFSpeedLabel.TextSize = 12
+    TFSpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
+    TFSpeedLabel.Parent = TrackSettings
+    TFSpeedLabel.ZIndex = 11
+
+    local TFSpeedVal = Instance.new("TextLabel")
+    TFSpeedVal.Size = UDim2.new(0, 40, 0, 25)
+    TFSpeedVal.Position = UDim2.new(1, -90, 0, 70)
+    TFSpeedVal.BackgroundTransparency = 1
+    TFSpeedVal.Text = tostring(BAT_FLOAT_SPEED)
+    TFSpeedVal.TextColor3 = Color3.fromRGB(138, 43, 226)
+    TFSpeedVal.Font = Enum.Font.GothamBold
+    TFSpeedVal.TextSize = 13
+    TFSpeedVal.Parent = TrackSettings
+    TFSpeedVal.ZIndex = 11
+
+    local TFSpeedMinus = Instance.new("TextButton")
+    TFSpeedMinus.Size = UDim2.new(0, 22, 0, 22)
+    TFSpeedMinus.Position = UDim2.new(1, -48, 0, 72)
+    TFSpeedMinus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    TFSpeedMinus.Text = "-"
+    TFSpeedMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TFSpeedMinus.Font = Enum.Font.GothamBold
+    TFSpeedMinus.TextSize = 14
+    TFSpeedMinus.Parent = TrackSettings
+    TFSpeedMinus.ZIndex = 11
+    Instance.new("UICorner", TFSpeedMinus).CornerRadius = UDim.new(0, 6)
+
+    local TFSpeedPlus = Instance.new("TextButton")
+    TFSpeedPlus.Size = UDim2.new(0, 22, 0, 22)
+    TFSpeedPlus.Position = UDim2.new(1, -22, 0, 72)
+    TFSpeedPlus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    TFSpeedPlus.Text = "+"
+    TFSpeedPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TFSpeedPlus.Font = Enum.Font.GothamBold
+    TFSpeedPlus.TextSize = 14
+    TFSpeedPlus.Parent = TrackSettings
+    TFSpeedPlus.ZIndex = 11
+    Instance.new("UICorner", TFSpeedPlus).CornerRadius = UDim.new(0, 6)
+
+    TFSpeedMinus.MouseButton1Click:Connect(function()
+        BAT_FLOAT_SPEED = math.max(0.5, BAT_FLOAT_SPEED - 0.5)
+        TFSpeedVal.Text = tostring(BAT_FLOAT_SPEED)
+    end)
+    TFSpeedPlus.MouseButton1Click:Connect(function()
+        BAT_FLOAT_SPEED = BAT_FLOAT_SPEED + 0.5
+        TFSpeedVal.Text = tostring(BAT_FLOAT_SPEED)
+    end)
+
+    -- Move Speed Label + Value
+    local TMSpeedLabel = Instance.new("TextLabel")
+    TMSpeedLabel.Size = UDim2.new(0.6, 0, 0, 25)
+    TMSpeedLabel.Position = UDim2.new(0, 10, 0, 105)
+    TMSpeedLabel.BackgroundTransparency = 1
+    TMSpeedLabel.Text = "Move Speed"
+    TMSpeedLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+    TMSpeedLabel.Font = Enum.Font.Gotham
+    TMSpeedLabel.TextSize = 12
+    TMSpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
+    TMSpeedLabel.Parent = TrackSettings
+    TMSpeedLabel.ZIndex = 11
+
+    local TMSpeedVal = Instance.new("TextLabel")
+    TMSpeedVal.Size = UDim2.new(0, 40, 0, 25)
+    TMSpeedVal.Position = UDim2.new(1, -90, 0, 105)
+    TMSpeedVal.BackgroundTransparency = 1
+    TMSpeedVal.Text = tostring(BAT_MOVE_SPEED)
+    TMSpeedVal.TextColor3 = Color3.fromRGB(138, 43, 226)
+    TMSpeedVal.Font = Enum.Font.GothamBold
+    TMSpeedVal.TextSize = 13
+    TMSpeedVal.Parent = TrackSettings
+    TMSpeedVal.ZIndex = 11
+
+    local TMSpeedMinus = Instance.new("TextButton")
+    TMSpeedMinus.Size = UDim2.new(0, 22, 0, 22)
+    TMSpeedMinus.Position = UDim2.new(1, -48, 0, 107)
+    TMSpeedMinus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    TMSpeedMinus.Text = "-"
+    TMSpeedMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TMSpeedMinus.Font = Enum.Font.GothamBold
+    TMSpeedMinus.TextSize = 14
+    TMSpeedMinus.Parent = TrackSettings
+    TMSpeedMinus.ZIndex = 11
+    Instance.new("UICorner", TMSpeedMinus).CornerRadius = UDim.new(0, 6)
+
+    local TMSpeedPlus = Instance.new("TextButton")
+    TMSpeedPlus.Size = UDim2.new(0, 22, 0, 22)
+    TMSpeedPlus.Position = UDim2.new(1, -22, 0, 107)
+    TMSpeedPlus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    TMSpeedPlus.Text = "+"
+    TMSpeedPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TMSpeedPlus.Font = Enum.Font.GothamBold
+    TMSpeedPlus.TextSize = 14
+    TMSpeedPlus.Parent = TrackSettings
+    TMSpeedPlus.ZIndex = 11
+    Instance.new("UICorner", TMSpeedPlus).CornerRadius = UDim.new(0, 6)
+
+    TMSpeedMinus.MouseButton1Click:Connect(function()
+        BAT_MOVE_SPEED = math.max(5, BAT_MOVE_SPEED - 5)
+        TMSpeedVal.Text = tostring(BAT_MOVE_SPEED)
+    end)
+    TMSpeedPlus.MouseButton1Click:Connect(function()
+        BAT_MOVE_SPEED = BAT_MOVE_SPEED + 5
+        TMSpeedVal.Text = tostring(BAT_MOVE_SPEED)
+    end)
+
+    -- Toggle gear panel
+    TrackGear.MouseButton1Click:Connect(function()
+        TrackSettings.Visible = not TrackSettings.Visible
+    end)
+
     -- ✅ HIT CIRCLE Button (UNDER TRACK PLAYER - GRAY!)
     local HitCircleButton = Instance.new("TextButton")
     HitCircleButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
@@ -4642,28 +4901,42 @@ function createRightButtons(device)
     end)
 
     -- ═══════════════════════════════════════════════════════
-    -- ✅ JUKE LOGIC: Float up, spam tool, wait, then TP down
+    -- ✅ JUKE LOGIC: Toggle float up/down + spam tool activate
     -- ═══════════════════════════════════════════════════════
 
-    local jukeSpamConn = nil
+    local jukeConn = nil
 
     JukeButton.MouseButton1Click:Connect(function()
-        if not jukeActive then
+        jukeActive = not jukeActive
+
+        if jukeActive then
+            JukeButton.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
             local c = player.Character
             local r = c and c:FindFirstChild("HumanoidRootPart")
-            if not r then return end
-            jukeActive = true
-            JukeButton.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+            if not r then jukeActive = false JukeButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30) return end
 
-            local startPos = r.Position
-            local targetY = startPos.Y + jukeFloatY
+            local startY = r.Position.Y
+            local jukeTime = 0
 
-            -- Spam activate held tool continuously while juke is on
-            jukeSpamConn = RunService.Heartbeat:Connect(function()
+            jukeConn = RunService.Heartbeat:Connect(function(dt)
                 if not jukeActive then
-                    if jukeSpamConn then jukeSpamConn:Disconnect() jukeSpamConn = nil end
+                    if jukeConn then jukeConn:Disconnect() jukeConn = nil end
                     return
                 end
+                local rr = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                if not rr then
+                    if jukeConn then jukeConn:Disconnect() jukeConn = nil end
+                    jukeActive = false
+                    JukeButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+                    return
+                end
+
+                -- Float up and down using sine wave
+                jukeTime = jukeTime + dt * jukeFloatSpeed * 0.1
+                local floatOffset = math.sin(jukeTime) * jukeFloatY
+                rr.AssemblyLinearVelocity = Vector3.new(rr.AssemblyLinearVelocity.X, floatOffset * 5, rr.AssemblyLinearVelocity.Z)
+
+                -- Spam activate held tool
                 local char = player.Character
                 if char then
                     local tool = char:FindFirstChildOfClass("Tool")
@@ -4672,34 +4945,13 @@ function createRightButtons(device)
                     end
                 end
             end)
-
-            -- Float up using velocity
-            local floatConn
-            floatConn = RunService.Heartbeat:Connect(function()
-                if not jukeActive then if floatConn then floatConn:Disconnect() end return end
-                local rr = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-                if not rr then if floatConn then floatConn:Disconnect() end return end
-
-                if rr.Position.Y >= targetY then
-                    rr.AssemblyLinearVelocity = Vector3.new(rr.AssemblyLinearVelocity.X, 0, rr.AssemblyLinearVelocity.Z)
-                    floatConn:Disconnect()
-                    -- Wait delay then TP down
-                    task.delay(jukeTPDelay, function()
-                        local rrr = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-                        if rrr then
-                            rrr.CFrame = CFrame.new(startPos.X, startPos.Y, startPos.Z)
-                            rrr.AssemblyLinearVelocity = Vector3.zero
-                        end
-                    end)
-                    return
-                end
-                rr.AssemblyLinearVelocity = Vector3.new(rr.AssemblyLinearVelocity.X, jukeFloatSpeed, rr.AssemblyLinearVelocity.Z)
-            end)
         else
-            -- Turn off juke
-            jukeActive = false
-            if jukeSpamConn then jukeSpamConn:Disconnect() jukeSpamConn = nil end
             JukeButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            if jukeConn then jukeConn:Disconnect() jukeConn = nil end
+            local rr = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+            if rr then
+                rr.AssemblyLinearVelocity = Vector3.new(rr.AssemblyLinearVelocity.X, 0, rr.AssemblyLinearVelocity.Z)
+            end
         end
     end)
 end
