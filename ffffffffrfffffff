@@ -1283,7 +1283,7 @@ RunService.Heartbeat:Connect(function()
     local target, distance = nearestPlayer_bat()
     if not target then return end
 
-    -- Float up and down using sine wave with separate up/down amplitudes
+    -- Float up and down using sine wave with separate up/down values
     local sineVal = math.sin(tick() * BAT_FLOAT_SPEED)
     local floatOffset = sineVal >= 0 and (sineVal * BAT_FLOAT_AMPLITUDE) or (sineVal * BAT_FLOAT_DOWN)
 
@@ -3972,105 +3972,103 @@ function createRightButtons(device)
         end
     end)
 
-    -- ✅ TRACK PLAYER GEAR (FLOAT SETTINGS)
+    -- ✅ TRACK PLAYER GEAR (SMALL SETTINGS BUTTON)
     local TrackGearBtn = Instance.new("TextButton")
     TrackGearBtn.Size = UDim2.new(0, 22, 0, 22)
-    TrackGearBtn.Position = UDim2.new(1, -15 - 22, 0.5, -buttonSize - 10 - 24)
-    TrackGearBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+    TrackGearBtn.Position = UDim2.new(1, -22, 0, 0)
+    TrackGearBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
     TrackGearBtn.Text = "⚙️"
-    TrackGearBtn.TextSize = device == "iPhone" and 10 or 12
-    TrackGearBtn.Font = Enum.Font.GothamBold
     TrackGearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    TrackGearBtn.Parent = ScreenGui
+    TrackGearBtn.Font = Enum.Font.GothamBold
+    TrackGearBtn.TextSize = 12
+    TrackGearBtn.Parent = TrackPlayerButton
 
     local TrackGearCorner = Instance.new("UICorner")
     TrackGearCorner.CornerRadius = UDim.new(0, 6)
     TrackGearCorner.Parent = TrackGearBtn
 
-    -- Float settings popup
-    local TrackFloatGUI = Instance.new("Frame")
-    TrackFloatGUI.Name = "TrackFloatGUI"
-    TrackFloatGUI.Size = UDim2.new(0, 180, 0, 110)
-    TrackFloatGUI.Position = UDim2.new(0.5, -90, 0.5, -55)
-    TrackFloatGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-    TrackFloatGUI.BackgroundTransparency = 0.1
-    TrackFloatGUI.BorderSizePixel = 0
-    TrackFloatGUI.Visible = false
-    TrackFloatGUI.Active = true
-    TrackFloatGUI.Draggable = true
-    TrackFloatGUI.Parent = ScreenGui
+    -- ✅ TRACK PLAYER FLOAT SETTINGS POPUP
+    local TrackSettingsGUI = Instance.new("Frame")
+    TrackSettingsGUI.Name = "TrackFloatSettings"
+    TrackSettingsGUI.Size = UDim2.new(0, 200, 0, 120)
+    TrackSettingsGUI.Position = UDim2.new(0.5, -100, 0.5, -60)
+    TrackSettingsGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    TrackSettingsGUI.BackgroundTransparency = 0.1
+    TrackSettingsGUI.BorderSizePixel = 0
+    TrackSettingsGUI.Visible = false
+    TrackSettingsGUI.Active = true
+    TrackSettingsGUI.Draggable = true
+    TrackSettingsGUI.Parent = ScreenGui
 
-    local TrackFloatCorner = Instance.new("UICorner")
-    TrackFloatCorner.CornerRadius = UDim.new(0, 12)
-    TrackFloatCorner.Parent = TrackFloatGUI
+    local TrackSettingsCorner = Instance.new("UICorner")
+    TrackSettingsCorner.CornerRadius = UDim.new(0, 12)
+    TrackSettingsCorner.Parent = TrackSettingsGUI
 
-    local TrackFloatStroke = Instance.new("UIStroke")
-    TrackFloatStroke.Color = Color3.fromRGB(255, 255, 255)
-    TrackFloatStroke.Thickness = 2
-    TrackFloatStroke.Parent = TrackFloatGUI
+    local TrackSettingsStroke = Instance.new("UIStroke")
+    TrackSettingsStroke.Color = Color3.fromRGB(255, 255, 255)
+    TrackSettingsStroke.Thickness = 2
+    TrackSettingsStroke.Parent = TrackSettingsGUI
 
-    local TrackFloatTitle = Instance.new("TextLabel")
-    TrackFloatTitle.Size = UDim2.new(1, 0, 0, 28)
-    TrackFloatTitle.BackgroundTransparency = 1
-    TrackFloatTitle.Text = "FLOAT SETTINGS"
-    TrackFloatTitle.TextColor3 = Color3.fromRGB(255, 200, 100)
-    TrackFloatTitle.Font = Enum.Font.GothamBold
-    TrackFloatTitle.TextSize = 13
-    TrackFloatTitle.Parent = TrackFloatGUI
+    local TrackSettingsTitle = Instance.new("TextLabel")
+    TrackSettingsTitle.Size = UDim2.new(1, 0, 0, 30)
+    TrackSettingsTitle.BackgroundTransparency = 1
+    TrackSettingsTitle.Text = "FLOAT SETTINGS"
+    TrackSettingsTitle.TextColor3 = Color3.fromRGB(255, 200, 100)
+    TrackSettingsTitle.Font = Enum.Font.GothamBold
+    TrackSettingsTitle.TextSize = 14
+    TrackSettingsTitle.Parent = TrackSettingsGUI
 
-    -- Float Up label + box
     local FloatUpLabel = Instance.new("TextLabel")
-    FloatUpLabel.Size = UDim2.new(0.55, 0, 0, 25)
-    FloatUpLabel.Position = UDim2.new(0, 10, 0, 32)
+    FloatUpLabel.Size = UDim2.new(0.6, 0, 0, 25)
+    FloatUpLabel.Position = UDim2.new(0, 10, 0, 35)
     FloatUpLabel.BackgroundTransparency = 1
-    FloatUpLabel.Text = "Up (studs):"
+    FloatUpLabel.Text = "Float Up:"
     FloatUpLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
     FloatUpLabel.Font = Enum.Font.Gotham
     FloatUpLabel.TextSize = 12
     FloatUpLabel.TextXAlignment = Enum.TextXAlignment.Left
-    FloatUpLabel.Parent = TrackFloatGUI
+    FloatUpLabel.Parent = TrackSettingsGUI
 
     local FloatUpBox = Instance.new("TextBox")
-    FloatUpBox.Size = UDim2.new(0, 50, 0, 25)
-    FloatUpBox.Position = UDim2.new(1, -60, 0, 32)
+    FloatUpBox.Size = UDim2.new(0, 60, 0, 25)
+    FloatUpBox.Position = UDim2.new(1, -70, 0, 35)
     FloatUpBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
     FloatUpBox.Text = tostring(BAT_FLOAT_AMPLITUDE)
     FloatUpBox.TextColor3 = Color3.fromRGB(255, 255, 255)
     FloatUpBox.Font = Enum.Font.GothamBold
     FloatUpBox.TextSize = 12
     FloatUpBox.ClearTextOnFocus = false
-    FloatUpBox.Parent = TrackFloatGUI
+    FloatUpBox.Parent = TrackSettingsGUI
 
-    local FloatUpCorner = Instance.new("UICorner")
-    FloatUpCorner.CornerRadius = UDim.new(0, 6)
-    FloatUpCorner.Parent = FloatUpBox
+    local FloatUpBoxCorner = Instance.new("UICorner")
+    FloatUpBoxCorner.CornerRadius = UDim.new(0, 6)
+    FloatUpBoxCorner.Parent = FloatUpBox
 
-    -- Float Down label + box
     local FloatDownLabel = Instance.new("TextLabel")
-    FloatDownLabel.Size = UDim2.new(0.55, 0, 0, 25)
-    FloatDownLabel.Position = UDim2.new(0, 10, 0, 62)
+    FloatDownLabel.Size = UDim2.new(0.6, 0, 0, 25)
+    FloatDownLabel.Position = UDim2.new(0, 10, 0, 65)
     FloatDownLabel.BackgroundTransparency = 1
-    FloatDownLabel.Text = "Down (studs):"
+    FloatDownLabel.Text = "Float Down:"
     FloatDownLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
     FloatDownLabel.Font = Enum.Font.Gotham
     FloatDownLabel.TextSize = 12
     FloatDownLabel.TextXAlignment = Enum.TextXAlignment.Left
-    FloatDownLabel.Parent = TrackFloatGUI
+    FloatDownLabel.Parent = TrackSettingsGUI
 
     local FloatDownBox = Instance.new("TextBox")
-    FloatDownBox.Size = UDim2.new(0, 50, 0, 25)
-    FloatDownBox.Position = UDim2.new(1, -60, 0, 62)
+    FloatDownBox.Size = UDim2.new(0, 60, 0, 25)
+    FloatDownBox.Position = UDim2.new(1, -70, 0, 65)
     FloatDownBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
     FloatDownBox.Text = tostring(BAT_FLOAT_DOWN)
     FloatDownBox.TextColor3 = Color3.fromRGB(255, 255, 255)
     FloatDownBox.Font = Enum.Font.GothamBold
     FloatDownBox.TextSize = 12
     FloatDownBox.ClearTextOnFocus = false
-    FloatDownBox.Parent = TrackFloatGUI
+    FloatDownBox.Parent = TrackSettingsGUI
 
-    local FloatDownCorner = Instance.new("UICorner")
-    FloatDownCorner.CornerRadius = UDim.new(0, 6)
-    FloatDownCorner.Parent = FloatDownBox
+    local FloatDownBoxCorner = Instance.new("UICorner")
+    FloatDownBoxCorner.CornerRadius = UDim.new(0, 6)
+    FloatDownBoxCorner.Parent = FloatDownBox
 
     FloatUpBox.FocusLost:Connect(function()
         local value = tonumber(FloatUpBox.Text)
@@ -4091,7 +4089,7 @@ function createRightButtons(device)
     end)
 
     TrackGearBtn.MouseButton1Click:Connect(function()
-        TrackFloatGUI.Visible = not TrackFloatGUI.Visible
+        TrackSettingsGUI.Visible = not TrackSettingsGUI.Visible
     end)
 
     -- ✅ HIT CIRCLE Button (UNDER TRACK PLAYER - GRAY!)
