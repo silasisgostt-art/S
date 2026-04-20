@@ -994,13 +994,6 @@ local function applyXrayTransparency(obj)
     end
 end
 
-local function restoreXrayTransparency(obj)
-    if XrayBase.OriginalTransparency[obj] then
-        obj.LocalTransparencyModifier = XrayBase.OriginalTransparency[obj]
-        XrayBase.OriginalTransparency[obj] = nil
-    end
-end
-
 local function enableXrayBase()
     if XrayBase.Enabled then return end
     XrayBase.Enabled = true
@@ -1037,7 +1030,7 @@ end
 
 local NoAnim = {
     Enabled = false,
-    CharacterConnections = {}
+    CharConns = {}
 }
 
 local function disableAnims(charTarget)
@@ -1046,10 +1039,10 @@ local function disableAnims(charTarget)
     for _, track in pairs(humanoid:GetPlayingAnimationTracks()) do
         track:Stop()
     end
-    if NoAnim.CharacterConnections[charTarget] then
-        NoAnim.CharacterConnections[charTarget]:Disconnect()
+    if NoAnim.CharConns[charTarget] then
+        NoAnim.CharConns[charTarget]:Disconnect()
     end
-    NoAnim.CharacterConnections[charTarget] = humanoid.AnimationPlayed:Connect(function(track)
+    NoAnim.CharConns[charTarget] = humanoid.AnimationPlayed:Connect(function(track)
         track:Stop()
     end)
 end
@@ -1060,7 +1053,7 @@ local function enableNoAnim()
     if player.Character then
         disableAnims(player.Character)
     end
-    NoAnim.CharacterConnections.characterAdded = player.CharacterAdded:Connect(function(char)
+    NoAnim.CharConns._charAdded = player.CharacterAdded:Connect(function(char)
         disableAnims(char)
     end)
 end
@@ -1068,12 +1061,12 @@ end
 local function disableNoAnim()
     if not NoAnim.Enabled then return end
     NoAnim.Enabled = false
-    for key, conn in pairs(NoAnim.CharacterConnections) do
+    for key, conn in pairs(NoAnim.CharConns) do
         if conn and typeof(conn) == "RBXScriptConnection" then
             conn:Disconnect()
         end
     end
-    NoAnim.CharacterConnections = {}
+    NoAnim.CharConns = {}
 end
 
 -- ═══════════════════════════════════════════════════════
@@ -1090,28 +1083,28 @@ local PlayerESP = {
 
 local function createESPHighlight(charTarget)
     local h = Instance.new("Highlight")
-    h.Name = "TIM_PlayerESP_Highlight"
+    h.Name = "TIM_ESP_Highlight"
     h.Adornee = charTarget
     h.FillColor = PlayerESP.ESP_COLOR
     h.FillTransparency = 0.25
     h.OutlineColor = PlayerESP.ESP_COLOR
     h.OutlineTransparency = 0
     h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-    h.Parent = game:GetService("CoreGui")
+    h.Parent = CoreGui
     return h
 end
 
 local function createESPBillboard(charTarget, plr)
-    local hrp = charTarget:FindFirstChild("HumanoidRootPart")
-    if not hrp then return nil end
+    local phrp = charTarget:FindFirstChild("HumanoidRootPart")
+    if not phrp then return nil end
     local bb = Instance.new("BillboardGui")
-    bb.Name = "TIM_PlayerESP_Name"
-    bb.Adornee = hrp
+    bb.Name = "TIM_ESP_Name"
+    bb.Adornee = phrp
     bb.AlwaysOnTop = true
     bb.Size = UDim2.new(0, 100, 0, 20)
     bb.StudsOffsetWorldSpace = Vector3.new(0, 3, 0)
     bb.MaxDistance = 600
-    bb.Parent = game:GetService("CoreGui")
+    bb.Parent = CoreGui
     local bg = Instance.new("Frame", bb)
     bg.Size = UDim2.new(1, 0, 1, 0)
     bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
@@ -1131,43 +1124,26 @@ end
 local function attachESP(plr)
     if plr == player then return end
     local function apply(charTarget)
-        if PlayerESP.Highlights[plr] then
-            pcall(function() PlayerESP.Highlights[plr]:Destroy() end)
-        end
-        if PlayerESP.Billboards[plr] then
-            pcall(function() PlayerESP.Billboards[plr]:Destroy() end)
-        end
+        if PlayerESP.Highlights[plr] then pcall(function() PlayerESP.Highlights[plr]:Destroy() end) end
+        if PlayerESP.Billboards[plr] then pcall(function() PlayerESP.Billboards[plr]:Destroy() end) end
         PlayerESP.Highlights[plr] = createESPHighlight(charTarget)
         PlayerESP.Billboards[plr] = createESPBillboard(charTarget, plr)
     end
     if plr.Character then apply(plr.Character) end
-    local conn = plr.CharacterAdded:Connect(apply)
-    table.insert(PlayerESP.Connections, conn)
+    table.insert(PlayerESP.Connections, plr.CharacterAdded:Connect(apply))
 end
 
 local function removeESP(plr)
-    if PlayerESP.Highlights[plr] then
-        pcall(function() PlayerESP.Highlights[plr]:Destroy() end)
-        PlayerESP.Highlights[plr] = nil
-    end
-    if PlayerESP.Billboards[plr] then
-        pcall(function() PlayerESP.Billboards[plr]:Destroy() end)
-        PlayerESP.Billboards[plr] = nil
-    end
+    if PlayerESP.Highlights[plr] then pcall(function() PlayerESP.Highlights[plr]:Destroy() end); PlayerESP.Highlights[plr] = nil end
+    if PlayerESP.Billboards[plr] then pcall(function() PlayerESP.Billboards[plr]:Destroy() end); PlayerESP.Billboards[plr] = nil end
 end
 
 local function enableESP()
     if PlayerESP.Enabled then return end
     PlayerESP.Enabled = true
-    for _, p in ipairs(Players:GetPlayers()) do
-        attachESP(p)
-    end
-    table.insert(PlayerESP.Connections, Players.PlayerAdded:Connect(function(p)
-        attachESP(p)
-    end))
-    table.insert(PlayerESP.Connections, Players.PlayerRemoving:Connect(function(p)
-        removeESP(p)
-    end))
+    for _, p in ipairs(Players:GetPlayers()) do attachESP(p) end
+    table.insert(PlayerESP.Connections, Players.PlayerAdded:Connect(function(p) attachESP(p) end))
+    table.insert(PlayerESP.Connections, Players.PlayerRemoving:Connect(function(p) removeESP(p) end))
 end
 
 local function disableESP()
@@ -1194,13 +1170,12 @@ local PerfModule = {
 local function enableShowPerformance()
     if PerfModule.Enabled then return end
     PerfModule.Enabled = true
-
     if not PerfModule.Gui then
         local Stats = game:GetService("Stats")
         PerfModule.Gui = Instance.new("ScreenGui")
         PerfModule.Gui.Name = "TIM_Performance"
         PerfModule.Gui.ResetOnSpawn = false
-        PerfModule.Gui.Parent = game:GetService("CoreGui")
+        PerfModule.Gui.Parent = CoreGui
 
         local Frame = Instance.new("Frame")
         Frame.Size = UDim2.new(0, 260, 0, 28)
@@ -1216,7 +1191,6 @@ local function enableShowPerformance()
         Label.BackgroundTransparency = 1
         Label.Font = Enum.Font.GothamBold
         Label.TextSize = 14
-        Label.RichText = true
         Label.TextColor3 = Color3.fromRGB(85, 170, 255)
         Label.Text = "FPS 0 | PING 0ms"
         Label.Parent = Frame
@@ -1242,10 +1216,7 @@ local function disableShowPerformance()
     if not PerfModule.Enabled then return end
     PerfModule.Enabled = false
     if PerfModule.Gui then PerfModule.Gui.Enabled = false end
-    if PerfModule.Connection then
-        PerfModule.Connection:Disconnect()
-        PerfModule.Connection = nil
-    end
+    if PerfModule.Connection then PerfModule.Connection:Disconnect(); PerfModule.Connection = nil end
 end
 
 -- ═══════════════════════════════════════════════════════
@@ -1272,12 +1243,6 @@ local function enableAntiFPSDevourer()
     AntiFPSDevourer.Enabled = true
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr.Character then cleanCharacterFPS(plr.Character) end
-        plr.CharacterAdded:Connect(function(c)
-            if AntiFPSDevourer.Enabled then
-                task.wait(0.5)
-                cleanCharacterFPS(c)
-            end
-        end)
     end
     AntiFPSDevourer.Conn = RunService.Heartbeat:Connect(function()
         for _, plr in ipairs(Players:GetPlayers()) do
@@ -1288,33 +1253,39 @@ end
 
 local function disableAntiFPSDevourer()
     AntiFPSDevourer.Enabled = false
-    if AntiFPSDevourer.Conn then
-        AntiFPSDevourer.Conn:Disconnect()
-        AntiFPSDevourer.Conn = nil
-    end
+    if AntiFPSDevourer.Conn then AntiFPSDevourer.Conn:Disconnect(); AntiFPSDevourer.Conn = nil end
 end
 
 -- ═══════════════════════════════════════════════════════
--- ANTI LAG MODULE (Comprehensive lag reduction)
+-- ANTI LAG MASTER (Runs all anti-lag features at once)
 -- ═══════════════════════════════════════════════════════
 
-local AntiLag = {
+local AntiLagMaster = {
     Enabled = false,
-    Connections = {}
+    DescAddedConn = nil
 }
 
 local function enableAntiLag()
-    if AntiLag.Enabled then return end
-    AntiLag.Enabled = true
+    if AntiLagMaster.Enabled then return end
+    AntiLagMaster.Enabled = true
 
-    -- Disable shadows and atmosphere
+    -- Run FPS Booster
+    enableFPSBooster()
+
+    -- Run Optimizer
+    enableOptimizer()
+
+    -- Enable Anti FPS Devourer
+    enableAntiFPSDevourer()
+
+    -- Disable shadows + atmosphere
     pcall(function()
         Lighting.GlobalShadows = false
         Lighting.FogEnd = 9e9
         if Lighting:FindFirstChild("Atmosphere") then Lighting.Atmosphere:Destroy() end
     end)
 
-    -- Set lowest quality
+    -- Lowest quality
     pcall(function()
         settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
     end)
@@ -1337,7 +1308,7 @@ local function enableAntiLag()
         end
     end)
 
-    -- Remove particles, trails, beams, effects from workspace
+    -- Remove particles, trails, effects, lights, decals
     task.spawn(function()
         for _, obj in pairs(workspace:GetDescendants()) do
             pcall(function()
@@ -1354,9 +1325,9 @@ local function enableAntiLag()
         end
     end)
 
-    -- Kill new particles/effects as they spawn
-    AntiLag.Connections.descAdded = workspace.DescendantAdded:Connect(function(obj)
-        if not AntiLag.Enabled then return end
+    -- Kill new effects as they spawn
+    AntiLagMaster.DescAddedConn = workspace.DescendantAdded:Connect(function(obj)
+        if not AntiLagMaster.Enabled then return end
         pcall(function()
             if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam") or
                obj:IsA("Smoke") or obj:IsA("Fire") or obj:IsA("Sparkles") or
@@ -1366,7 +1337,7 @@ local function enableAntiLag()
         end)
     end)
 
-    -- Set all materials to Plastic for performance
+    -- Set all materials to Plastic
     task.spawn(function()
         for _, obj in pairs(workspace:GetDescendants()) do
             pcall(function()
@@ -1379,11 +1350,12 @@ local function enableAntiLag()
 end
 
 local function disableAntiLag()
-    AntiLag.Enabled = false
-    for _, conn in pairs(AntiLag.Connections) do
-        pcall(function() conn:Disconnect() end)
+    AntiLagMaster.Enabled = false
+    disableAntiFPSDevourer()
+    if AntiLagMaster.DescAddedConn then
+        AntiLagMaster.DescAddedConn:Disconnect()
+        AntiLagMaster.DescAddedConn = nil
     end
-    AntiLag.Connections = {}
 end
 
 -- ═══════════════════════════════════════════════════════
@@ -3509,7 +3481,7 @@ local function createMainGUI(device)
     end)
 
     local antiLagButton = createMISCButton("Anti Lag", 12, function()
-        if AntiLag.Enabled then
+        if AntiLagMaster.Enabled then
             disableAntiLag()
             antiLagButton.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
         else
@@ -4036,399 +4008,16 @@ function createRightButtons(device)
     DesyncStroke.ZIndex = 2
     DesyncStroke.Parent = DesyncButton
 
-    -- Invisible Steal (Desync) logic
+    -- Desync logic
     local desyncEnabled = false
     local laggerEnabled = false
-    local desyncAnimPlaying = false
-    local desyncTracks = {}
-    local desyncClone = nil
-    local desyncOldRoot = nil
-    local desyncHip = nil
-    local desyncConnection = nil
-    local desyncFolderConns = {}
-    local desyncServerGhosts = {}
-    local desyncGhostEnabled = true
-    local desyncLagbackCount = 0
-    local desyncLagbackWindowStart = 0
-    local desyncLastLagbackTime = 0
-    local desyncErrorOrbActive = false
-    local desyncErrorOrb = nil
-    local desyncErrorOrbConn = nil
-    local DESYNC_SETTINGS = {
-        InvisStealAngle = 233,
-        SinkSliderValue = 5,
-        AutoRecoverLagback = true,
-    }
-
-    -- Load saved desync settings
-    if ConfigData.desyncAngle then DESYNC_SETTINGS.InvisStealAngle = ConfigData.desyncAngle end
-    if ConfigData.desyncSink then DESYNC_SETTINGS.SinkSliderValue = ConfigData.desyncSink end
-    if ConfigData.desyncAutoRecover ~= nil then DESYNC_SETTINGS.AutoRecoverLagback = ConfigData.desyncAutoRecover end
-
-    local function desyncClearErrorOrb()
-        if desyncErrorOrb and desyncErrorOrb.Parent then desyncErrorOrb:Destroy() end
-        desyncErrorOrb = nil
-        desyncErrorOrbActive = false
-        if desyncErrorOrbConn then desyncErrorOrbConn:Disconnect(); desyncErrorOrbConn = nil end
+    local animConnection
+    local prevSpeed, prevJump, prevBypass, prevSpin, prevPath, prevAimbot
+    local function getStealSpeed()
+        if SpeedBooster and SpeedBooster.StealSpeed then return SpeedBooster.StealSpeed end
+        if ConfigData and ConfigData.stealSpeed then return ConfigData.stealSpeed end
+        return 29.6
     end
-
-    local function desyncCreateErrorOrb()
-        if desyncErrorOrbActive then return end
-        desyncErrorOrbActive = true
-        for _, ghost in pairs(desyncServerGhosts) do
-            if ghost and ghost.Parent then ghost:Destroy() end
-        end
-        desyncServerGhosts = {}
-        local sg = Instance.new("ScreenGui")
-        sg.Name = "DesyncErrorOrbGui"
-        sg.ResetOnSpawn = false
-        sg.Parent = player.PlayerGui
-        local fr = Instance.new("Frame")
-        fr.Size = UDim2.new(0, 500, 0, 60)
-        fr.Position = UDim2.new(0.5, -250, 0.3, 0)
-        fr.BackgroundTransparency = 1
-        fr.BorderSizePixel = 0
-        fr.Parent = sg
-        local l1 = Instance.new("TextLabel")
-        l1.Size = UDim2.new(1, 0, 0.5, 0)
-        l1.BackgroundTransparency = 1
-        l1.Text = "ERROR CAUSED BY PLAYER DEATH"
-        l1.TextColor3 = Color3.fromRGB(255, 0, 0)
-        l1.TextStrokeTransparency = 0
-        l1.TextStrokeColor3 = Color3.new(0, 0, 0)
-        l1.Font = Enum.Font.SourceSansBold
-        l1.TextScaled = true
-        l1.Parent = fr
-        local l2 = Instance.new("TextLabel")
-        l2.Size = UDim2.new(1, 0, 0.5, 0)
-        l2.Position = UDim2.new(0, 0, 0.5, 0)
-        l2.BackgroundTransparency = 1
-        l2.Text = "MUST RESET TO FIX ERROR"
-        l2.TextColor3 = Color3.fromRGB(255, 0, 0)
-        l2.TextStrokeTransparency = 0
-        l2.TextStrokeColor3 = Color3.new(0, 0, 0)
-        l2.Font = Enum.Font.SourceSansBold
-        l2.TextScaled = true
-        l2.Parent = fr
-        desyncErrorOrb = sg
-    end
-
-    local function desyncCreateServerGhost(position)
-        if not desyncGhostEnabled or desyncErrorOrbActive then return end
-        local now = tick()
-        if now - desyncLastLagbackTime < 0.05 then return end
-        desyncLastLagbackTime = now
-        if now - desyncLagbackWindowStart > 1 then
-            desyncLagbackCount = 0
-            desyncLagbackWindowStart = now
-        end
-        desyncLagbackCount = desyncLagbackCount + 1
-        if desyncLagbackCount >= 7 then
-            desyncCreateErrorOrb()
-            return
-        end
-        for _, g in pairs(desyncServerGhosts) do
-            if g and g.Parent then g:Destroy() end
-        end
-        desyncServerGhosts = {}
-        local sg = Instance.new("ScreenGui")
-        sg.Name = "DesyncLagbackNotif"
-        sg.ResetOnSpawn = false
-        sg.Parent = player.PlayerGui
-        local sl = Instance.new("TextLabel")
-        sl.Size = UDim2.new(0, 500, 0, 30)
-        sl.Position = UDim2.new(0.5, -250, 0.15, 0)
-        sl.BackgroundTransparency = 1
-        sl.Text = "LAGBACK DETECTED"
-        sl.TextColor3 = Color3.fromRGB(255, 0, 0)
-        sl.TextStrokeTransparency = 0
-        sl.TextStrokeColor3 = Color3.new(0, 0, 0)
-        sl.Font = Enum.Font.SourceSansBold
-        sl.TextScaled = true
-        sl.Parent = sg
-        local sw = Instance.new("TextLabel")
-        sw.Size = UDim2.new(0, 650, 0, 25)
-        sw.Position = UDim2.new(0.5, -325, 0.15, 32)
-        sw.BackgroundTransparency = 1
-        sw.Text = "DISABLE DESYNC NOW OR ANTICHEAT WILL KILL YOU"
-        sw.TextColor3 = Color3.fromRGB(200, 200, 200)
-        sw.TextStrokeTransparency = 0
-        sw.TextStrokeColor3 = Color3.new(0, 0, 0)
-        sw.Font = Enum.Font.SourceSansBold
-        sw.TextScaled = true
-        sw.Parent = sg
-        task.delay(1.5, function()
-            if sg and sg.Parent then sg:Destroy() end
-        end)
-        local ghost = Instance.new("Part")
-        ghost.Name = "DesyncLagbackGhost"
-        ghost.Shape = Enum.PartType.Ball
-        ghost.Size = Vector3.new(3, 3, 3)
-        ghost.Color = Color3.fromRGB(255, 0, 0)
-        ghost.Material = Enum.Material.Glass
-        ghost.Transparency = 0.3
-        ghost.CanCollide = false
-        ghost.Anchored = true
-        ghost.CastShadow = false
-        ghost.Position = position + Vector3.new(0, 5, 0)
-        ghost.Parent = Workspace.CurrentCamera
-        local bb = Instance.new("BillboardGui")
-        bb.Size = UDim2.new(0, 400, 0, 60)
-        bb.StudsOffset = Vector3.new(0, 4, 0)
-        bb.AlwaysOnTop = true
-        bb.Parent = ghost
-        local bl = Instance.new("TextLabel")
-        bl.Size = UDim2.new(1, 0, 0, 25)
-        bl.BackgroundTransparency = 1
-        bl.Text = "LAGBACK DETECTED"
-        bl.TextColor3 = Color3.fromRGB(255, 0, 0)
-        bl.TextStrokeTransparency = 0
-        bl.TextStrokeColor3 = Color3.new(0, 0, 0)
-        bl.Font = Enum.Font.SourceSansBold
-        bl.TextScaled = true
-        bl.Parent = bb
-        table.insert(desyncServerGhosts, ghost)
-    end
-
-    local function desyncClearAllGhosts()
-        for _, ghost in pairs(desyncServerGhosts) do
-            pcall(function() if ghost and ghost.Parent then ghost:Destroy() end end)
-        end
-        desyncServerGhosts = {}
-        desyncClearErrorOrb()
-        desyncLagbackCount = 0
-        desyncLastLagbackTime = 0
-        pcall(function()
-            for _, gui in pairs(player.PlayerGui:GetChildren()) do
-                if gui.Name == "DesyncLagbackNotif" or gui.Name == "DesyncErrorOrbGui" then gui:Destroy() end
-            end
-        end)
-        pcall(function()
-            if Workspace.CurrentCamera then
-                for _, c in pairs(Workspace.CurrentCamera:GetChildren()) do
-                    if c.Name == "DesyncLagbackGhost" then c:Destroy() end
-                end
-            end
-        end)
-    end
-
-    local function desyncRemoveFolders()
-        local pf = Workspace:FindFirstChild(player.Name)
-        if not pf then return end
-        local dr = pf:FindFirstChild("DoubleRig")
-        if dr then
-            local rr = dr:FindFirstChild("HumanoidRootPart") or dr:FindFirstChildWhichIsA("BasePart")
-            if rr and desyncGhostEnabled then desyncCreateServerGhost(rr.Position) end
-            dr:Destroy()
-        end
-        local cs = pf:FindFirstChild("Constraints")
-        if cs then cs:Destroy() end
-        local conn = pf.ChildAdded:Connect(function(child)
-            if child.Name == "DoubleRig" then
-                task.defer(function()
-                    local rr = child:FindFirstChild("HumanoidRootPart") or child:FindFirstChildWhichIsA("BasePart")
-                    if rr and desyncGhostEnabled then desyncCreateServerGhost(rr.Position) end
-                    child:Destroy()
-                end)
-            elseif child.Name == "Constraints" then
-                child:Destroy()
-            end
-        end)
-        table.insert(desyncFolderConns, conn)
-    end
-
-    local function desyncDoClone()
-        local character = player.Character
-        if character and character:FindFirstChild("Humanoid") and character.Humanoid.Health > 0 then
-            desyncHip = character.Humanoid.HipHeight
-            desyncOldRoot = character:FindFirstChild("HumanoidRootPart")
-            if not desyncOldRoot or not desyncOldRoot.Parent then return false end
-            for _, c in pairs(desyncOldRoot:GetChildren()) do
-                if c:IsA("Attachment") and (c.Name:find("Beam") or c.Name:find("Attach")) then c:Destroy() end
-            end
-            for _, c in pairs(desyncOldRoot:GetChildren()) do
-                if c:IsA("Beam") then c:Destroy() end
-            end
-            local tmp = Instance.new("Model")
-            tmp.Parent = game
-            character.Parent = tmp
-            desyncClone = desyncOldRoot:Clone()
-            desyncClone.Parent = character
-            desyncOldRoot.Parent = Workspace.CurrentCamera
-            desyncClone.CFrame = desyncOldRoot.CFrame
-            character.PrimaryPart = desyncClone
-            character.Parent = Workspace
-            for _, v in pairs(character:GetDescendants()) do
-                if v:IsA("Weld") or v:IsA("Motor6D") then
-                    if v.Part0 == desyncOldRoot then v.Part0 = desyncClone end
-                    if v.Part1 == desyncOldRoot then v.Part1 = desyncClone end
-                end
-            end
-            tmp:Destroy()
-            return true
-        end
-        return false
-    end
-
-    local function desyncRevertClone()
-        local character = player.Character
-        if not desyncOldRoot or not desyncOldRoot:IsDescendantOf(Workspace) or not character or character.Humanoid.Health <= 0 then
-            return
-        end
-        local tmp = Instance.new("Model")
-        tmp.Parent = game
-        character.Parent = tmp
-        desyncOldRoot.Parent = character
-        character.PrimaryPart = desyncOldRoot
-        character.Parent = Workspace
-        desyncOldRoot.CanCollide = true
-        for _, v in pairs(character:GetDescendants()) do
-            if v:IsA("Weld") or v:IsA("Motor6D") then
-                if v.Part0 == desyncClone then v.Part0 = desyncOldRoot end
-                if v.Part1 == desyncClone then v.Part1 = desyncOldRoot end
-            end
-        end
-        if desyncClone then
-            local p = desyncClone.CFrame
-            desyncClone:Destroy()
-            desyncClone = nil
-            desyncOldRoot.CFrame = p
-        end
-        desyncOldRoot = nil
-        if character and character.Humanoid then
-            character.Humanoid.HipHeight = desyncHip
-        end
-        desyncClearAllGhosts()
-    end
-
-    local function desyncAnimTrickery()
-        local character = player.Character
-        if character and character:FindFirstChild("Humanoid") and character.Humanoid.Health > 0 then
-            local anim = Instance.new("Animation")
-            anim.AnimationId = "http://www.roblox.com/asset/?id=18537363391"
-            local humanoid = character.Humanoid
-            local animator = humanoid:FindFirstChild("Animator") or Instance.new("Animator", humanoid)
-            local animTrack = animator:LoadAnimation(anim)
-            animTrack.Priority = Enum.AnimationPriority.Action4
-            animTrack:Play(0, 1, 0)
-            anim:Destroy()
-            table.insert(desyncTracks, animTrack)
-            animTrack.Stopped:Connect(function()
-                if desyncAnimPlaying then desyncAnimTrickery() end
-            end)
-            task.delay(0, function()
-                animTrack.TimePosition = 0.7
-                task.delay(0.3, function()
-                    if animTrack then animTrack:AdjustSpeed(math.huge) end
-                end)
-            end)
-        end
-    end
-
-    local function desyncTurnOff()
-        desyncClearAllGhosts()
-        if not desyncAnimPlaying then return end
-        local character = player.Character
-        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-        desyncAnimPlaying = false
-        desyncEnabled = false
-        for _, t in pairs(desyncTracks) do pcall(function() t:Stop() end) end
-        desyncTracks = {}
-        if desyncConnection then desyncConnection:Disconnect(); desyncConnection = nil end
-        for _, c in ipairs(desyncFolderConns) do if c then c:Disconnect() end end
-        desyncFolderConns = {}
-        desyncRevertClone()
-        desyncClearAllGhosts()
-        if humanoid then
-            pcall(function() humanoid:ChangeState(Enum.HumanoidStateType.GettingUp) end)
-        end
-        DesyncButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    end
-
-    local function desyncTurnOn()
-        if desyncAnimPlaying then return end
-        local character = player.Character
-        if not character then return end
-        local humanoid = character:FindFirstChildOfClass("Humanoid")
-        if not humanoid then return end
-        desyncAnimPlaying = true
-        desyncEnabled = true
-        DesyncButton.BackgroundColor3 = Color3.fromRGB(120, 60, 255)
-        desyncTracks = {}
-        desyncRemoveFolders()
-        local success = desyncDoClone()
-        if success then
-            task.wait(0.05)
-            desyncAnimTrickery()
-            local lastSetPosition = nil
-            local skipFrames = 5
-            desyncConnection = RunService.PreSimulation:Connect(function()
-                if character and character:FindFirstChild("Humanoid") and character.Humanoid.Health > 0 and desyncOldRoot then
-                    local root = character.PrimaryPart or character:FindFirstChild("HumanoidRootPart")
-                    if root then
-                        if skipFrames > 0 then
-                            skipFrames = skipFrames - 1
-                            lastSetPosition = nil
-                        elseif lastSetPosition and desyncGhostEnabled then
-                            local currentPos = desyncOldRoot.Position
-                            local jumpDist = (currentPos - lastSetPosition).Magnitude
-                            if jumpDist > 3 and not _G.DesyncRecoveryInProgress then
-                                lastSetPosition = nil
-                                desyncCreateServerGhost(currentPos)
-                                if DESYNC_SETTINGS.AutoRecoverLagback then
-                                    _G.DesyncRecoveryInProgress = true
-                                    task.spawn(function()
-                                        pcall(desyncTurnOff)
-                                        task.wait(0.5)
-                                        pcall(desyncTurnOn)
-                                        _G.DesyncRecoveryInProgress = false
-                                    end)
-                                end
-                            end
-                        end
-                        if desyncClone then desyncClone.CanCollide = false end
-                        for _, c in pairs(desyncOldRoot:GetChildren()) do
-                            if c:IsA("Attachment") or c:IsA("Beam") then c:Destroy() end
-                        end
-                        local rotAngle = DESYNC_SETTINGS.InvisStealAngle
-                        local sa = DESYNC_SETTINGS.SinkSliderValue * 0.5
-                        local cf = root.CFrame - Vector3.new(0, sa, 0)
-                        desyncOldRoot.CFrame = cf * CFrame.Angles(math.rad(rotAngle), 0, 0)
-                        desyncOldRoot.AssemblyLinearVelocity = root.AssemblyLinearVelocity
-                        desyncOldRoot.CanCollide = false
-                        lastSetPosition = desyncOldRoot.Position
-                    end
-                end
-            end)
-        end
-    end
-
-    -- Character respawn cleanup for desync
-    player.CharacterAdded:Connect(function(newChar)
-        desyncClearErrorOrb()
-        desyncClearAllGhosts()
-        desyncLagbackCount = 0
-        pcall(function()
-            for _, c in pairs(Workspace.CurrentCamera:GetChildren()) do
-                if c:IsA("BasePart") and c.Name == "HumanoidRootPart" then c:Destroy() end
-            end
-        end)
-        if desyncOldRoot then pcall(function() desyncOldRoot:Destroy() end); desyncOldRoot = nil end
-        if desyncClone then pcall(function() desyncClone:Destroy() end); desyncClone = nil end
-        desyncAnimPlaying = false
-        desyncEnabled = false
-        DesyncButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-        task.wait(0.2)
-        local camera = Workspace.CurrentCamera
-        if camera and newChar then
-            local h = newChar:FindFirstChildOfClass("Humanoid")
-            if h then
-                camera.CameraSubject = h
-                camera.CameraType = Enum.CameraType.Custom
-            end
-        end
-    end)
-
         -- ✅ LAGGER Button (TOP)
         local LaggerButton = Instance.new("TextButton")
         LaggerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
@@ -4757,282 +4346,35 @@ function createRightButtons(device)
         LaggerGear.MouseButton1Click:Connect(function()
             LaggerSettings.Visible = not LaggerSettings.Visible
         end)
-    DesyncButton.MouseButton1Click:Connect(function()
-        if desyncAnimPlaying then
-            desyncTurnOff()
-        else
-            desyncTurnOn()
+    local function getHumanoid()
+        local char = player.Character or player.CharacterAdded:Wait()
+        return char:WaitForChild("Humanoid")
+    end
+    local function stopAnims(hum)
+        for _, track in pairs(hum:GetPlayingAnimationTracks()) do track:Stop() end
+    end
+    local function setOtherPlayersDesync(state)
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= player and plr.Character and plr.Character:FindFirstChild("Humanoid") then
+                if raknet and raknet.desync then pcall(function() raknet.desync(state, plr) end) end
+            end
         end
-    end)
-
-    -- ⚙ Desync Gear Button
-    local DesyncGear = Instance.new("TextButton")
-    DesyncGear.Size = UDim2.new(0, 18, 0, 18)
-    DesyncGear.Position = UDim2.new(1, -16, 0, -2)
-    DesyncGear.BackgroundTransparency = 1
-    DesyncGear.Text = "⚙"
-    DesyncGear.TextColor3 = Color3.fromRGB(200, 200, 200)
-    DesyncGear.Font = Enum.Font.GothamBold
-    DesyncGear.TextSize = 14
-    DesyncGear.ZIndex = 3
-    DesyncGear.Parent = DesyncButton
-
-    -- ═══════════════════════════════════════════════════════
-    -- ✅ DESYNC SETTINGS PANEL (Invisible Steal)
-    -- ═══════════════════════════════════════════════════════
-
-    local DesyncSettings = Instance.new("Frame")
-    DesyncSettings.Name = "DesyncSettings"
-    DesyncSettings.Size = UDim2.new(0, 210, 0, 230)
-    DesyncSettings.Position = UDim2.new(0.5, -105, 0.3, 0)
-    DesyncSettings.BackgroundColor3 = Color3.fromRGB(14, 14, 14)
-    DesyncSettings.BackgroundTransparency = 0.05
-    DesyncSettings.Visible = false
-    DesyncSettings.Active = true
-    DesyncSettings.Draggable = true
-    DesyncSettings.Parent = ScreenGui
-    DesyncSettings.ZIndex = 10
-
-    Instance.new("UICorner", DesyncSettings).CornerRadius = UDim.new(0, 8)
-    local DSBlackStroke = Instance.new("UIStroke", DesyncSettings)
-    DSBlackStroke.Color = Color3.fromRGB(0, 0, 0)
-    DSBlackStroke.Thickness = 5
-    DSBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    local DSStroke = Instance.new("UIStroke", DesyncSettings)
-    DSStroke.Color = Color3.fromRGB(255, 255, 255)
-    DSStroke.Thickness = 2.8
-    DSStroke.Transparency = 0.3
-    DSStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    DSStroke.ZIndex = 2
-    local DSWaveGrad = Instance.new("UIGradient")
-    DSWaveGrad.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
-    DSWaveGrad.Transparency = NumberSequence.new({
-        NumberSequenceKeypoint.new(0, 1),
-        NumberSequenceKeypoint.new(0.45, 0),
-        NumberSequenceKeypoint.new(0.55, 0),
-        NumberSequenceKeypoint.new(1, 1)
-    })
-    DSWaveGrad.Rotation = 0
-    DSWaveGrad.Parent = DSStroke
-    TweenService:Create(DSStroke, TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Thickness = 4.5, Transparency = 0.05}):Play()
-    RunService.Heartbeat:Connect(function(dt) pcall(function() DSWaveGrad.Rotation = (DSWaveGrad.Rotation + 180 * dt) % 360 end) end)
-
-    local DSTitle = Instance.new("TextLabel")
-    DSTitle.Size = UDim2.new(1, 0, 0, 30)
-    DSTitle.BackgroundTransparency = 1
-    DSTitle.Text = "⚙ Desync Settings"
-    DSTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-    DSTitle.Font = Enum.Font.GothamBold
-    DSTitle.TextSize = 14
-    DSTitle.Parent = DesyncSettings
-    DSTitle.ZIndex = 11
-
-    local DSClose = Instance.new("TextButton")
-    DSClose.Size = UDim2.new(0, 24, 0, 24)
-    DSClose.Position = UDim2.new(1, -28, 0, 3)
-    DSClose.BackgroundTransparency = 1
-    DSClose.Text = "✕"
-    DSClose.TextColor3 = Color3.fromRGB(255, 80, 80)
-    DSClose.Font = Enum.Font.GothamBold
-    DSClose.TextSize = 14
-    DSClose.Parent = DesyncSettings
-    DSClose.ZIndex = 11
-    DSClose.MouseButton1Click:Connect(function() DesyncSettings.Visible = false end)
-
-    -- Rotation row
-    local DSRotLbl = Instance.new("TextLabel")
-    DSRotLbl.Size = UDim2.new(0.5, 0, 0, 25)
-    DSRotLbl.Position = UDim2.new(0, 10, 0, 35)
-    DSRotLbl.BackgroundTransparency = 1
-    DSRotLbl.Text = "Rotation"
-    DSRotLbl.TextColor3 = Color3.fromRGB(220, 220, 220)
-    DSRotLbl.Font = Enum.Font.Gotham
-    DSRotLbl.TextSize = 11
-    DSRotLbl.TextXAlignment = Enum.TextXAlignment.Left
-    DSRotLbl.Parent = DesyncSettings
-    DSRotLbl.ZIndex = 11
-
-    local DSRotVal = Instance.new("TextLabel")
-    DSRotVal.Size = UDim2.new(0, 40, 0, 25)
-    DSRotVal.Position = UDim2.new(1, -90, 0, 35)
-    DSRotVal.BackgroundTransparency = 1
-    DSRotVal.Text = tostring(DESYNC_SETTINGS.InvisStealAngle)
-    DSRotVal.TextColor3 = Color3.fromRGB(138, 43, 226)
-    DSRotVal.Font = Enum.Font.GothamBold
-    DSRotVal.TextSize = 13
-    DSRotVal.Parent = DesyncSettings
-    DSRotVal.ZIndex = 11
-
-    local DSRotMinus = Instance.new("TextButton")
-    DSRotMinus.Size = UDim2.new(0, 22, 0, 22)
-    DSRotMinus.Position = UDim2.new(1, -48, 0, 37)
-    DSRotMinus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    DSRotMinus.Text = "-"
-    DSRotMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
-    DSRotMinus.Font = Enum.Font.GothamBold
-    DSRotMinus.TextSize = 14
-    DSRotMinus.Parent = DesyncSettings
-    DSRotMinus.ZIndex = 11
-    Instance.new("UICorner", DSRotMinus).CornerRadius = UDim.new(0, 6)
-
-    local DSRotPlus = Instance.new("TextButton")
-    DSRotPlus.Size = UDim2.new(0, 22, 0, 22)
-    DSRotPlus.Position = UDim2.new(1, -22, 0, 37)
-    DSRotPlus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    DSRotPlus.Text = "+"
-    DSRotPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
-    DSRotPlus.Font = Enum.Font.GothamBold
-    DSRotPlus.TextSize = 14
-    DSRotPlus.Parent = DesyncSettings
-    DSRotPlus.ZIndex = 11
-    Instance.new("UICorner", DSRotPlus).CornerRadius = UDim.new(0, 6)
-
-    DSRotMinus.MouseButton1Click:Connect(function()
-        DESYNC_SETTINGS.InvisStealAngle = math.max(180, DESYNC_SETTINGS.InvisStealAngle - 5)
-        DSRotVal.Text = tostring(DESYNC_SETTINGS.InvisStealAngle)
-    end)
-    DSRotPlus.MouseButton1Click:Connect(function()
-        DESYNC_SETTINGS.InvisStealAngle = math.min(360, DESYNC_SETTINGS.InvisStealAngle + 5)
-        DSRotVal.Text = tostring(DESYNC_SETTINGS.InvisStealAngle)
-    end)
-
-    -- Depth row
-    local DSDepthLbl = Instance.new("TextLabel")
-    DSDepthLbl.Size = UDim2.new(0.5, 0, 0, 25)
-    DSDepthLbl.Position = UDim2.new(0, 10, 0, 65)
-    DSDepthLbl.BackgroundTransparency = 1
-    DSDepthLbl.Text = "Depth"
-    DSDepthLbl.TextColor3 = Color3.fromRGB(220, 220, 220)
-    DSDepthLbl.Font = Enum.Font.Gotham
-    DSDepthLbl.TextSize = 11
-    DSDepthLbl.TextXAlignment = Enum.TextXAlignment.Left
-    DSDepthLbl.Parent = DesyncSettings
-    DSDepthLbl.ZIndex = 11
-
-    local DSDepthVal = Instance.new("TextLabel")
-    DSDepthVal.Size = UDim2.new(0, 40, 0, 25)
-    DSDepthVal.Position = UDim2.new(1, -90, 0, 65)
-    DSDepthVal.BackgroundTransparency = 1
-    DSDepthVal.Text = tostring(DESYNC_SETTINGS.SinkSliderValue)
-    DSDepthVal.TextColor3 = Color3.fromRGB(138, 43, 226)
-    DSDepthVal.Font = Enum.Font.GothamBold
-    DSDepthVal.TextSize = 13
-    DSDepthVal.Parent = DesyncSettings
-    DSDepthVal.ZIndex = 11
-
-    local DSDepthMinus = Instance.new("TextButton")
-    DSDepthMinus.Size = UDim2.new(0, 22, 0, 22)
-    DSDepthMinus.Position = UDim2.new(1, -48, 0, 67)
-    DSDepthMinus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    DSDepthMinus.Text = "-"
-    DSDepthMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
-    DSDepthMinus.Font = Enum.Font.GothamBold
-    DSDepthMinus.TextSize = 14
-    DSDepthMinus.Parent = DesyncSettings
-    DSDepthMinus.ZIndex = 11
-    Instance.new("UICorner", DSDepthMinus).CornerRadius = UDim.new(0, 6)
-
-    local DSDepthPlus = Instance.new("TextButton")
-    DSDepthPlus.Size = UDim2.new(0, 22, 0, 22)
-    DSDepthPlus.Position = UDim2.new(1, -22, 0, 67)
-    DSDepthPlus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    DSDepthPlus.Text = "+"
-    DSDepthPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
-    DSDepthPlus.Font = Enum.Font.GothamBold
-    DSDepthPlus.TextSize = 14
-    DSDepthPlus.Parent = DesyncSettings
-    DSDepthPlus.ZIndex = 11
-    Instance.new("UICorner", DSDepthPlus).CornerRadius = UDim.new(0, 6)
-
-    DSDepthMinus.MouseButton1Click:Connect(function()
-        DESYNC_SETTINGS.SinkSliderValue = math.max(0.5, DESYNC_SETTINGS.SinkSliderValue - 0.5)
-        DSDepthVal.Text = tostring(DESYNC_SETTINGS.SinkSliderValue)
-    end)
-    DSDepthPlus.MouseButton1Click:Connect(function()
-        DESYNC_SETTINGS.SinkSliderValue = math.min(10, DESYNC_SETTINGS.SinkSliderValue + 0.5)
-        DSDepthVal.Text = tostring(DESYNC_SETTINGS.SinkSliderValue)
-    end)
-
-    -- Auto Fix Lagback toggle
-    local DSAutoFixBtn = Instance.new("TextButton")
-    DSAutoFixBtn.Size = UDim2.new(0, 190, 0, 26)
-    DSAutoFixBtn.Position = UDim2.new(0, 10, 0, 100)
-    DSAutoFixBtn.BackgroundColor3 = DESYNC_SETTINGS.AutoRecoverLagback and Color3.fromRGB(50, 180, 50) or Color3.fromRGB(30, 30, 30)
-    DSAutoFixBtn.Text = "Auto Fix Lagback: " .. (DESYNC_SETTINGS.AutoRecoverLagback and "ON" or "OFF")
-    DSAutoFixBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
-    DSAutoFixBtn.Font = Enum.Font.GothamBold
-    DSAutoFixBtn.TextSize = 11
-    DSAutoFixBtn.Parent = DesyncSettings
-    DSAutoFixBtn.ZIndex = 11
-    Instance.new("UICorner", DSAutoFixBtn).CornerRadius = UDim.new(0, 6)
-
-    DSAutoFixBtn.MouseButton1Click:Connect(function()
-        DESYNC_SETTINGS.AutoRecoverLagback = not DESYNC_SETTINGS.AutoRecoverLagback
-        DSAutoFixBtn.Text = "Auto Fix Lagback: " .. (DESYNC_SETTINGS.AutoRecoverLagback and "ON" or "OFF")
-        DSAutoFixBtn.BackgroundColor3 = DESYNC_SETTINGS.AutoRecoverLagback and Color3.fromRGB(50, 180, 50) or Color3.fromRGB(30, 30, 30)
-    end)
-
-    -- Save & Reset
-    local DSSave = Instance.new("TextButton")
-    DSSave.Size = UDim2.new(0.44, 0, 0, 28)
-    DSSave.Position = UDim2.new(0.03, 0, 0, 140)
-    DSSave.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
-    DSSave.Text = "💾 Save"
-    DSSave.TextColor3 = Color3.fromRGB(255, 255, 255)
-    DSSave.Font = Enum.Font.GothamBold
-    DSSave.TextSize = 12
-    DSSave.Parent = DesyncSettings
-    DSSave.ZIndex = 11
-    Instance.new("UICorner", DSSave).CornerRadius = UDim.new(0, 8)
-
-    local DSReset = Instance.new("TextButton")
-    DSReset.Size = UDim2.new(0.44, 0, 0, 28)
-    DSReset.Position = UDim2.new(0.53, 0, 0, 140)
-    DSReset.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-    DSReset.Text = "🔄 Reset"
-    DSReset.TextColor3 = Color3.fromRGB(255, 255, 255)
-    DSReset.Font = Enum.Font.GothamBold
-    DSReset.TextSize = 12
-    DSReset.Parent = DesyncSettings
-    DSReset.ZIndex = 11
-    Instance.new("UICorner", DSReset).CornerRadius = UDim.new(0, 8)
-
-    local DSStatus = Instance.new("TextLabel")
-    DSStatus.Size = UDim2.new(1, 0, 0, 20)
-    DSStatus.Position = UDim2.new(0, 0, 0, 175)
-    DSStatus.BackgroundTransparency = 1
-    DSStatus.Text = ""
-    DSStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
-    DSStatus.Font = Enum.Font.Gotham
-    DSStatus.TextSize = 11
-    DSStatus.Parent = DesyncSettings
-    DSStatus.ZIndex = 11
-
-    DSSave.MouseButton1Click:Connect(function()
-        ConfigData.desyncAngle = DESYNC_SETTINGS.InvisStealAngle
-        ConfigData.desyncSink = DESYNC_SETTINGS.SinkSliderValue
-        ConfigData.desyncAutoRecover = DESYNC_SETTINGS.AutoRecoverLagback
-        SaveConfig()
-        DSStatus.Text = "✅ Saved!"
-        DSStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
-        task.delay(2, function() DSStatus.Text = "" end)
-    end)
-
-    DSReset.MouseButton1Click:Connect(function()
-        DESYNC_SETTINGS.InvisStealAngle = 233
-        DESYNC_SETTINGS.SinkSliderValue = 5
-        DESYNC_SETTINGS.AutoRecoverLagback = true
-        DSRotVal.Text = "233"
-        DSDepthVal.Text = "5"
-        DSAutoFixBtn.Text = "Auto Fix Lagback: ON"
-        DSAutoFixBtn.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
-        DSStatus.Text = "🔄 Reset!"
-        DSStatus.TextColor3 = Color3.fromRGB(255, 200, 80)
-        task.delay(2, function() DSStatus.Text = "" end)
-    end)
-
-    DesyncGear.MouseButton1Click:Connect(function()
-        DesyncSettings.Visible = not DesyncSettings.Visible
+    end
+    DesyncButton.MouseButton1Click:Connect(function()
+        desyncEnabled = not desyncEnabled
+        local humanoid = getHumanoid()
+        if desyncEnabled then
+            DesyncButton.BackgroundColor3 = Color3.fromRGB(120, 60, 255)
+            stopAnims(humanoid)
+            if animConnection then animConnection:Disconnect() animConnection = nil end
+            animConnection = humanoid.AnimationPlayed:Connect(function(t) t:Stop() end)
+            if raknet and raknet.desync then raknet.desync(true) end
+            print("leak by Lacsy on dc\nLeak Royals desync by Lacsy")
+        else
+            DesyncButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            if animConnection then animConnection:Disconnect() animConnection = nil end
+            if raknet and raknet.desync then raknet.desync(false) end
+        end
     end)
 
     -- ✅ TRACK PLAYER Button (RIGHT SIDE - GRAY!)
