@@ -762,99 +762,9 @@ autoStealLoop() -- ✅ STARTS IMMEDIATELY!
 
 local fpsBoosterActive = false
 
-local DesyncSystem = {
-    Enabled = false,
-    AnimationConn = nil,
-    SpeedConn = nil,
-    LagConn = nil,
-}
-
-local function optimizeSystem()
-    pcall(function()
-        settings().Network.IncomingReplicationLag = -1000
-    end)
-
-    pcall(function()
-        Lighting.GlobalShadows = false
-    end)
-
-    for _, v in pairs(game:GetDescendants()) do
-        pcall(function()
-            if v:IsA("Decal") or v:IsA("Texture") then
-                v:Destroy()
-            elseif v:IsA("BasePart") and not v:IsDescendantOf(Players) then
-                v.Material = Enum.Material.SmoothPlastic
-                v.CastShadow = false
-            end
-        end)
-    end
-end
-
-local function stopDesyncSystem()
-    DesyncSystem.Enabled = false
-    if DesyncSystem.AnimationConn then DesyncSystem.AnimationConn:Disconnect() DesyncSystem.AnimationConn = nil end
-    if DesyncSystem.SpeedConn then DesyncSystem.SpeedConn:Disconnect() DesyncSystem.SpeedConn = nil end
-    if DesyncSystem.LagConn then DesyncSystem.LagConn:Disconnect() DesyncSystem.LagConn = nil end
-    pcall(function()
-        if raknet and raknet.desync then
-            raknet.desync(false)
-        end
-    end)
-end
-
-local function startDesyncSystem()
-    stopDesyncSystem()
-    DesyncSystem.Enabled = true
-    optimizeSystem()
-
-    pcall(function()
-        if raknet and raknet.desync then
-            raknet.desync(true)
-        end
-    end)
-
-    local localCharacter = player.Character
-    local localHumanoid = localCharacter and localCharacter:FindFirstChildOfClass("Humanoid")
-    if localHumanoid then
-        for _, track in pairs(localHumanoid:GetPlayingAnimationTracks()) do
-            track:Stop()
-        end
-        DesyncSystem.AnimationConn = localHumanoid.AnimationPlayed:Connect(function(track)
-            track:Stop()
-        end)
-    end
-
-    DesyncSystem.SpeedConn = RunService.Heartbeat:Connect(function()
-        if not DesyncSystem.Enabled then return end
-        local char = player.Character
-        local humLocal = char and char:FindFirstChildOfClass("Humanoid")
-        local root = char and char:FindFirstChild("HumanoidRootPart")
-        if not humLocal or not root then return end
-        if humLocal.MoveDirection.Magnitude > 0 then
-            local speed = (humLocal.WalkSpeed < 27) and 53 or 43
-            root.AssemblyLinearVelocity = Vector3.new(
-                humLocal.MoveDirection.X * speed,
-                root.AssemblyLinearVelocity.Y,
-                humLocal.MoveDirection.Z * speed
-            )
-        end
-    end)
-
-    DesyncSystem.LagConn = RunService.RenderStepped:Connect(function()
-        if not DesyncSystem.Enabled then return end
-        local char = player.Character
-        local humLocal = char and char:FindFirstChildOfClass("Humanoid")
-        if humLocal and humLocal.WalkSpeed < 27 then
-            local started = os.clock()
-            while os.clock() - started < 0.09 do end
-        end
-    end)
-end
-
 local function enableFPSBooster()
     if fpsBoosterActive then return end
     fpsBoosterActive = true
-    optimizeSystem()
     
     task.spawn(function()
         for _, obj in pairs(workspace:GetDescendants()) do
@@ -3655,11 +3565,91 @@ function createRightButtons(device)
 
     -- Desync logic
     local desyncEnabled = false
-    local prevSpeed, prevJump, prevBypass, prevSpin, prevPath, prevAimbot
-    local function getStealSpeed()
-        if SpeedBooster and SpeedBooster.StealSpeed then return SpeedBooster.StealSpeed end
-        if ConfigData and ConfigData.stealSpeed then return ConfigData.stealSpeed end
-        return 29.6
+    local laggerEnabled = false
+    local animConnection
+    local desyncHeartbeatConn
+    local desyncRenderConn
+    local desyncOptimized = false
+    local function applyDesyncOptimization()
+        if desyncOptimized then return end
+        desyncOptimized = true
+        pcall(function()
+            settings().Network.IncomingReplicationLag = -1000
+            Lighting.GlobalShadows = false
+        end)
+        task.spawn(function()
+            for _, v in pairs(game:GetDescendants()) do
+                pcall(function()
+                    if v:IsA("Decal") or v:IsA("Texture") then
+                        v:Destroy()
+                    elseif v:IsA("BasePart") and not v:IsDescendantOf(Players) then
+                        v.Material = Enum.Material.SmoothPlastic
+                        v.CastShadow = false
+                    end
+                end)
+            end
+        end)
+    end
+    local function getHumanoid()
+        local char = player.Character or player.CharacterAdded:Wait()
+        return char:WaitForChild("Humanoid")
+    end
+    local function stopAnims(humanoid)
+        for _, track in pairs(humanoid:GetPlayingAnimationTracks()) do
+            track:Stop()
+        end
+    end
+    local function stopDesyncLogic()
+        if animConnection then animConnection:Disconnect() animConnection = nil end
+        if desyncHeartbeatConn then desyncHeartbeatConn:Disconnect() desyncHeartbeatConn = nil end
+        if desyncRenderConn then desyncRenderConn:Disconnect() desyncRenderConn = nil end
+        pcall(function()
+            if raknet and raknet.desync then
+                raknet.desync(false)
+            end
+        end)
+    end
+    local function startDesyncLogic()
+        applyDesyncOptimization()
+        local humanoid = getHumanoid()
+        stopAnims(humanoid)
+        if animConnection then animConnection:Disconnect() end
+        animConnection = humanoid.AnimationPlayed:Connect(function(track)
+            track:Stop()
+        end)
+        pcall(function()
+            if raknet and raknet.desync then
+                raknet.desync(true)
+            end
+        end)
+        if player.Character then
+            pcall(function()
+                player.Character:BreakJoints()
+                local charHum = player.Character:FindFirstChildOfClass("Humanoid")
+                if charHum then
+                    charHum.Health = 0
+                end
+            end)
+        end
+        desyncHeartbeatConn = RunService.Heartbeat:Connect(function()
+            if not desyncEnabled then return end
+            local char = player.Character
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+            if hum and root and hum.MoveDirection.Magnitude > 0 then
+                local speed = (hum.WalkSpeed < 27) and 53 or 43
+                root.AssemblyLinearVelocity = Vector3.new(hum.MoveDirection.X * speed, root.AssemblyLinearVelocity.Y, hum.MoveDirection.Z * speed)
+            end
+        end)
+        desyncRenderConn = RunService.RenderStepped:Connect(function()
+            if not desyncEnabled then return end
+            local char = player.Character
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+            if hum and hum.WalkSpeed < 27 then
+                local startTick = os.clock()
+                while os.clock() - startTick < 0.09 do end
+            end
+        end)
     end
         -- ✅ LAGGER Button (TOP)
         local LaggerButton = Instance.new("TextButton")
@@ -3716,6 +3706,13 @@ function createRightButtons(device)
             end
             return obj
         end
+        local function getmaxvalue(val)
+            local mainvalueifonetable = 499999
+            if type(val) ~= "number" then return nil end
+            return mainvalueifonetable / (val + 2)
+        end
+        local function bomb(tableincrease, tries)
+            local maintable = {}
             local spammedtable = {}
             table.insert(spammedtable, {})
             local z = spammedtable[1]
@@ -3725,15 +3722,20 @@ function createRightButtons(device)
                 z = tableins
             end
             local maximum = getmaxvalue(tableincrease) or 9999999
+            for i = 1, maximum do
                 table.insert(maintable, spammedtable)
                 if i % 5000 == 0 then task.wait() end
-                startDesyncSystem()
+            end
+            local remote = resolveRemote(CUSTOM_REMOTE_PATH)
+            if remote then
+                for i = 1, tries do
                     pcall(function()
                         if remote:IsA("RemoteEvent") or remote:IsA("UnreliableRemoteEvent") then
                             remote:FireServer(maintable)
                         elseif remote:IsA("RemoteFunction") then
                             remote:InvokeServer(maintable)
-                stopDesyncSystem()
+                        end
+                    end)
                 end
             end
         end
@@ -3977,34 +3979,14 @@ function createRightButtons(device)
         LaggerGear.MouseButton1Click:Connect(function()
             LaggerSettings.Visible = not LaggerSettings.Visible
         end)
-    local function getHumanoid()
-        local char = player.Character or player.CharacterAdded:Wait()
-        return char:WaitForChild("Humanoid")
-    end
-    local function stopAnims(hum)
-        for _, track in pairs(hum:GetPlayingAnimationTracks()) do track:Stop() end
-    end
-    local function setOtherPlayersDesync(state)
-        for _, plr in ipairs(Players:GetPlayers()) do
-            if plr ~= player and plr.Character and plr.Character:FindFirstChild("Humanoid") then
-                if raknet and raknet.desync then pcall(function() raknet.desync(state, plr) end) end
-            end
-        end
-    end
     DesyncButton.MouseButton1Click:Connect(function()
         desyncEnabled = not desyncEnabled
-        local humanoid = getHumanoid()
         if desyncEnabled then
             DesyncButton.BackgroundColor3 = Color3.fromRGB(120, 60, 255)
-            stopAnims(humanoid)
-            if animConnection then animConnection:Disconnect() animConnection = nil end
-            animConnection = humanoid.AnimationPlayed:Connect(function(t) t:Stop() end)
-            if raknet and raknet.desync then raknet.desync(true) end
-            print("leak by Lacsy on dc\nLeak Royals desync by Lacsy")
+            startDesyncLogic()
         else
             DesyncButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-            if animConnection then animConnection:Disconnect() animConnection = nil end
-            if raknet and raknet.desync then raknet.desync(false) end
+            stopDesyncLogic()
         end
     end)
 
