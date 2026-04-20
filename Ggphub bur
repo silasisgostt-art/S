@@ -1,147 +1,496 @@
-local C = {
-    P = game:GetService("Players"),
-    RS = game:GetService("RunService"),
-    UIS = game:GetService("UserInputService"),
-    HS = game:GetService("HttpService"),
-    CG = game:GetService("CoreGui"),
-    lp = game:GetService("Players").LocalPlayer
-}
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+local Lighting = game:GetService("Lighting")
+local CoreGui = game:GetService("CoreGui")
 
-local char, hum, hrp
-local function upd() 
-    char = C.lp.Character or C.lp.CharacterAdded:Wait()
-    hum = char:FindFirstChildOfClass("Humanoid")
-    hrp = char:FindFirstChild("HumanoidRootPart")
-end
-upd()
+local player = Players.LocalPlayer
 
--- Configuration & Save System
-local CFG_FILE = "TimCheeseConfig.json"
-local Config = {
-    Float = false, FloatH = 5, FloatS = 3,
-    Speed = false, BSpeed = 27, AntiDie = false
-}
+-- ═══════════════════════════════════════════════════════
+-- GUI SETUP
+-- ═══════════════════════════════════════════════════════
 
-local function saveSettings()
-    if writefile then writefile(CFG_FILE, C.HS:JSONEncode(Config)) end
-end
+local gui = Instance.new("ScreenGui", CoreGui)
+gui.Name = "TIM_CHEESE_GUI"
+gui.ResetOnSpawn = false
 
-local function loadSettings()
-    if isfile and isfile(CFG_FILE) then
-        local ok, data = pcall(C.HS.JSONDecode, C.HS, readfile(CFG_FILE))
-        if ok then for k, v in pairs(data) do Config[k] = v end end
-    end
-end
-loadSettings()
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.fromOffset(270, 0) -- height set after buttons
+main.Position = UDim2.fromScale(0.5, 0.5)
+main.AnchorPoint = Vector2.new(0.5, 0.5)
+main.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
+main.BorderSizePixel = 0
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 12)
+Instance.new("UIStroke", main).Color = Color3.fromRGB(255, 255, 255)
 
--- Anti-Die Logic (Directly from your file)
-local function applyAntiDie()
-    if not hum or not Config.AntiDie then return end
-    hum.BreakJointsOnDeath = false
-    hum:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
-
-    local connection
-    connection = hum:GetPropertyChangedSignal("Health"):Connect(function()
-        if Config.AntiDie and hum.Health <= 0 then
-            hum.Health = hum.MaxHealth
-        elseif not Config.AntiDie then
-            connection:Disconnect()
-        end
-    end)
-end
-
--- Draggable Logic
-local function makeDraggable(frame)
-    local dragging, dragInput, dragStart, startPos
-    frame.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true dragStart = input.Position startPos = frame.Position
-            input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end)
-        end
-    end)
-    C.UIS.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-            local delta = input.Position - dragStart
-            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        end
-    end)
-end
-
--- UI Construction
-local sg = Instance.new("ScreenGui", C.CG)
-local main = Instance.new("Frame", sg)
-main.Size, main.Position = UDim2.new(0, 150, 0, 260), UDim2.new(0.5, -75, 0.4, 0)
-main.BackgroundColor3, main.BorderSizePixel = Color3.fromRGB(18, 18, 18), 0
-Instance.new("UICorner", main)
-makeDraggable(main)
-
+-- Title
 local title = Instance.new("TextLabel", main)
-title.Size, title.Text, title.TextColor3 = UDim2.new(1, 0, 0, 30), "Tim Cheese Hub", Color3.fromRGB(255, 215, 0)
-title.BackgroundTransparency, title.Font, title.TextSize = 1, 3, 16
+title.Size = UDim2.new(1, 0, 0, 34)
+title.BackgroundTransparency = 1
+title.Text = "TIM CHEESE DUELS"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 16
+title.TextColor3 = Color3.new(1, 1, 1)
 
-local scroll = Instance.new("ScrollingFrame", main)
-scroll.Size, scroll.Position, scroll.BackgroundTransparency = UDim2.new(1, -10, 1, -40), UDim2.new(0, 5, 0, 35), 1
-scroll.CanvasSize, scroll.ScrollBarThickness = UDim2.new(0, 0, 0, 300), 0
+-- Button container
+local container = Instance.new("Frame", main)
+container.Size = UDim2.new(1, -20, 1, -44)
+container.Position = UDim2.fromOffset(10, 38)
+container.BackgroundTransparency = 1
 
-local function createToggle(txt, prop, cb)
-    local b = Instance.new("TextButton", scroll)
-    b.Size = UDim2.new(1, -5, 0, 26)
-    local function update()
-        b.Text = txt .. ": " .. (Config[prop] and "ON" or "OFF")
-        b.BackgroundColor3 = Config[prop] and Color3.fromRGB(45, 90, 45) or Color3.fromRGB(35, 35, 35)
-    end
-    b.Position = UDim2.new(0, 2, 0, #scroll:GetChildren() * 30 - 30)
-    b.TextColor3, b.Font, b.TextSize = Color3.new(1, 1, 1), 3, 14
-    Instance.new("UICorner", b)
-    b.MouseButton1Click:Connect(function()
-        Config[prop] = not Config[prop]
-        update()
-        saveSettings()
-        if cb then cb(Config[prop]) end
+local layout = Instance.new("UIListLayout", container)
+layout.Padding = UDim.new(0, 6)
+layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+-- ═══════════════════════════════════════════════════════
+-- BUTTON FACTORY
+-- ═══════════════════════════════════════════════════════
+
+local allButtons = {}
+
+local function makeToggle(name, callback)
+    local active = false
+
+    local btn = Instance.new("TextButton", container)
+    btn.Size = UDim2.new(1, 0, 0, 32)
+    btn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 13
+    btn.Text = name .. ": OFF"
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+
+    btn.MouseButton1Click:Connect(function()
+        active = not active
+        btn.Text = name .. (active and ": ON" or ": OFF")
+        btn.BackgroundColor3 = active and Color3.fromRGB(40, 140, 40) or Color3.fromRGB(30, 30, 35)
+        callback(active)
     end)
-    update()
+
+    table.insert(allButtons, btn)
+    return btn
 end
 
-local function createInput(txt, prop)
-    local f = Instance.new("Frame", scroll)
-    f.Size, f.BackgroundTransparency = UDim2.new(1, -5, 0, 30), 1
-    f.Position = UDim2.new(0, 2, 0, #scroll:GetChildren() * 30 - 30)
-    
-    local l = Instance.new("TextLabel", f)
-    l.Size, l.Text, l.TextColor3, l.TextSize = UDim2.new(0.6, 0, 1, 0), txt, Color3.new(0.7, 0.7, 0.7), 12
-    l.BackgroundTransparency, l.TextXAlignment = 1, 0
-    
-    local t = Instance.new("TextBox", f)
-    t.Size, t.Position, t.BackgroundColor3 = UDim2.new(0.35, 0, 0.7, 0), UDim2.new(0.6, 0, 0.15, 0), Color3.fromRGB(40, 40, 40)
-    t.Text, t.TextColor3 = tostring(Config[prop]), Color3.new(1, 1, 1)
-    Instance.new("UICorner", t)
-    
-    t.FocusLost:Connect(function()
-        local val = tonumber(t.Text)
-        if val then Config[prop] = val saveSettings() else t.Text = tostring(Config[prop]) end
-    end)
-end
+-- ═══════════════════════════════════════════════════════
+-- FEATURE: SPEED BOOST
+-- ═══════════════════════════════════════════════════════
 
--- Add Elements
-createToggle("Anti-Die", "AntiDie", function(v) if v then applyAntiDie() end end)
-createToggle("Float Dodge", "Float")
-createToggle("Speed Boost", "Speed")
-createInput("F-Height", "FloatH")
-createInput("F-Speed", "FloatS")
-createInput("WalkSpeed", "BSpeed")
+local isSpeedOn = false
+local speedAmount = 50
 
--- Logic Loop
-local fCount = 0
-C.RS.Heartbeat:Connect(function(dt)
-    if not hrp or not hum then upd() return end
-    if Config.Speed and hum.MoveDirection.Magnitude > 0 then
-        hrp.AssemblyLinearVelocity = Vector3.new(hum.MoveDirection.X * Config.BSpeed, hrp.AssemblyLinearVelocity.Y, hum.MoveDirection.Z * Config.BSpeed)
-    end
-    if Config.Float then
-        fCount = fCount + dt * Config.FloatS
-        hrp.Velocity = Vector3.new(hrp.Velocity.X, 0, hrp.Velocity.Z)
-        hrp.CFrame = hrp.CFrame * CFrame.new(0, math.sin(fCount) * (Config.FloatH * 0.05), 0)
+makeToggle("Speed", function(v)
+    isSpeedOn = v
+end)
+
+RunService.RenderStepped:Connect(function()
+    if not isSpeedOn then return end
+    local char = player.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if root and hum and hum.MoveDirection.Magnitude > 0 then
+        local dir = hum.MoveDirection.Unit
+        root.AssemblyLinearVelocity = Vector3.new(
+            dir.X * speedAmount,
+            root.AssemblyLinearVelocity.Y,
+            dir.Z * speedAmount
+        )
     end
 end)
 
-if Config.AntiDie then applyAntiDie() end
+-- ═══════════════════════════════════════════════════════
+-- FEATURE: LAGGER
+-- ═══════════════════════════════════════════════════════
+
+local isLagOn = false
+local lagAmount = 0.05
+
+makeToggle("Lagger", function(v)
+    isLagOn = v
+end)
+
+RunService.RenderStepped:Connect(function()
+    if isLagOn then
+        local t = tick()
+        while tick() - t < lagAmount do end
+    end
+end)
+
+-- ═══════════════════════════════════════════════════════
+-- FEATURE: XRAY BASE
+-- ═══════════════════════════════════════════════════════
+
+local XrayBase = { Enabled = false, Original = {}, Conns = {} }
+
+local function isBase(obj)
+    if not (obj:IsA("BasePart") or obj:IsA("MeshPart") or obj:IsA("UnionOperation")) then return false end
+    local n = obj.Name:lower()
+    local p = obj.Parent and obj.Parent.Name:lower() or ""
+    return n:find("base") or n:find("claim") or p:find("base") or p:find("claim")
+end
+
+makeToggle("Xray Base", function(v)
+    XrayBase.Enabled = v
+    if v then
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if isBase(obj) then
+                XrayBase.Original[obj] = obj.LocalTransparencyModifier
+                obj.LocalTransparencyModifier = 0.8
+            end
+        end
+        XrayBase.Conns[1] = workspace.DescendantAdded:Connect(function(obj)
+            if isBase(obj) then
+                XrayBase.Original[obj] = obj.LocalTransparencyModifier
+                obj.LocalTransparencyModifier = 0.8
+            end
+        end)
+    else
+        for _, c in pairs(XrayBase.Conns) do pcall(function() c:Disconnect() end) end
+        XrayBase.Conns = {}
+        for obj, orig in pairs(XrayBase.Original) do
+            pcall(function() obj.LocalTransparencyModifier = orig end)
+        end
+        XrayBase.Original = {}
+    end
+end)
+
+-- ═══════════════════════════════════════════════════════
+-- FEATURE: NO ANIM
+-- ═══════════════════════════════════════════════════════
+
+local NoAnim = { Conns = {} }
+
+makeToggle("No Anim", function(v)
+    if v then
+        local function block(char)
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if not hum then return end
+            for _, t in pairs(hum:GetPlayingAnimationTracks()) do t:Stop() end
+            NoAnim.Conns[char] = hum.AnimationPlayed:Connect(function(t) t:Stop() end)
+        end
+        if player.Character then block(player.Character) end
+        NoAnim.Conns["added"] = player.CharacterAdded:Connect(block)
+    else
+        for _, c in pairs(NoAnim.Conns) do
+            if typeof(c) == "RBXScriptConnection" then c:Disconnect() end
+        end
+        NoAnim.Conns = {}
+    end
+end)
+
+-- ═══════════════════════════════════════════════════════
+-- FEATURE: PLAYER ESP
+-- ═══════════════════════════════════════════════════════
+
+local ESP = { Highlights = {}, Billboards = {}, Conns = {} }
+local ESP_COLOR = Color3.fromRGB(85, 170, 255)
+
+local function addESP(plr)
+    if plr == player then return end
+    local function apply(char)
+        if ESP.Highlights[plr] then pcall(function() ESP.Highlights[plr]:Destroy() end) end
+        if ESP.Billboards[plr] then pcall(function() ESP.Billboards[plr]:Destroy() end) end
+
+        local h = Instance.new("Highlight")
+        h.Adornee = char
+        h.FillColor = ESP_COLOR
+        h.FillTransparency = 0.25
+        h.OutlineColor = ESP_COLOR
+        h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        h.Parent = CoreGui
+        ESP.Highlights[plr] = h
+
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            local bb = Instance.new("BillboardGui")
+            bb.Adornee = hrp
+            bb.AlwaysOnTop = true
+            bb.Size = UDim2.new(0, 100, 0, 20)
+            bb.StudsOffsetWorldSpace = Vector3.new(0, 3, 0)
+            bb.MaxDistance = 600
+            bb.Parent = CoreGui
+            local bg = Instance.new("Frame", bb)
+            bg.Size = UDim2.new(1, 0, 1, 0)
+            bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+            bg.BackgroundTransparency = 0.4
+            Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 6)
+            local txt = Instance.new("TextLabel", bg)
+            txt.Size = UDim2.new(1, 0, 1, 0)
+            txt.BackgroundTransparency = 1
+            txt.Font = Enum.Font.GothamSemibold
+            txt.TextSize = 13
+            txt.TextColor3 = Color3.new(1, 1, 1)
+            txt.TextStrokeTransparency = 0.2
+            txt.Text = plr.DisplayName
+            ESP.Billboards[plr] = bb
+        end
+    end
+    if plr.Character then apply(plr.Character) end
+    table.insert(ESP.Conns, plr.CharacterAdded:Connect(apply))
+end
+
+makeToggle("Player ESP", function(v)
+    if v then
+        for _, p in ipairs(Players:GetPlayers()) do addESP(p) end
+        table.insert(ESP.Conns, Players.PlayerAdded:Connect(addESP))
+        table.insert(ESP.Conns, Players.PlayerRemoving:Connect(function(p)
+            if ESP.Highlights[p] then pcall(function() ESP.Highlights[p]:Destroy() end) ESP.Highlights[p] = nil end
+            if ESP.Billboards[p] then pcall(function() ESP.Billboards[p]:Destroy() end) ESP.Billboards[p] = nil end
+        end))
+    else
+        for _, h in pairs(ESP.Highlights) do pcall(function() h:Destroy() end) end
+        for _, b in pairs(ESP.Billboards) do pcall(function() b:Destroy() end) end
+        for _, c in ipairs(ESP.Conns) do pcall(function() c:Disconnect() end) end
+        ESP.Highlights = {}
+        ESP.Billboards = {}
+        ESP.Conns = {}
+    end
+end)
+
+-- ═══════════════════════════════════════════════════════
+-- FEATURE: SHOW PERFORMANCE (FPS + PING)
+-- ═══════════════════════════════════════════════════════
+
+local Perf = { Gui = nil, Conn = nil }
+
+makeToggle("Show FPS/Ping", function(v)
+    if v then
+        if not Perf.Gui then
+            local Stats = game:GetService("Stats")
+            Perf.Gui = Instance.new("ScreenGui")
+            Perf.Gui.Name = "TIM_Perf"
+            Perf.Gui.ResetOnSpawn = false
+            Perf.Gui.Parent = CoreGui
+            local f = Instance.new("Frame", Perf.Gui)
+            f.Size = UDim2.fromOffset(260, 28)
+            f.Position = UDim2.new(0.5, -130, 0.015, 0)
+            f.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+            f.BackgroundTransparency = 0.45
+            f.BorderSizePixel = 0
+            Instance.new("UICorner", f).CornerRadius = UDim.new(0, 10)
+            local lbl = Instance.new("TextLabel", f)
+            lbl.Size = UDim2.new(1, 0, 1, 0)
+            lbl.BackgroundTransparency = 1
+            lbl.Font = Enum.Font.GothamBold
+            lbl.TextSize = 14
+            lbl.TextColor3 = Color3.fromRGB(85, 170, 255)
+            lbl.Text = "FPS 0 | PING 0ms"
+            local frames, last = 0, tick()
+            Perf.Conn = RunService.RenderStepped:Connect(function()
+                frames = frames + 1
+                if tick() - last >= 1 then
+                    local fps = frames; frames = 0; last = tick()
+                    local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
+                    lbl.Text = "FPS " .. fps .. " | PING " .. ping .. "ms"
+                end
+            end)
+        else
+            Perf.Gui.Enabled = true
+        end
+    else
+        if Perf.Gui then Perf.Gui.Enabled = false end
+        if Perf.Conn then Perf.Conn:Disconnect(); Perf.Conn = nil end
+    end
+end)
+
+-- ═══════════════════════════════════════════════════════
+-- FEATURE: ANTI FPS DEVOURER
+-- ═══════════════════════════════════════════════════════
+
+local FPSDev = { Enabled = false, Conn = nil }
+
+local function cleanChar(char)
+    if not char then return end
+    for _, obj in ipairs(char:GetChildren()) do
+        if obj:IsA("Accessory") or obj:IsA("Shirt") or obj:IsA("Pants") or obj:IsA("ShirtGraphic")
+            or obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam") then
+            pcall(function() obj:Destroy() end)
+        end
+    end
+end
+
+local function enableFPSDev()
+    if FPSDev.Enabled then return end
+    FPSDev.Enabled = true
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p.Character then cleanChar(p.Character) end
+    end
+    FPSDev.Conn = RunService.Heartbeat:Connect(function()
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p.Character then cleanChar(p.Character) end
+        end
+    end)
+end
+
+local function disableFPSDev()
+    FPSDev.Enabled = false
+    if FPSDev.Conn then FPSDev.Conn:Disconnect(); FPSDev.Conn = nil end
+end
+
+makeToggle("Anti FPS Devourer", function(v)
+    if v then enableFPSDev() else disableFPSDev() end
+end)
+
+-- ═══════════════════════════════════════════════════════
+-- FEATURE: OPTIMIZER
+-- ═══════════════════════════════════════════════════════
+
+local OptimizerOn = false
+
+local function enableOptimizer()
+    if OptimizerOn then return end
+    OptimizerOn = true
+    pcall(function()
+        workspace.Terrain.WaterWaveSize = 0
+        Lighting.GlobalShadows = false
+        Lighting.Brightness = 1
+        Lighting.ClockTime = 12
+    end)
+    for _, obj in pairs(game:GetDescendants()) do
+        pcall(function()
+            if obj:IsA("BasePart") then
+                obj.Material = Enum.Material.Plastic
+            elseif obj:IsA("Decal") then
+                obj.Transparency = 1
+            end
+        end)
+    end
+end
+
+makeToggle("Optimizer", function(v)
+    if v then enableOptimizer() end
+end)
+
+-- ═══════════════════════════════════════════════════════
+-- FEATURE: ANTI BEE & DISCO (Block effect remotes)
+-- ═══════════════════════════════════════════════════════
+
+local AntiBee = { Enabled = false, Watcher = nil }
+local AntiBeeKeywords = {"effect", "vfx", "fx", "particle", "camera", "shake", "blur", "flash", "visual", "ui", "item"}
+
+local function enableAntiBee()
+    if AntiBee.Enabled then return end
+    AntiBee.Enabled = true
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    AntiBee.Watcher = ReplicatedStorage.DescendantAdded:Connect(function(r)
+        if AntiBee.Enabled and r:IsA("RemoteEvent") then
+            for _, k in pairs(AntiBeeKeywords) do
+                if r.Name:lower():find(k) then
+                    pcall(function()
+                        for _, c in pairs(getconnections(r.OnClientEvent)) do
+                            if c.Disable then c:Disable() end
+                        end
+                    end)
+                    break
+                end
+            end
+        end
+    end)
+end
+
+local function disableAntiBee()
+    AntiBee.Enabled = false
+    if AntiBee.Watcher then AntiBee.Watcher:Disconnect(); AntiBee.Watcher = nil end
+end
+
+makeToggle("Anti Bee & Disco", function(v)
+    if v then enableAntiBee() else disableAntiBee() end
+end)
+
+-- ═══════════════════════════════════════════════════════
+-- FEATURE: ANTI LAG (RUNS ALL ANTI-LAG AT ONCE)
+-- ═══════════════════════════════════════════════════════
+
+local AntiLag = { Enabled = false, DescConn = nil }
+
+makeToggle("Anti Lag (ALL)", function(v)
+    AntiLag.Enabled = v
+    if v then
+        -- Activate all anti-lag features
+        enableFPSDev()
+        enableOptimizer()
+        enableAntiBee()
+
+        -- Remove particles, trails, effects, lights
+        task.spawn(function()
+            for _, obj in pairs(workspace:GetDescendants()) do
+                pcall(function()
+                    if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam")
+                        or obj:IsA("Smoke") or obj:IsA("Fire") or obj:IsA("Sparkles")
+                        or obj:IsA("Explosion") then
+                        obj:Destroy()
+                    elseif obj:IsA("PointLight") or obj:IsA("SpotLight") or obj:IsA("SurfaceLight") then
+                        obj:Destroy()
+                    end
+                end)
+            end
+        end)
+
+        -- Disable shadows, atmosphere, post-processing
+        pcall(function()
+            Lighting.GlobalShadows = false
+            Lighting.FogEnd = 9e9
+            if Lighting:FindFirstChild("Atmosphere") then Lighting.Atmosphere:Destroy() end
+        end)
+        pcall(function() settings().Rendering.QualityLevel = Enum.QualityLevel.Level01 end)
+        pcall(function()
+            workspace.Terrain.WaterWaveSize = 0
+            workspace.Terrain.WaterReflectance = 0
+            workspace.Terrain.WaterTransparency = 0
+        end)
+        pcall(function()
+            for _, e in pairs(workspace.CurrentCamera:GetChildren()) do
+                if e:IsA("BloomEffect") or e:IsA("BlurEffect") or e:IsA("DepthOfFieldEffect")
+                    or e:IsA("SunRaysEffect") or e:IsA("ColorCorrectionEffect") then
+                    e:Destroy()
+                end
+            end
+        end)
+
+        -- Kill new effects as they spawn
+        AntiLag.DescConn = workspace.DescendantAdded:Connect(function(obj)
+            pcall(function()
+                if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam")
+                    or obj:IsA("Smoke") or obj:IsA("Fire") or obj:IsA("Sparkles")
+                    or obj:IsA("Explosion") then
+                    obj:Destroy()
+                end
+            end)
+        end)
+    else
+        disableFPSDev()
+        disableAntiBee()
+        if AntiLag.DescConn then AntiLag.DescConn:Disconnect(); AntiLag.DescConn = nil end
+    end
+end)
+
+-- ═══════════════════════════════════════════════════════
+-- RESIZE MAIN FRAME TO FIT ALL BUTTONS
+-- ═══════════════════════════════════════════════════════
+
+local totalHeight = 44 + (#allButtons * 38) + 10
+main.Size = UDim2.fromOffset(270, totalHeight)
+
+-- ═══════════════════════════════════════════════════════
+-- DRAGGABLE GUI
+-- ═══════════════════════════════════════════════════════
+
+local dragging, dragStart, startPos
+
+main.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = main.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then dragging = false end
+        end)
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
