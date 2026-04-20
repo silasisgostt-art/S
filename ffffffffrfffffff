@@ -1642,7 +1642,6 @@ local SmallButtonOrder = {
     "Drop Brainrot",
     "TP Down",
     "TP Up",
-    "Dodge",
 }
 
 local function refreshSmallButtonPositions()
@@ -1700,7 +1699,6 @@ local SmallRagdollTPGUI, SmallRagdollTPButton, RagdollTPDot = createSmallGUI("Ra
 local SmallDropGUI, SmallDropButton, DropDot = createSmallGUI("Drop Brainrot", 460) -- ✅ NEW!
 SmallTPDownGUI, SmallTPDownButton, TPDownDot = createSmallGUI("TP Down", 505)
 SmallTPUpGUI, SmallTPUpButton, TPUpDot = createSmallGUI("TP Up", 550)
-local SmallDodgeGUI, SmallDodgeButton, DodgeDot = createSmallGUI("Dodge", 595)
 
 local function serializeUDim2(value)
     return {
@@ -1729,7 +1727,6 @@ getButtonPositions = function()
         ["Drop Brainrot"] = serializeUDim2(SmallDropGUI.Position),
         ["TP Down"] = serializeUDim2(SmallTPDownGUI.Position),
         ["TP Up"] = serializeUDim2(SmallTPUpGUI.Position),
-        Dodge = serializeUDim2(SmallDodgeGUI.Position),
     }
 end
 
@@ -1747,7 +1744,6 @@ local function applyButtonPositions(data)
         ["Drop Brainrot"] = SmallDropGUI,
         ["TP Down"] = SmallTPDownGUI,
         ["TP Up"] = SmallTPUpGUI,
-        Dodge = SmallDodgeGUI,
     }
     for name, gui in pairs(mapping) do
         if gui and data[name] then
@@ -1770,7 +1766,6 @@ local function setButtonsDraggable(enabled)
         SmallAntiRagGUI,
         SmallRagdollTPGUI,
         SmallDropGUI,
-        SmallDodgeGUI,
     }) do
         if gui then
             gui.Draggable = enabled
@@ -2051,294 +2046,6 @@ SmallDropButton.MouseButton1Click:Connect(function()
         DropDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
         stopDropBrainrot()
     end
-end)
-
-        stopDropBrainrot()
-    end
-end)
-
--- ═══════════════════════════════════════════════════════
--- ✅ DODGE SMALL GUI (Float + Anti-Die + Gear Settings)
--- ═══════════════════════════════════════════════════════
-
-local DodgeConfig = {
-    Float = false, FloatH = 5, FloatS = 3,
-    AntiDie = false,
-    JumpTP = false, JumpH = 20, TPDownEnabled = false
-}
-
-local dodgeAntiDieConn = nil
-local dodgeFCount = 0
-local dodgeFloatConn = nil
-local dodgeEnabled = false
-
-local function applyDodgeAntiDie()
-    if not hum or not DodgeConfig.AntiDie then return end
-    hum.BreakJointsOnDeath = false
-    hum:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
-    if dodgeAntiDieConn then dodgeAntiDieConn:Disconnect() end
-    dodgeAntiDieConn = hum:GetPropertyChangedSignal("Health"):Connect(function()
-        if DodgeConfig.AntiDie and hum.Health <= 0 then
-            hum.Health = hum.MaxHealth
-        elseif not DodgeConfig.AntiDie then
-            if dodgeAntiDieConn then dodgeAntiDieConn:Disconnect() dodgeAntiDieConn = nil end
-        end
-    end)
-end
-
-local function doDodgeInstantTP(dist)
-    if not hrp then return end
-    local rayParam = RaycastParams.new()
-    rayParam.FilterDescendantsInstances = {character or player.Character}
-    local result = workspace:Raycast(hrp.Position, Vector3.new(0, dist, 0), rayParam)
-    if result then
-        local sideBuffer = dist > 0 and -3.5 or 3.5
-        hrp.CFrame = CFrame.new(result.Position + Vector3.new(0, sideBuffer, 0))
-    else
-        hrp.CFrame = hrp.CFrame + Vector3.new(0, dist, 0)
-    end
-    hrp.AssemblyLinearVelocity = Vector3.zero
-end
-
-local dodgeJumpConn = nil
-local dodgeKeyConn = nil
-
-local function startDodge()
-    dodgeEnabled = true
-    dodgeFCount = 0
-
-    -- Float loop
-    if dodgeFloatConn then dodgeFloatConn:Disconnect() end
-    dodgeFloatConn = RunService.Heartbeat:Connect(function(dt)
-        if not hrp or not hum then return end
-        if DodgeConfig.Float then
-            dodgeFCount = dodgeFCount + dt * DodgeConfig.FloatS
-            hrp.AssemblyLinearVelocity = Vector3.new(hrp.AssemblyLinearVelocity.X, 0, hrp.AssemblyLinearVelocity.Z)
-            hrp.CFrame = hrp.CFrame * CFrame.new(0, math.sin(dodgeFCount) * (DodgeConfig.FloatH * 0.05), 0)
-        end
-    end)
-
-    -- Jump TP
-    if dodgeJumpConn then dodgeJumpConn:Disconnect() end
-    dodgeJumpConn = UserInputService.JumpRequest:Connect(function()
-        if DodgeConfig.JumpTP and hrp then
-            doDodgeInstantTP(DodgeConfig.JumpH)
-        end
-    end)
-
-    -- TP Down on G
-    if dodgeKeyConn then dodgeKeyConn:Disconnect() end
-    dodgeKeyConn = UserInputService.InputBegan:Connect(function(i, gp)
-        if not gp and i.KeyCode == Enum.KeyCode.G and DodgeConfig.TPDownEnabled and hrp then
-            doDodgeInstantTP(-20)
-        end
-    end)
-
-    -- Anti-Die
-    if DodgeConfig.AntiDie then applyDodgeAntiDie() end
-end
-
-local function stopDodge()
-    dodgeEnabled = false
-    if dodgeFloatConn then dodgeFloatConn:Disconnect() dodgeFloatConn = nil end
-    if dodgeJumpConn then dodgeJumpConn:Disconnect() dodgeJumpConn = nil end
-    if dodgeKeyConn then dodgeKeyConn:Disconnect() dodgeKeyConn = nil end
-    if dodgeAntiDieConn then dodgeAntiDieConn:Disconnect() dodgeAntiDieConn = nil end
-end
-
-SmallDodgeButton.MouseButton1Click:Connect(function()
-    dodgeEnabled = not dodgeEnabled
-    if dodgeEnabled then
-        SmallDodgeGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        DodgeDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-        startDodge()
-    else
-        SmallDodgeGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        DodgeDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        stopDodge()
-    end
-end)
-
--- ⚙ Dodge Gear Button (on the small GUI)
-local DodgeGear = Instance.new("TextButton")
-DodgeGear.Size = UDim2.new(0, 16, 0, 16)
-DodgeGear.Position = UDim2.new(1, -18, 0, 2)
-DodgeGear.BackgroundTransparency = 1
-DodgeGear.Text = "⚙"
-DodgeGear.TextColor3 = Color3.fromRGB(200, 200, 200)
-DodgeGear.Font = Enum.Font.GothamBold
-DodgeGear.TextSize = 12
-DodgeGear.ZIndex = 3
-DodgeGear.Parent = SmallDodgeGUI
-
--- ═══════════════════════════════════════════════════════
--- ✅ DODGE SETTINGS PANEL
--- ═══════════════════════════════════════════════════════
-
-local DodgeSettings = Instance.new("Frame")
-DodgeSettings.Name = "DodgeSettings"
-DodgeSettings.Size = UDim2.new(0, 210, 0, 250)
-DodgeSettings.Position = UDim2.new(0.5, -105, 0.5, -125)
-DodgeSettings.BackgroundColor3 = Color3.fromRGB(14, 14, 14)
-DodgeSettings.BackgroundTransparency = 0.05
-DodgeSettings.Visible = false
-DodgeSettings.Active = true
-DodgeSettings.Draggable = true
-DodgeSettings.Parent = ScreenGui
-DodgeSettings.ZIndex = 10
-
-local DSCorner = Instance.new("UICorner")
-DSCorner.CornerRadius = UDim.new(0, 8)
-DSCorner.Parent = DodgeSettings
-
-local DSBlackStroke = Instance.new("UIStroke")
-DSBlackStroke.Color = Color3.fromRGB(0, 0, 0)
-DSBlackStroke.Thickness = 4
-DSBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-DSBlackStroke.Parent = DodgeSettings
-
-local DSStroke = Instance.new("UIStroke")
-DSStroke.Color = Color3.fromRGB(255, 255, 255)
-DSStroke.Thickness = 2.5
-DSStroke.Transparency = 0.35
-DSStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-DSStroke.ZIndex = 2
-DSStroke.Parent = DodgeSettings
-
-local DSWaveGrad = Instance.new("UIGradient")
-DSWaveGrad.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
-DSWaveGrad.Transparency = NumberSequence.new({
-    NumberSequenceKeypoint.new(0, 1),
-    NumberSequenceKeypoint.new(0.4, 0),
-    NumberSequenceKeypoint.new(0.6, 0),
-    NumberSequenceKeypoint.new(1, 1)
-})
-DSWaveGrad.Rotation = 0
-DSWaveGrad.Parent = DSStroke
-TweenService:Create(DSStroke, TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Thickness = 4.2, Transparency = 0.08}):Play()
-RunService.Heartbeat:Connect(function(dt) pcall(function() DSWaveGrad.Rotation = (DSWaveGrad.Rotation + 140 * dt) % 360 end) end)
-
--- Title
-local DSTitle = Instance.new("TextLabel")
-DSTitle.Size = UDim2.new(1, 0, 0, 30)
-DSTitle.BackgroundTransparency = 1
-DSTitle.Text = "⚙ Dodge Settings"
-DSTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-DSTitle.Font = Enum.Font.GothamBold
-DSTitle.TextSize = 14
-DSTitle.Parent = DodgeSettings
-DSTitle.ZIndex = 11
-
--- Close X
-local DSClose = Instance.new("TextButton")
-DSClose.Size = UDim2.new(0, 24, 0, 24)
-DSClose.Position = UDim2.new(1, -28, 0, 3)
-DSClose.BackgroundTransparency = 1
-DSClose.Text = "✕"
-DSClose.TextColor3 = Color3.fromRGB(255, 80, 80)
-DSClose.Font = Enum.Font.GothamBold
-DSClose.TextSize = 14
-DSClose.Parent = DodgeSettings
-DSClose.ZIndex = 11
-DSClose.MouseButton1Click:Connect(function() DodgeSettings.Visible = false end)
-
--- Helper: create toggle row in Dodge settings
-local function createDodgeToggle(text, yPos, getVal, setVal)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -20, 0, 24)
-    btn.Position = UDim2.new(0, 10, 0, yPos)
-    btn.BackgroundColor3 = getVal() and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(30, 30, 30)
-    btn.Text = text .. ": " .. (getVal() and "ON" or "OFF")
-    btn.TextColor3 = Color3.fromRGB(220, 220, 220)
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 11
-    btn.Parent = DodgeSettings
-    btn.ZIndex = 11
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
-    btn.MouseButton1Click:Connect(function()
-        setVal(not getVal())
-        btn.BackgroundColor3 = getVal() and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(30, 30, 30)
-        btn.Text = text .. ": " .. (getVal() and "ON" or "OFF")
-    end)
-    return btn
-end
-
--- Helper: create +/- value row in Dodge settings
-local function createDodgeValue(text, yPos, getVal, setVal, step, minVal)
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0.55, 0, 0, 25)
-    label.Position = UDim2.new(0, 10, 0, yPos)
-    label.BackgroundTransparency = 1
-    label.Text = text
-    label.TextColor3 = Color3.fromRGB(220, 220, 220)
-    label.Font = Enum.Font.Gotham
-    label.TextSize = 11
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Parent = DodgeSettings
-    label.ZIndex = 11
-
-    local valLabel = Instance.new("TextLabel")
-    valLabel.Size = UDim2.new(0, 40, 0, 25)
-    valLabel.Position = UDim2.new(1, -90, 0, yPos)
-    valLabel.BackgroundTransparency = 1
-    valLabel.Text = tostring(getVal())
-    valLabel.TextColor3 = Color3.fromRGB(138, 43, 226)
-    valLabel.Font = Enum.Font.GothamBold
-    valLabel.TextSize = 13
-    valLabel.Parent = DodgeSettings
-    valLabel.ZIndex = 11
-
-    local minus = Instance.new("TextButton")
-    minus.Size = UDim2.new(0, 22, 0, 22)
-    minus.Position = UDim2.new(1, -48, 0, yPos + 2)
-    minus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    minus.Text = "-"
-    minus.TextColor3 = Color3.fromRGB(255, 255, 255)
-    minus.Font = Enum.Font.GothamBold
-    minus.TextSize = 14
-    minus.Parent = DodgeSettings
-    minus.ZIndex = 11
-    Instance.new("UICorner", minus).CornerRadius = UDim.new(0, 6)
-
-    local plus = Instance.new("TextButton")
-    plus.Size = UDim2.new(0, 22, 0, 22)
-    plus.Position = UDim2.new(1, -22, 0, yPos + 2)
-    plus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    plus.Text = "+"
-    plus.TextColor3 = Color3.fromRGB(255, 255, 255)
-    plus.Font = Enum.Font.GothamBold
-    plus.TextSize = 14
-    plus.Parent = DodgeSettings
-    plus.ZIndex = 11
-    Instance.new("UICorner", plus).CornerRadius = UDim.new(0, 6)
-
-    minus.MouseButton1Click:Connect(function()
-        setVal(math.max(minVal or 0, getVal() - step))
-        valLabel.Text = tostring(getVal())
-    end)
-    plus.MouseButton1Click:Connect(function()
-        setVal(getVal() + step)
-        valLabel.Text = tostring(getVal())
-    end)
-end
-
--- Toggles
-createDodgeToggle("Float", 35, function() return DodgeConfig.Float end, function(v) DodgeConfig.Float = v end)
-createDodgeToggle("Anti-Die", 65, function() return DodgeConfig.AntiDie end, function(v)
-    DodgeConfig.AntiDie = v
-    if v and dodgeEnabled then applyDodgeAntiDie() end
-end)
-createDodgeToggle("Jump TP Up", 95, function() return DodgeConfig.JumpTP end, function(v) DodgeConfig.JumpTP = v end)
-createDodgeToggle("TP Down (G)", 125, function() return DodgeConfig.TPDownEnabled end, function(v) DodgeConfig.TPDownEnabled = v end)
-
--- Values
-createDodgeValue("Float Height", 158, function() return DodgeConfig.FloatH end, function(v) DodgeConfig.FloatH = v end, 1, 1)
-createDodgeValue("Float Speed", 188, function() return DodgeConfig.FloatS end, function(v) DodgeConfig.FloatS = v end, 0.5, 0.5)
-createDodgeValue("Jump Dist", 218, function() return DodgeConfig.JumpH end, function(v) DodgeConfig.JumpH = v end, 5, 5)
-
--- Toggle gear panel
-DodgeGear.MouseButton1Click:Connect(function()
-    DodgeSettings.Visible = not DodgeSettings.Visible
 end)
 
 -- ═══════════════════════════════════════════════════════
@@ -5006,6 +4713,244 @@ function createRightButtons(device)
         else
             stopJukeSpam()
             JukeButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        end
+    end)
+end
+
+-- ═══════════════════════════════════════════════════════
+-- ✅ SMALL SQUARE GUI: FLOAT, DODGE, ANTI-DIE + SETTINGS
+-- ═══════════════════════════════════════════════════════
+
+do
+    local sqFloat = false
+    local sqFloatH = 5
+    local sqFloatS = 3
+    local sqAntiDie = false
+    local sqDodge = false
+    local sqJumpH = 20
+    local sqTPDownOn = false
+    local sqFloatCount = 0
+    local sqAntiDieConn = nil
+    local sqDodgeConn = nil
+
+    local sgQ = Instance.new("ScreenGui", CoreGui)
+    sgQ.Name = "SmallSquareGUI"
+    sgQ.ResetOnSpawn = false
+
+    local main = Instance.new("Frame", sgQ)
+    main.Size = UDim2.new(0, 150, 0, 230)
+    main.Position = UDim2.new(0, 10, 0.3, 0)
+    main.BackgroundColor3 = Color3.fromRGB(14, 14, 14)
+    main.BackgroundTransparency = 0.05
+    main.BorderSizePixel = 0
+    main.Active = true
+    main.Draggable = true
+    Instance.new("UICorner", main).CornerRadius = UDim.new(0, 10)
+
+    local mStroke = Instance.new("UIStroke", main)
+    mStroke.Color = Color3.fromRGB(255, 255, 255)
+    mStroke.Thickness = 2
+    mStroke.Transparency = 0.35
+    RunService.RenderStepped:Connect(function() mStroke.Color = Color3.fromHSV(tick() % 5 / 5, 1, 1) end)
+
+    -- Title
+    local title = Instance.new("TextLabel", main)
+    title.Size = UDim2.new(1, 0, 0, 22)
+    title.BackgroundTransparency = 1
+    title.Text = "⚡ Quick Tools"
+    title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    title.Font = Enum.Font.GothamBold
+    title.TextSize = 11
+    title.ZIndex = 2
+
+    local yOff = 24
+
+    -- Helper: create toggle button
+    local function mkToggle(txt, yPos)
+        local b = Instance.new("TextButton", main)
+        b.Size = UDim2.new(1, -10, 0, 22)
+        b.Position = UDim2.new(0, 5, 0, yPos)
+        b.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        b.TextColor3 = Color3.fromRGB(220, 220, 220)
+        b.Font = Enum.Font.GothamBold
+        b.TextSize = 10
+        b.Text = txt .. ": OFF"
+        b.ZIndex = 2
+        Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
+        return b
+    end
+
+    -- Helper: create +/- input row
+    local function mkInput(labelTxt, yPos, val)
+        local lbl = Instance.new("TextLabel", main)
+        lbl.Size = UDim2.new(0.55, 0, 0, 20)
+        lbl.Position = UDim2.new(0, 8, 0, yPos)
+        lbl.BackgroundTransparency = 1
+        lbl.Text = labelTxt
+        lbl.TextColor3 = Color3.fromRGB(180, 180, 180)
+        lbl.Font = Enum.Font.Gotham
+        lbl.TextSize = 9
+        lbl.TextXAlignment = Enum.TextXAlignment.Left
+        lbl.ZIndex = 2
+
+        local valLbl = Instance.new("TextLabel", main)
+        valLbl.Size = UDim2.new(0, 30, 0, 20)
+        valLbl.Position = UDim2.new(1, -72, 0, yPos)
+        valLbl.BackgroundTransparency = 1
+        valLbl.Text = tostring(val)
+        valLbl.TextColor3 = Color3.fromRGB(138, 43, 226)
+        valLbl.Font = Enum.Font.GothamBold
+        valLbl.TextSize = 10
+        valLbl.ZIndex = 2
+
+        local minus = Instance.new("TextButton", main)
+        minus.Size = UDim2.new(0, 18, 0, 18)
+        minus.Position = UDim2.new(1, -40, 0, yPos + 1)
+        minus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        minus.Text = "-"
+        minus.TextColor3 = Color3.fromRGB(255, 255, 255)
+        minus.Font = Enum.Font.GothamBold
+        minus.TextSize = 11
+        minus.ZIndex = 2
+        Instance.new("UICorner", minus).CornerRadius = UDim.new(0, 5)
+
+        local plus = Instance.new("TextButton", main)
+        plus.Size = UDim2.new(0, 18, 0, 18)
+        plus.Position = UDim2.new(1, -18, 0, yPos + 1)
+        plus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        plus.Text = "+"
+        plus.TextColor3 = Color3.fromRGB(255, 255, 255)
+        plus.Font = Enum.Font.GothamBold
+        plus.TextSize = 11
+        plus.ZIndex = 2
+        Instance.new("UICorner", plus).CornerRadius = UDim.new(0, 5)
+
+        return valLbl, minus, plus
+    end
+
+    -- Float Toggle
+    local floatBtn = mkToggle("Float", yOff)
+    yOff = yOff + 24
+
+    -- Float Height
+    local fhVal, fhMinus, fhPlus = mkInput("Height", yOff, sqFloatH)
+    yOff = yOff + 22
+
+    -- Float Speed
+    local fsVal, fsMinus, fsPlus = mkInput("Speed", yOff, sqFloatS)
+    yOff = yOff + 24
+
+    -- Dodge Toggle (Jump TP Up)
+    local dodgeBtn = mkToggle("Dodge", yOff)
+    yOff = yOff + 24
+
+    -- Jump Distance
+    local jdVal, jdMinus, jdPlus = mkInput("Jump Dist", yOff, sqJumpH)
+    yOff = yOff + 22
+
+    -- TP Down Toggle (G key)
+    local tpDownBtn = mkToggle("TP Down (G)", yOff)
+    yOff = yOff + 26
+
+    -- Anti-Die Toggle
+    local antiDieBtn = mkToggle("Anti-Die", yOff)
+    yOff = yOff + 24
+
+    -- Resize frame to fit
+    main.Size = UDim2.new(0, 150, 0, yOff + 4)
+
+    -- Float logic
+    floatBtn.MouseButton1Click:Connect(function()
+        sqFloat = not sqFloat
+        floatBtn.Text = "Float: " .. (sqFloat and "ON" or "OFF")
+        floatBtn.BackgroundColor3 = sqFloat and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(30, 30, 30)
+    end)
+
+    fhMinus.MouseButton1Click:Connect(function() sqFloatH = math.max(1, sqFloatH - 1) fhVal.Text = tostring(sqFloatH) end)
+    fhPlus.MouseButton1Click:Connect(function() sqFloatH = sqFloatH + 1 fhVal.Text = tostring(sqFloatH) end)
+    fsMinus.MouseButton1Click:Connect(function() sqFloatS = math.max(0.5, sqFloatS - 0.5) fsVal.Text = tostring(sqFloatS) end)
+    fsPlus.MouseButton1Click:Connect(function() sqFloatS = sqFloatS + 0.5 fsVal.Text = tostring(sqFloatS) end)
+
+    -- Float heartbeat
+    RunService.Heartbeat:Connect(function(dt)
+        if not sqFloat then return end
+        local r = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+        if not r then return end
+        sqFloatCount = sqFloatCount + dt * sqFloatS
+        r.AssemblyLinearVelocity = Vector3.new(r.AssemblyLinearVelocity.X, 0, r.AssemblyLinearVelocity.Z)
+        r.CFrame = r.CFrame * CFrame.new(0, math.sin(sqFloatCount) * (sqFloatH * 0.05), 0)
+    end)
+
+    -- Dodge logic (Jump TP Up)
+    dodgeBtn.MouseButton1Click:Connect(function()
+        sqDodge = not sqDodge
+        dodgeBtn.Text = "Dodge: " .. (sqDodge and "ON" or "OFF")
+        dodgeBtn.BackgroundColor3 = sqDodge and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(30, 30, 30)
+        if sqDodge then
+            if sqDodgeConn then sqDodgeConn:Disconnect() end
+            sqDodgeConn = UserInputService.JumpRequest:Connect(function()
+                if not sqDodge then return end
+                local r = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                if r then
+                    local params = RaycastParams.new()
+                    params.FilterDescendantsInstances = {player.Character}
+                    local result = workspace:Raycast(r.Position, Vector3.new(0, sqJumpH, 0), params)
+                    if result then
+                        r.CFrame = CFrame.new(result.Position + Vector3.new(0, -3.5, 0))
+                    else
+                        r.CFrame = r.CFrame + Vector3.new(0, sqJumpH, 0)
+                    end
+                    r.AssemblyLinearVelocity = Vector3.zero
+                end
+            end)
+        else
+            if sqDodgeConn then sqDodgeConn:Disconnect() sqDodgeConn = nil end
+        end
+    end)
+
+    jdMinus.MouseButton1Click:Connect(function() sqJumpH = math.max(1, sqJumpH - 1) jdVal.Text = tostring(sqJumpH) end)
+    jdPlus.MouseButton1Click:Connect(function() sqJumpH = sqJumpH + 1 jdVal.Text = tostring(sqJumpH) end)
+
+    -- TP Down (G key)
+    tpDownBtn.MouseButton1Click:Connect(function()
+        sqTPDownOn = not sqTPDownOn
+        tpDownBtn.Text = "TP Down (G): " .. (sqTPDownOn and "ON" or "OFF")
+        tpDownBtn.BackgroundColor3 = sqTPDownOn and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(30, 30, 30)
+    end)
+
+    UserInputService.InputBegan:Connect(function(i, gp)
+        if not gp and i.KeyCode == Enum.KeyCode.G and sqTPDownOn then
+            local r = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+            if not r then return end
+            local params = RaycastParams.new()
+            params.FilterDescendantsInstances = {player.Character}
+            local ray = workspace:Raycast(r.Position, Vector3.new(0, -5000, 0), params)
+            if ray and ray.Position then
+                r.CFrame = CFrame.new(ray.Position + Vector3.new(0, 3, 0))
+                r.AssemblyLinearVelocity = Vector3.zero
+            end
+        end
+    end)
+
+    -- Anti-Die logic
+    antiDieBtn.MouseButton1Click:Connect(function()
+        sqAntiDie = not sqAntiDie
+        antiDieBtn.Text = "Anti-Die: " .. (sqAntiDie and "ON" or "OFF")
+        antiDieBtn.BackgroundColor3 = sqAntiDie and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(30, 30, 30)
+        if sqAntiDie then
+            local h = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+            if h then
+                h.BreakJointsOnDeath = false
+                pcall(function() h:SetStateEnabled(Enum.HumanoidStateType.Dead, false) end)
+            end
+            if sqAntiDieConn then sqAntiDieConn:Disconnect() end
+            sqAntiDieConn = RunService.Heartbeat:Connect(function()
+                if not sqAntiDie then return end
+                local hum2 = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+                if hum2 and hum2.Health <= 0 then hum2.Health = hum2.MaxHealth end
+            end)
+        else
+            if sqAntiDieConn then sqAntiDieConn:Disconnect() sqAntiDieConn = nil end
         end
     end)
 end
