@@ -1030,7 +1030,7 @@ end
 
 local NoAnim = {
     Enabled = false,
-    CharConns = {}
+    CharacterConnections = {}
 }
 
 local function disableAnims(charTarget)
@@ -1039,10 +1039,10 @@ local function disableAnims(charTarget)
     for _, track in pairs(humanoid:GetPlayingAnimationTracks()) do
         track:Stop()
     end
-    if NoAnim.CharConns[charTarget] then
-        NoAnim.CharConns[charTarget]:Disconnect()
+    if NoAnim.CharacterConnections[charTarget] then
+        NoAnim.CharacterConnections[charTarget]:Disconnect()
     end
-    NoAnim.CharConns[charTarget] = humanoid.AnimationPlayed:Connect(function(track)
+    NoAnim.CharacterConnections[charTarget] = humanoid.AnimationPlayed:Connect(function(track)
         track:Stop()
     end)
 end
@@ -1053,7 +1053,7 @@ local function enableNoAnim()
     if player.Character then
         disableAnims(player.Character)
     end
-    NoAnim.CharConns._charAdded = player.CharacterAdded:Connect(function(char)
+    NoAnim.CharacterConnections.characterAdded = player.CharacterAdded:Connect(function(char)
         disableAnims(char)
     end)
 end
@@ -1061,12 +1061,12 @@ end
 local function disableNoAnim()
     if not NoAnim.Enabled then return end
     NoAnim.Enabled = false
-    for key, conn in pairs(NoAnim.CharConns) do
+    for key, conn in pairs(NoAnim.CharacterConnections) do
         if conn and typeof(conn) == "RBXScriptConnection" then
             conn:Disconnect()
         end
     end
-    NoAnim.CharConns = {}
+    NoAnim.CharacterConnections = {}
 end
 
 -- ═══════════════════════════════════════════════════════
@@ -1083,28 +1083,28 @@ local PlayerESP = {
 
 local function createESPHighlight(charTarget)
     local h = Instance.new("Highlight")
-    h.Name = "TIM_ESP_Highlight"
+    h.Name = "TIM_PlayerESP_Highlight"
     h.Adornee = charTarget
     h.FillColor = PlayerESP.ESP_COLOR
     h.FillTransparency = 0.25
     h.OutlineColor = PlayerESP.ESP_COLOR
     h.OutlineTransparency = 0
     h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-    h.Parent = CoreGui
+    h.Parent = game:GetService("CoreGui")
     return h
 end
 
 local function createESPBillboard(charTarget, plr)
-    local phrp = charTarget:FindFirstChild("HumanoidRootPart")
-    if not phrp then return nil end
+    local hrp = charTarget:FindFirstChild("HumanoidRootPart")
+    if not hrp then return nil end
     local bb = Instance.new("BillboardGui")
-    bb.Name = "TIM_ESP_Name"
-    bb.Adornee = phrp
+    bb.Name = "TIM_PlayerESP_Name"
+    bb.Adornee = hrp
     bb.AlwaysOnTop = true
     bb.Size = UDim2.new(0, 100, 0, 20)
     bb.StudsOffsetWorldSpace = Vector3.new(0, 3, 0)
     bb.MaxDistance = 600
-    bb.Parent = CoreGui
+    bb.Parent = game:GetService("CoreGui")
     local bg = Instance.new("Frame", bb)
     bg.Size = UDim2.new(1, 0, 1, 0)
     bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
@@ -1124,26 +1124,43 @@ end
 local function attachESP(plr)
     if plr == player then return end
     local function apply(charTarget)
-        if PlayerESP.Highlights[plr] then pcall(function() PlayerESP.Highlights[plr]:Destroy() end) end
-        if PlayerESP.Billboards[plr] then pcall(function() PlayerESP.Billboards[plr]:Destroy() end) end
+        if PlayerESP.Highlights[plr] then
+            pcall(function() PlayerESP.Highlights[plr]:Destroy() end)
+        end
+        if PlayerESP.Billboards[plr] then
+            pcall(function() PlayerESP.Billboards[plr]:Destroy() end)
+        end
         PlayerESP.Highlights[plr] = createESPHighlight(charTarget)
         PlayerESP.Billboards[plr] = createESPBillboard(charTarget, plr)
     end
     if plr.Character then apply(plr.Character) end
-    table.insert(PlayerESP.Connections, plr.CharacterAdded:Connect(apply))
+    local conn = plr.CharacterAdded:Connect(apply)
+    table.insert(PlayerESP.Connections, conn)
 end
 
 local function removeESP(plr)
-    if PlayerESP.Highlights[plr] then pcall(function() PlayerESP.Highlights[plr]:Destroy() end); PlayerESP.Highlights[plr] = nil end
-    if PlayerESP.Billboards[plr] then pcall(function() PlayerESP.Billboards[plr]:Destroy() end); PlayerESP.Billboards[plr] = nil end
+    if PlayerESP.Highlights[plr] then
+        pcall(function() PlayerESP.Highlights[plr]:Destroy() end)
+        PlayerESP.Highlights[plr] = nil
+    end
+    if PlayerESP.Billboards[plr] then
+        pcall(function() PlayerESP.Billboards[plr]:Destroy() end)
+        PlayerESP.Billboards[plr] = nil
+    end
 end
 
 local function enableESP()
     if PlayerESP.Enabled then return end
     PlayerESP.Enabled = true
-    for _, p in ipairs(Players:GetPlayers()) do attachESP(p) end
-    table.insert(PlayerESP.Connections, Players.PlayerAdded:Connect(function(p) attachESP(p) end))
-    table.insert(PlayerESP.Connections, Players.PlayerRemoving:Connect(function(p) removeESP(p) end))
+    for _, p in ipairs(Players:GetPlayers()) do
+        attachESP(p)
+    end
+    table.insert(PlayerESP.Connections, Players.PlayerAdded:Connect(function(p)
+        attachESP(p)
+    end))
+    table.insert(PlayerESP.Connections, Players.PlayerRemoving:Connect(function(p)
+        removeESP(p)
+    end))
 end
 
 local function disableESP()
@@ -1175,8 +1192,7 @@ local function enableShowPerformance()
         PerfModule.Gui = Instance.new("ScreenGui")
         PerfModule.Gui.Name = "TIM_Performance"
         PerfModule.Gui.ResetOnSpawn = false
-        PerfModule.Gui.Parent = CoreGui
-
+        PerfModule.Gui.Parent = game:GetService("CoreGui")
         local Frame = Instance.new("Frame")
         Frame.Size = UDim2.new(0, 260, 0, 28)
         Frame.Position = UDim2.new(0.5, -130, 0.015, 0)
@@ -1185,7 +1201,6 @@ local function enableShowPerformance()
         Frame.BorderSizePixel = 0
         Frame.Parent = PerfModule.Gui
         Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 10)
-
         local Label = Instance.new("TextLabel")
         Label.Size = UDim2.new(1, 0, 1, 0)
         Label.BackgroundTransparency = 1
@@ -1194,7 +1209,6 @@ local function enableShowPerformance()
         Label.TextColor3 = Color3.fromRGB(85, 170, 255)
         Label.Text = "FPS 0 | PING 0ms"
         Label.Parent = Frame
-
         local frames = 0
         local last = tick()
         PerfModule.Connection = RunService.RenderStepped:Connect(function()
@@ -1216,7 +1230,10 @@ local function disableShowPerformance()
     if not PerfModule.Enabled then return end
     PerfModule.Enabled = false
     if PerfModule.Gui then PerfModule.Gui.Enabled = false end
-    if PerfModule.Connection then PerfModule.Connection:Disconnect(); PerfModule.Connection = nil end
+    if PerfModule.Connection then
+        PerfModule.Connection:Disconnect()
+        PerfModule.Connection = nil
+    end
 end
 
 -- ═══════════════════════════════════════════════════════
@@ -1243,6 +1260,12 @@ local function enableAntiFPSDevourer()
     AntiFPSDevourer.Enabled = true
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr.Character then cleanCharacterFPS(plr.Character) end
+        plr.CharacterAdded:Connect(function(c)
+            if AntiFPSDevourer.Enabled then
+                task.wait(0.5)
+                cleanCharacterFPS(c)
+            end
+        end)
     end
     AntiFPSDevourer.Conn = RunService.Heartbeat:Connect(function()
         for _, plr in ipairs(Players:GetPlayers()) do
@@ -1253,16 +1276,19 @@ end
 
 local function disableAntiFPSDevourer()
     AntiFPSDevourer.Enabled = false
-    if AntiFPSDevourer.Conn then AntiFPSDevourer.Conn:Disconnect(); AntiFPSDevourer.Conn = nil end
+    if AntiFPSDevourer.Conn then
+        AntiFPSDevourer.Conn:Disconnect()
+        AntiFPSDevourer.Conn = nil
+    end
 end
 
 -- ═══════════════════════════════════════════════════════
--- ANTI LAG MASTER (Runs all anti-lag features at once)
+-- ANTI LAG MODULE (Runs all anti-lag features at once)
 -- ═══════════════════════════════════════════════════════
 
 local AntiLagMaster = {
     Enabled = false,
-    DescAddedConn = nil
+    DescConn = nil
 }
 
 local function enableAntiLag()
@@ -1275,17 +1301,17 @@ local function enableAntiLag()
     -- Run Optimizer
     enableOptimizer()
 
-    -- Enable Anti FPS Devourer
+    -- Run Anti FPS Devourer (remove accessories/particles from players)
     enableAntiFPSDevourer()
 
-    -- Disable shadows + atmosphere
+    -- Disable shadows and atmosphere
     pcall(function()
         Lighting.GlobalShadows = false
         Lighting.FogEnd = 9e9
         if Lighting:FindFirstChild("Atmosphere") then Lighting.Atmosphere:Destroy() end
     end)
 
-    -- Lowest quality
+    -- Set lowest quality
     pcall(function()
         settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
     end)
@@ -1308,16 +1334,12 @@ local function enableAntiLag()
         end
     end)
 
-    -- Remove particles, trails, effects, lights, decals
+    -- Set all materials to Plastic for performance
     task.spawn(function()
         for _, obj in pairs(workspace:GetDescendants()) do
             pcall(function()
-                if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam") or
-                   obj:IsA("Smoke") or obj:IsA("Fire") or obj:IsA("Sparkles") or
-                   obj:IsA("Explosion") then
-                    obj:Destroy()
-                elseif obj:IsA("PointLight") or obj:IsA("SpotLight") or obj:IsA("SurfaceLight") then
-                    obj:Destroy()
+                if obj:IsA("BasePart") and obj.Parent and not obj.Parent:FindFirstChildOfClass("Humanoid") then
+                    obj.Material = Enum.Material.Plastic
                 elseif obj:IsA("Decal") and obj.Parent and not obj.Parent:FindFirstChildOfClass("Humanoid") then
                     obj.Transparency = 1
                 end
@@ -1325,8 +1347,8 @@ local function enableAntiLag()
         end
     end)
 
-    -- Kill new effects as they spawn
-    AntiLagMaster.DescAddedConn = workspace.DescendantAdded:Connect(function(obj)
+    -- Kill new particles/effects as they spawn
+    AntiLagMaster.DescConn = workspace.DescendantAdded:Connect(function(obj)
         if not AntiLagMaster.Enabled then return end
         pcall(function()
             if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam") or
@@ -1336,25 +1358,14 @@ local function enableAntiLag()
             end
         end)
     end)
-
-    -- Set all materials to Plastic
-    task.spawn(function()
-        for _, obj in pairs(workspace:GetDescendants()) do
-            pcall(function()
-                if obj:IsA("BasePart") and obj.Parent and not obj.Parent:FindFirstChildOfClass("Humanoid") then
-                    obj.Material = Enum.Material.Plastic
-                end
-            end)
-        end
-    end)
 end
 
 local function disableAntiLag()
     AntiLagMaster.Enabled = false
     disableAntiFPSDevourer()
-    if AntiLagMaster.DescAddedConn then
-        AntiLagMaster.DescAddedConn:Disconnect()
-        AntiLagMaster.DescAddedConn = nil
+    if AntiLagMaster.DescConn then
+        AntiLagMaster.DescConn:Disconnect()
+        AntiLagMaster.DescConn = nil
     end
 end
 
