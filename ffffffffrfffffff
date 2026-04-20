@@ -515,9 +515,13 @@ local function getHRP()
 end
 
 -- TP Down function (uses existing player/getHRP)
+local tpDownDebounce = false
 local function tpDownToGround()
+    if tpDownDebounce then return end
     local hrp = getHRP()
     if not hrp then return end
+
+    tpDownDebounce = true
 
     local origin = hrp.Position
     local params = RaycastParams.new()
@@ -530,7 +534,10 @@ local function tpDownToGround()
         -- put player a bit above ground to avoid clipping
         local target = Vector3.new(origin.X, groundY + 3, origin.Z)
         hrp.CFrame = CFrame.new(target)
+        hrp.AssemblyLinearVelocity = Vector3.zero
     end
+
+    task.delay(0.3, function() tpDownDebounce = false end)
 end
 
 local function isMyBase(plotName)
