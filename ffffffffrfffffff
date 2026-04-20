@@ -1161,7 +1161,7 @@ end
 -- TRACK PLAYER (BAT AIMBOT)
 -- ═══════════════════════════════════════════════════════
 
--- IMPROVED BAT AIMBOT (anti-TP-down trick: follows jumpers to ground)
+-- IMPROVED BAT AIMBOT (anti-trick: follows jump+TP-down players)
 local batAimbotToggled = false
 local BAT_MOVE_SPEED = 56.5
 local BAT_ENGAGE_RANGE = 20
@@ -1173,11 +1173,48 @@ local attachment_bat = nil
 local alignOrientation_bat = nil
 local BAT_LOOK_DISTANCE = 50
 
--- Anti-TP-down tracking: remember each player's recent Y positions
-local playerYHistory = {} -- [playerName] = { lastY, wasInAir, lastAirTick, groundY }
-local TP_DOWN_DETECT_DROP = 8       -- Y drop threshold to detect TP down
-local TP_DOWN_FOLLOW_TIME = 0.6     -- seconds to keep following ground pos after TP down
-local JUMP_TRACK_MIN_HEIGHT = 3     -- min Y above ground to count as "in air"
+-- Anti-trick tracking: store recent Y positions per player to detect jump+TP-down
+local playerYHistory = {} -- [playerName] = {positions={}, lastTick=0, wasJumping=false, trickDetected=false}
+local TRICK_DETECT_DROP = 6       -- Y units of sudden drop to count as TP-down trick
+local TRICK_FOLLOW_TIME = 0.8     -- seconds to stick to target after trick detected
+local TRICK_HISTORY_SIZE = 8      -- number of Y samples to keep
+
+local function updatePlayerTracking(targetHRP, targetHum)
+    local name = targetHRP.Parent and targetHRP.Parent.Name or "?"
+    if not playerYHistory[name] then
+        playerYHistory[name] = {positions = {}, lastTick = tick(), wasJumping = false, trickDetected = false, trickTick = 0, lastY = targetHRP.Position.Y}
+    end
+    local data = playerYHistory[name]
+    local now = tick()
+    local curY = targetHRP.Position.Y
+    
+    -- Record Y position
+    table.insert(data.positions, curY)
+    if #data.positions > TRICK_HISTORY_SIZE then
+        table.remove(data.positions, 1)
+    end
+    
+    -- Detect if player was in the air (jumping)
+    local inAir = targetHum and targetHum.FloorMaterial == Enum.Material.Air
+    
+    -- Detect sudden drop (jump then TP down trick)
+    local dy = curY - data.lastY
+    if data.wasJumping and dy < -TRICK_DETECT_DROP then
+        data.trickDetected = true
+        data.trickTick = now
+    end
+    
+    -- Clear trick flag after timeout
+    if data.trickDetected and (now - data.trickTick) > TRICK_FOLLOW_TIME then
+        data.trickDetected = false
+    end
+    
+    data.wasJumping = inAir
+    data.lastY = curY
+    data.lastTick = now
+    
+    return data
+end
 
 local function nearestPlayer_bat()
     if not hrp then return nil, math.huge end
@@ -1226,48 +1263,22 @@ local function startLookAt()
     alignOrientation_bat.Responsiveness = 1000
     alignOrientation_bat.RigidityEnabled = true
     alignOrientation_bat.Parent = hrp
-    -- Restore original follow/lock logic with anti-TP-down prediction
+    -- Restore original follow/lock logic with anti-trick TP prediction
     local lastTargetPos = nil
-    local lastTargetAirTick = 0
-    local lastTargetWasAir = false
     lookConnection_bat = RunService.RenderStepped:Connect(function()
         if not hrp or not alignOrientation_bat then return end
         local target = closestLookTarget()
         if not target then return end
-
-        local targetHum = target.Parent and target.Parent:FindFirstChildOfClass("Humanoid")
-        local isInAir = targetHum and targetHum.FloorMaterial == Enum.Material.Air
-        local now = tick()
-
-        if isInAir and not lastTargetWasAir then
-            lastTargetAirTick = now
-        end
-        lastTargetWasAir = isInAir
-
-        local predictY = target.Position.Y
-
-        -- If target has been airborne for a bit, look toward ground level
-        if isInAir and (now - lastTargetAirTick) > 0.3 then
-            -- Raycast to find ground below target
-            local rayParams = RaycastParams.new()
-            rayParams.FilterDescendantsInstances = {target.Parent}
-            rayParams.FilterType = Enum.RaycastFilterType.Exclude
-            local rayResult = workspace:Raycast(target.Position, Vector3.new(0, -500, 0), rayParams)
-            if rayResult then
-                predictY = rayResult.Position.Y + 3
-            end
-        elseif lastTargetPos then
-            local dy = target.Position.Y - lastTargetPos.Y
-            -- Sudden drop = TP down, snap look to their new pos
-            if dy < -TP_DOWN_DETECT_DROP then
-                predictY = target.Position.Y
-            elseif math.abs(dy) > 2 then
-                predictY = target.Position.Y + dy * 0.7
+        -- Always aim at actual current position (don't get tricked by sudden Y changes)
+        local lookPos = target.Position
+        -- Smoothly track: if target velocity is strong, lead slightly
+        if lastTargetPos then
+            local delta = target.Position - lastTargetPos
+            if delta.Magnitude > 0.5 then
+                lookPos = target.Position + delta * 0.3
             end
         end
-
         lastTargetPos = target.Position
-        local lookPos = Vector3.new(target.Position.X, predictY, target.Position.Z)
         alignOrientation_bat.CFrame = CFrame.lookAt(hrp.Position, lookPos)
     end)
 end
@@ -1311,65 +1322,36 @@ RunService.Heartbeat:Connect(function()
     local target, distance = nearestPlayer_bat()
     if not target then return end
 
-    local targetName = target.Parent and target.Parent.Name or "?"
     local targetHum = target.Parent and target.Parent:FindFirstChildOfClass("Humanoid")
-    local now = tick()
-
-    -- Initialize tracking for this player
-    if not playerYHistory[targetName] then
-        playerYHistory[targetName] = {
-            lastY = target.Position.Y,
-            wasInAir = false,
-            lastAirTick = 0,
-            tpDownTick = 0,
-            groundY = target.Position.Y,
-        }
-    end
-    local track = playerYHistory[targetName]
-
-    -- Detect ground position via raycast from target
-    local rayParams = RaycastParams.new()
-    rayParams.FilterDescendantsInstances = {target.Parent}
-    rayParams.FilterType = Enum.RaycastFilterType.Exclude
-    local rayResult = workspace:Raycast(target.Position, Vector3.new(0, -500, 0), rayParams)
-    if rayResult then
-        track.groundY = rayResult.Position.Y + 3
-    end
-
-    local curY = target.Position.Y
-    local yDrop = track.lastY - curY
-    local isInAir = targetHum and targetHum.FloorMaterial == Enum.Material.Air
-
-    -- Detect jump: player goes into the air
-    if isInAir and not track.wasInAir then
-        track.lastAirTick = now
-    end
-
-    -- Detect TP-down trick: player was in air and suddenly drops a lot
-    if yDrop > TP_DOWN_DETECT_DROP and track.wasInAir then
-        track.tpDownTick = now
-    end
-
-    -- Build predicted position
+    
+    -- Update anti-trick tracking for this target
+    local trackData = updatePlayerTracking(target, targetHum)
+    
+    -- Always follow the target's ACTUAL current position
+    -- This prevents being tricked by jump+TP-down: bat just stays on them
     local predictedPos = target.Position
-
-    if isInAir and track.wasInAir and (now - track.lastAirTick) > 0.3 then
-        -- Player has been in the air for a while - they'll likely TP down soon
-        -- Pre-aim toward their ground position to beat them there
-        predictedPos = Vector3.new(target.Position.X, track.groundY, target.Position.Z)
-    elseif isInAir then
-        -- Just jumped - follow them up but bias slightly toward ground
-        predictedPos = target.Position + Vector3.new(0, -2, 0)
-    elseif (now - track.tpDownTick) < TP_DOWN_FOLLOW_TIME then
-        -- They just TP'd down - snap to their ground position fast
-        predictedPos = Vector3.new(target.Position.X, track.groundY, target.Position.Z)
+    
+    -- If they're in the air (jumping), move faster toward them vertically to close the gap
+    local inAir = targetHum and targetHum.FloorMaterial == Enum.Material.Air
+    local moveSpeed = BAT_MOVE_SPEED
+    
+    if inAir or trackData.trickDetected then
+        -- Player is jumping or just did a trick (jumped then TP'd down)
+        -- Increase speed and go straight to their real position with no delay
+        moveSpeed = BAT_MOVE_SPEED * 1.3
+        -- Add velocity prediction: if they're moving, lead slightly
+        if target.AssemblyLinearVelocity.Magnitude > 3 then
+            predictedPos = predictedPos + target.AssemblyLinearVelocity * 0.15
+        end
     end
 
-    track.lastY = curY
-    track.wasInAir = isInAir
-
-    local moveDir = (predictedPos - hrp.Position).Unit
-    hrp.AssemblyLinearVelocity = moveDir * BAT_MOVE_SPEED
+    local moveDir = (predictedPos - hrp.Position)
+    if moveDir.Magnitude > 0.5 then
+        hrp.AssemblyLinearVelocity = moveDir.Unit * moveSpeed
+    else
+        -- Very close, match their velocity to stick to them
+        hrp.AssemblyLinearVelocity = target.AssemblyLinearVelocity
+    end
 
     if distance <= BAT_ENGAGE_RANGE then
         if tick() - lastEquipTick_bat >= BAT_LOOP_TIME then
