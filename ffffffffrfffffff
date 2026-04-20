@@ -1172,8 +1172,6 @@ local lookConnection_bat = nil
 local attachment_bat = nil
 local alignOrientation_bat = nil
 local BAT_LOOK_DISTANCE = 50
-local bat_lastTargetY = nil
-local bat_verticalBoost = false
 
 local function nearestPlayer_bat()
     if not hrp then return nil, math.huge end
@@ -1251,8 +1249,6 @@ end
 
 local function stopBatAimbot()
     batAimbotToggled = false
-    bat_lastTargetY = nil
-    bat_verticalBoost = false
     stopLookAt()
     if hrp then
         hrp.AssemblyLinearVelocity = Vector3.zero
@@ -1281,78 +1277,38 @@ RunService.Heartbeat:Connect(function()
     hrp.CanCollide = false
 
     local target, distance = nearestPlayer_bat()
-    if not target then
-        bat_lastTargetY = nil
-        bat_verticalBoost = false
-        return
-    end
+    if not target then return end
 
-    -- Detect vertical teleport (TP up/down)
-    local targetY = target.Position.Y
-    local yDiff = 0
-    if bat_lastTargetY then
-        yDiff = targetY - bat_lastTargetY
-    end
-    bat_lastTargetY = targetY
-
-    -- If target moved more than 8 studs vertically in one frame = TP detected
-    if math.abs(yDiff) > 8 then
-        bat_verticalBoost = true
-    end
-
-    -- Predict target position
+    -- Predict target movement for anti-dodge/anti-jump
     local predictedPos = target.Position
     local targetHum = target.Parent and target.Parent:FindFirstChildOfClass("Humanoid")
-
-    -- Enhanced vertical prediction for TP up/down players
-    local myY = hrp.Position.Y
-    local verticalGap = math.abs(targetY - myY)
-
-    if bat_verticalBoost or verticalGap > 6 then
-        -- Float directly to target Y - match their height aggressively
-        local horizontalDir = Vector3.new(
-            target.Position.X - hrp.Position.X,
-            0,
-            target.Position.Z - hrp.Position.Z
-        )
-
-        -- Vertical speed scales with gap - faster when further apart
-        local verticalSpeed = math.clamp(verticalGap * 8, BAT_MOVE_SPEED, BAT_MOVE_SPEED * 3)
-        local yVel = 0
-        if targetY > myY + 1 then
-            yVel = verticalSpeed -- go up fast
-        elseif targetY < myY - 1 then
-            yVel = -verticalSpeed -- go down fast
-        else
-            bat_verticalBoost = false -- caught up, reset
-        end
-
-        -- Horizontal movement at normal speed
-        local hSpeed = BAT_MOVE_SPEED
-        if horizontalDir.Magnitude > 0.5 then
-            local hDir = horizontalDir.Unit
-            hrp.AssemblyLinearVelocity = Vector3.new(
-                hDir.X * hSpeed,
-                yVel,
-                hDir.Z * hSpeed
-            )
-        else
-            hrp.AssemblyLinearVelocity = Vector3.new(0, yVel, 0)
-        end
-
-        -- Reset boost when within range vertically
-        if verticalGap < 3 then
-            bat_verticalBoost = false
-        end
-    else
-        -- Normal tracking (original behavior with small air prediction)
-        if targetHum and targetHum.FloorMaterial == Enum.Material.Air then
-            predictedPos = predictedPos + Vector3.new(0, targetHum.Jump and 4 or 2, 0)
-        end
-
-        local moveDir = (predictedPos - hrp.Position).Unit
-        hrp.AssemblyLinearVelocity = moveDir * BAT_MOVE_SPEED
+    if targetHum and targetHum.FloorMaterial == Enum.Material.Air then
+        -- If jumping, predict upward movement
+        predictedPos = predictedPos + Vector3.new(0, targetHum.Jump and 4 or 2, 0)
     end
+
+    -- Full 3D tracking: aggressively match target Y (TP up/down catch)
+    local diff = predictedPos - hrp.Position
+    local horizDist = Vector3.new(diff.X, 0, diff.Z).Magnitude
+    local vertDiff = diff.Y
+    local horizDir = horizDist > 0.5 and Vector3.new(diff.X, 0, diff.Z).Unit or Vector3.zero
+
+    -- Boost vertical speed when height difference is large (target TP'd up or down)
+    local vertSpeed = BAT_MOVE_SPEED
+    if math.abs(vertDiff) > 3 then
+        vertSpeed = math.max(BAT_MOVE_SPEED, math.abs(vertDiff) * 8)
+    end
+
+    local vertVel = 0
+    if math.abs(vertDiff) > 0.5 then
+        vertVel = (vertDiff > 0) and vertSpeed or -vertSpeed
+    end
+
+    hrp.AssemblyLinearVelocity = Vector3.new(
+        horizDir.X * BAT_MOVE_SPEED,
+        vertVel,
+        horizDir.Z * BAT_MOVE_SPEED
+    )
 
     if distance <= BAT_ENGAGE_RANGE then
         if tick() - lastEquipTick_bat >= BAT_LOOP_TIME then
