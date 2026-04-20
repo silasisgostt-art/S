@@ -15,31 +15,33 @@ gui.Name = "TIM_CHEESE_GUI"
 gui.ResetOnSpawn = false
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.fromOffset(270, 0) -- height set after buttons
+main.Size = UDim2.fromOffset(160, 0) -- height set after buttons
 main.Position = UDim2.fromScale(0.5, 0.5)
 main.AnchorPoint = Vector2.new(0.5, 0.5)
 main.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
 main.BorderSizePixel = 0
-Instance.new("UICorner", main).CornerRadius = UDim.new(0, 12)
-Instance.new("UIStroke", main).Color = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 8)
+local uiStroke = Instance.new("UIStroke", main)
+uiStroke.Color = Color3.fromRGB(255, 255, 255)
+uiStroke.Thickness = 1
 
 -- Title
 local title = Instance.new("TextLabel", main)
-title.Size = UDim2.new(1, 0, 0, 34)
+title.Size = UDim2.new(1, 0, 0, 18)
 title.BackgroundTransparency = 1
 title.Text = "TIM CHEESE DUELS"
 title.Font = Enum.Font.GothamBold
-title.TextSize = 16
+title.TextSize = 9
 title.TextColor3 = Color3.new(1, 1, 1)
 
 -- Button container
 local container = Instance.new("Frame", main)
-container.Size = UDim2.new(1, -20, 1, -44)
-container.Position = UDim2.fromOffset(10, 38)
+container.Size = UDim2.new(1, -8, 1, -22)
+container.Position = UDim2.fromOffset(4, 20)
 container.BackgroundTransparency = 1
 
 local layout = Instance.new("UIListLayout", container)
-layout.Padding = UDim.new(0, 6)
+layout.Padding = UDim.new(0, 2)
 layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 -- ═══════════════════════════════════════════════════════
@@ -52,13 +54,13 @@ local function makeToggle(name, callback)
     local active = false
 
     local btn = Instance.new("TextButton", container)
-    btn.Size = UDim2.new(1, 0, 0, 32)
+    btn.Size = UDim2.new(1, 0, 0, 14)
     btn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
     btn.TextColor3 = Color3.new(1, 1, 1)
     btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 13
+    btn.TextSize = 8
     btn.Text = name .. ": OFF"
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
 
     btn.MouseButton1Click:Connect(function()
         active = not active
@@ -398,6 +400,43 @@ makeToggle("Anti Bee & Disco", function(v)
 end)
 
 -- ═══════════════════════════════════════════════════════
+-- FEATURE: GALAXY SKY
+-- ═══════════════════════════════════════════════════════
+
+local GalaxySky = { Sky = nil }
+
+makeToggle("Galaxy Sky", function(v)
+    if v then
+        -- Remove existing sky
+        for _, s in pairs(Lighting:GetChildren()) do
+            if s:IsA("Sky") then s:Destroy() end
+        end
+        local sky = Instance.new("Sky", Lighting)
+        sky.Name = "GalaxySky"
+        sky.SkyboxBk = "rbxassetid://159454286"
+        sky.SkyboxDn = "rbxassetid://159454286"
+        sky.SkyboxFt = "rbxassetid://159454286"
+        sky.SkyboxLf = "rbxassetid://159454286"
+        sky.SkyboxRt = "rbxassetid://159454286"
+        sky.SkyboxUp = "rbxassetid://159454286"
+        sky.StarCount = 5000
+        sky.CelestialBodiesShown = true
+        Lighting.ClockTime = 0
+        Lighting.Ambient = Color3.fromRGB(30, 10, 50)
+        Lighting.OutdoorAmbient = Color3.fromRGB(20, 5, 40)
+        GalaxySky.Sky = sky
+    else
+        if GalaxySky.Sky then
+            pcall(function() GalaxySky.Sky:Destroy() end)
+            GalaxySky.Sky = nil
+        end
+        Lighting.ClockTime = 12
+        Lighting.Ambient = Color3.fromRGB(128, 128, 128)
+        Lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128)
+    end
+end)
+
+-- ═══════════════════════════════════════════════════════
 -- FEATURE: ANTI LAG (RUNS ALL ANTI-LAG AT ONCE)
 -- ═══════════════════════════════════════════════════════
 
@@ -468,8 +507,8 @@ end)
 -- RESIZE MAIN FRAME TO FIT ALL BUTTONS
 -- ═══════════════════════════════════════════════════════
 
-local totalHeight = 44 + (#allButtons * 38) + 10
-main.Size = UDim2.fromOffset(270, totalHeight)
+local totalHeight = 22 + (#allButtons * 16) + 6
+main.Size = UDim2.fromOffset(160, totalHeight)
 
 -- ═══════════════════════════════════════════════════════
 -- DRAGGABLE GUI
