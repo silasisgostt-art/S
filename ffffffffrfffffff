@@ -1271,7 +1271,7 @@ local function equipBat_target()
     end
 end
 
-local BAT_FLOAT_AMPLITUDE = 4 -- studs up and down
+local BAT_FLOAT_AMPLITUDE = 7 -- studs up and down
 local BAT_FLOAT_SPEED = 3 -- oscillation speed
 
 RunService.Heartbeat:Connect(function()
@@ -1282,8 +1282,8 @@ RunService.Heartbeat:Connect(function()
     local target, distance = nearestPlayer_bat()
     if not target then return end
 
-    -- Float up 4 studs then back down, repeating
-    local floatOffset = math.abs(math.sin(tick() * BAT_FLOAT_SPEED)) * BAT_FLOAT_AMPLITUDE
+    -- Float up and down by 4 studs using sine wave
+    local floatOffset = math.sin(tick() * BAT_FLOAT_SPEED) * BAT_FLOAT_AMPLITUDE
 
     -- Predict target movement for anti-dodge/anti-jump
     local predictedPos = target.Position
@@ -3968,6 +3968,132 @@ function createRightButtons(device)
             stopBatAimbot()
             TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
         end
+    end)
+
+    -- ✅ TRACK PLAYER SETTINGS GEAR (FLOAT SPEED)
+    local TrackGearBtn = Instance.new("TextButton")
+    TrackGearBtn.Size = UDim2.new(0, 30, 0, 30)
+    TrackGearBtn.Position = UDim2.new(1, -buttonSize - 50, 0.5, -buttonSize - 10 + (buttonSize - 30) / 2)
+    TrackGearBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
+    TrackGearBtn.Text = "⚙️"
+    TrackGearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TrackGearBtn.Font = Enum.Font.GothamBold
+    TrackGearBtn.TextSize = device == "iPhone" and 14 or 16
+    TrackGearBtn.Parent = ScreenGui
+
+    local TrackGearCorner = Instance.new("UICorner")
+    TrackGearCorner.CornerRadius = UDim.new(0, 8)
+    TrackGearCorner.Parent = TrackGearBtn
+
+    local TrackGearBlackStroke = Instance.new("UIStroke")
+    TrackGearBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+    TrackGearBlackStroke.Thickness = 4
+    TrackGearBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    TrackGearBlackStroke.Parent = TrackGearBtn
+
+    -- Track Player Settings Popup
+    local TrackSettingsGUI = Instance.new("Frame")
+    TrackSettingsGUI.Name = "TrackSettingsGUI"
+    TrackSettingsGUI.Size = UDim2.new(0, 200, 0, 100)
+    TrackSettingsGUI.Position = UDim2.new(0.5, -100, 0.5, -50)
+    TrackSettingsGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    TrackSettingsGUI.BackgroundTransparency = 0.1
+    TrackSettingsGUI.BorderSizePixel = 0
+    TrackSettingsGUI.Visible = false
+    TrackSettingsGUI.Active = true
+    TrackSettingsGUI.Draggable = true
+    TrackSettingsGUI.Parent = ScreenGui
+
+    local TrackSetCorner = Instance.new("UICorner")
+    TrackSetCorner.CornerRadius = UDim.new(0, 12)
+    TrackSetCorner.Parent = TrackSettingsGUI
+
+    local TrackSetStroke = Instance.new("UIStroke")
+    TrackSetStroke.Color = Color3.fromRGB(255, 255, 255)
+    TrackSetStroke.Thickness = 2
+    TrackSetStroke.Parent = TrackSettingsGUI
+
+    local TrackSetTitle = Instance.new("TextLabel")
+    TrackSetTitle.Size = UDim2.new(1, 0, 0, 30)
+    TrackSetTitle.BackgroundTransparency = 1
+    TrackSetTitle.Text = "TRACK PLAYER SETTINGS"
+    TrackSetTitle.TextColor3 = Color3.fromRGB(255, 200, 100)
+    TrackSetTitle.Font = Enum.Font.GothamBold
+    TrackSetTitle.TextSize = 14
+    TrackSetTitle.Parent = TrackSettingsGUI
+
+    local FloatSpeedLabel = Instance.new("TextLabel")
+    FloatSpeedLabel.Size = UDim2.new(0.6, 0, 0, 25)
+    FloatSpeedLabel.Position = UDim2.new(0, 10, 0, 35)
+    FloatSpeedLabel.BackgroundTransparency = 1
+    FloatSpeedLabel.Text = "Float Speed:"
+    FloatSpeedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    FloatSpeedLabel.Font = Enum.Font.Gotham
+    FloatSpeedLabel.TextSize = 12
+    FloatSpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
+    FloatSpeedLabel.Parent = TrackSettingsGUI
+
+    local FloatSpeedBox = Instance.new("TextBox")
+    FloatSpeedBox.Size = UDim2.new(0, 60, 0, 25)
+    FloatSpeedBox.Position = UDim2.new(1, -70, 0, 35)
+    FloatSpeedBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    FloatSpeedBox.Text = tostring(BAT_FLOAT_SPEED)
+    FloatSpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    FloatSpeedBox.Font = Enum.Font.GothamBold
+    FloatSpeedBox.TextSize = 12
+    FloatSpeedBox.ClearTextOnFocus = false
+    FloatSpeedBox.Parent = TrackSettingsGUI
+
+    local FloatSpeedBoxCorner = Instance.new("UICorner")
+    FloatSpeedBoxCorner.CornerRadius = UDim.new(0, 6)
+    FloatSpeedBoxCorner.Parent = FloatSpeedBox
+
+    local FloatHeightLabel = Instance.new("TextLabel")
+    FloatHeightLabel.Size = UDim2.new(0.6, 0, 0, 25)
+    FloatHeightLabel.Position = UDim2.new(0, 10, 0, 65)
+    FloatHeightLabel.BackgroundTransparency = 1
+    FloatHeightLabel.Text = "Float Height:"
+    FloatHeightLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    FloatHeightLabel.Font = Enum.Font.Gotham
+    FloatHeightLabel.TextSize = 12
+    FloatHeightLabel.TextXAlignment = Enum.TextXAlignment.Left
+    FloatHeightLabel.Parent = TrackSettingsGUI
+
+    local FloatHeightBox = Instance.new("TextBox")
+    FloatHeightBox.Size = UDim2.new(0, 60, 0, 25)
+    FloatHeightBox.Position = UDim2.new(1, -70, 0, 65)
+    FloatHeightBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    FloatHeightBox.Text = tostring(BAT_FLOAT_AMPLITUDE)
+    FloatHeightBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    FloatHeightBox.Font = Enum.Font.GothamBold
+    FloatHeightBox.TextSize = 12
+    FloatHeightBox.ClearTextOnFocus = false
+    FloatHeightBox.Parent = TrackSettingsGUI
+
+    local FloatHeightBoxCorner = Instance.new("UICorner")
+    FloatHeightBoxCorner.CornerRadius = UDim.new(0, 6)
+    FloatHeightBoxCorner.Parent = FloatHeightBox
+
+    FloatSpeedBox.FocusLost:Connect(function()
+        local value = tonumber(FloatSpeedBox.Text)
+        if value then
+            BAT_FLOAT_SPEED = value
+        else
+            FloatSpeedBox.Text = tostring(BAT_FLOAT_SPEED)
+        end
+    end)
+
+    FloatHeightBox.FocusLost:Connect(function()
+        local value = tonumber(FloatHeightBox.Text)
+        if value then
+            BAT_FLOAT_AMPLITUDE = value
+        else
+            FloatHeightBox.Text = tostring(BAT_FLOAT_AMPLITUDE)
+        end
+    end)
+
+    TrackGearBtn.MouseButton1Click:Connect(function()
+        TrackSettingsGUI.Visible = not TrackSettingsGUI.Visible
     end)
 
     -- ✅ HIT CIRCLE Button (UNDER TRACK PLAYER - GRAY!)
