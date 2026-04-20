@@ -1271,8 +1271,10 @@ local function equipBat_target()
     end
 end
 
-local BAT_FLOAT_AMPLITUDE = 7 -- studs up and down
+local BAT_FLOAT_AMPLITUDE = 3.5 -- half of total range
 local BAT_FLOAT_SPEED = 3 -- oscillation speed
+local trackFloatHeight = 7  -- studs above target to float (up 7 then back down)
+local trackFloatSpeed = 3   -- oscillation speed (configurable via gear)
 
 RunService.Heartbeat:Connect(function()
     if not batAimbotToggled or not character or not hrp or not hum then return end
@@ -1282,8 +1284,8 @@ RunService.Heartbeat:Connect(function()
     local target, distance = nearestPlayer_bat()
     if not target then return end
 
-    -- Float up and down by 4 studs using sine wave
-    local floatOffset = math.sin(tick() * BAT_FLOAT_SPEED) * BAT_FLOAT_AMPLITUDE
+    -- Float from target's Y to target's Y + trackFloatHeight (up 7 then back down)
+    local floatOffset = (math.sin(tick() * trackFloatSpeed) + 1) / 2 * trackFloatHeight
 
     -- Predict target movement for anti-dodge/anti-jump
     local predictedPos = target.Position
@@ -1293,8 +1295,8 @@ RunService.Heartbeat:Connect(function()
         predictedPos = predictedPos + Vector3.new(0, targetHum.Jump and 4 or 2, 0)
     end
 
-    -- Add float offset to predicted position
-    predictedPos = predictedPos + Vector3.new(0, floatOffset, 0)
+    -- Track target's Y height + oscillating offset (0 to trackFloatHeight studs above)
+    predictedPos = Vector3.new(predictedPos.X, target.Position.Y + floatOffset, predictedPos.Z)
 
     local moveDir = (predictedPos - hrp.Position).Unit
     hrp.AssemblyLinearVelocity = moveDir * BAT_MOVE_SPEED
@@ -3983,12 +3985,12 @@ function createRightButtons(device)
     TrackGear.Parent = TrackPlayerButton
 
     -- ═══════════════════════════════════════════════════════
-    -- ✅ TRACK PLAYER SETTINGS PANEL (Float Height & Speed)
+    -- ✅ TRACK PLAYER SETTINGS PANEL (Height + Speed)
     -- ═══════════════════════════════════════════════════════
 
     local TrackSettings = Instance.new("Frame")
     TrackSettings.Name = "TrackSettings"
-    TrackSettings.Size = UDim2.new(0, 210, 0, 200)
+    TrackSettings.Size = UDim2.new(0, 210, 0, 140)
     TrackSettings.Position = UDim2.new(0.5, -105, 0.3, 0)
     TrackSettings.BackgroundColor3 = Color3.fromRGB(14, 14, 14)
     TrackSettings.BackgroundTransparency = 0.05
@@ -4025,7 +4027,7 @@ function createRightButtons(device)
     local TSTitle = Instance.new("TextLabel")
     TSTitle.Size = UDim2.new(1, 0, 0, 30)
     TSTitle.BackgroundTransparency = 1
-    TSTitle.Text = "⚙ Track Player Settings"
+    TSTitle.Text = "⚙ Track Settings"
     TSTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
     TSTitle.Font = Enum.Font.GothamBold
     TSTitle.TextSize = 14
@@ -4044,7 +4046,6 @@ function createRightButtons(device)
     TSClose.ZIndex = 11
     TSClose.MouseButton1Click:Connect(function() TrackSettings.Visible = false end)
 
-    -- Helper to create a track setting row
     local function createTrackRow(labelText, yPos, getValue, setValue, step, minVal)
         local lbl = Instance.new("TextLabel")
         lbl.Size = UDim2.new(0.55, 0, 0, 25)
@@ -4063,7 +4064,7 @@ function createRightButtons(device)
         valLbl.Position = UDim2.new(1, -100, 0, yPos)
         valLbl.BackgroundTransparency = 1
         valLbl.Text = tostring(getValue())
-        valLbl.TextColor3 = Color3.fromRGB(100, 200, 255)
+        valLbl.TextColor3 = Color3.fromRGB(138, 43, 226)
         valLbl.Font = Enum.Font.GothamBold
         valLbl.TextSize = 12
         valLbl.Parent = TrackSettings
@@ -4101,74 +4102,16 @@ function createRightButtons(device)
             setValue(getValue() + step)
             valLbl.Text = tostring(getValue())
         end)
-        return valLbl
     end
 
-    createTrackRow("Float Height", 35, function() return BAT_FLOAT_AMPLITUDE end, function(v) BAT_FLOAT_AMPLITUDE = v end, 1, 1)
-    createTrackRow("Float Speed", 65, function() return BAT_FLOAT_SPEED end, function(v) BAT_FLOAT_SPEED = v end, 0.5, 0.5)
-    createTrackRow("Move Speed", 95, function() return BAT_MOVE_SPEED end, function(v) BAT_MOVE_SPEED = v end, 1, 5)
-
-    -- Save & Reset for Track Player
-    local TSSave = Instance.new("TextButton")
-    TSSave.Size = UDim2.new(0.44, 0, 0, 28)
-    TSSave.Position = UDim2.new(0.03, 0, 0, 130)
-    TSSave.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
-    TSSave.Text = "💾 Save"
-    TSSave.TextColor3 = Color3.fromRGB(255, 255, 255)
-    TSSave.Font = Enum.Font.GothamBold
-    TSSave.TextSize = 12
-    TSSave.Parent = TrackSettings
-    TSSave.ZIndex = 11
-    Instance.new("UICorner", TSSave).CornerRadius = UDim.new(0, 8)
-
-    local TSReset = Instance.new("TextButton")
-    TSReset.Size = UDim2.new(0.44, 0, 0, 28)
-    TSReset.Position = UDim2.new(0.53, 0, 0, 130)
-    TSReset.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-    TSReset.Text = "🔄 Reset"
-    TSReset.TextColor3 = Color3.fromRGB(255, 255, 255)
-    TSReset.Font = Enum.Font.GothamBold
-    TSReset.TextSize = 12
-    TSReset.Parent = TrackSettings
-    TSReset.ZIndex = 11
-    Instance.new("UICorner", TSReset).CornerRadius = UDim.new(0, 8)
-
-    local TSStatus = Instance.new("TextLabel")
-    TSStatus.Size = UDim2.new(1, 0, 0, 20)
-    TSStatus.Position = UDim2.new(0, 0, 0, 162)
-    TSStatus.BackgroundTransparency = 1
-    TSStatus.Text = ""
-    TSStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
-    TSStatus.Font = Enum.Font.Gotham
-    TSStatus.TextSize = 11
-    TSStatus.Parent = TrackSettings
-    TSStatus.ZIndex = 11
-
-    TSSave.MouseButton1Click:Connect(function()
-        ConfigData.batFloatAmplitude = BAT_FLOAT_AMPLITUDE
-        ConfigData.batFloatSpeed = BAT_FLOAT_SPEED
-        ConfigData.batMoveSpeed = BAT_MOVE_SPEED
-        SaveConfig()
-        TSStatus.Text = "✅ Saved!"
-        TSStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
-        task.delay(2, function() TSStatus.Text = "" end)
-    end)
-
-    TSReset.MouseButton1Click:Connect(function()
-        BAT_FLOAT_AMPLITUDE = 7
-        BAT_FLOAT_SPEED = 3
-        BAT_MOVE_SPEED = 56.5
-        TrackSettings.Visible = false
-        TrackSettings.Visible = true
-        TSStatus.Text = "🔄 Reset!"
-        TSStatus.TextColor3 = Color3.fromRGB(255, 200, 80)
-        task.delay(2, function() TSStatus.Text = "" end)
-    end)
-
-    -- Load saved track player settings
-    if ConfigData.batFloatAmplitude then BAT_FLOAT_AMPLITUDE = ConfigData.batFloatAmplitude end
-    if ConfigData.batFloatSpeed then BAT_FLOAT_SPEED = ConfigData.batFloatSpeed end
-    if ConfigData.batMoveSpeed then BAT_MOVE_SPEED = ConfigData.batMoveSpeed end
+    createTrackRow("Float Height", 35,
+        function() return trackFloatHeight end,
+        function(v) trackFloatHeight = v end,
+        1, 1)
+    createTrackRow("Float Speed", 65,
+        function() return trackFloatSpeed end,
+        function(v) trackFloatSpeed = v end,
+        1, 1)
 
     TrackGear.MouseButton1Click:Connect(function()
         TrackSettings.Visible = not TrackSettings.Visible
