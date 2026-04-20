@@ -1,6 +1,4 @@
--- TIM CHEESE DUELS
 
---[[
 ══════════════════════════════════════════════════════════════
                 TIM CHEESE DUELS
 ══════════════════════════════════════════════════════════════
@@ -10,6 +8,215 @@
 ✅ Config auto-loads on join
 ══════════════════════════════════════════════════════════════
 ]]
+--[[
+=====================
+  rzgr1ks DESYNC MODULE (SOURCES HUB BOT DEOBFUSCATED)
+  Standalone toggleable desync/speed bypass system with GUI
+=====================
+]]
+do
+    local UIS = game:GetService("UserInputService")
+    local TweenService = game:GetService("TweenService")
+    local RunService = game:GetService("RunService")
+    local Players = game:GetService("Players")
+    local Lighting = game:GetService("Lighting")
+    local LocalPlayer = Players.LocalPlayer
+
+    -- Ping & Grafik Optimizasyonu (safe to call once)
+    local function optimizeSystem()
+        pcall(function()
+            settings().Network.IncomingReplicationLag = -1000
+        end)
+        pcall(function()
+            Lighting.GlobalShadows = false
+        end)
+        for _, v in pairs(game:GetDescendants()) do
+            if v:IsA("Decal") or v:IsA("Texture") then pcall(function() v:Destroy() end)
+            elseif v:IsA("BasePart") and not v:IsDescendantOf(Players) then
+                pcall(function()
+                    v.Material = Enum.Material.SmoothPlastic
+                    v.CastShadow = false
+                end)
+            end
+        end
+    end
+    optimizeSystem()
+
+    -- GUI
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "rzgr1ks_Bypass_V28"
+    ScreenGui.Parent = game:GetService("CoreGui")
+    ScreenGui.ResetOnSpawn = false
+    ScreenGui.DisplayOrder = 999999999
+    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+    local MasterActive = false
+    local currentKey = Enum.KeyCode.K
+    local isSettingKey = false
+    local isMinimized = false
+
+    local MainFrame = Instance.new("Frame")
+    MainFrame.Parent = ScreenGui
+    MainFrame.BackgroundColor3 = Color3.fromRGB(0, 15, 35)
+    MainFrame.BackgroundTransparency = 0.5
+    MainFrame.Position = UDim2.new(0.5, -110, 0.5, -40)
+    MainFrame.Size = UDim2.new(0, 220, 0, 80)
+    MainFrame.BorderSizePixel = 0
+    MainFrame.ClipsDescendants = true
+    MainFrame.ZIndex = 10
+    Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
+
+    local MainStroke = Instance.new("UIStroke", MainFrame)
+    MainStroke.Color = Color3.fromRGB(0, 160, 255)
+    MainStroke.Thickness = 2.2
+
+    local TitleBar = Instance.new("Frame")
+    TitleBar.Parent = MainFrame
+    TitleBar.BackgroundColor3 = Color3.fromRGB(0, 100, 220)
+    TitleBar.BackgroundTransparency = 0.2
+    TitleBar.Size = UDim2.new(1, 0, 0, 25)
+    TitleBar.ZIndex = 11
+    Instance.new("UICorner", TitleBar)
+
+    local TitleText = Instance.new("TextLabel")
+    TitleText.Parent = TitleBar
+    TitleText.BackgroundTransparency = 1
+    TitleText.Position = UDim2.new(0, 10, 0, 0)
+    TitleText.Size = UDim2.new(0, 180, 1, 0)
+    TitleText.Font = Enum.Font.GothamBold
+    TitleText.Text = "rzgr1ks desync speed bypass"
+    TitleText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TitleText.TextSize = 10
+    TitleText.TextXAlignment = Enum.TextXAlignment.Left
+    TitleText.ZIndex = 12
+
+    local CloseBtn = Instance.new("TextButton")
+    CloseBtn.Parent = TitleBar
+    CloseBtn.BackgroundTransparency = 1
+    CloseBtn.Position = UDim2.new(1, -30, 0, 0)
+    CloseBtn.Size = UDim2.new(0, 30, 1, 0)
+    CloseBtn.Font = Enum.Font.GothamBold
+    CloseBtn.Text = "X"
+    CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    CloseBtn.ZIndex = 12
+
+    local Content = Instance.new("Frame")
+    Content.Parent = MainFrame
+    Content.BackgroundTransparency = 1
+    Content.Position = UDim2.new(0, 0, 0, 25)
+    Content.Size = UDim2.new(1, 0, 1, -25)
+    Content.ZIndex = 11
+
+    local KeyBtn = Instance.new("TextButton")
+    KeyBtn.Parent = Content
+    KeyBtn.BackgroundColor3 = Color3.fromRGB(0, 35, 75)
+    KeyBtn.Position = UDim2.new(0.05, 0, 0.15, 0)
+    KeyBtn.Size = UDim2.new(0, 95, 0, 35)
+    KeyBtn.Text = "Key: " .. currentKey.Name
+    KeyBtn.TextColor3 = Color3.fromRGB(0, 210, 255)
+    KeyBtn.Font = Enum.Font.GothamBold
+    KeyBtn.TextSize = 12
+    KeyBtn.ZIndex = 12
+    Instance.new("UICorner", KeyBtn)
+    Instance.new("UIStroke", KeyBtn).Color = Color3.fromRGB(0, 140, 255)
+
+    local ToggleBg = Instance.new("TextButton")
+    ToggleBg.Parent = Content
+    ToggleBg.BackgroundColor3 = Color3.fromRGB(0, 35, 75)
+    ToggleBg.Position = UDim2.new(0.55, 0, 0.15, 0)
+    ToggleBg.Size = UDim2.new(0, 80, 0, 35)
+    ToggleBg.Text = ""
+    ToggleBg.ZIndex = 12
+    Instance.new("UICorner", ToggleBg).CornerRadius = UDim.new(1, 0)
+    Instance.new("UIStroke", ToggleBg).Color = Color3.fromRGB(0, 140, 255)
+
+    local ToggleKnob = Instance.new("Frame")
+    ToggleKnob.Parent = ToggleBg
+    ToggleKnob.BackgroundColor3 = Color3.fromRGB(220, 0, 60)
+    ToggleKnob.Position = UDim2.new(0, 4, 0.5, -13)
+    ToggleKnob.Size = UDim2.new(0, 26, 0, 26)
+    ToggleKnob.ZIndex = 13
+    Instance.new("UICorner", ToggleKnob).CornerRadius = UDim.new(1, 0)
+
+    local function ToggleEverything()
+        MasterActive = not MasterActive
+        local targetPos = MasterActive and UDim2.new(1, -30, 0.5, -13) or UDim2.new(0, 4, 0.5, -13)
+        local targetCol = MasterActive and Color3.fromRGB(0, 255, 140) or Color3.fromRGB(220, 0, 60)
+        TweenService:Create(ToggleKnob, TweenInfo.new(0.25), {Position = targetPos, BackgroundColor3 = targetCol}):Play()
+        if MasterActive then
+            pcall(function() if raknet and raknet.desync then raknet.desync(true) end end)
+            if LocalPlayer.Character then 
+                LocalPlayer.Character:BreakJoints() 
+                if LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then LocalPlayer.Character.Humanoid.Health = 0 end
+            end
+        else
+            pcall(function() if raknet and raknet.desync then raknet.desync(false) end end)
+        end
+    end
+
+    UIS.InputBegan:Connect(function(input, gp)
+        if not gp then
+            if isSettingKey then
+                if input.KeyCode ~= Enum.KeyCode.Unknown then
+                    currentKey = input.KeyCode
+                    KeyBtn.Text = "Key: " .. currentKey.Name
+                    isSettingKey = false
+                end
+            elseif input.KeyCode == currentKey then
+                ToggleEverything()
+            end
+        end
+    end)
+
+    KeyBtn.MouseButton1Click:Connect(function() isSettingKey = true; KeyBtn.Text = "..." end)
+    ToggleBg.MouseButton1Click:Connect(ToggleEverything)
+
+    -- Hız Kontrolü (43 / 53)
+    RunService.Heartbeat:Connect(function()
+        if MasterActive and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local hum = LocalPlayer.Character.Humanoid
+            local root = LocalPlayer.Character.HumanoidRootPart
+            if hum.MoveDirection.Magnitude > 0 then
+                local speed = (hum.WalkSpeed < 27) and 53 or 43
+                root.AssemblyLinearVelocity = Vector3.new(hum.MoveDirection.X * speed, root.AssemblyLinearVelocity.Y, hum.MoveDirection.Z * speed)
+            end
+        end
+    end)
+
+    -- Lag Boost
+    RunService.RenderStepped:Connect(function()
+        if MasterActive and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            if LocalPlayer.Character.Humanoid.WalkSpeed < 27 then
+                local start = os.clock()
+                while os.clock() - start < 0.09 do end
+            end
+        end
+    end)
+
+    -- Küçültme & Sürükleme
+    CloseBtn.MouseButton1Click:Connect(function()
+        isMinimized = not isMinimized
+        Content.Visible = not isMinimized
+        local targetSize = isMinimized and UDim2.new(0, 220, 0, 25) or UDim2.new(0, 220, 0, 80)
+        TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = targetSize}):Play()
+    end)
+
+    local dragging, dragStart, startPos
+    TitleBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = MainFrame.Position
+            input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end)
+        end
+    end)
+    UIS.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+end
 
 repeat task.wait() until game:IsLoaded()
 
