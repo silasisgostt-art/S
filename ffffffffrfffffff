@@ -1255,40 +1255,6 @@ local function stopBatAimbot()
     end
 end
 
--- ═══════════════════════════════════════════════════════
--- AUTO TRACK (MOVE TOWARD NEAREST PLAYER - FULL UP/DOWN!)
--- ═══════════════════════════════════════════════════════
-
-local autoTrackEnabled = false
-local autoTrackConn = nil
-local AUTO_TRACK_SPEED = 56.5
-
-local function startAutoTrack()
-    if autoTrackConn then autoTrackConn:Disconnect() end
-    autoTrackConn = RunService.Heartbeat:Connect(function()
-        if not autoTrackEnabled then return end
-        local c = player.Character
-        local r = c and c:FindFirstChild("HumanoidRootPart")
-        if not r then return end
-        local target, _ = nearestPlayer_bat()
-        if not target then return end
-        local diff = target.Position - r.Position
-        -- Full 3D tracking including vertical (up/down)
-        if diff.Magnitude > 1 then
-            r.AssemblyLinearVelocity = diff.Unit * AUTO_TRACK_SPEED
-        else
-            r.AssemblyLinearVelocity = Vector3.zero
-        end
-    end)
-end
-
-local function stopAutoTrack()
-    autoTrackEnabled = false
-    if autoTrackConn then autoTrackConn:Disconnect() autoTrackConn = nil end
-    local r = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if r then r.AssemblyLinearVelocity = Vector3.zero end
-end
-
 local function startBatAimbot()
     stopBatAimbot()
     batAimbotToggled = true
@@ -1316,9 +1282,6 @@ RunService.Heartbeat:Connect(function()
     local target, distance = nearestPlayer_bat()
     if not target then return end
 
-    -- Float up and down by 4 studs using sine wave
-    local floatOffset = math.sin(tick() * BAT_FLOAT_SPEED) * BAT_FLOAT_AMPLITUDE
-
     -- Predict target movement for anti-dodge/anti-jump
     local predictedPos = target.Position
     local targetHum = target.Parent and target.Parent:FindFirstChildOfClass("Humanoid")
@@ -1327,11 +1290,18 @@ RunService.Heartbeat:Connect(function()
         predictedPos = predictedPos + Vector3.new(0, targetHum.Jump and 4 or 2, 0)
     end
 
-    -- Add float offset to predicted position
-    predictedPos = predictedPos + Vector3.new(0, floatOffset, 0)
+    -- ✅ SPLIT HORIZONTAL + VERTICAL TRACKING (tracks up/down properly!)
+    -- Horizontal: move toward target XZ at full speed
+    local hrpPos = hrp.Position
+    local xzDir = Vector3.new(predictedPos.X - hrpPos.X, 0, predictedPos.Z - hrpPos.Z)
+    local xzDist = xzDir.Magnitude
+    local xzVelocity = xzDist > 0.5 and (xzDir.Unit * BAT_MOVE_SPEED) or Vector3.zero
 
-    local moveDir = (predictedPos - hrp.Position).Unit
-    hrp.AssemblyLinearVelocity = moveDir * BAT_MOVE_SPEED
+    -- Vertical: track target Y with full speed (up and down)
+    local yDiff = predictedPos.Y - hrpPos.Y
+    local yVelocity = math.clamp(yDiff * 12, -BAT_MOVE_SPEED, BAT_MOVE_SPEED)
+
+    hrp.AssemblyLinearVelocity = Vector3.new(xzVelocity.X, yVelocity, xzVelocity.Z)
 
     if distance <= BAT_ENGAGE_RANGE then
         if tick() - lastEquipTick_bat >= BAT_LOOP_TIME then
@@ -1669,7 +1639,6 @@ local SmallButtonOrder = {
     "Drop Brainrot",
     "TP Down",
     "TP Up",
-    "Auto Track",
 }
 
 local function refreshSmallButtonPositions()
@@ -1727,7 +1696,6 @@ local SmallRagdollTPGUI, SmallRagdollTPButton, RagdollTPDot = createSmallGUI("Ra
 local SmallDropGUI, SmallDropButton, DropDot = createSmallGUI("Drop Brainrot", 460) -- ✅ NEW!
 SmallTPDownGUI, SmallTPDownButton, TPDownDot = createSmallGUI("TP Down", 505)
 SmallTPUpGUI, SmallTPUpButton, TPUpDot = createSmallGUI("TP Up", 550)
-local SmallAutoTrackGUI, SmallAutoTrackButton, AutoTrackDot = createSmallGUI("Auto Track", 595)
 
 local function serializeUDim2(value)
     return {
@@ -1756,7 +1724,6 @@ getButtonPositions = function()
         ["Drop Brainrot"] = serializeUDim2(SmallDropGUI.Position),
         ["TP Down"] = serializeUDim2(SmallTPDownGUI.Position),
         ["TP Up"] = serializeUDim2(SmallTPUpGUI.Position),
-        ["Auto Track"] = serializeUDim2(SmallAutoTrackGUI.Position),
     }
 end
 
@@ -1774,7 +1741,6 @@ local function applyButtonPositions(data)
         ["Drop Brainrot"] = SmallDropGUI,
         ["TP Down"] = SmallTPDownGUI,
         ["TP Up"] = SmallTPUpGUI,
-        ["Auto Track"] = SmallAutoTrackGUI,
     }
     for name, gui in pairs(mapping) do
         if gui and data[name] then
@@ -1797,7 +1763,6 @@ local function setButtonsDraggable(enabled)
         SmallAntiRagGUI,
         SmallRagdollTPGUI,
         SmallDropGUI,
-        SmallAutoTrackGUI,
     }) do
         if gui then
             gui.Draggable = enabled
@@ -2077,20 +2042,6 @@ SmallDropButton.MouseButton1Click:Connect(function()
         SmallDropGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
         DropDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
         stopDropBrainrot()
-    end
-end)
-
--- ✅ AUTO TRACK SMALL GUI TOGGLE
-SmallAutoTrackButton.MouseButton1Click:Connect(function()
-    autoTrackEnabled = not autoTrackEnabled
-    if autoTrackEnabled then
-        SmallAutoTrackGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        AutoTrackDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-        startAutoTrack()
-    else
-        SmallAutoTrackGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        AutoTrackDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        stopAutoTrack()
     end
 end)
 
@@ -2862,20 +2813,6 @@ local function createMainGUI(device)
         refreshSmallButtonPositions()
     end)
 
-    -- ✅ AUTO TRACK main button
-    local AutoTrackContainer, AutoTrackBtn, AutoTrackLabel = createMainButton("Auto Track", 11, function()
-        SmallAutoTrackGUI.Visible = true
-        AutoTrackBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-        if autoTrackEnabled then
-            SmallAutoTrackGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-            AutoTrackDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-        else
-            SmallAutoTrackGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-            AutoTrackDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        end
-        refreshSmallButtonPositions()
-    end)
-
     -- ✅ FOV SETTINGS POPUP (NEXT TO BUTTON!)
     local FOVSettingsGUI = Instance.new("Frame")
     FOVSettingsGUI.Name = "FOVSettingsGUI"
@@ -3236,11 +3173,6 @@ local function initializeGUI(device)
         SmallTPDownGUI.Visible = true
         SmallTPDownGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
         TPDownDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        
-        -- ⚪ Auto Track - SHOW AS ON-SCREEN BUTTON (off by default)
-        SmallAutoTrackGUI.Visible = true
-        SmallAutoTrackGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        AutoTrackDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
         
         -- Restore TP Up / TP Down visibility from config
         if ConfigData.tpUpEnabled then
