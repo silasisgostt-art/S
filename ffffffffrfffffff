@@ -961,6 +961,312 @@ local function disableAntiRagdoll()
 end
 
 -- ═══════════════════════════════════════════════════════
+-- XRAY BASE MODULE
+-- ═══════════════════════════════════════════════════════
+
+local XrayBase = {
+    Enabled = false,
+    OriginalTransparency = {},
+    Connections = {}
+}
+
+local XrayKeywords = {"base", "claim"}
+
+local function isPlayerBase(obj)
+    if not (obj:IsA("BasePart") or obj:IsA("MeshPart") or obj:IsA("UnionOperation")) then
+        return false
+    end
+    local n = obj.Name:lower()
+    local p = obj.Parent and obj.Parent.Name:lower() or ""
+    for _, keyword in ipairs(XrayKeywords) do
+        if n:find(keyword) or p:find(keyword) then
+            return true
+        end
+    end
+    return false
+end
+
+local function applyXrayTransparency(obj)
+    if isPlayerBase(obj) then
+        if not XrayBase.OriginalTransparency[obj] then
+            XrayBase.OriginalTransparency[obj] = obj.Transparency
+        end
+        obj.Transparency = 0.8
+    end
+end
+
+local function enableXrayBase()
+    if XrayBase.Enabled then return end
+    XrayBase.Enabled = true
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        applyXrayTransparency(obj)
+    end
+    XrayBase.Connections.descendantAdded = workspace.DescendantAdded:Connect(function(obj)
+        applyXrayTransparency(obj)
+    end)
+end
+
+local function disableXrayBase()
+    if not XrayBase.Enabled then return end
+    XrayBase.Enabled = false
+    for _, conn in pairs(XrayBase.Connections) do
+        conn:Disconnect()
+    end
+    XrayBase.Connections = {}
+    for obj, original in pairs(XrayBase.OriginalTransparency) do
+        if obj and obj.Parent then
+            obj.Transparency = original
+        end
+    end
+    XrayBase.OriginalTransparency = {}
+end
+
+-- ═══════════════════════════════════════════════════════
+-- NO ANIM MODULE
+-- ═══════════════════════════════════════════════════════
+
+local NoAnim = {
+    Enabled = false,
+    Connections = {}
+}
+
+local function disableAnims(char2)
+    local humanoid2 = char2:FindFirstChildOfClass("Humanoid")
+    if not humanoid2 then return end
+    for _, track in pairs(humanoid2:GetPlayingAnimationTracks()) do
+        track:Stop()
+    end
+    if NoAnim.Connections[char2] then
+        NoAnim.Connections[char2]:Disconnect()
+    end
+    NoAnim.Connections[char2] = humanoid2.AnimationPlayed:Connect(function(track)
+        track:Stop()
+    end)
+end
+
+local function enableNoAnim()
+    if NoAnim.Enabled then return end
+    NoAnim.Enabled = true
+    if player.Character then
+        disableAnims(player.Character)
+    end
+    NoAnim.Connections.charAdded = player.CharacterAdded:Connect(function(char2)
+        disableAnims(char2)
+    end)
+end
+
+local function disableNoAnim()
+    if not NoAnim.Enabled then return end
+    NoAnim.Enabled = false
+    for key, conn in pairs(NoAnim.Connections) do
+        conn:Disconnect()
+        NoAnim.Connections[key] = nil
+    end
+end
+
+-- ═══════════════════════════════════════════════════════
+-- PLAYER ESP MODULE
+-- ═══════════════════════════════════════════════════════
+
+local PlayerESP = {
+    Enabled = false,
+    ESP_COLOR = Color3.fromRGB(85, 170, 255),
+    Highlights = {},
+    Billboards = {},
+    Connections = {}
+}
+
+local function createESPHighlight(char2)
+    local h = Instance.new("Highlight")
+    h.Name = "TIM_ESP_Highlight"
+    h.Adornee = char2
+    h.FillColor = PlayerESP.ESP_COLOR
+    h.FillTransparency = 0.25
+    h.OutlineColor = PlayerESP.ESP_COLOR
+    h.OutlineTransparency = 0
+    h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    h.Parent = CoreGui
+    return h
+end
+
+local function createESPBillboard(char2, plr)
+    local hrp2 = char2:FindFirstChild("HumanoidRootPart")
+    if not hrp2 then return nil end
+    local bb = Instance.new("BillboardGui")
+    bb.Name = "TIM_ESP_Name"
+    bb.Adornee = hrp2
+    bb.AlwaysOnTop = true
+    bb.Size = UDim2.new(0, 100, 0, 20)
+    bb.StudsOffsetWorldSpace = Vector3.new(0, 3, 0)
+    bb.MaxDistance = 600
+    bb.Parent = CoreGui
+    local bg = Instance.new("Frame", bb)
+    bg.Size = UDim2.new(1, 0, 1, 0)
+    bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    bg.BackgroundTransparency = 0.4
+    Instance.new("UICorner", bg).CornerRadius = UDim.new(0, 6)
+    local txt = Instance.new("TextLabel", bg)
+    txt.Size = UDim2.new(1, 0, 1, 0)
+    txt.BackgroundTransparency = 1
+    txt.Font = Enum.Font.GothamSemibold
+    txt.TextSize = 13
+    txt.TextColor3 = Color3.new(1, 1, 1)
+    txt.TextStrokeTransparency = 0.2
+    txt.Text = plr.DisplayName
+    return bb
+end
+
+local function attachESP(plr)
+    if plr == player then return end
+    local function apply(char2)
+        if PlayerESP.Highlights[plr] then
+            pcall(function() PlayerESP.Highlights[plr]:Destroy() end)
+        end
+        if PlayerESP.Billboards[plr] then
+            pcall(function() PlayerESP.Billboards[plr]:Destroy() end)
+        end
+        PlayerESP.Highlights[plr] = createESPHighlight(char2)
+        PlayerESP.Billboards[plr] = createESPBillboard(char2, plr)
+    end
+    if plr.Character then apply(plr.Character) end
+    local conn = plr.CharacterAdded:Connect(apply)
+    table.insert(PlayerESP.Connections, conn)
+end
+
+local function enableESP()
+    if PlayerESP.Enabled then return end
+    PlayerESP.Enabled = true
+    for _, p in ipairs(Players:GetPlayers()) do
+        attachESP(p)
+    end
+    table.insert(PlayerESP.Connections, Players.PlayerAdded:Connect(function(p)
+        attachESP(p)
+    end))
+    table.insert(PlayerESP.Connections, Players.PlayerRemoving:Connect(function(p)
+        if PlayerESP.Highlights[p] then
+            pcall(function() PlayerESP.Highlights[p]:Destroy() end)
+            PlayerESP.Highlights[p] = nil
+        end
+        if PlayerESP.Billboards[p] then
+            pcall(function() PlayerESP.Billboards[p]:Destroy() end)
+            PlayerESP.Billboards[p] = nil
+        end
+    end))
+end
+
+local function disableESP()
+    if not PlayerESP.Enabled then return end
+    PlayerESP.Enabled = false
+    for _, h in pairs(PlayerESP.Highlights) do pcall(function() h:Destroy() end) end
+    for _, b in pairs(PlayerESP.Billboards) do pcall(function() b:Destroy() end) end
+    for _, c in ipairs(PlayerESP.Connections) do pcall(function() c:Disconnect() end) end
+    PlayerESP.Highlights = {}
+    PlayerESP.Billboards = {}
+    PlayerESP.Connections = {}
+end
+
+-- ═══════════════════════════════════════════════════════
+-- SHOW PERFORMANCE MODULE
+-- ═══════════════════════════════════════════════════════
+
+local PerformanceGui = nil
+local PerfConnection = nil
+local Stats = game:GetService("Stats")
+
+local function enableShowPerformance()
+    if not PerformanceGui then
+        PerformanceGui = Instance.new("ScreenGui")
+        PerformanceGui.Name = "TIM_Performance"
+        PerformanceGui.ResetOnSpawn = false
+        PerformanceGui.Parent = CoreGui
+        local Frame = Instance.new("Frame")
+        Frame.Size = UDim2.new(0, 260, 0, 28)
+        Frame.Position = UDim2.new(0.5, -130, 0.015, 0)
+        Frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        Frame.BackgroundTransparency = 0.45
+        Frame.BorderSizePixel = 0
+        Frame.Parent = PerformanceGui
+        Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 10)
+        local Label = Instance.new("TextLabel")
+        Label.Name = "PerfLabel"
+        Label.Size = UDim2.new(1, 0, 1, 0)
+        Label.BackgroundTransparency = 1
+        Label.Font = Enum.Font.GothamBold
+        Label.TextSize = 14
+        Label.RichText = true
+        Label.TextColor3 = Color3.fromRGB(85, 170, 255)
+        Label.Text = "FPS 0 | PING 0ms"
+        Label.Parent = Frame
+        local frames = 0
+        local last = tick()
+        PerfConnection = RunService.RenderStepped:Connect(function()
+            frames = frames + 1
+            if tick() - last >= 1 then
+                local fps = frames
+                frames = 0
+                last = tick()
+                local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
+                Label.Text = "FPS " .. fps .. " | PING " .. ping .. "ms"
+            end
+        end)
+    else
+        PerformanceGui.Enabled = true
+    end
+end
+
+local function disableShowPerformance()
+    if PerformanceGui then
+        PerformanceGui.Enabled = false
+    end
+    if PerfConnection then
+        PerfConnection:Disconnect()
+        PerfConnection = nil
+    end
+end
+
+-- ═══════════════════════════════════════════════════════
+-- ANTI FPS DEVOURER MODULE (removes accessories/particles from all players)
+-- ═══════════════════════════════════════════════════════
+
+local AntiFPSDevourer = {
+    Enabled = false,
+    Conn = nil
+}
+
+local function cleanPlayerChar(char2)
+    if not char2 then return end
+    for _, obj in ipairs(char2:GetChildren()) do
+        if obj:IsA("Accessory") or obj:IsA("Shirt") or obj:IsA("Pants") or obj:IsA("ShirtGraphic") then
+            obj:Destroy()
+        end
+        if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam") then
+            obj:Destroy()
+        end
+    end
+end
+
+local function enableAntiFPSDevourer()
+    if AntiFPSDevourer.Enabled then return end
+    AntiFPSDevourer.Enabled = true
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr.Character then cleanPlayerChar(plr.Character) end
+    end
+    AntiFPSDevourer.Conn = RunService.Heartbeat:Connect(function()
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr.Character then cleanPlayerChar(plr.Character) end
+        end
+    end)
+end
+
+local function disableAntiFPSDevourer()
+    AntiFPSDevourer.Enabled = false
+    if AntiFPSDevourer.Conn then
+        AntiFPSDevourer.Conn:Disconnect()
+        AntiFPSDevourer.Conn = nil
+    end
+end
+
+-- ═══════════════════════════════════════════════════════
 -- RAGDOLL TP
 -- ═══════════════════════════════════════════════════════
 
@@ -3033,6 +3339,60 @@ local function createMainGUI(device)
     end)
 
     -- ═══════════════════════════════════════════════════════
+    -- VISUAL FEATURES IN MISC
+    -- ═══════════════════════════════════════════════════════
+
+    local xrayButton = createMISCButton("Xray Base", 7, function()
+        if XrayBase.Enabled then
+            disableXrayBase()
+            xrayButton.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+        else
+            enableXrayBase()
+            xrayButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        end
+    end)
+
+    local noAnimButton = createMISCButton("No Anim", 8, function()
+        if NoAnim.Enabled then
+            disableNoAnim()
+            noAnimButton.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+        else
+            enableNoAnim()
+            noAnimButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        end
+    end)
+
+    local espButton = createMISCButton("Player ESP", 9, function()
+        if PlayerESP.Enabled then
+            disableESP()
+            espButton.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+        else
+            enableESP()
+            espButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        end
+    end)
+
+    local perfButton = createMISCButton("Show Performance", 10, function()
+        if PerformanceGui and PerformanceGui.Enabled then
+            disableShowPerformance()
+            perfButton.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+        else
+            enableShowPerformance()
+            perfButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        end
+    end)
+
+    local antiFPSButton = createMISCButton("Anti FPS Devourer", 11, function()
+        if AntiFPSDevourer.Enabled then
+            disableAntiFPSDevourer()
+            antiFPSButton.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+        else
+            enableAntiFPSDevourer()
+            antiFPSButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        end
+    end)
+
+    -- ═══════════════════════════════════════════════════════
     -- SETTINGS TAB CONTENT
     -- ═══════════════════════════════════════════════════════
 
@@ -3568,12 +3928,9 @@ function createRightButtons(device)
     local desyncErrorOrbActive = false
     local desyncErrorOrb = nil
     local desyncErrorOrbConn = nil
-    local desyncVisualClone = nil
-    local desyncOffsetConn = nil
-    local DESYNC_OFFSET = Vector3.new(0, -500, 0)
     local DESYNC_SETTINGS = {
-        InvisStealAngle = 213,
-        SinkSliderValue = 6,
+        InvisStealAngle = 233,
+        SinkSliderValue = 5,
         AutoRecoverLagback = true,
     }
 
@@ -3844,9 +4201,6 @@ function createRightButtons(device)
 
     local function desyncTurnOff()
         desyncClearAllGhosts()
-        -- Stop visual ghost clone
-        if desyncOffsetConn then desyncOffsetConn:Disconnect(); desyncOffsetConn = nil end
-        if desyncVisualClone then pcall(function() desyncVisualClone:Destroy() end); desyncVisualClone = nil end
         if not desyncAnimPlaying then return end
         local character = player.Character
         local humanoid = character and character:FindFirstChildOfClass("Humanoid")
@@ -3876,24 +4230,6 @@ function createRightButtons(device)
         DesyncButton.BackgroundColor3 = Color3.fromRGB(120, 60, 255)
         desyncTracks = {}
         desyncRemoveFolders()
-        -- Create visual neon ghost clone (UNKNOWN DESYNC style)
-        local function createVisualClone()
-            if desyncVisualClone then desyncVisualClone:Destroy() end
-            desyncVisualClone = Instance.new("Model", Workspace)
-            desyncVisualClone.Name = "DesyncVisualGhost"
-            for _, part in pairs(character:GetDescendants()) do
-                if part:IsA("BasePart") and part.Parent == character then
-                    local vc = part:Clone()
-                    vc.Color = Color3.fromRGB(0, 100, 255)
-                    vc.Material = Enum.Material.Neon
-                    vc.Transparency = 0.5
-                    vc.Anchored = true
-                    vc.CanCollide = false
-                    vc.Parent = desyncVisualClone
-                end
-            end
-        end
-        createVisualClone()
         local success = desyncDoClone()
         if success then
             task.wait(0.05)
@@ -3935,22 +4271,6 @@ function createRightButtons(device)
                         desyncOldRoot.AssemblyLinearVelocity = root.AssemblyLinearVelocity
                         desyncOldRoot.CanCollide = false
                         lastSetPosition = desyncOldRoot.Position
-                        -- Update visual ghost clone positions
-                        if desyncVisualClone then
-                            for _, p in pairs(desyncVisualClone:GetChildren()) do
-                                if p:IsA("BasePart") then
-                                    local orig = character:FindFirstChild(p.Name)
-                                    if orig then
-                                        p.CFrame = orig.CFrame + DESYNC_OFFSET
-                                    end
-                                end
-                            end
-                        end
-                        -- UNKNOWN DESYNC offset flicker
-                        local cf2 = root.CFrame
-                        desyncOldRoot.CFrame = cf2 + DESYNC_OFFSET
-                        task.wait()
-                        desyncOldRoot.CFrame = cf2 * CFrame.Angles(math.rad(rotAngle), 0, 0) - Vector3.new(0, sa, 0)
                     end
                 end
             end)
@@ -3972,8 +4292,6 @@ function createRightButtons(device)
         desyncAnimPlaying = false
         desyncEnabled = false
         DesyncButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-        -- Clean visual ghost
-        if desyncVisualClone then pcall(function() desyncVisualClone:Destroy() end); desyncVisualClone = nil end
         task.wait(0.2)
         local camera = Workspace.CurrentCamera
         if camera and newChar then
@@ -4319,6 +4637,276 @@ function createRightButtons(device)
         else
             desyncTurnOn()
         end
+    end)
+
+    -- ⚙ Desync Gear Button
+    local DesyncGear = Instance.new("TextButton")
+    DesyncGear.Size = UDim2.new(0, 18, 0, 18)
+    DesyncGear.Position = UDim2.new(1, -16, 0, -2)
+    DesyncGear.BackgroundTransparency = 1
+    DesyncGear.Text = "⚙"
+    DesyncGear.TextColor3 = Color3.fromRGB(200, 200, 200)
+    DesyncGear.Font = Enum.Font.GothamBold
+    DesyncGear.TextSize = 14
+    DesyncGear.ZIndex = 3
+    DesyncGear.Parent = DesyncButton
+
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ DESYNC SETTINGS PANEL (Invisible Steal)
+    -- ═══════════════════════════════════════════════════════
+
+    local DesyncSettings = Instance.new("Frame")
+    DesyncSettings.Name = "DesyncSettings"
+    DesyncSettings.Size = UDim2.new(0, 210, 0, 230)
+    DesyncSettings.Position = UDim2.new(0.5, -105, 0.3, 0)
+    DesyncSettings.BackgroundColor3 = Color3.fromRGB(14, 14, 14)
+    DesyncSettings.BackgroundTransparency = 0.05
+    DesyncSettings.Visible = false
+    DesyncSettings.Active = true
+    DesyncSettings.Draggable = true
+    DesyncSettings.Parent = ScreenGui
+    DesyncSettings.ZIndex = 10
+
+    Instance.new("UICorner", DesyncSettings).CornerRadius = UDim.new(0, 8)
+    local DSBlackStroke = Instance.new("UIStroke", DesyncSettings)
+    DSBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+    DSBlackStroke.Thickness = 5
+    DSBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    local DSStroke = Instance.new("UIStroke", DesyncSettings)
+    DSStroke.Color = Color3.fromRGB(255, 255, 255)
+    DSStroke.Thickness = 2.8
+    DSStroke.Transparency = 0.3
+    DSStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    DSStroke.ZIndex = 2
+    local DSWaveGrad = Instance.new("UIGradient")
+    DSWaveGrad.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
+    DSWaveGrad.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 1),
+        NumberSequenceKeypoint.new(0.45, 0),
+        NumberSequenceKeypoint.new(0.55, 0),
+        NumberSequenceKeypoint.new(1, 1)
+    })
+    DSWaveGrad.Rotation = 0
+    DSWaveGrad.Parent = DSStroke
+    TweenService:Create(DSStroke, TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Thickness = 4.5, Transparency = 0.05}):Play()
+    RunService.Heartbeat:Connect(function(dt) pcall(function() DSWaveGrad.Rotation = (DSWaveGrad.Rotation + 180 * dt) % 360 end) end)
+
+    local DSTitle = Instance.new("TextLabel")
+    DSTitle.Size = UDim2.new(1, 0, 0, 30)
+    DSTitle.BackgroundTransparency = 1
+    DSTitle.Text = "⚙ Desync Settings"
+    DSTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    DSTitle.Font = Enum.Font.GothamBold
+    DSTitle.TextSize = 14
+    DSTitle.Parent = DesyncSettings
+    DSTitle.ZIndex = 11
+
+    local DSClose = Instance.new("TextButton")
+    DSClose.Size = UDim2.new(0, 24, 0, 24)
+    DSClose.Position = UDim2.new(1, -28, 0, 3)
+    DSClose.BackgroundTransparency = 1
+    DSClose.Text = "✕"
+    DSClose.TextColor3 = Color3.fromRGB(255, 80, 80)
+    DSClose.Font = Enum.Font.GothamBold
+    DSClose.TextSize = 14
+    DSClose.Parent = DesyncSettings
+    DSClose.ZIndex = 11
+    DSClose.MouseButton1Click:Connect(function() DesyncSettings.Visible = false end)
+
+    -- Rotation row
+    local DSRotLbl = Instance.new("TextLabel")
+    DSRotLbl.Size = UDim2.new(0.5, 0, 0, 25)
+    DSRotLbl.Position = UDim2.new(0, 10, 0, 35)
+    DSRotLbl.BackgroundTransparency = 1
+    DSRotLbl.Text = "Rotation"
+    DSRotLbl.TextColor3 = Color3.fromRGB(220, 220, 220)
+    DSRotLbl.Font = Enum.Font.Gotham
+    DSRotLbl.TextSize = 11
+    DSRotLbl.TextXAlignment = Enum.TextXAlignment.Left
+    DSRotLbl.Parent = DesyncSettings
+    DSRotLbl.ZIndex = 11
+
+    local DSRotVal = Instance.new("TextLabel")
+    DSRotVal.Size = UDim2.new(0, 40, 0, 25)
+    DSRotVal.Position = UDim2.new(1, -90, 0, 35)
+    DSRotVal.BackgroundTransparency = 1
+    DSRotVal.Text = tostring(DESYNC_SETTINGS.InvisStealAngle)
+    DSRotVal.TextColor3 = Color3.fromRGB(138, 43, 226)
+    DSRotVal.Font = Enum.Font.GothamBold
+    DSRotVal.TextSize = 13
+    DSRotVal.Parent = DesyncSettings
+    DSRotVal.ZIndex = 11
+
+    local DSRotMinus = Instance.new("TextButton")
+    DSRotMinus.Size = UDim2.new(0, 22, 0, 22)
+    DSRotMinus.Position = UDim2.new(1, -48, 0, 37)
+    DSRotMinus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    DSRotMinus.Text = "-"
+    DSRotMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    DSRotMinus.Font = Enum.Font.GothamBold
+    DSRotMinus.TextSize = 14
+    DSRotMinus.Parent = DesyncSettings
+    DSRotMinus.ZIndex = 11
+    Instance.new("UICorner", DSRotMinus).CornerRadius = UDim.new(0, 6)
+
+    local DSRotPlus = Instance.new("TextButton")
+    DSRotPlus.Size = UDim2.new(0, 22, 0, 22)
+    DSRotPlus.Position = UDim2.new(1, -22, 0, 37)
+    DSRotPlus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    DSRotPlus.Text = "+"
+    DSRotPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    DSRotPlus.Font = Enum.Font.GothamBold
+    DSRotPlus.TextSize = 14
+    DSRotPlus.Parent = DesyncSettings
+    DSRotPlus.ZIndex = 11
+    Instance.new("UICorner", DSRotPlus).CornerRadius = UDim.new(0, 6)
+
+    DSRotMinus.MouseButton1Click:Connect(function()
+        DESYNC_SETTINGS.InvisStealAngle = math.max(180, DESYNC_SETTINGS.InvisStealAngle - 5)
+        DSRotVal.Text = tostring(DESYNC_SETTINGS.InvisStealAngle)
+    end)
+    DSRotPlus.MouseButton1Click:Connect(function()
+        DESYNC_SETTINGS.InvisStealAngle = math.min(360, DESYNC_SETTINGS.InvisStealAngle + 5)
+        DSRotVal.Text = tostring(DESYNC_SETTINGS.InvisStealAngle)
+    end)
+
+    -- Depth row
+    local DSDepthLbl = Instance.new("TextLabel")
+    DSDepthLbl.Size = UDim2.new(0.5, 0, 0, 25)
+    DSDepthLbl.Position = UDim2.new(0, 10, 0, 65)
+    DSDepthLbl.BackgroundTransparency = 1
+    DSDepthLbl.Text = "Depth"
+    DSDepthLbl.TextColor3 = Color3.fromRGB(220, 220, 220)
+    DSDepthLbl.Font = Enum.Font.Gotham
+    DSDepthLbl.TextSize = 11
+    DSDepthLbl.TextXAlignment = Enum.TextXAlignment.Left
+    DSDepthLbl.Parent = DesyncSettings
+    DSDepthLbl.ZIndex = 11
+
+    local DSDepthVal = Instance.new("TextLabel")
+    DSDepthVal.Size = UDim2.new(0, 40, 0, 25)
+    DSDepthVal.Position = UDim2.new(1, -90, 0, 65)
+    DSDepthVal.BackgroundTransparency = 1
+    DSDepthVal.Text = tostring(DESYNC_SETTINGS.SinkSliderValue)
+    DSDepthVal.TextColor3 = Color3.fromRGB(138, 43, 226)
+    DSDepthVal.Font = Enum.Font.GothamBold
+    DSDepthVal.TextSize = 13
+    DSDepthVal.Parent = DesyncSettings
+    DSDepthVal.ZIndex = 11
+
+    local DSDepthMinus = Instance.new("TextButton")
+    DSDepthMinus.Size = UDim2.new(0, 22, 0, 22)
+    DSDepthMinus.Position = UDim2.new(1, -48, 0, 67)
+    DSDepthMinus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    DSDepthMinus.Text = "-"
+    DSDepthMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    DSDepthMinus.Font = Enum.Font.GothamBold
+    DSDepthMinus.TextSize = 14
+    DSDepthMinus.Parent = DesyncSettings
+    DSDepthMinus.ZIndex = 11
+    Instance.new("UICorner", DSDepthMinus).CornerRadius = UDim.new(0, 6)
+
+    local DSDepthPlus = Instance.new("TextButton")
+    DSDepthPlus.Size = UDim2.new(0, 22, 0, 22)
+    DSDepthPlus.Position = UDim2.new(1, -22, 0, 67)
+    DSDepthPlus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    DSDepthPlus.Text = "+"
+    DSDepthPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
+    DSDepthPlus.Font = Enum.Font.GothamBold
+    DSDepthPlus.TextSize = 14
+    DSDepthPlus.Parent = DesyncSettings
+    DSDepthPlus.ZIndex = 11
+    Instance.new("UICorner", DSDepthPlus).CornerRadius = UDim.new(0, 6)
+
+    DSDepthMinus.MouseButton1Click:Connect(function()
+        DESYNC_SETTINGS.SinkSliderValue = math.max(0.5, DESYNC_SETTINGS.SinkSliderValue - 0.5)
+        DSDepthVal.Text = tostring(DESYNC_SETTINGS.SinkSliderValue)
+    end)
+    DSDepthPlus.MouseButton1Click:Connect(function()
+        DESYNC_SETTINGS.SinkSliderValue = math.min(10, DESYNC_SETTINGS.SinkSliderValue + 0.5)
+        DSDepthVal.Text = tostring(DESYNC_SETTINGS.SinkSliderValue)
+    end)
+
+    -- Auto Fix Lagback toggle
+    local DSAutoFixBtn = Instance.new("TextButton")
+    DSAutoFixBtn.Size = UDim2.new(0, 190, 0, 26)
+    DSAutoFixBtn.Position = UDim2.new(0, 10, 0, 100)
+    DSAutoFixBtn.BackgroundColor3 = DESYNC_SETTINGS.AutoRecoverLagback and Color3.fromRGB(50, 180, 50) or Color3.fromRGB(30, 30, 30)
+    DSAutoFixBtn.Text = "Auto Fix Lagback: " .. (DESYNC_SETTINGS.AutoRecoverLagback and "ON" or "OFF")
+    DSAutoFixBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
+    DSAutoFixBtn.Font = Enum.Font.GothamBold
+    DSAutoFixBtn.TextSize = 11
+    DSAutoFixBtn.Parent = DesyncSettings
+    DSAutoFixBtn.ZIndex = 11
+    Instance.new("UICorner", DSAutoFixBtn).CornerRadius = UDim.new(0, 6)
+
+    DSAutoFixBtn.MouseButton1Click:Connect(function()
+        DESYNC_SETTINGS.AutoRecoverLagback = not DESYNC_SETTINGS.AutoRecoverLagback
+        DSAutoFixBtn.Text = "Auto Fix Lagback: " .. (DESYNC_SETTINGS.AutoRecoverLagback and "ON" or "OFF")
+        DSAutoFixBtn.BackgroundColor3 = DESYNC_SETTINGS.AutoRecoverLagback and Color3.fromRGB(50, 180, 50) or Color3.fromRGB(30, 30, 30)
+    end)
+
+    -- Save & Reset
+    local DSSave = Instance.new("TextButton")
+    DSSave.Size = UDim2.new(0.44, 0, 0, 28)
+    DSSave.Position = UDim2.new(0.03, 0, 0, 140)
+    DSSave.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
+    DSSave.Text = "💾 Save"
+    DSSave.TextColor3 = Color3.fromRGB(255, 255, 255)
+    DSSave.Font = Enum.Font.GothamBold
+    DSSave.TextSize = 12
+    DSSave.Parent = DesyncSettings
+    DSSave.ZIndex = 11
+    Instance.new("UICorner", DSSave).CornerRadius = UDim.new(0, 8)
+
+    local DSReset = Instance.new("TextButton")
+    DSReset.Size = UDim2.new(0.44, 0, 0, 28)
+    DSReset.Position = UDim2.new(0.53, 0, 0, 140)
+    DSReset.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+    DSReset.Text = "🔄 Reset"
+    DSReset.TextColor3 = Color3.fromRGB(255, 255, 255)
+    DSReset.Font = Enum.Font.GothamBold
+    DSReset.TextSize = 12
+    DSReset.Parent = DesyncSettings
+    DSReset.ZIndex = 11
+    Instance.new("UICorner", DSReset).CornerRadius = UDim.new(0, 8)
+
+    local DSStatus = Instance.new("TextLabel")
+    DSStatus.Size = UDim2.new(1, 0, 0, 20)
+    DSStatus.Position = UDim2.new(0, 0, 0, 175)
+    DSStatus.BackgroundTransparency = 1
+    DSStatus.Text = ""
+    DSStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
+    DSStatus.Font = Enum.Font.Gotham
+    DSStatus.TextSize = 11
+    DSStatus.Parent = DesyncSettings
+    DSStatus.ZIndex = 11
+
+    DSSave.MouseButton1Click:Connect(function()
+        ConfigData.desyncAngle = DESYNC_SETTINGS.InvisStealAngle
+        ConfigData.desyncSink = DESYNC_SETTINGS.SinkSliderValue
+        ConfigData.desyncAutoRecover = DESYNC_SETTINGS.AutoRecoverLagback
+        SaveConfig()
+        DSStatus.Text = "✅ Saved!"
+        DSStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
+        task.delay(2, function() DSStatus.Text = "" end)
+    end)
+
+    DSReset.MouseButton1Click:Connect(function()
+        DESYNC_SETTINGS.InvisStealAngle = 233
+        DESYNC_SETTINGS.SinkSliderValue = 5
+        DESYNC_SETTINGS.AutoRecoverLagback = true
+        DSRotVal.Text = "233"
+        DSDepthVal.Text = "5"
+        DSAutoFixBtn.Text = "Auto Fix Lagback: ON"
+        DSAutoFixBtn.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
+        DSStatus.Text = "🔄 Reset!"
+        DSStatus.TextColor3 = Color3.fromRGB(255, 200, 80)
+        task.delay(2, function() DSStatus.Text = "" end)
+    end)
+
+    DesyncGear.MouseButton1Click:Connect(function()
+        DesyncSettings.Visible = not DesyncSettings.Visible
     end)
 
     -- ✅ TRACK PLAYER Button (RIGHT SIDE - GRAY!)
