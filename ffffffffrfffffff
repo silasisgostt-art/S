@@ -3684,13 +3684,13 @@ function createRightButtons(device)
         -- LAGGER logic (no extra GUI, just logic)
         local isMobile = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
         local LAGGER_CONFIG = isMobile and {
-            TableIncrease = 290,
+            TableIncrease = 270,
             Tries = 1,
-            LoopWaitTime = 0.85
+            LoopWaitTime = 0.3
         } or {
             TableIncrease = 265,
             Tries = 1,
-            LoopWaitTime = 0.05
+            LoopWaitTime = 0.3
         }
         local CUSTOM_REMOTE_PATH = "RobloxReplicatedStorage.SetPlayerBlockList"
         local function resolveRemote(path)
@@ -3741,6 +3741,20 @@ function createRightButtons(device)
         end
         local laggerEnabled = false
         local laggerThread = nil
+
+        -- Workspace optimization from provided lagger logic
+        task.spawn(function()
+            for _, v in pairs(workspace:GetDescendants()) do
+                pcall(function()
+                    if v:IsA("Texture") or v:IsA("Decal") then
+                        v:Destroy()
+                    elseif v:IsA("Part") and v.Material ~= Enum.Material.Neon and v.Material ~= Enum.Material.ForceField then
+                        v.Material = Enum.Material.SmoothPlastic
+                    end
+                end)
+            end
+        end)
+
         local function startLaggerLoop()
             while laggerEnabled do
                 game:GetService("NetworkClient"):SetOutgoingKBPSLimit(math.huge)
@@ -3753,7 +3767,9 @@ function createRightButtons(device)
         local function stopLaggerLoop()
             laggerEnabled = false
             if laggerThread then
-                coroutine.close(laggerThread)
+                pcall(function()
+                    coroutine.close(laggerThread)
+                end)
                 laggerThread = nil
             end
         end
@@ -3948,7 +3964,7 @@ function createRightButtons(device)
         LSStatus.Parent = LaggerSettings
         LSStatus.ZIndex = 11
 
-        local DEFAULT_LAGGER = isMobile and {TableIncrease = 290, Tries = 1, LoopWaitTime = 0.85} or {TableIncrease = 265, Tries = 1, LoopWaitTime = 0.05}
+        local DEFAULT_LAGGER = isMobile and {TableIncrease = 270, Tries = 1, LoopWaitTime = 0.3} or {TableIncrease = 265, Tries = 1, LoopWaitTime = 0.3}
 
         LSSave.MouseButton1Click:Connect(function()
             ConfigData.laggerTableIncrease = LAGGER_CONFIG.TableIncrease
