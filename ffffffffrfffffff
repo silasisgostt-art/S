@@ -3292,112 +3292,90 @@ local AutoLeftSmallGUI, AutoRightSmallGUI
 
 function createAutoButtons(device)
     local buttonSize = device == "iPhone" and 55 or 70
-    local gridPadding = device == "iPhone" and 6 or 8
-    local buttonsPerRow = 5
-    local leftButtonCount = 3
-    local rows = math.clamp(math.ceil(leftButtonCount / buttonsPerRow), 1, 2)
-    local containerWidth = (math.min(leftButtonCount, buttonsPerRow) * buttonSize) + (math.max(math.min(leftButtonCount, buttonsPerRow) - 1, 0) * gridPadding) + 20
-    local containerHeight = (rows * buttonSize) + (math.max(rows - 1, 0) * gridPadding) + 20
+    local columns = 5
+    local rows = 2
+    local cellPadding = device == "iPhone" and 6 or 8
+    local panelPadding = device == "iPhone" and 8 or 10
+    local panelWidth = columns * buttonSize + (columns - 1) * cellPadding + panelPadding * 2
+    local panelHeight = rows * buttonSize + (rows - 1) * cellPadding + panelPadding * 2
 
-    local LeftButtonsBox = Instance.new("Frame")
-    LeftButtonsBox.Name = "LeftButtonsBox"
-    LeftButtonsBox.Size = UDim2.new(0, containerWidth, 0, containerHeight)
-    LeftButtonsBox.Position = UDim2.new(0, 15, 0.5, -containerHeight/2 + buttonSize)
-    LeftButtonsBox.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
-    LeftButtonsBox.BackgroundTransparency = 0.08
-    LeftButtonsBox.Parent = ScreenGui
+    local LeftButtonBox = Instance.new("Frame")
+    LeftButtonBox.Name = "LeftButtonBox"
+    LeftButtonBox.Size = UDim2.new(0, panelWidth, 0, panelHeight)
+    LeftButtonBox.Position = UDim2.new(0, 15, 0.5, -panelHeight / 2)
+    LeftButtonBox.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+    LeftButtonBox.BackgroundTransparency = 0.08
+    LeftButtonBox.BorderSizePixel = 0
+    LeftButtonBox.Parent = ScreenGui
 
-    local LeftButtonsCorner = Instance.new("UICorner")
-    LeftButtonsCorner.CornerRadius = UDim.new(0, 10)
-    LeftButtonsCorner.Parent = LeftButtonsBox
+    local BoxCorner = Instance.new("UICorner")
+    BoxCorner.CornerRadius = UDim.new(0, 12)
+    BoxCorner.Parent = LeftButtonBox
 
-    local LeftButtonsBlackStroke = Instance.new("UIStroke")
-    LeftButtonsBlackStroke.Color = Color3.fromRGB(0, 0, 0)
-    LeftButtonsBlackStroke.Thickness = 4
-    LeftButtonsBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    LeftButtonsBlackStroke.Parent = LeftButtonsBox
+    local BoxBlackStroke = Instance.new("UIStroke")
+    BoxBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+    BoxBlackStroke.Thickness = 4
+    BoxBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    BoxBlackStroke.Parent = LeftButtonBox
 
-    local LeftButtonsStroke = Instance.new("UIStroke")
-    LeftButtonsStroke.Color = Color3.fromRGB(255, 255, 255)
-    LeftButtonsStroke.Thickness = 2
-    LeftButtonsStroke.Transparency = 0.35
-    LeftButtonsStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    LeftButtonsStroke.Parent = LeftButtonsBox
+    local BoxStroke = Instance.new("UIStroke")
+    BoxStroke.Color = Color3.fromRGB(255, 255, 255)
+    BoxStroke.Thickness = 2
+    BoxStroke.Transparency = 0.35
+    BoxStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    BoxStroke.Parent = LeftButtonBox
 
-    local LeftButtonsPadding = Instance.new("UIPadding")
-    LeftButtonsPadding.PaddingTop = UDim.new(0, 10)
-    LeftButtonsPadding.PaddingBottom = UDim.new(0, 10)
-    LeftButtonsPadding.PaddingLeft = UDim.new(0, 10)
-    LeftButtonsPadding.PaddingRight = UDim.new(0, 10)
-    LeftButtonsPadding.Parent = LeftButtonsBox
+    local BoxPadding = Instance.new("UIPadding")
+    BoxPadding.PaddingTop = UDim.new(0, panelPadding)
+    BoxPadding.PaddingBottom = UDim.new(0, panelPadding)
+    BoxPadding.PaddingLeft = UDim.new(0, panelPadding)
+    BoxPadding.PaddingRight = UDim.new(0, panelPadding)
+    BoxPadding.Parent = LeftButtonBox
 
-    local LeftButtonsLayout = Instance.new("UIGridLayout")
-    LeftButtonsLayout.CellSize = UDim2.new(0, buttonSize, 0, buttonSize)
-    LeftButtonsLayout.CellPadding = UDim2.new(0, gridPadding, 0, gridPadding)
-    LeftButtonsLayout.FillDirectionMaxCells = buttonsPerRow
-    LeftButtonsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-    LeftButtonsLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    LeftButtonsLayout.Parent = LeftButtonsBox
+    local ButtonGrid = Instance.new("UIGridLayout")
+    ButtonGrid.CellSize = UDim2.new(0, buttonSize, 0, buttonSize)
+    ButtonGrid.CellPadding = UDim2.new(0, cellPadding, 0, cellPadding)
+    ButtonGrid.FillDirectionMaxCells = columns
+    ButtonGrid.HorizontalAlignment = Enum.HorizontalAlignment.Left
+    ButtonGrid.SortOrder = Enum.SortOrder.LayoutOrder
+    ButtonGrid.VerticalAlignment = Enum.VerticalAlignment.Top
+    ButtonGrid.Parent = LeftButtonBox
 
-    -- ✅ AUTO LEFT Button (GRAY!)
-    local AutoLeftButton = Instance.new("TextButton")
-    AutoLeftButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    AutoLeftButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    AutoLeftButton.BackgroundTransparency = 0
-    AutoLeftButton.Text = "AUTO\nLEFT"
-    AutoLeftButton.TextColor3 = Color3.fromRGB(220, 220, 220)
-    AutoLeftButton.Font = Enum.Font.GothamBold
-    AutoLeftButton.TextSize = device == "iPhone" and 9 or 12
-    AutoLeftButton.LayoutOrder = 1
-    AutoLeftButton.Parent = LeftButtonsBox
+    local function createBoxButton(text, order)
+        local button = Instance.new("TextButton")
+        button.Size = UDim2.new(0, buttonSize, 0, buttonSize)
+        button.LayoutOrder = order
+        button.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        button.BackgroundTransparency = 0
+        button.Text = text
+        button.TextColor3 = Color3.fromRGB(220, 220, 220)
+        button.Font = Enum.Font.GothamBold
+        button.TextSize = device == "iPhone" and 9 or 12
+        button.Parent = LeftButtonBox
 
-    local LeftCorner = Instance.new("UICorner")
-    LeftCorner.CornerRadius = UDim.new(0, 8)
-    LeftCorner.Parent = AutoLeftButton
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, 8)
+        corner.Parent = button
 
-    local LeftBlackStroke = Instance.new("UIStroke")
-    LeftBlackStroke.Color = Color3.fromRGB(0, 0, 0)
-    LeftBlackStroke.Thickness = 4
-    LeftBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    LeftBlackStroke.Parent = AutoLeftButton
+        local blackStroke = Instance.new("UIStroke")
+        blackStroke.Color = Color3.fromRGB(0, 0, 0)
+        blackStroke.Thickness = 4
+        blackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        blackStroke.Parent = button
 
-    local LeftStroke = Instance.new("UIStroke")
-    LeftStroke.Color = Color3.fromRGB(255, 255, 255)
-    LeftStroke.Thickness = 2.5
-    LeftStroke.Transparency = 0.35
-    LeftStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    LeftStroke.ZIndex = 2
-    LeftStroke.Parent = AutoLeftButton
+        local stroke = Instance.new("UIStroke")
+        stroke.Color = Color3.fromRGB(255, 255, 255)
+        stroke.Thickness = 2.5
+        stroke.Transparency = 0.35
+        stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        stroke.ZIndex = 2
+        stroke.Parent = button
 
-    -- ✅ AUTO MEDUSA Button (above Auto Right)
-    local AutoMedusaButton = Instance.new("TextButton")
-    AutoMedusaButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    AutoMedusaButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    AutoMedusaButton.BackgroundTransparency = 0
-    AutoMedusaButton.Text = "AUTO\nMEDUSA"
-    AutoMedusaButton.TextColor3 = Color3.fromRGB(220, 220, 220)
-    AutoMedusaButton.Font = Enum.Font.GothamBold
-    AutoMedusaButton.TextSize = device == "iPhone" and 9 or 12
-    AutoMedusaButton.LayoutOrder = 2
-    AutoMedusaButton.Parent = LeftButtonsBox
+        return button
+    end
 
-    local MedusaCorner = Instance.new("UICorner")
-    MedusaCorner.CornerRadius = UDim.new(0, 8)
-    MedusaCorner.Parent = AutoMedusaButton
-
-    local MedusaBlackStroke = Instance.new("UIStroke")
-    MedusaBlackStroke.Color = Color3.fromRGB(0, 0, 0)
-    MedusaBlackStroke.Thickness = 4
-    MedusaBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    MedusaBlackStroke.Parent = AutoMedusaButton
-
-    local MedusaStroke = Instance.new("UIStroke")
-    MedusaStroke.Color = Color3.fromRGB(255, 255, 255)
-    MedusaStroke.Thickness = 2.5
-    MedusaStroke.Transparency = 0.35
-    MedusaStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    MedusaStroke.ZIndex = 2
-    MedusaStroke.Parent = AutoMedusaButton
+    local AutoLeftButton = createBoxButton("AUTO\nLEFT", 1)
+    local AutoMedusaButton = createBoxButton("AUTO\nMEDUSA", 2)
 
     -- Auto Medusa logic (logic only, no extra GUI)
     local MEDUSA_RANGE = 9.5
@@ -3513,34 +3491,7 @@ function createAutoButtons(device)
             stopAutoMedusa()
         end
     end)
-    local AutoRightButton = Instance.new("TextButton")
-    AutoRightButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    AutoRightButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    AutoRightButton.BackgroundTransparency = 0
-    AutoRightButton.Text = "AUTO\nRIGHT"
-    AutoRightButton.TextColor3 = Color3.fromRGB(220, 220, 220)
-    AutoRightButton.Font = Enum.Font.GothamBold
-    AutoRightButton.TextSize = device == "iPhone" and 9 or 12
-    AutoRightButton.LayoutOrder = 3
-    AutoRightButton.Parent = LeftButtonsBox
-
-    local RightCorner = Instance.new("UICorner")
-    RightCorner.CornerRadius = UDim.new(0, 8)
-    RightCorner.Parent = AutoRightButton
-
-    local RightBlackStroke = Instance.new("UIStroke")
-    RightBlackStroke.Color = Color3.fromRGB(0, 0, 0)
-    RightBlackStroke.Thickness = 4
-    RightBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    RightBlackStroke.Parent = AutoRightButton
-
-    local RightStroke = Instance.new("UIStroke")
-    RightStroke.Color = Color3.fromRGB(255, 255, 255)
-    RightStroke.Thickness = 2.5
-    RightStroke.Transparency = 0.35
-    RightStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    RightStroke.ZIndex = 2
-    RightStroke.Parent = AutoRightButton
+    local AutoRightButton = createBoxButton("AUTO\nRIGHT", 3)
 
     -- ✅ AUTO LEFT CLICK (WITH PATH!)
     AutoLeftButton.MouseButton1Click:Connect(function()
