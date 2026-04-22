@@ -1736,7 +1736,7 @@ do
     BTaskFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
     BTaskFrame.BackgroundTransparency = 0.1
     BTaskFrame.Active = true
-    BTaskFrame.Draggable = true
+    BTaskFrame.Draggable = false
     BTaskFrame.Parent = BTaskGui
     Instance.new("UICorner", BTaskFrame).CornerRadius = UDim.new(0, 10)
     local BTaskStroke = Instance.new("UIStroke")
@@ -1787,7 +1787,7 @@ do
     BTaskPanel.Visible = false
     BTaskPanel.Parent = BTaskGui
     BTaskPanel.Active = true
-    BTaskPanel.Draggable = true
+    BTaskPanel.Draggable = false
     Instance.new("UICorner", BTaskPanel).CornerRadius = UDim.new(0, 10)
     local BTaskPanelStroke = Instance.new("UIStroke")
     BTaskPanelStroke.Color = Color3.fromRGB(255, 255, 255)
@@ -1976,7 +1976,7 @@ SpinBotScreen.Position = UDim2.new(0.7, 0, 0.2, 0)
 SpinBotScreen.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 SpinBotScreen.BorderSizePixel = 0
 SpinBotScreen.Active = true
-SpinBotScreen.Draggable = true
+SpinBotScreen.Draggable = false
 SpinBotScreen.Visible = false
 SpinBotScreen.Parent = ScreenGui
 
@@ -2471,7 +2471,7 @@ local function createMainGUI(device)
     MainFrame.BackgroundTransparency = 0.1
     MainFrame.BorderSizePixel = 0
     MainFrame.Active = true
-    MainFrame.Draggable = true
+    MainFrame.Draggable = false
     MainFrame.Visible = false
     MainFrame.Parent = ScreenGui
 
@@ -2746,7 +2746,7 @@ local function createMainGUI(device)
     SpeedSettingsGUI.BorderSizePixel = 0
     SpeedSettingsGUI.Visible = false
     SpeedSettingsGUI.Active = true
-    SpeedSettingsGUI.Draggable = true
+    SpeedSettingsGUI.Draggable = false
     SpeedSettingsGUI.Parent = ScreenGui
 
     local SpeedCorner = Instance.new("UICorner")
@@ -3122,7 +3122,7 @@ local function createMainGUI(device)
     FOVSettingsGUI.BorderSizePixel = 0
     FOVSettingsGUI.Visible = false
     FOVSettingsGUI.Active = true
-    FOVSettingsGUI.Draggable = true
+    FOVSettingsGUI.Draggable = false
     FOVSettingsGUI.Parent = ScreenGui
 
     local FOVCorner = Instance.new("UICorner")
@@ -4092,7 +4092,7 @@ function createRightButtons(device)
         LaggerSettings.BackgroundTransparency = 0.05
         LaggerSettings.Visible = false
         LaggerSettings.Active = true
-        LaggerSettings.Draggable = true
+        LaggerSettings.Draggable = false
         LaggerSettings.Parent = ScreenGui
         LaggerSettings.ZIndex = 10
 
@@ -4431,7 +4431,7 @@ function createRightButtons(device)
     JukeSettings.BackgroundTransparency = 0.05
     JukeSettings.Visible = false
     JukeSettings.Active = true
-    JukeSettings.Draggable = true
+    JukeSettings.Draggable = false
     JukeSettings.Parent = ScreenGui
     JukeSettings.ZIndex = 10
 
