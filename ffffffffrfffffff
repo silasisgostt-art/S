@@ -3533,18 +3533,38 @@ end
 function createRightButtons(device)
     local buttonSize = device == "iPhone" and 38 or 48
     local spacing = 10
+    local pad = 8
+    local boxW = pad*2 + buttonSize*3 + spacing*2
+    local boxH = pad*2 + buttonSize*2 + spacing
+
+    -- ✅ Container box for all 5 right buttons
+    local RightButtonBox = Instance.new("Frame")
+    RightButtonBox.Size = UDim2.new(0, boxW, 0, boxH)
+    RightButtonBox.Position = UDim2.new(1, -(boxW + 12), 0.5, -boxH/2)
+    RightButtonBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    RightButtonBox.BackgroundTransparency = 0.25
+    RightButtonBox.Parent = ScreenGui
+    local RBCorner = Instance.new("UICorner")
+    RBCorner.CornerRadius = UDim.new(0, 12)
+    RBCorner.Parent = RightButtonBox
+    local RBStroke = Instance.new("UIStroke")
+    RBStroke.Color = Color3.fromRGB(255, 255, 255)
+    RBStroke.Thickness = 2
+    RBStroke.Transparency = 0.5
+    RBStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    RBStroke.Parent = RightButtonBox
 
     -- ✅ DESYNC Button (TOP ROW, LEFT)
     local DesyncButton = Instance.new("TextButton")
     DesyncButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    DesyncButton.Position = UDim2.new(1, -(buttonSize*3 + spacing*2 + 15), 0.5, -buttonSize - 20)
+    DesyncButton.Position = UDim2.new(0, pad, 0, pad)
     DesyncButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     DesyncButton.BackgroundTransparency = 0
     DesyncButton.Text = "DESYNC"
     DesyncButton.TextColor3 = Color3.fromRGB(220, 220, 220)
     DesyncButton.Font = Enum.Font.GothamBold
     DesyncButton.TextSize = device == "iPhone" and 9 or 12
-    DesyncButton.Parent = ScreenGui
+    DesyncButton.Parent = RightButtonBox
 
     local DesyncCorner = Instance.new("UICorner")
     DesyncCorner.CornerRadius = UDim.new(0, 8)
@@ -3655,14 +3675,14 @@ function createRightButtons(device)
         -- ✅ LAGGER Button (TOP ROW, MIDDLE)
         local LaggerButton = Instance.new("TextButton")
         LaggerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-        LaggerButton.Position = UDim2.new(1, -(buttonSize*2 + spacing + 15), 0.5, -buttonSize - 20)
+        LaggerButton.Position = UDim2.new(0, pad + buttonSize + spacing, 0, pad)
         LaggerButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
         LaggerButton.BackgroundTransparency = 0
         LaggerButton.Text = "LAGGER"
         LaggerButton.TextColor3 = Color3.fromRGB(220, 220, 220)
         LaggerButton.Font = Enum.Font.GothamBold
         LaggerButton.TextSize = device == "iPhone" and 9 or 12
-        LaggerButton.Parent = ScreenGui
+        LaggerButton.Parent = RightButtonBox
 
         local LaggerCorner = Instance.new("UICorner")
         LaggerCorner.CornerRadius = UDim.new(0, 8)
@@ -3994,14 +4014,14 @@ function createRightButtons(device)
     -- ✅ TRACK PLAYER Button (TOP ROW, RIGHT)
     local TrackPlayerButton = Instance.new("TextButton")
     TrackPlayerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    TrackPlayerButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, -buttonSize - 20)
+    TrackPlayerButton.Position = UDim2.new(0, pad + buttonSize*2 + spacing*2, 0, pad)
     TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     TrackPlayerButton.BackgroundTransparency = 0
     TrackPlayerButton.Text = "TRACK\nPLAYER"
     TrackPlayerButton.TextColor3 = Color3.fromRGB(220, 220, 220)
     TrackPlayerButton.Font = Enum.Font.GothamBold
     TrackPlayerButton.TextSize = device == "iPhone" and 9 or 12
-    TrackPlayerButton.Parent = ScreenGui
+    TrackPlayerButton.Parent = RightButtonBox
 
     local TrackCorner = Instance.new("UICorner")
     TrackCorner.CornerRadius = UDim.new(0, 8)
@@ -4036,14 +4056,14 @@ function createRightButtons(device)
     -- ✅ HIT CIRCLE Button (BOTTOM ROW, LEFT)
     local HitCircleButton = Instance.new("TextButton")
     HitCircleButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    HitCircleButton.Position = UDim2.new(1, -(buttonSize*2 + spacing + 15), 0.5, buttonSize + 20)
+    HitCircleButton.Position = UDim2.new(0, pad, 0, pad + buttonSize + spacing)
     HitCircleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     HitCircleButton.BackgroundTransparency = 0
     HitCircleButton.Text = "HIT\nCIRCLE"
     HitCircleButton.TextColor3 = Color3.fromRGB(220, 220, 220)
     HitCircleButton.Font = Enum.Font.GothamBold
     HitCircleButton.TextSize = device == "iPhone" and 9 or 12
-    HitCircleButton.Parent = ScreenGui
+    HitCircleButton.Parent = RightButtonBox
 
     local HitCorner = Instance.new("UICorner")
     HitCorner.CornerRadius = UDim.new(0, 8)
@@ -4087,14 +4107,14 @@ function createRightButtons(device)
     -- JUKE Button (BOTTOM ROW, RIGHT)
     local JukeButton = Instance.new("TextButton")
     JukeButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    JukeButton.Position = UDim2.new(1, -buttonSize - 15, 0.5, buttonSize + 20)
+    JukeButton.Position = UDim2.new(0, pad + buttonSize + spacing, 0, pad + buttonSize + spacing)
     JukeButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     JukeButton.BackgroundTransparency = 0
     JukeButton.Text = "JUKE"
     JukeButton.TextColor3 = Color3.fromRGB(220, 220, 220)
     JukeButton.Font = Enum.Font.GothamBold
     JukeButton.TextSize = device == "iPhone" and 9 or 12
-    JukeButton.Parent = ScreenGui
+    JukeButton.Parent = RightButtonBox
 
     local JukeCorner = Instance.new("UICorner")
     JukeCorner.CornerRadius = UDim.new(0, 8)
@@ -4422,17 +4442,23 @@ function createRightButtons(device)
     Instance.new("UICorner", BtnSizePlus).CornerRadius = UDim.new(0, 6)
 
     local function relayoutRightButtons(newSize)
-        local spacing = 10
+        local sp = 10
+        local p = 8
+        local newW = p*2 + newSize*3 + sp*2
+        local newH = p*2 + newSize*2 + sp
         for _, btn in ipairs(allRightButtons) do
             btn.Size = UDim2.new(0, newSize, 0, newSize)
         end
-        -- Top row: DESYNC, LAGGER, TRACK
-        DesyncButton.Position = UDim2.new(1, -(newSize*3 + spacing*2 + 15), 0.5, -newSize - 20)
-        LaggerButton.Position = UDim2.new(1, -(newSize*2 + spacing + 15), 0.5, -newSize - 20)
-        TrackPlayerButton.Position = UDim2.new(1, -newSize - 15, 0.5, -newSize - 20)
-        -- Bottom row: HIT, JUKE
-        HitCircleButton.Position = UDim2.new(1, -(newSize*2 + spacing + 15), 0.5, newSize + 20)
-        JukeButton.Position = UDim2.new(1, -newSize - 15, 0.5, newSize + 20)
+        -- Resize the box
+        RightButtonBox.Size = UDim2.new(0, newW, 0, newH)
+        RightButtonBox.Position = UDim2.new(1, -(newW + 12), 0.5, -newH/2)
+        -- Top row
+        DesyncButton.Position = UDim2.new(0, p, 0, p)
+        LaggerButton.Position = UDim2.new(0, p + newSize + sp, 0, p)
+        TrackPlayerButton.Position = UDim2.new(0, p + newSize*2 + sp*2, 0, p)
+        -- Bottom row
+        HitCircleButton.Position = UDim2.new(0, p, 0, p + newSize + sp)
+        JukeButton.Position = UDim2.new(0, p + newSize + sp, 0, p + newSize + sp)
     end
 
     BtnSizeMinus.MouseButton1Click:Connect(function()
