@@ -2745,8 +2745,8 @@ local function createMainGUI(device)
     -- ✅ SPEED SETTINGS POPUP (tabs + improved style)
     local SpeedSettingsGUI = Instance.new("Frame")
     SpeedSettingsGUI.Name = "SpeedSettingsGUI"
-    SpeedSettingsGUI.Size = UDim2.new(0, 210, 0, 152)
-    SpeedSettingsGUI.Position = UDim2.new(0.5, -105, 0.5, -76)
+    SpeedSettingsGUI.Size = UDim2.new(0, 198, 0, 148)
+    SpeedSettingsGUI.Position = UDim2.new(0.5, -99, 0.5, -74)
     SpeedSettingsGUI.BackgroundColor3 = Color3.fromRGB(22, 24, 30)
     SpeedSettingsGUI.BackgroundTransparency = 0.05
     SpeedSettingsGUI.BorderSizePixel = 0
@@ -2779,34 +2779,34 @@ local function createMainGUI(device)
     SpeedTitle.Text = "SPEED SETTINGS"
     SpeedTitle.TextColor3 = Color3.fromRGB(215, 230, 255)
     SpeedTitle.Font = Enum.Font.GothamBold
-    SpeedTitle.TextSize = 13
+    SpeedTitle.TextSize = 12
     SpeedTitle.Parent = SpeedSettingsGUI
 
     local tabHost = Instance.new("Frame")
-    tabHost.Size = UDim2.new(1, -16, 0, 28)
+    tabHost.Size = UDim2.new(1, -12, 0, 24)
     tabHost.Position = UDim2.new(0, 8, 0, 30)
     tabHost.BackgroundTransparency = 1
     tabHost.Parent = SpeedSettingsGUI
 
     local NormalTab = Instance.new("TextButton")
-    NormalTab.Size = UDim2.new(0.5, -4, 1, 0)
+    NormalTab.Size = UDim2.new(0.5, -3, 1, 0)
     NormalTab.Position = UDim2.new(0, 0, 0, 0)
     NormalTab.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-    NormalTab.Text = "Normal Speed"
+    NormalTab.Text = "NORMAL"
     NormalTab.TextColor3 = Color3.fromRGB(255, 255, 255)
     NormalTab.Font = Enum.Font.GothamBold
-    NormalTab.TextSize = 11
+    NormalTab.TextSize = 10
     NormalTab.Parent = tabHost
     Instance.new("UICorner", NormalTab).CornerRadius = UDim.new(0, 8)
 
     local DesyncTab = Instance.new("TextButton")
-    DesyncTab.Size = UDim2.new(0.5, -4, 1, 0)
-    DesyncTab.Position = UDim2.new(0.5, 4, 0, 0)
+    DesyncTab.Size = UDim2.new(0.5, -3, 1, 0)
+    DesyncTab.Position = UDim2.new(0.5, 3, 0, 0)
     DesyncTab.BackgroundColor3 = Color3.fromRGB(50, 70, 105)
-    DesyncTab.Text = "Desync Speed"
+    DesyncTab.Text = "DESYNC"
     DesyncTab.TextColor3 = Color3.fromRGB(255, 255, 255)
     DesyncTab.Font = Enum.Font.GothamBold
-    DesyncTab.TextSize = 11
+    DesyncTab.TextSize = 10
     DesyncTab.Parent = tabHost
     Instance.new("UICorner", DesyncTab).CornerRadius = UDim.new(0, 8)
 
@@ -2892,6 +2892,12 @@ local function createMainGUI(device)
         local normalActive = SpeedBooster.Mode ~= "Desync"
         NormalTab.BackgroundColor3 = normalActive and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(50, 70, 105)
         DesyncTab.BackgroundColor3 = (not normalActive) and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(50, 70, 105)
+
+        -- Show speed textbox for active tab only
+        NormalLabel.Visible = normalActive
+        normalSpeedBox.Visible = normalActive
+        StealLabel.Visible = not normalActive
+        stealSpeedBox.Visible = not normalActive
     end
 
     NormalTab.MouseButton1Click:Connect(function()
