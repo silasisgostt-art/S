@@ -127,6 +127,10 @@ SpeedBooster = {
     JumpConn = nil
 }
 
+if SpeedBooster.Mode ~= "Normal" and SpeedBooster.Mode ~= "Desync" then
+    SpeedBooster.Mode = "Normal"
+end
+
 local function startSpeedBooster()
     if SpeedBooster.HeartbeatConn then SpeedBooster.HeartbeatConn:Disconnect() end
     if SpeedBooster.JumpConn then SpeedBooster.JumpConn:Disconnect() end
@@ -138,23 +142,7 @@ local function startSpeedBooster()
         local r = c and c:FindFirstChild("HumanoidRootPart")
         if not h or not r then return end
         
-        local carry = false
-        local a = h:FindFirstChildOfClass("Animator")
-        if a then
-            for _, t in pairs(a:GetPlayingAnimationTracks()) do
-                if string.find(t.Animation.AnimationId, "71186871415348") then
-                    carry = true
-                    break
-                end
-            end
-        end
-
-        local useDesyncSpeed = false
-        if SpeedBooster.Mode == "Desync" then
-            useDesyncSpeed = true
-        elseif SpeedBooster.Mode == "Auto" then
-            useDesyncSpeed = carry
-        end
+        local useDesyncSpeed = (SpeedBooster.Mode == "Desync")
         
         if h.MoveDirection.Magnitude > 0 then
             local vel = useDesyncSpeed and SpeedBooster.StealSpeed or SpeedBooster.NormalSpeed
@@ -2757,8 +2745,8 @@ local function createMainGUI(device)
     -- ✅ SPEED SETTINGS POPUP (tabs + improved style)
     local SpeedSettingsGUI = Instance.new("Frame")
     SpeedSettingsGUI.Name = "SpeedSettingsGUI"
-    SpeedSettingsGUI.Size = UDim2.new(0, 240, 0, 188)
-    SpeedSettingsGUI.Position = UDim2.new(0.5, -120, 0.5, -94)
+    SpeedSettingsGUI.Size = UDim2.new(0, 210, 0, 152)
+    SpeedSettingsGUI.Position = UDim2.new(0.5, -105, 0.5, -76)
     SpeedSettingsGUI.BackgroundColor3 = Color3.fromRGB(22, 24, 30)
     SpeedSettingsGUI.BackgroundTransparency = 0.05
     SpeedSettingsGUI.BorderSizePixel = 0
@@ -2786,17 +2774,17 @@ local function createMainGUI(device)
     SpeedGrad.Parent = SpeedSettingsGUI
 
     local SpeedTitle = Instance.new("TextLabel")
-    SpeedTitle.Size = UDim2.new(1, 0, 0, 34)
+    SpeedTitle.Size = UDim2.new(1, 0, 0, 30)
     SpeedTitle.BackgroundTransparency = 1
     SpeedTitle.Text = "SPEED SETTINGS"
     SpeedTitle.TextColor3 = Color3.fromRGB(215, 230, 255)
     SpeedTitle.Font = Enum.Font.GothamBold
-    SpeedTitle.TextSize = 15
+    SpeedTitle.TextSize = 13
     SpeedTitle.Parent = SpeedSettingsGUI
 
     local tabHost = Instance.new("Frame")
-    tabHost.Size = UDim2.new(1, -16, 0, 32)
-    tabHost.Position = UDim2.new(0, 8, 0, 34)
+    tabHost.Size = UDim2.new(1, -16, 0, 28)
+    tabHost.Position = UDim2.new(0, 8, 0, 30)
     tabHost.BackgroundTransparency = 1
     tabHost.Parent = SpeedSettingsGUI
 
@@ -2807,7 +2795,7 @@ local function createMainGUI(device)
     NormalTab.Text = "Normal Speed"
     NormalTab.TextColor3 = Color3.fromRGB(255, 255, 255)
     NormalTab.Font = Enum.Font.GothamBold
-    NormalTab.TextSize = 12
+    NormalTab.TextSize = 11
     NormalTab.Parent = tabHost
     Instance.new("UICorner", NormalTab).CornerRadius = UDim.new(0, 8)
 
@@ -2818,29 +2806,29 @@ local function createMainGUI(device)
     DesyncTab.Text = "Desync Speed"
     DesyncTab.TextColor3 = Color3.fromRGB(255, 255, 255)
     DesyncTab.Font = Enum.Font.GothamBold
-    DesyncTab.TextSize = 12
+    DesyncTab.TextSize = 11
     DesyncTab.Parent = tabHost
     Instance.new("UICorner", DesyncTab).CornerRadius = UDim.new(0, 8)
 
     local NormalLabel = Instance.new("TextLabel")
     NormalLabel.Size = UDim2.new(0.6, 0, 0, 25)
-    NormalLabel.Position = UDim2.new(0, 10, 0, 76)
+    NormalLabel.Position = UDim2.new(0, 10, 0, 62)
     NormalLabel.BackgroundTransparency = 1
     NormalLabel.Text = "Normal Speed:"
     NormalLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
     NormalLabel.Font = Enum.Font.Gotham
-    NormalLabel.TextSize = 12
+    NormalLabel.TextSize = 11
     NormalLabel.TextXAlignment = Enum.TextXAlignment.Left
     NormalLabel.Parent = SpeedSettingsGUI
 
     normalSpeedBox = Instance.new("TextBox")
-    normalSpeedBox.Size = UDim2.new(0, 78, 0, 28)
-    normalSpeedBox.Position = UDim2.new(1, -88, 0, 74)
+    normalSpeedBox.Size = UDim2.new(0, 70, 0, 22)
+    normalSpeedBox.Position = UDim2.new(1, -80, 0, 62)
     normalSpeedBox.BackgroundColor3 = Color3.fromRGB(36, 42, 55)
     normalSpeedBox.Text = tostring(SpeedBooster.NormalSpeed)
     normalSpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
     normalSpeedBox.Font = Enum.Font.GothamBold
-    normalSpeedBox.TextSize = 12
+    normalSpeedBox.TextSize = 11
     normalSpeedBox.ClearTextOnFocus = false
     normalSpeedBox.Parent = SpeedSettingsGUI
 
@@ -2850,23 +2838,23 @@ local function createMainGUI(device)
 
     local StealLabel = Instance.new("TextLabel")
     StealLabel.Size = UDim2.new(0.6, 0, 0, 25)
-    StealLabel.Position = UDim2.new(0, 10, 0, 110)
+    StealLabel.Position = UDim2.new(0, 10, 0, 92)
     StealLabel.BackgroundTransparency = 1
     StealLabel.Text = "Desync Speed:"
     StealLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
     StealLabel.Font = Enum.Font.Gotham
-    StealLabel.TextSize = 12
+    StealLabel.TextSize = 11
     StealLabel.TextXAlignment = Enum.TextXAlignment.Left
     StealLabel.Parent = SpeedSettingsGUI
 
     stealSpeedBox = Instance.new("TextBox")
-    stealSpeedBox.Size = UDim2.new(0, 78, 0, 28)
-    stealSpeedBox.Position = UDim2.new(1, -88, 0, 108)
+    stealSpeedBox.Size = UDim2.new(0, 70, 0, 22)
+    stealSpeedBox.Position = UDim2.new(1, -80, 0, 92)
     stealSpeedBox.BackgroundColor3 = Color3.fromRGB(36, 42, 55)
     stealSpeedBox.Text = tostring(SpeedBooster.StealSpeed)
     stealSpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
     stealSpeedBox.Font = Enum.Font.GothamBold
-    stealSpeedBox.TextSize = 12
+    stealSpeedBox.TextSize = 11
     stealSpeedBox.ClearTextOnFocus = false
     stealSpeedBox.Parent = SpeedSettingsGUI
 
@@ -2876,23 +2864,23 @@ local function createMainGUI(device)
 
     local JumpLabel = Instance.new("TextLabel")
     JumpLabel.Size = UDim2.new(0.6, 0, 0, 25)
-    JumpLabel.Position = UDim2.new(0, 10, 0, 144)
+    JumpLabel.Position = UDim2.new(0, 10, 0, 122)
     JumpLabel.BackgroundTransparency = 1
     JumpLabel.Text = "Jump Power:"
     JumpLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
     JumpLabel.Font = Enum.Font.Gotham
-    JumpLabel.TextSize = 12
+    JumpLabel.TextSize = 11
     JumpLabel.TextXAlignment = Enum.TextXAlignment.Left
     JumpLabel.Parent = SpeedSettingsGUI
 
     local JumpPowerBox = Instance.new("TextBox")
-    JumpPowerBox.Size = UDim2.new(0, 78, 0, 28)
-    JumpPowerBox.Position = UDim2.new(1, -88, 0, 142)
+    JumpPowerBox.Size = UDim2.new(0, 70, 0, 22)
+    JumpPowerBox.Position = UDim2.new(1, -80, 0, 122)
     JumpPowerBox.BackgroundColor3 = Color3.fromRGB(36, 42, 55)
     JumpPowerBox.Text = tostring(SpeedBooster.JumpPower)
     JumpPowerBox.TextColor3 = Color3.fromRGB(255, 255, 255)
     JumpPowerBox.Font = Enum.Font.GothamBold
-    JumpPowerBox.TextSize = 12
+    JumpPowerBox.TextSize = 11
     JumpPowerBox.ClearTextOnFocus = false
     JumpPowerBox.Parent = SpeedSettingsGUI
 
