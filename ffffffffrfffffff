@@ -3292,19 +3292,64 @@ local AutoLeftSmallGUI, AutoRightSmallGUI
 
 function createAutoButtons(device)
     local buttonSize = device == "iPhone" and 55 or 70
-    local yOffset = buttonSize + 10
+    local gridPadding = device == "iPhone" and 6 or 8
+    local buttonsPerRow = 5
+    local leftButtonCount = 3
+    local rows = math.clamp(math.ceil(leftButtonCount / buttonsPerRow), 1, 2)
+    local containerWidth = (math.min(leftButtonCount, buttonsPerRow) * buttonSize) + (math.max(math.min(leftButtonCount, buttonsPerRow) - 1, 0) * gridPadding) + 20
+    local containerHeight = (rows * buttonSize) + (math.max(rows - 1, 0) * gridPadding) + 20
+
+    local LeftButtonsBox = Instance.new("Frame")
+    LeftButtonsBox.Name = "LeftButtonsBox"
+    LeftButtonsBox.Size = UDim2.new(0, containerWidth, 0, containerHeight)
+    LeftButtonsBox.Position = UDim2.new(0, 15, 0.5, -containerHeight/2 + buttonSize)
+    LeftButtonsBox.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+    LeftButtonsBox.BackgroundTransparency = 0.08
+    LeftButtonsBox.Parent = ScreenGui
+
+    local LeftButtonsCorner = Instance.new("UICorner")
+    LeftButtonsCorner.CornerRadius = UDim.new(0, 10)
+    LeftButtonsCorner.Parent = LeftButtonsBox
+
+    local LeftButtonsBlackStroke = Instance.new("UIStroke")
+    LeftButtonsBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+    LeftButtonsBlackStroke.Thickness = 4
+    LeftButtonsBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    LeftButtonsBlackStroke.Parent = LeftButtonsBox
+
+    local LeftButtonsStroke = Instance.new("UIStroke")
+    LeftButtonsStroke.Color = Color3.fromRGB(255, 255, 255)
+    LeftButtonsStroke.Thickness = 2
+    LeftButtonsStroke.Transparency = 0.35
+    LeftButtonsStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    LeftButtonsStroke.Parent = LeftButtonsBox
+
+    local LeftButtonsPadding = Instance.new("UIPadding")
+    LeftButtonsPadding.PaddingTop = UDim.new(0, 10)
+    LeftButtonsPadding.PaddingBottom = UDim.new(0, 10)
+    LeftButtonsPadding.PaddingLeft = UDim.new(0, 10)
+    LeftButtonsPadding.PaddingRight = UDim.new(0, 10)
+    LeftButtonsPadding.Parent = LeftButtonsBox
+
+    local LeftButtonsLayout = Instance.new("UIGridLayout")
+    LeftButtonsLayout.CellSize = UDim2.new(0, buttonSize, 0, buttonSize)
+    LeftButtonsLayout.CellPadding = UDim2.new(0, gridPadding, 0, gridPadding)
+    LeftButtonsLayout.FillDirectionMaxCells = buttonsPerRow
+    LeftButtonsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+    LeftButtonsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    LeftButtonsLayout.Parent = LeftButtonsBox
 
     -- ✅ AUTO LEFT Button (GRAY!)
     local AutoLeftButton = Instance.new("TextButton")
     AutoLeftButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    AutoLeftButton.Position = UDim2.new(0, 15, 0.5, -buttonSize/2 + yOffset)
     AutoLeftButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     AutoLeftButton.BackgroundTransparency = 0
     AutoLeftButton.Text = "AUTO\nLEFT"
     AutoLeftButton.TextColor3 = Color3.fromRGB(220, 220, 220)
     AutoLeftButton.Font = Enum.Font.GothamBold
     AutoLeftButton.TextSize = device == "iPhone" and 9 or 12
-    AutoLeftButton.Parent = ScreenGui
+    AutoLeftButton.LayoutOrder = 1
+    AutoLeftButton.Parent = LeftButtonsBox
 
     local LeftCorner = Instance.new("UICorner")
     LeftCorner.CornerRadius = UDim.new(0, 8)
@@ -3327,14 +3372,14 @@ function createAutoButtons(device)
     -- ✅ AUTO MEDUSA Button (above Auto Right)
     local AutoMedusaButton = Instance.new("TextButton")
     AutoMedusaButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    AutoMedusaButton.Position = UDim2.new(0, 15 + buttonSize + 10, 0.5, -buttonSize*1.5 + yOffset - 10)
     AutoMedusaButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     AutoMedusaButton.BackgroundTransparency = 0
     AutoMedusaButton.Text = "AUTO\nMEDUSA"
     AutoMedusaButton.TextColor3 = Color3.fromRGB(220, 220, 220)
     AutoMedusaButton.Font = Enum.Font.GothamBold
     AutoMedusaButton.TextSize = device == "iPhone" and 9 or 12
-    AutoMedusaButton.Parent = ScreenGui
+    AutoMedusaButton.LayoutOrder = 2
+    AutoMedusaButton.Parent = LeftButtonsBox
 
     local MedusaCorner = Instance.new("UICorner")
     MedusaCorner.CornerRadius = UDim.new(0, 8)
@@ -3470,14 +3515,14 @@ function createAutoButtons(device)
     end)
     local AutoRightButton = Instance.new("TextButton")
     AutoRightButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    AutoRightButton.Position = UDim2.new(0, 15 + buttonSize + 10, 0.5, -buttonSize/2 + yOffset)
     AutoRightButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     AutoRightButton.BackgroundTransparency = 0
     AutoRightButton.Text = "AUTO\nRIGHT"
     AutoRightButton.TextColor3 = Color3.fromRGB(220, 220, 220)
     AutoRightButton.Font = Enum.Font.GothamBold
     AutoRightButton.TextSize = device == "iPhone" and 9 or 12
-    AutoRightButton.Parent = ScreenGui
+    AutoRightButton.LayoutOrder = 3
+    AutoRightButton.Parent = LeftButtonsBox
 
     local RightCorner = Instance.new("UICorner")
     RightCorner.CornerRadius = UDim.new(0, 8)
@@ -3684,13 +3729,13 @@ function createRightButtons(device)
         -- LAGGER logic (no extra GUI, just logic)
         local isMobile = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
         local LAGGER_CONFIG = isMobile and {
-            TableIncrease = 270,
+            TableIncrease = 290,
             Tries = 1,
-            LoopWaitTime = 0.3
+            LoopWaitTime = 0.85
         } or {
             TableIncrease = 265,
             Tries = 1,
-            LoopWaitTime = 0.3
+            LoopWaitTime = 0.05
         }
         local CUSTOM_REMOTE_PATH = "RobloxReplicatedStorage.SetPlayerBlockList"
         local function resolveRemote(path)
@@ -3741,20 +3786,6 @@ function createRightButtons(device)
         end
         local laggerEnabled = false
         local laggerThread = nil
-
-        -- Workspace optimization from provided lagger logic
-        task.spawn(function()
-            for _, v in pairs(workspace:GetDescendants()) do
-                pcall(function()
-                    if v:IsA("Texture") or v:IsA("Decal") then
-                        v:Destroy()
-                    elseif v:IsA("Part") and v.Material ~= Enum.Material.Neon and v.Material ~= Enum.Material.ForceField then
-                        v.Material = Enum.Material.SmoothPlastic
-                    end
-                end)
-            end
-        end)
-
         local function startLaggerLoop()
             while laggerEnabled do
                 game:GetService("NetworkClient"):SetOutgoingKBPSLimit(math.huge)
@@ -3767,9 +3798,7 @@ function createRightButtons(device)
         local function stopLaggerLoop()
             laggerEnabled = false
             if laggerThread then
-                pcall(function()
-                    coroutine.close(laggerThread)
-                end)
+                coroutine.close(laggerThread)
                 laggerThread = nil
             end
         end
@@ -3964,7 +3993,7 @@ function createRightButtons(device)
         LSStatus.Parent = LaggerSettings
         LSStatus.ZIndex = 11
 
-        local DEFAULT_LAGGER = isMobile and {TableIncrease = 270, Tries = 1, LoopWaitTime = 0.3} or {TableIncrease = 265, Tries = 1, LoopWaitTime = 0.3}
+        local DEFAULT_LAGGER = isMobile and {TableIncrease = 290, Tries = 1, LoopWaitTime = 0.85} or {TableIncrease = 265, Tries = 1, LoopWaitTime = 0.05}
 
         LSSave.MouseButton1Click:Connect(function()
             ConfigData.laggerTableIncrease = LAGGER_CONFIG.TableIncrease
@@ -4791,466 +4820,3 @@ game:GetService("Players").PlayerRemoving:Connect(function(plr)
         print("[TIM CHEESE DUELS] ✅ Auto-saved config on leave!")
     end
 end)
-
--- 5RT STYLE LAYOUT (copied look/colors, wired to TIM CHEESE features)
-do
-    local CopyPlayers = game:GetService("Players")
-    local CopyRunService = game:GetService("RunService")
-    local CopyUserInputService = game:GetService("UserInputService")
-    local CopyTweenService = game:GetService("TweenService")
-    local CopyCoreGui = game:GetService("CoreGui")
-
-    local CopyPlayer = CopyPlayers.LocalPlayer
-    local CopyIsMobile = CopyUserInputService.TouchEnabled and not CopyUserInputService.KeyboardEnabled
-    local CopyWidth = CopyIsMobile and 280 or 360
-    local CopyHeight = CopyIsMobile and 450 or 580
-
-    local C_BG = Color3.fromRGB(0, 0, 0)
-    local C_BORDER = Color3.fromRGB(255, 255, 255)
-    local C_TEXT = Color3.fromRGB(255, 255, 255)
-    local C_ACCENT = Color3.fromRGB(255, 255, 255)
-    local C_WHITE = Color3.fromRGB(240, 240, 255)
-    local C_CARD = Color3.fromRGB(14, 14, 22)
-    local C_OFF = Color3.fromRGB(35, 35, 50)
-    local C_RED = Color3.fromRGB(255, 100, 100)
-
-    local rotatingStrokes = {}
-
-    local function CreateRotatingFrame(parent, size, position, cornerRadius)
-        local frame = Instance.new("Frame", parent)
-        frame.Size = size
-        frame.Position = position
-        frame.BackgroundColor3 = C_BG
-        frame.BackgroundTransparency = 0
-        frame.BorderSizePixel = 0
-        frame.ClipsDescendants = true
-
-        local corner = Instance.new("UICorner", frame)
-        corner.CornerRadius = UDim.new(0, cornerRadius or 9)
-
-        local stroke = Instance.new("UIStroke", frame)
-        stroke.Color = C_BORDER
-        stroke.Thickness = 1.5
-        stroke.Transparency = 0.3
-        stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-
-        local gradient = Instance.new("UIGradient", stroke)
-        gradient.Color = ColorSequence.new(C_BORDER)
-        gradient.Transparency = NumberSequence.new({
-            NumberSequenceKeypoint.new(0, 1),
-            NumberSequenceKeypoint.new(0.4, 0),
-            NumberSequenceKeypoint.new(0.6, 0),
-            NumberSequenceKeypoint.new(1, 1)
-        })
-        gradient.Rotation = 0
-        table.insert(rotatingStrokes, gradient)
-        return frame
-    end
-
-    local function CreateButtonFrame(parent, size, position, cornerRadius)
-        local frame = Instance.new("Frame", parent)
-        frame.Size = size
-        frame.Position = position
-        frame.BackgroundColor3 = C_BG
-        frame.BackgroundTransparency = 0
-        frame.BorderSizePixel = 0
-
-        local corner = Instance.new("UICorner", frame)
-        corner.CornerRadius = UDim.new(0, cornerRadius or 8)
-
-        local stroke = Instance.new("UIStroke", frame)
-        stroke.Color = C_BORDER
-        stroke.Thickness = 1
-        stroke.Transparency = 0
-        stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-
-        local gradient = Instance.new("UIGradient", stroke)
-        gradient.Color = ColorSequence.new(C_BORDER)
-        gradient.Transparency = NumberSequence.new({
-            NumberSequenceKeypoint.new(0, 1),
-            NumberSequenceKeypoint.new(0.4, 0),
-            NumberSequenceKeypoint.new(0.6, 0),
-            NumberSequenceKeypoint.new(1, 1)
-        })
-        gradient.Rotation = 0
-        table.insert(rotatingStrokes, gradient)
-        return frame
-    end
-
-    local function MakeDraggable(frame)
-        local dragging, dragInput, dragStart, startPos
-        frame.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                dragging = true
-                dragStart = input.Position
-                startPos = frame.Position
-            end
-        end)
-        frame.InputChanged:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-                dragInput = input
-            end
-        end)
-        CopyUserInputService.InputChanged:Connect(function(input)
-            if input == dragInput and dragging then
-                local delta = input.Position - dragStart
-                frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-            end
-        end)
-        frame.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                dragging = false
-            end
-        end)
-    end
-
-    local function clickExistingButton(text)
-        if not ScreenGui then return end
-        for _, obj in ipairs(ScreenGui:GetDescendants()) do
-            if obj:IsA("TextButton") and obj.Text == text then
-                pcall(function() obj:Activate() end)
-                break
-            end
-        end
-    end
-
-    local CopyGui = Instance.new("ScreenGui")
-    CopyGui.Name = "5RT_Hub_Layout_Copy"
-    CopyGui.ResetOnSpawn = false
-    CopyGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    CopyGui.Parent = CopyCoreGui
-
-    local topBar = CreateRotatingFrame(CopyGui, UDim2.new(0, 240, 0, 32), UDim2.new(0.5, -120, 0.02, 0), 10)
-    local topLabel = Instance.new("TextLabel", topBar)
-    topLabel.Size = UDim2.new(1, 0, 1, 0)
-    topLabel.BackgroundTransparency = 1
-    topLabel.Font = Enum.Font.Bangers
-    topLabel.TextSize = 12
-    topLabel.TextColor3 = C_TEXT
-    topLabel.TextXAlignment = Enum.TextXAlignment.Center
-
-    local fpsCount = 0
-    local fpsTimer = tick()
-    CopyRunService.RenderStepped:Connect(function()
-        fpsCount = fpsCount + 1
-        if tick() - fpsTimer >= 1 then
-            local ping = math.floor(CopyPlayer:GetNetworkPing() * 1000)
-            topLabel.Text = "TIM CHEESE | " .. fpsCount .. " FPS | " .. ping .. " ms"
-            fpsCount = 0
-            fpsTimer = tick()
-        end
-    end)
-
-    local menuBtnFrame = CreateButtonFrame(CopyGui, UDim2.new(0, 45, 0, 45), UDim2.new(0.05, 0, 0.2, 0), 12)
-    local menuBtn = Instance.new("TextButton", menuBtnFrame)
-    menuBtn.Size = UDim2.new(1, -2, 1, -2)
-    menuBtn.Position = UDim2.new(0, 1, 0, 1)
-    menuBtn.Text = "5"
-    menuBtn.TextSize = 22
-    menuBtn.Font = Enum.Font.Bangers
-    menuBtn.TextColor3 = C_TEXT
-    menuBtn.BackgroundTransparency = 1
-    menuBtn.AutoButtonColor = false
-    MakeDraggable(menuBtnFrame)
-
-    local MainFrame = CreateRotatingFrame(CopyGui, UDim2.new(0, CopyWidth, 0, CopyHeight), UDim2.new(0.5, -CopyWidth/2, 0.5, -CopyHeight/2), 16)
-    MainFrame.Visible = false
-    MakeDraggable(MainFrame)
-
-    local TitleBar = Instance.new("Frame", MainFrame)
-    TitleBar.Size = UDim2.new(1, 0, 0, 45)
-    TitleBar.BackgroundColor3 = C_BG
-    TitleBar.BorderSizePixel = 0
-    Instance.new("UICorner", TitleBar).CornerRadius = UDim.new(0, 16)
-
-    local TitleLbl = Instance.new("TextLabel", TitleBar)
-    TitleLbl.Size = UDim2.new(1, 0, 1, 0)
-    TitleLbl.BackgroundTransparency = 1
-    TitleLbl.Text = "TIM CHEESE HUB"
-    TitleLbl.Font = Enum.Font.Bangers
-    TitleLbl.TextSize = 20
-    TitleLbl.TextColor3 = C_WHITE
-
-    local closeFrame = CreateButtonFrame(TitleBar, UDim2.new(0, 28, 0, 28), UDim2.new(1, -40, 0, 8), 6)
-    local closeBtn = Instance.new("TextButton", closeFrame)
-    closeBtn.Size = UDim2.new(1, -2, 1, -2)
-    closeBtn.Position = UDim2.new(0, 1, 0, 1)
-    closeBtn.Text = "✕"
-    closeBtn.TextColor3 = C_RED
-    closeBtn.Font = Enum.Font.Bangers
-    closeBtn.TextSize = 16
-    closeBtn.BackgroundTransparency = 1
-
-    local TabContainer = Instance.new("Frame", MainFrame)
-    TabContainer.Size = UDim2.new(1, -16, 0, 32)
-    TabContainer.Position = UDim2.new(0, 8, 0, 52)
-    TabContainer.BackgroundTransparency = 1
-
-    local function makeTab(text, xScale, xPos)
-        local tabFrame = CreateButtonFrame(TabContainer, UDim2.new(xScale, -4, 1, 0), UDim2.new(xPos, 2, 0, 0), 6)
-        local tab = Instance.new("TextButton", tabFrame)
-        tab.Size = UDim2.new(1, -2, 1, -2)
-        tab.Position = UDim2.new(0, 1, 0, 1)
-        tab.Text = text
-        tab.TextColor3 = C_WHITE
-        tab.Font = Enum.Font.Bangers
-        tab.TextSize = 12
-        tab.BackgroundTransparency = 1
-        tabFrame.BackgroundColor3 = C_OFF
-        return tab, tabFrame
-    end
-
-    local FeatTab, FeatTabFrame = makeTab("FEATURES", 0.48, 0.01)
-    local SetTab, SetTabFrame = makeTab("SETTINGS", 0.48, 0.51)
-
-    local function makeScrollFrame()
-        local sf = Instance.new("ScrollingFrame", MainFrame)
-        sf.Size = UDim2.new(1, -16, 1, -120)
-        sf.Position = UDim2.new(0, 8, 0, 92)
-        sf.BackgroundTransparency = 1
-        sf.BorderSizePixel = 0
-        sf.ScrollBarThickness = 3
-        sf.ScrollBarImageColor3 = C_ACCENT
-        sf.AutomaticCanvasSize = Enum.AutomaticSize.Y
-        sf.Visible = false
-        local ll = Instance.new("UIListLayout", sf)
-        ll.Padding = UDim.new(0, 5)
-        ll.SortOrder = Enum.SortOrder.LayoutOrder
-        return sf
-    end
-
-    local FeatFrame = makeScrollFrame()
-    local SetFrame = makeScrollFrame()
-
-    local function selectTab(idx)
-        FeatFrame.Visible = idx == 1
-        SetFrame.Visible = idx == 2
-        FeatTabFrame.BackgroundColor3 = idx == 1 and C_ACCENT or C_OFF
-        SetTabFrame.BackgroundColor3 = idx == 2 and C_ACCENT or C_OFF
-    end
-    FeatTab.MouseButton1Click:Connect(function() selectTab(1) end)
-    SetTab.MouseButton1Click:Connect(function() selectTab(2) end)
-    selectTab(1)
-
-    local toggleStates = {}
-    local function makeToggle(parent, name, order, callback)
-        local row = Instance.new("Frame", parent)
-        row.Size = UDim2.new(1, 0, 0, 38)
-        row.BackgroundColor3 = C_CARD
-        row.BorderSizePixel = 0
-        row.LayoutOrder = order
-        Instance.new("UICorner", row).CornerRadius = UDim.new(0, 8)
-        local rowStroke = Instance.new("UIStroke", row)
-        rowStroke.Color = C_BORDER
-        rowStroke.Thickness = 1
-        rowStroke.Transparency = 0.5
-
-        local lbl = Instance.new("TextLabel", row)
-        lbl.Size = UDim2.new(1, -65, 1, 0)
-        lbl.Position = UDim2.new(0, 12, 0, 0)
-        lbl.BackgroundTransparency = 1
-        lbl.Text = name
-        lbl.TextColor3 = C_WHITE
-        lbl.Font = Enum.Font.Bangers
-        lbl.TextSize = 12
-        lbl.TextXAlignment = Enum.TextXAlignment.Left
-
-        local track = Instance.new("Frame", row)
-        track.Size = UDim2.new(0, 42, 0, 20)
-        track.Position = UDim2.new(1, -52, 0.5, -10)
-        track.BackgroundColor3 = C_OFF
-        track.BorderSizePixel = 0
-        Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
-
-        local dot = Instance.new("Frame", track)
-        dot.Size = UDim2.new(0, 16, 0, 16)
-        dot.Position = UDim2.new(0, 2, 0.5, -8)
-        dot.BackgroundColor3 = C_WHITE
-        dot.BorderSizePixel = 0
-        Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
-
-        toggleStates[name] = false
-        local btn = Instance.new("TextButton", row)
-        btn.Size = UDim2.new(1, 0, 1, 0)
-        btn.BackgroundTransparency = 1
-        btn.Text = ""
-        btn.MouseButton1Click:Connect(function()
-            toggleStates[name] = not toggleStates[name]
-            local v = toggleStates[name]
-            track.BackgroundColor3 = v and C_ACCENT or C_OFF
-            dot.Position = v and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
-            if callback then callback(v) end
-        end)
-    end
-
-    local function makeButton(parent, text, order, callback)
-        local row = CreateButtonFrame(parent, UDim2.new(1, 0, 0, 35), UDim2.new(0, 0, 0, 0), 8)
-        row.LayoutOrder = order
-        local btn = Instance.new("TextButton", row)
-        btn.Size = UDim2.new(1, -4, 1, -4)
-        btn.Position = UDim2.new(0, 2, 0, 2)
-        btn.Text = text
-        btn.TextColor3 = C_TEXT
-        btn.Font = Enum.Font.Bangers
-        btn.TextSize = 12
-        btn.BackgroundTransparency = 1
-        btn.MouseButton1Click:Connect(function()
-            if callback then callback() end
-        end)
-    end
-
-    local function makeNumInput(parent, labelText, defaultVal, order, onChanged)
-        local row = Instance.new("Frame", parent)
-        row.Size = UDim2.new(1, 0, 0, 38)
-        row.BackgroundColor3 = C_CARD
-        row.BorderSizePixel = 0
-        row.LayoutOrder = order
-        Instance.new("UICorner", row).CornerRadius = UDim.new(0, 8)
-        local rowStroke = Instance.new("UIStroke", row)
-        rowStroke.Color = C_BORDER
-        rowStroke.Thickness = 1
-        rowStroke.Transparency = 0.5
-
-        local lbl = Instance.new("TextLabel", row)
-        lbl.Size = UDim2.new(1, -85, 1, 0)
-        lbl.Position = UDim2.new(0, 12, 0, 0)
-        lbl.BackgroundTransparency = 1
-        lbl.Text = labelText
-        lbl.TextColor3 = C_WHITE
-        lbl.Font = Enum.Font.Bangers
-        lbl.TextSize = 12
-        lbl.TextXAlignment = Enum.TextXAlignment.Left
-
-        local boxFrame = CreateButtonFrame(row, UDim2.new(0, 60, 0, 24), UDim2.new(1, -70, 0.5, -12), 5)
-        local box = Instance.new("TextBox", boxFrame)
-        box.Size = UDim2.new(1, -2, 1, -2)
-        box.Position = UDim2.new(0, 1, 0, 1)
-        box.BackgroundTransparency = 1
-        box.Text = tostring(defaultVal)
-        box.TextColor3 = C_ACCENT
-        box.Font = Enum.Font.Bangers
-        box.TextSize = 12
-        box.ClearTextOnFocus = false
-        box.FocusLost:Connect(function()
-            local n = tonumber(box.Text)
-            if n and onChanged then onChanged(n) end
-        end)
-    end
-
-    local function makeSection(parent, text, order)
-        local lbl = Instance.new("TextLabel", parent)
-        lbl.Size = UDim2.new(1, 0, 0, 22)
-        lbl.BackgroundTransparency = 1
-        lbl.Text = text
-        lbl.TextColor3 = C_ACCENT
-        lbl.Font = Enum.Font.Bangers
-        lbl.TextSize = 10
-        lbl.TextXAlignment = Enum.TextXAlignment.Left
-        lbl.LayoutOrder = order
-    end
-
-    local order = 1
-    makeSection(FeatFrame, " COMBAT", order); order = order + 1
-    makeToggle(FeatFrame, "TRACK PLAYER", order, function(v)
-        if v then startBatAimbot() else stopBatAimbot() end
-    end); order = order + 1
-    makeToggle(FeatFrame, "HIT CIRCLE", order, function(v)
-        hitCircleEnabled = v
-        if v then startHitCircle() else stopHitCircle() end
-    end); order = order + 1
-    makeToggle(FeatFrame, "ANTI RAGDOLL", order, function(v)
-        AntiRagdollEnabled = v
-        if v then enableAntiRagdoll() else disableAntiRagdoll() end
-    end); order = order + 1
-    makeToggle(FeatFrame, "RAGDOLL TP", order, function(v)
-        RagdollTP.enabled = v
-        if v then startRagdollTP() else stopRagdollTP() end
-    end); order = order + 1
-    makeToggle(FeatFrame, "UNWALK", order, function(v)
-        UnwalkEnabled = v
-        if v then startUnwalk() else stopUnwalk() end
-    end); order = order + 1
-
-    makeSection(FeatFrame, " MOVEMENT", order); order = order + 1
-    makeToggle(FeatFrame, "AUTO LEFT", order, function(v)
-        if v then
-            stopStealPath()
-            startStealPath(stealPath2)
-        else
-            stopStealPath()
-        end
-    end); order = order + 1
-    makeToggle(FeatFrame, "AUTO RIGHT", order, function(v)
-        if v then
-            stopStealPath()
-            startStealPath(stealPath1)
-        else
-            stopStealPath()
-        end
-    end); order = order + 1
-    makeToggle(FeatFrame, "FLOAT UP", order, function(v)
-        if v then startFloat() else stopFloat() end
-    end); order = order + 1
-    makeToggle(FeatFrame, "SPIN BOT", order, function(v)
-        SpinBotEnabled = v
-        if v then startSpinBot() else stopSpinBot() end
-    end); order = order + 1
-    makeToggle(FeatFrame, "INF JUMP", order, function(v)
-        InfJumpEnabled = v
-        if v then startInfJump() else stopInfJump() end
-    end); order = order + 1
-
-    makeSection(FeatFrame, " RIGHT BUTTONS", order); order = order + 1
-    makeToggle(FeatFrame, "DESYNC", order, function()
-        clickExistingButton("DESYNC")
-    end); order = order + 1
-    makeToggle(FeatFrame, "LAGGER", order, function()
-        clickExistingButton("LAGGER")
-    end); order = order + 1
-    makeToggle(FeatFrame, "JUKE", order, function()
-        clickExistingButton("JUKE")
-    end); order = order + 1
-
-    makeSection(FeatFrame, " ACTIONS", order); order = order + 1
-    makeButton(FeatFrame, "▼ DO DROP", order, function() doDrop() end); order = order + 1
-    makeButton(FeatFrame, "⬇ TP DOWN", order, function() tpDownToGround() end); order = order + 1
-
-    local setOrder = 1
-    makeSection(SetFrame, " SPEEDS", setOrder); setOrder = setOrder + 1
-    makeNumInput(SetFrame, "NORMAL SPEED", SpeedBooster.NormalSpeed, setOrder, function(v)
-        SpeedBooster.NormalSpeed = v
-        if normalSpeedBox then normalSpeedBox.Text = tostring(v) end
-    end); setOrder = setOrder + 1
-    makeNumInput(SetFrame, "STEAL SPEED", SpeedBooster.StealSpeed, setOrder, function(v)
-        SpeedBooster.StealSpeed = v
-        if stealSpeedBox then stealSpeedBox.Text = tostring(v) end
-    end); setOrder = setOrder + 1
-    makeNumInput(SetFrame, "FOV", fovValue, setOrder, function(v)
-        fovValue = math.clamp(v, 1, 120)
-        updateFOV()
-        if fovSliderBox then fovSliderBox.Text = tostring(fovValue) end
-    end); setOrder = setOrder + 1
-    makeNumInput(SetFrame, "STEAL RADIUS", InstaSteal.Radius, setOrder, function(v)
-        InstaSteal.Radius = math.max(1, v)
-        if RadiusValue then RadiusValue.Text = tostring(InstaSteal.Radius) end
-    end); setOrder = setOrder + 1
-    makeButton(SetFrame, "💾 SAVE CONFIG", setOrder, function()
-        SaveConfig()
-    end)
-
-    menuBtn.MouseButton1Click:Connect(function()
-        MainFrame.Visible = not MainFrame.Visible
-    end)
-
-    closeBtn.MouseButton1Click:Connect(function()
-        MainFrame.Visible = false
-    end)
-
-    CopyRunService.Heartbeat:Connect(function(dt)
-        for _, gradient in ipairs(rotatingStrokes) do
-            if gradient and gradient.Parent then
-                gradient.Rotation = (gradient.Rotation + 90 * dt) % 360
-            end
-        end
-    end)
-end
