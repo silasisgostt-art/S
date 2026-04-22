@@ -1698,18 +1698,39 @@ SmallTPDownGUI, SmallTPDownButton, TPDownDot = createSmallGUI("TP Down", 505)
 SmallTPUpGUI, SmallTPUpButton, TPUpDot = createSmallGUI("TP Up", 550)
 
 -- ═══════════════════════════════════════════════════════
--- ✅ BUTTONS TASK GUI (toggle top-screen buttons on/off)
+-- ✅ BUTTONS TASK GUI (master + per-button on/off list)
 -- ═══════════════════════════════════════════════════════
 do
-    local allSmallGUIs = {
-        SmallSpeedGUI, SmallUnwalkGUI, SmallSpinBotGUI, SmallInfJumpGUI,
-        SmallFloatGUI, SmallFOVGUI, SmallAntiRagGUI, SmallRagdollTPGUI,
-        SmallDropGUI, SmallTPDownGUI, SmallTPUpGUI,
+    local buttonItems = {
+        {name = "Speed", gui = SmallSpeedGUI},
+        {name = "Unwalk", gui = SmallUnwalkGUI},
+        {name = "Spin Bot", gui = SmallSpinBotGUI},
+        {name = "Inf Jump", gui = SmallInfJumpGUI},
+        {name = "Float Up", gui = SmallFloatGUI},
+        {name = "FOV", gui = SmallFOVGUI},
+        {name = "Anti Ragdoll", gui = SmallAntiRagGUI},
+        {name = "Ragdoll TP", gui = SmallRagdollTPGUI},
+        {name = "Drop Brainrot", gui = SmallDropGUI},
+        {name = "TP Down", gui = SmallTPDownGUI},
+        {name = "TP Up", gui = SmallTPUpGUI},
     }
 
-    -- track which ones were visible before toggling off
-    local savedVisibility = {}
     local buttonsTaskOn = true
+    local perButtonEnabled = {}
+    for _, item in ipairs(buttonItems) do
+        perButtonEnabled[item.name] = true
+    end
+
+    local function applyButtonVisibility()
+        for _, item in ipairs(buttonItems) do
+            item.gui.Visible = buttonsTaskOn and perButtonEnabled[item.name]
+        end
+    end
+
+    local function styleToggle(toggleButton, isEnabled)
+        toggleButton.Text = isEnabled and "ON" or "OFF"
+        toggleButton.BackgroundColor3 = isEnabled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(180, 50, 50)
+    end
 
     local BTaskGui = Instance.new("ScreenGui")
     BTaskGui.Name = "ButtonsTaskGui"
@@ -1718,8 +1739,8 @@ do
     BTaskGui.Parent = PlayerGui
 
     local BTaskFrame = Instance.new("Frame")
-    BTaskFrame.Size = UDim2.new(0, 130, 0, 38)
-    BTaskFrame.Position = UDim2.new(0.5, -65, 1, -55)
+    BTaskFrame.Size = UDim2.new(0, 170, 0, 40)
+    BTaskFrame.Position = UDim2.new(0.5, -85, 1, -58)
     BTaskFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
     BTaskFrame.BackgroundTransparency = 0.1
     BTaskFrame.Active = true
@@ -1734,7 +1755,7 @@ do
     BTaskStroke.Parent = BTaskFrame
 
     local BTaskLabel = Instance.new("TextLabel")
-    BTaskLabel.Size = UDim2.new(0, 80, 1, 0)
+    BTaskLabel.Size = UDim2.new(0, 95, 1, 0)
     BTaskLabel.Position = UDim2.new(0, 8, 0, 0)
     BTaskLabel.BackgroundTransparency = 1
     BTaskLabel.Text = "Buttons Task"
@@ -1743,6 +1764,17 @@ do
     BTaskLabel.TextSize = 11
     BTaskLabel.TextXAlignment = Enum.TextXAlignment.Left
     BTaskLabel.Parent = BTaskFrame
+
+    local BTaskSettings = Instance.new("TextButton")
+    BTaskSettings.Size = UDim2.new(0, 22, 0, 22)
+    BTaskSettings.Position = UDim2.new(1, -72, 0.5, -11)
+    BTaskSettings.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    BTaskSettings.Text = "⋮"
+    BTaskSettings.TextColor3 = Color3.fromRGB(220, 220, 220)
+    BTaskSettings.Font = Enum.Font.GothamBold
+    BTaskSettings.TextSize = 14
+    BTaskSettings.Parent = BTaskFrame
+    Instance.new("UICorner", BTaskSettings).CornerRadius = UDim.new(0, 6)
 
     local BTaskToggle = Instance.new("TextButton")
     BTaskToggle.Size = UDim2.new(0, 38, 0, 22)
@@ -1755,29 +1787,121 @@ do
     BTaskToggle.Parent = BTaskFrame
     Instance.new("UICorner", BTaskToggle).CornerRadius = UDim.new(0, 8)
 
+    local BTaskPanel = Instance.new("Frame")
+    BTaskPanel.Size = UDim2.new(0, 205, 0, 300)
+    BTaskPanel.Position = UDim2.new(1, -205, 1, -365)
+    BTaskPanel.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
+    BTaskPanel.BackgroundTransparency = 0.08
+    BTaskPanel.Visible = false
+    BTaskPanel.Parent = BTaskGui
+    BTaskPanel.Active = true
+    BTaskPanel.Draggable = true
+    Instance.new("UICorner", BTaskPanel).CornerRadius = UDim.new(0, 10)
+    local BTaskPanelStroke = Instance.new("UIStroke")
+    BTaskPanelStroke.Color = Color3.fromRGB(255, 255, 255)
+    BTaskPanelStroke.Thickness = 2
+    BTaskPanelStroke.Transparency = 0.45
+    BTaskPanelStroke.Parent = BTaskPanel
+
+    local BTaskPanelTitle = Instance.new("TextLabel")
+    BTaskPanelTitle.Size = UDim2.new(1, -32, 0, 26)
+    BTaskPanelTitle.Position = UDim2.new(0, 8, 0, 4)
+    BTaskPanelTitle.BackgroundTransparency = 1
+    BTaskPanelTitle.Text = "Buttons Task Settings"
+    BTaskPanelTitle.TextColor3 = Color3.fromRGB(240, 240, 240)
+    BTaskPanelTitle.Font = Enum.Font.GothamBold
+    BTaskPanelTitle.TextSize = 12
+    BTaskPanelTitle.TextXAlignment = Enum.TextXAlignment.Left
+    BTaskPanelTitle.Parent = BTaskPanel
+
+    local BTaskPanelClose = Instance.new("TextButton")
+    BTaskPanelClose.Size = UDim2.new(0, 22, 0, 22)
+    BTaskPanelClose.Position = UDim2.new(1, -26, 0, 4)
+    BTaskPanelClose.BackgroundColor3 = Color3.fromRGB(160, 55, 55)
+    BTaskPanelClose.Text = "X"
+    BTaskPanelClose.TextColor3 = Color3.fromRGB(255, 255, 255)
+    BTaskPanelClose.Font = Enum.Font.GothamBold
+    BTaskPanelClose.TextSize = 11
+    BTaskPanelClose.Parent = BTaskPanel
+    Instance.new("UICorner", BTaskPanelClose).CornerRadius = UDim.new(0, 6)
+
+    local BTaskList = Instance.new("ScrollingFrame")
+    BTaskList.Size = UDim2.new(1, -12, 1, -40)
+    BTaskList.Position = UDim2.new(0, 6, 0, 32)
+    BTaskList.BackgroundTransparency = 1
+    BTaskList.BorderSizePixel = 0
+    BTaskList.ScrollBarThickness = 4
+    BTaskList.CanvasSize = UDim2.new(0, 0, 0, 0)
+    BTaskList.Parent = BTaskPanel
+
+    local BTaskLayout = Instance.new("UIListLayout")
+    BTaskLayout.FillDirection = Enum.FillDirection.Vertical
+    BTaskLayout.Padding = UDim.new(0, 6)
+    BTaskLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    BTaskLayout.Parent = BTaskList
+
+    local function createListRow(itemName)
+        local row = Instance.new("Frame")
+        row.Size = UDim2.new(1, -2, 0, 24)
+        row.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
+        row.BackgroundTransparency = 0.1
+        row.Parent = BTaskList
+        Instance.new("UICorner", row).CornerRadius = UDim.new(0, 6)
+
+        local rowLabel = Instance.new("TextLabel")
+        rowLabel.Size = UDim2.new(1, -58, 1, 0)
+        rowLabel.Position = UDim2.new(0, 8, 0, 0)
+        rowLabel.BackgroundTransparency = 1
+        rowLabel.Text = itemName
+        rowLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+        rowLabel.Font = Enum.Font.Gotham
+        rowLabel.TextSize = 11
+        rowLabel.TextXAlignment = Enum.TextXAlignment.Left
+        rowLabel.Parent = row
+
+        local rowToggle = Instance.new("TextButton")
+        rowToggle.Size = UDim2.new(0, 48, 0, 18)
+        rowToggle.Position = UDim2.new(1, -52, 0.5, -9)
+        rowToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+        rowToggle.Font = Enum.Font.GothamBold
+        rowToggle.TextSize = 10
+        rowToggle.Parent = row
+        Instance.new("UICorner", rowToggle).CornerRadius = UDim.new(0, 6)
+        styleToggle(rowToggle, perButtonEnabled[itemName])
+
+        rowToggle.MouseButton1Click:Connect(function()
+            perButtonEnabled[itemName] = not perButtonEnabled[itemName]
+            styleToggle(rowToggle, perButtonEnabled[itemName])
+            applyButtonVisibility()
+        end)
+    end
+
+    for _, item in ipairs(buttonItems) do
+        createListRow(item.name)
+    end
+
+    local function refreshListCanvas()
+        BTaskList.CanvasSize = UDim2.new(0, 0, 0, BTaskLayout.AbsoluteContentSize.Y + 4)
+    end
+    refreshListCanvas()
+    BTaskLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(refreshListCanvas)
+
+    BTaskSettings.MouseButton1Click:Connect(function()
+        BTaskPanel.Visible = not BTaskPanel.Visible
+    end)
+
+    BTaskPanelClose.MouseButton1Click:Connect(function()
+        BTaskPanel.Visible = false
+    end)
+
     BTaskToggle.MouseButton1Click:Connect(function()
         buttonsTaskOn = not buttonsTaskOn
-        if buttonsTaskOn then
-            -- restore previously visible ones
-            for _, gui in ipairs(allSmallGUIs) do
-                if savedVisibility[gui] then
-                    gui.Visible = true
-                end
-            end
-            BTaskToggle.Text = "ON"
-            BTaskToggle.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-            BTaskStroke.Color = Color3.fromRGB(255, 255, 255)
-        else
-            -- save and hide all
-            for _, gui in ipairs(allSmallGUIs) do
-                savedVisibility[gui] = gui.Visible
-                gui.Visible = false
-            end
-            BTaskToggle.Text = "OFF"
-            BTaskToggle.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
-            BTaskStroke.Color = Color3.fromRGB(255, 80, 80)
-        end
+        styleToggle(BTaskToggle, buttonsTaskOn)
+        BTaskStroke.Color = buttonsTaskOn and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(255, 80, 80)
+        applyButtonVisibility()
     end)
+
+    applyButtonVisibility()
 end
 
 local function serializeUDim2(value)
