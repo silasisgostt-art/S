@@ -311,7 +311,11 @@ local function runStealPath(path)
         end
         local speed
         if SpeedBooster.Enabled then
-            speed = i > 2 and SpeedBooster.StealSpeed or SpeedBooster.NormalSpeed
+            if SpeedBooster.Mode == "Desync" then
+                speed = i > 2 and SpeedBooster.DesyncStealSpeed or SpeedBooster.DesyncSpeed
+            else
+                speed = i > 2 and SpeedBooster.StealSpeed or SpeedBooster.NormalSpeed
+            end
         else
             speed = i > 2 and PATH_SECOND_SPEED or PATH_VELOCITY_SPEED
         end
@@ -1568,8 +1572,8 @@ local function createSmallGUI(name, yPosition)
     SmallGUI.BackgroundTransparency = 0
     SmallGUI.BorderSizePixel = 0
     SmallGUI.Visible = false
-    SmallGUI.Active = true
-    SmallGUI.Draggable = true  -- ✅ DRAGGABLE!
+    SmallGUI.Active = false
+    SmallGUI.Draggable = false
     SmallGUI.Parent = ScreenGui
 
     local Corner = Instance.new("UICorner")
@@ -1662,45 +1666,13 @@ local SmallButtonOrder = {
 }
 
 local function refreshSmallButtonPositions()
-    local visibleFrames = {}
+    -- Keep buttons in their own UI positions; do not auto-rearrange on click.
     for _, name in ipairs(SmallButtonOrder) do
         local entry = SmallGUIInstances[name]
-        if entry and entry.Frame.Visible then
-            table.insert(visibleFrames, entry.Frame)
+        if entry and entry.Frame then
+            entry.Frame.Size = UDim2.new(0, 80, 0, 20)
+            entry.Frame.Draggable = false
         end
-    end
-
-    local columns = 5
-    local buttonHeight = 30
-    local rows = 3
-    local gapX = 8
-    local gapY = 8
-    local topPadding = 8
-    local sidePadding = 10
-    local viewport = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1280, 720)
-    local availableWidth = math.max(400, viewport.X - sidePadding * 2)
-    local buttonWidth = math.floor((availableWidth - gapX * (columns - 1)) / columns)
-    buttonWidth = math.clamp(buttonWidth, 70, 150)
-    local totalWidth = columns * buttonWidth + (columns - 1) * gapX
-    local startX = math.max(sidePadding, math.floor((viewport.X - totalWidth) / 2))
-    local startY = topPadding
-
-    for index, frame in ipairs(visibleFrames) do
-        if index > (rows * columns) then
-            frame.Visible = false
-            continue
-        end
-
-        frame.Size = UDim2.new(0, buttonWidth, 0, buttonHeight)
-        local row = math.floor((index - 1) / columns)
-        local col = (index - 1) % columns
-        frame.Position = UDim2.new(
-            0,
-            startX + col * (buttonWidth + gapX),
-            0,
-            startY + row * (buttonHeight + gapY)
-        )
-        frame.Visible = true
     end
 end
 
@@ -1992,7 +1964,7 @@ local function setButtonsDraggable(enabled)
         SmallDropGUI,
     }) do
         if gui then
-            gui.Draggable = enabled
+            gui.Draggable = false
         end
     end
 end
