@@ -55,12 +55,18 @@ local ConfigData = {
     buttonPositions = nil,
     tpUpEnabled = false,
     tpDownVisible = false,
+    desyncSpeedSwitch = true,
+    desyncNormalSpeed = 43,
+    desyncStealSpeed = 53,
 }
 
 local buttonsLocked = false
 local getButtonPositions
 local SmallTPDownGUI, SmallTPDownButton, TPDownDot
 local SmallTPUpGUI, SmallTPUpButton, TPUpDot
+local desyncSpeedSwitch = ConfigData.desyncSpeedSwitch ~= false
+local desyncNormalSpeed = ConfigData.desyncNormalSpeed or 43
+local desyncStealSpeed = ConfigData.desyncStealSpeed or 53
 
 local function SaveConfig()
     ConfigData.speedEnabled = SpeedBooster and SpeedBooster.Enabled or false
@@ -73,6 +79,9 @@ local function SaveConfig()
     ConfigData.buttonsLocked = buttonsLocked or false
     ConfigData.tpUpEnabled = TPUpEnabled or false
     ConfigData.tpDownVisible = (SmallTPDownGUI and SmallTPDownGUI.Visible) or false
+    ConfigData.desyncSpeedSwitch = desyncSpeedSwitch
+    ConfigData.desyncNormalSpeed = desyncNormalSpeed
+    ConfigData.desyncStealSpeed = desyncStealSpeed
     ConfigData.buttonPositions = getButtonPositions()
 
     if writefile then
@@ -110,6 +119,9 @@ end
 -- ✅ LOAD CONFIG ON START!
 LoadConfig()
 buttonsLocked = ConfigData.buttonsLocked or false
+desyncSpeedSwitch = ConfigData.desyncSpeedSwitch ~= false
+desyncNormalSpeed = ConfigData.desyncNormalSpeed or 43
+desyncStealSpeed = ConfigData.desyncStealSpeed or 53
 
 -- ═══════════════════════════════════════════════════════
 -- SPEED BOOSTER (EXACT 57.9/29.6/25.8 - CONNECTED!)
@@ -2603,7 +2615,8 @@ local function createMainGUI(device)
     local MainTab = createTab("🛡️", "Main", 1)
     local MISCTab = createTab("🔧", "MISC", 2)
     local SettingsTab = createTab("⚙️", "Settings", 3)
-    local CreditsTab = createTab("⭐", "Info", 4)
+    local DesyncSpeedTab = createTab("⚡", "Desync Speed", 4)
+    local CreditsTab = createTab("⭐", "Info", 5)
 
     local ContentContainer = Instance.new("Frame")
     ContentContainer.Size = UDim2.new(1, -sidebarWidth - 20, 1, -70)
@@ -2639,6 +2652,7 @@ local function createMainGUI(device)
     local MainContent = createContentFrame("Main")
     local MISCContent = createContentFrame("MISC")
     local SettingsContent = createContentFrame("Settings")
+    local DesyncSpeedContent = createContentFrame("Desync Speed")
     local CreditsContent = createContentFrame("Credits")
 
     MainContent.Visible = true
@@ -2666,6 +2680,7 @@ local function createMainGUI(device)
     MainTab.MouseButton1Click:Connect(function() switchTab("Main") end)
     MISCTab.MouseButton1Click:Connect(function() switchTab("MISC") end)
     SettingsTab.MouseButton1Click:Connect(function() switchTab("Settings") end)
+    DesyncSpeedTab.MouseButton1Click:Connect(function() switchTab("Desync Speed") end)
     CreditsTab.MouseButton1Click:Connect(function() switchTab("Credits") end)
 
     switchTab("Main")
@@ -3257,6 +3272,128 @@ local function createMainGUI(device)
     -- ═══════════════════════════════════════════════════════
 
     -- Settings tab no longer needs manual config buttons. Settings will auto-save on change.
+
+    -- ═══════════════════════════════════════════════════════
+    -- DESYNC SPEED TAB CONTENT
+    -- ═══════════════════════════════════════════════════════
+
+    local function createDesyncSettingRow(labelText, order)
+        local Row = Instance.new("Frame")
+        Row.Size = UDim2.new(1, 0, 0, 50)
+        Row.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+        Row.BorderSizePixel = 0
+        Row.LayoutOrder = order
+        Row.Parent = DesyncSpeedContent
+
+        local RowCorner = Instance.new("UICorner")
+        RowCorner.CornerRadius = UDim.new(0, 10)
+        RowCorner.Parent = Row
+
+        local Label = Instance.new("TextLabel")
+        Label.Size = UDim2.new(0.6, 0, 1, 0)
+        Label.Position = UDim2.new(0, 12, 0, 0)
+        Label.BackgroundTransparency = 1
+        Label.Text = labelText
+        Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Label.Font = Enum.Font.GothamBold
+        Label.TextSize = device == "iPhone" and 11 or 14
+        Label.TextXAlignment = Enum.TextXAlignment.Left
+        Label.Parent = Row
+
+        return Row
+    end
+
+    local DesyncInfo = Instance.new("TextLabel")
+    DesyncInfo.Size = UDim2.new(1, 0, 0, 42)
+    DesyncInfo.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+    DesyncInfo.BorderSizePixel = 0
+    DesyncInfo.LayoutOrder = 1
+    DesyncInfo.Text = "DESYNC SPEED SETTINGS\nSet normal + steal speed and switch mode"
+    DesyncInfo.TextColor3 = Color3.fromRGB(220, 220, 220)
+    DesyncInfo.Font = Enum.Font.Gotham
+    DesyncInfo.TextSize = device == "iPhone" and 9 or 12
+    DesyncInfo.TextWrapped = true
+    DesyncInfo.Parent = DesyncSpeedContent
+
+    local DesyncInfoCorner = Instance.new("UICorner")
+    DesyncInfoCorner.CornerRadius = UDim.new(0, 10)
+    DesyncInfoCorner.Parent = DesyncInfo
+
+    local SwitchRow = createDesyncSettingRow("Switch Speed", 2)
+    local SwitchBtn = Instance.new("TextButton")
+    SwitchBtn.Size = UDim2.new(0, 70, 0, 32)
+    SwitchBtn.Position = UDim2.new(1, -80, 0.5, -16)
+    SwitchBtn.BackgroundColor3 = desyncSpeedSwitch and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(40, 40, 45)
+    SwitchBtn.Text = desyncSpeedSwitch and "ON" or "OFF"
+    SwitchBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SwitchBtn.Font = Enum.Font.GothamBold
+    SwitchBtn.TextSize = device == "iPhone" and 10 or 12
+    SwitchBtn.Parent = SwitchRow
+
+    local SwitchCorner = Instance.new("UICorner")
+    SwitchCorner.CornerRadius = UDim.new(0, 8)
+    SwitchCorner.Parent = SwitchBtn
+
+    SwitchBtn.MouseButton1Click:Connect(function()
+        desyncSpeedSwitch = not desyncSpeedSwitch
+        SwitchBtn.Text = desyncSpeedSwitch and "ON" or "OFF"
+        SwitchBtn.BackgroundColor3 = desyncSpeedSwitch and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(40, 40, 45)
+        SaveConfig()
+    end)
+
+    local NormalRow = createDesyncSettingRow("Normal Speed", 3)
+    local NormalBox = Instance.new("TextBox")
+    NormalBox.Size = UDim2.new(0, 70, 0, 32)
+    NormalBox.Position = UDim2.new(1, -80, 0.5, -16)
+    NormalBox.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
+    NormalBox.Text = tostring(desyncNormalSpeed)
+    NormalBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    NormalBox.Font = Enum.Font.GothamBold
+    NormalBox.TextSize = device == "iPhone" and 10 or 12
+    NormalBox.ClearTextOnFocus = false
+    NormalBox.Parent = NormalRow
+
+    local NormalCorner = Instance.new("UICorner")
+    NormalCorner.CornerRadius = UDim.new(0, 8)
+    NormalCorner.Parent = NormalBox
+
+    NormalBox.FocusLost:Connect(function()
+        local value = tonumber(NormalBox.Text)
+        if value then
+            desyncNormalSpeed = math.clamp(value, 1, 200)
+            NormalBox.Text = tostring(desyncNormalSpeed)
+            SaveConfig()
+        else
+            NormalBox.Text = tostring(desyncNormalSpeed)
+        end
+    end)
+
+    local StealRow = createDesyncSettingRow("Steal Speed", 4)
+    local StealBox = Instance.new("TextBox")
+    StealBox.Size = UDim2.new(0, 70, 0, 32)
+    StealBox.Position = UDim2.new(1, -80, 0.5, -16)
+    StealBox.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
+    StealBox.Text = tostring(desyncStealSpeed)
+    StealBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    StealBox.Font = Enum.Font.GothamBold
+    StealBox.TextSize = device == "iPhone" and 10 or 12
+    StealBox.ClearTextOnFocus = false
+    StealBox.Parent = StealRow
+
+    local StealCorner = Instance.new("UICorner")
+    StealCorner.CornerRadius = UDim.new(0, 8)
+    StealCorner.Parent = StealBox
+
+    StealBox.FocusLost:Connect(function()
+        local value = tonumber(StealBox.Text)
+        if value then
+            desyncStealSpeed = math.clamp(value, 1, 200)
+            StealBox.Text = tostring(desyncStealSpeed)
+            SaveConfig()
+        else
+            StealBox.Text = tostring(desyncStealSpeed)
+        end
+    end)
 
     -- ═══════════════════════════════════════════════════════
     -- CREDITS TAB CONTENT
@@ -3865,7 +4002,10 @@ function createRightButtons(device)
             local hum = char and char:FindFirstChildOfClass("Humanoid")
             local root = char and char:FindFirstChild("HumanoidRootPart")
             if hum and root and hum.MoveDirection.Magnitude > 0 then
-                local speed = (hum.WalkSpeed < 27) and 53 or 43
+                local speed = desyncNormalSpeed
+                if desyncSpeedSwitch and hum.WalkSpeed < 27 then
+                    speed = desyncStealSpeed
+                end
                 root.AssemblyLinearVelocity = Vector3.new(hum.MoveDirection.X * speed, root.AssemblyLinearVelocity.Y, hum.MoveDirection.Z * speed)
             end
         end)
