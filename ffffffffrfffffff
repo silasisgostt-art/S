@@ -143,9 +143,20 @@ local function startSpeedBooster()
         if not h or not r then return end
         
         local useDesyncSpeed = (SpeedBooster.Mode == "Desync")
+
+        local carry = false
+        local a = h:FindFirstChildOfClass("Animator")
+        if a then
+            for _, t in pairs(a:GetPlayingAnimationTracks()) do
+                if string.find(t.Animation.AnimationId, "71186871415348") then
+                    carry = true
+                    break
+                end
+            end
+        end
         
         if h.MoveDirection.Magnitude > 0 then
-            local vel = useDesyncSpeed and SpeedBooster.StealSpeed or SpeedBooster.NormalSpeed
+            local vel = (carry or useDesyncSpeed) and SpeedBooster.StealSpeed or SpeedBooster.NormalSpeed
             -- True bypass: if lag-back detected, use CFrame teleport
             if math.abs(r.AssemblyLinearVelocity.X) < 1 and math.abs(r.AssemblyLinearVelocity.Z) < 1 and h.MoveDirection.Magnitude > 0.1 then
                 r.CFrame = r.CFrame + Vector3.new(h.MoveDirection.X * 2, 0, h.MoveDirection.Z * 2)
@@ -2783,32 +2794,30 @@ local function createMainGUI(device)
     SpeedTitle.Parent = SpeedSettingsGUI
 
     local tabHost = Instance.new("Frame")
-    tabHost.Size = UDim2.new(1, -16, 0, 24)
-    tabHost.Position = UDim2.new(0, 8, 0, 32)
+    tabHost.Size = UDim2.new(1, -16, 0, 28)
+    tabHost.Position = UDim2.new(0, 8, 0, 30)
     tabHost.BackgroundTransparency = 1
     tabHost.Parent = SpeedSettingsGUI
 
     local NormalTab = Instance.new("TextButton")
-    NormalTab.Size = UDim2.new(0, 92, 0, 24)
-    NormalTab.Position = UDim2.new(0, 2, 0, 0)
+    NormalTab.Size = UDim2.new(0, 94, 0, 24)
+    NormalTab.Position = UDim2.new(0, 0, 0, 2)
     NormalTab.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
     NormalTab.Text = "NORMAL"
     NormalTab.TextColor3 = Color3.fromRGB(255, 255, 255)
     NormalTab.Font = Enum.Font.GothamBold
     NormalTab.TextSize = 11
-    NormalTab.AutoButtonColor = false
     NormalTab.Parent = tabHost
     Instance.new("UICorner", NormalTab).CornerRadius = UDim.new(0, 8)
 
     local DesyncTab = Instance.new("TextButton")
-    DesyncTab.Size = UDim2.new(0, 92, 0, 24)
-    DesyncTab.Position = UDim2.new(1, -94, 0, 0)
+    DesyncTab.Size = UDim2.new(0, 94, 0, 24)
+    DesyncTab.Position = UDim2.new(0, 100, 0, 2)
     DesyncTab.BackgroundColor3 = Color3.fromRGB(50, 70, 105)
     DesyncTab.Text = "DESYNC"
     DesyncTab.TextColor3 = Color3.fromRGB(255, 255, 255)
     DesyncTab.Font = Enum.Font.GothamBold
     DesyncTab.TextSize = 11
-    DesyncTab.AutoButtonColor = false
     DesyncTab.Parent = tabHost
     Instance.new("UICorner", DesyncTab).CornerRadius = UDim.new(0, 8)
 
@@ -2842,7 +2851,7 @@ local function createMainGUI(device)
     StealLabel.Size = UDim2.new(0.6, 0, 0, 25)
     StealLabel.Position = UDim2.new(0, 10, 0, 92)
     StealLabel.BackgroundTransparency = 1
-    StealLabel.Text = "Desync Speed:"
+    StealLabel.Text = "Steal Speed:"
     StealLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
     StealLabel.Font = Enum.Font.Gotham
     StealLabel.TextSize = 11
@@ -2894,10 +2903,6 @@ local function createMainGUI(device)
         local normalActive = SpeedBooster.Mode ~= "Desync"
         NormalTab.BackgroundColor3 = normalActive and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(50, 70, 105)
         DesyncTab.BackgroundColor3 = (not normalActive) and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(50, 70, 105)
-        NormalLabel.Visible = normalActive
-        normalSpeedBox.Visible = normalActive
-        StealLabel.Visible = not normalActive
-        stealSpeedBox.Visible = not normalActive
     end
 
     NormalTab.MouseButton1Click:Connect(function()
