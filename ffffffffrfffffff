@@ -4775,3 +4775,488 @@ game:GetService("Players").PlayerRemoving:Connect(function(plr)
         print("[TIM CHEESE DUELS] ✅ Auto-saved config on leave!")
     end
 end)
+
+-- copied ui layout/colors with existing TIM CHEESE buttons/features
+do
+    local playersC = game:GetService("Players")
+    local runServiceC = game:GetService("RunService")
+    local inputC = game:GetService("UserInputService")
+    local tweenC = game:GetService("TweenService")
+    local coreGuiC = game:GetService("CoreGui")
+
+    local localPlayerC = playersC.LocalPlayer
+    local isMobileC = inputC.TouchEnabled and not inputC.KeyboardEnabled
+    local UI_W = isMobileC and 280 or 360
+    local UI_H = isMobileC and 450 or 580
+
+    local C_BG = Color3.fromRGB(0, 0, 0)
+    local C_BORDER = Color3.fromRGB(255, 255, 255)
+    local C_TEXT = Color3.fromRGB(255, 255, 255)
+    local C_ACCENT = Color3.fromRGB(255, 255, 255)
+    local C_WHITE = Color3.fromRGB(240, 240, 255)
+    local C_CARD = Color3.fromRGB(14, 14, 22)
+    local C_OFF = Color3.fromRGB(35, 35, 50)
+    local C_RED = Color3.fromRGB(255, 100, 100)
+
+    local rotatingStrokesC = {}
+
+    local function createRotatingFrameC(parent, size, position, cornerRadius)
+        local frame = Instance.new("Frame", parent)
+        frame.Size = size
+        frame.Position = position
+        frame.BackgroundColor3 = C_BG
+        frame.BorderSizePixel = 0
+        frame.ClipsDescendants = true
+
+        local corner = Instance.new("UICorner", frame)
+        corner.CornerRadius = UDim.new(0, cornerRadius or 9)
+
+        local stroke = Instance.new("UIStroke", frame)
+        stroke.Color = C_BORDER
+        stroke.Thickness = 1.5
+        stroke.Transparency = 0.3
+        stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+        local gradient = Instance.new("UIGradient", stroke)
+        gradient.Color = ColorSequence.new(C_BORDER)
+        gradient.Transparency = NumberSequence.new({
+            NumberSequenceKeypoint.new(0, 1),
+            NumberSequenceKeypoint.new(0.4, 0),
+            NumberSequenceKeypoint.new(0.6, 0),
+            NumberSequenceKeypoint.new(1, 1)
+        })
+        gradient.Rotation = 0
+
+        table.insert(rotatingStrokesC, gradient)
+        return frame
+    end
+
+    local function createButtonFrameC(parent, size, position, cornerRadius)
+        local frame = Instance.new("Frame", parent)
+        frame.Size = size
+        frame.Position = position
+        frame.BackgroundColor3 = C_BG
+        frame.BorderSizePixel = 0
+
+        local corner = Instance.new("UICorner", frame)
+        corner.CornerRadius = UDim.new(0, cornerRadius or 8)
+
+        local stroke = Instance.new("UIStroke", frame)
+        stroke.Color = C_BORDER
+        stroke.Thickness = 1
+        stroke.Transparency = 0
+        stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+        local gradient = Instance.new("UIGradient", stroke)
+        gradient.Color = ColorSequence.new(C_BORDER)
+        gradient.Transparency = NumberSequence.new({
+            NumberSequenceKeypoint.new(0, 1),
+            NumberSequenceKeypoint.new(0.4, 0),
+            NumberSequenceKeypoint.new(0.6, 0),
+            NumberSequenceKeypoint.new(1, 1)
+        })
+        gradient.Rotation = 0
+
+        table.insert(rotatingStrokesC, gradient)
+        return frame
+    end
+
+    local function makeDraggableC(frame)
+        local dragging, dragInput, dragStart, startPos
+        frame.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                dragging = true
+                dragStart = input.Position
+                startPos = frame.Position
+            end
+        end)
+        frame.InputChanged:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+                dragInput = input
+            end
+        end)
+        inputC.InputChanged:Connect(function(input)
+            if input == dragInput and dragging then
+                local delta = input.Position - dragStart
+                frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+            end
+        end)
+        frame.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                dragging = false
+            end
+        end)
+    end
+
+    local function clickByTextC(text)
+        if not ScreenGui then return false end
+        for _, obj in ipairs(ScreenGui:GetDescendants()) do
+            if obj:IsA("TextButton") and obj.Text == text then
+                pcall(function() obj:Activate() end)
+                return true
+            end
+        end
+        return false
+    end
+
+    local copyGui = Instance.new("ScreenGui")
+    copyGui.Name = "TIMCHEESE_5RT_LAYOUT"
+    copyGui.ResetOnSpawn = false
+    copyGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    copyGui.Parent = coreGuiC
+
+    local topBar = createRotatingFrameC(copyGui, UDim2.new(0, 240, 0, 32), UDim2.new(0.5, -120, 0.02, 0), 10)
+    local topLabel = Instance.new("TextLabel", topBar)
+    topLabel.Size = UDim2.new(1, 0, 1, 0)
+    topLabel.BackgroundTransparency = 1
+    topLabel.Font = Enum.Font.Bangers
+    topLabel.TextSize = 12
+    topLabel.TextColor3 = C_TEXT
+    topLabel.TextXAlignment = Enum.TextXAlignment.Center
+
+    local fpsCount, fpsTimer = 0, tick()
+    runServiceC.RenderStepped:Connect(function()
+        fpsCount = fpsCount + 1
+        if tick() - fpsTimer >= 1 then
+            local ping = math.floor(localPlayerC:GetNetworkPing() * 1000)
+            topLabel.Text = "TIM CHEESE | " .. fpsCount .. " FPS | " .. ping .. " ms"
+            fpsCount = 0
+            fpsTimer = tick()
+        end
+    end)
+
+    local menuBtnFrame = createButtonFrameC(copyGui, UDim2.new(0, 45, 0, 45), UDim2.new(0.05, 0, 0.2, 0), 12)
+    local menuBtn = Instance.new("TextButton", menuBtnFrame)
+    menuBtn.Size = UDim2.new(1, -2, 1, -2)
+    menuBtn.Position = UDim2.new(0, 1, 0, 1)
+    menuBtn.Text = "5"
+    menuBtn.TextSize = 22
+    menuBtn.Font = Enum.Font.Bangers
+    menuBtn.TextColor3 = C_TEXT
+    menuBtn.BackgroundTransparency = 1
+    makeDraggableC(menuBtnFrame)
+
+    local mainFrame = createRotatingFrameC(copyGui, UDim2.new(0, UI_W, 0, UI_H), UDim2.new(0.5, -UI_W/2, 0.5, -UI_H/2), 16)
+    mainFrame.Visible = false
+    makeDraggableC(mainFrame)
+
+    local titleBar = Instance.new("Frame", mainFrame)
+    titleBar.Size = UDim2.new(1, 0, 0, 45)
+    titleBar.BackgroundColor3 = C_BG
+    titleBar.BorderSizePixel = 0
+    Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 16)
+
+    local titleLbl = Instance.new("TextLabel", titleBar)
+    titleLbl.Size = UDim2.new(1, 0, 1, 0)
+    titleLbl.BackgroundTransparency = 1
+    titleLbl.Text = "TIM CHEESE HUB"
+    titleLbl.Font = Enum.Font.Bangers
+    titleLbl.TextSize = 20
+    titleLbl.TextColor3 = C_WHITE
+
+    local closeFrame = createButtonFrameC(titleBar, UDim2.new(0, 28, 0, 28), UDim2.new(1, -40, 0, 8), 6)
+    local closeBtn = Instance.new("TextButton", closeFrame)
+    closeBtn.Size = UDim2.new(1, -2, 1, -2)
+    closeBtn.Position = UDim2.new(0, 1, 0, 1)
+    closeBtn.Text = "✕"
+    closeBtn.TextColor3 = C_RED
+    closeBtn.Font = Enum.Font.Bangers
+    closeBtn.TextSize = 16
+    closeBtn.BackgroundTransparency = 1
+
+    local tabContainer = Instance.new("Frame", mainFrame)
+    tabContainer.Size = UDim2.new(1, -16, 0, 32)
+    tabContainer.Position = UDim2.new(0, 8, 0, 52)
+    tabContainer.BackgroundTransparency = 1
+
+    local function makeTab(text, xScale, xPos)
+        local tabFrame = createButtonFrameC(tabContainer, UDim2.new(xScale, -4, 1, 0), UDim2.new(xPos, 2, 0, 0), 6)
+        local tab = Instance.new("TextButton", tabFrame)
+        tab.Size = UDim2.new(1, -2, 1, -2)
+        tab.Position = UDim2.new(0, 1, 0, 1)
+        tab.Text = text
+        tab.TextColor3 = C_WHITE
+        tab.Font = Enum.Font.Bangers
+        tab.TextSize = 12
+        tab.BackgroundTransparency = 1
+        tabFrame.BackgroundColor3 = C_OFF
+        return tab, tabFrame
+    end
+
+    local featTab, featTabFrame = makeTab("FEATURES", 0.48, 0.01)
+    local setTab, setTabFrame = makeTab("SETTINGS", 0.48, 0.51)
+
+    local function makeScrollFrame()
+        local sf = Instance.new("ScrollingFrame", mainFrame)
+        sf.Size = UDim2.new(1, -16, 1, -120)
+        sf.Position = UDim2.new(0, 8, 0, 92)
+        sf.BackgroundTransparency = 1
+        sf.BorderSizePixel = 0
+        sf.ScrollBarThickness = 3
+        sf.ScrollBarImageColor3 = C_ACCENT
+        sf.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        sf.Visible = false
+        local ll = Instance.new("UIListLayout", sf)
+        ll.Padding = UDim.new(0, 5)
+        ll.SortOrder = Enum.SortOrder.LayoutOrder
+        return sf
+    end
+
+    local featFrame = makeScrollFrame()
+    local setFrame = makeScrollFrame()
+
+    local function selectTab(idx)
+        featFrame.Visible = (idx == 1)
+        setFrame.Visible = (idx == 2)
+        featTabFrame.BackgroundColor3 = idx == 1 and C_ACCENT or C_OFF
+        setTabFrame.BackgroundColor3 = idx == 2 and C_ACCENT or C_OFF
+    end
+
+    featTab.MouseButton1Click:Connect(function() selectTab(1) end)
+    setTab.MouseButton1Click:Connect(function() selectTab(2) end)
+    selectTab(1)
+
+    local function makeSection(parent, text, order)
+        local lbl = Instance.new("TextLabel", parent)
+        lbl.Size = UDim2.new(1, 0, 0, 22)
+        lbl.BackgroundTransparency = 1
+        lbl.Text = text
+        lbl.TextColor3 = C_ACCENT
+        lbl.Font = Enum.Font.Bangers
+        lbl.TextSize = 10
+        lbl.TextXAlignment = Enum.TextXAlignment.Left
+        lbl.LayoutOrder = order
+    end
+
+    local function makeToggle(parent, name, order, callback)
+        local row = Instance.new("Frame", parent)
+        row.Size = UDim2.new(1, 0, 0, 38)
+        row.BackgroundColor3 = C_CARD
+        row.BorderSizePixel = 0
+        row.LayoutOrder = order
+        Instance.new("UICorner", row).CornerRadius = UDim.new(0, 8)
+        local rowStroke = Instance.new("UIStroke", row)
+        rowStroke.Color = C_BORDER
+        rowStroke.Thickness = 1
+        rowStroke.Transparency = 0.5
+
+        local lbl = Instance.new("TextLabel", row)
+        lbl.Size = UDim2.new(1, -65, 1, 0)
+        lbl.Position = UDim2.new(0, 12, 0, 0)
+        lbl.BackgroundTransparency = 1
+        lbl.Text = name
+        lbl.TextColor3 = C_WHITE
+        lbl.Font = Enum.Font.Bangers
+        lbl.TextSize = 12
+        lbl.TextXAlignment = Enum.TextXAlignment.Left
+
+        local track = Instance.new("Frame", row)
+        track.Size = UDim2.new(0, 42, 0, 20)
+        track.Position = UDim2.new(1, -52, 0.5, -10)
+        track.BackgroundColor3 = C_OFF
+        track.BorderSizePixel = 0
+        Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
+
+        local dot = Instance.new("Frame", track)
+        dot.Size = UDim2.new(0, 16, 0, 16)
+        dot.Position = UDim2.new(0, 2, 0.5, -8)
+        dot.BackgroundColor3 = C_WHITE
+        dot.BorderSizePixel = 0
+        Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
+
+        local state = false
+        local btn = Instance.new("TextButton", row)
+        btn.Size = UDim2.new(1, 0, 1, 0)
+        btn.BackgroundTransparency = 1
+        btn.Text = ""
+        btn.MouseButton1Click:Connect(function()
+            state = not state
+            track.BackgroundColor3 = state and C_ACCENT or C_OFF
+            dot.Position = state and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
+            if callback then callback(state) end
+        end)
+    end
+
+    local function makeActionButton(parent, text, order, onClick)
+        local row = createButtonFrameC(parent, UDim2.new(1, 0, 0, 35), UDim2.new(0, 0, 0, 0), 8)
+        row.LayoutOrder = order
+        local btn = Instance.new("TextButton", row)
+        btn.Size = UDim2.new(1, -4, 1, -4)
+        btn.Position = UDim2.new(0, 2, 0, 2)
+        btn.Text = text
+        btn.TextColor3 = C_TEXT
+        btn.Font = Enum.Font.Bangers
+        btn.TextSize = 12
+        btn.BackgroundTransparency = 1
+        btn.MouseButton1Click:Connect(function()
+            if onClick then onClick() end
+        end)
+    end
+
+    local function makeNumInput(parent, labelText, defaultVal, order, onChanged)
+        local row = Instance.new("Frame", parent)
+        row.Size = UDim2.new(1, 0, 0, 38)
+        row.BackgroundColor3 = C_CARD
+        row.BorderSizePixel = 0
+        row.LayoutOrder = order
+        Instance.new("UICorner", row).CornerRadius = UDim.new(0, 8)
+        local rowStroke = Instance.new("UIStroke", row)
+        rowStroke.Color = C_BORDER
+        rowStroke.Thickness = 1
+        rowStroke.Transparency = 0.5
+
+        local lbl = Instance.new("TextLabel", row)
+        lbl.Size = UDim2.new(1, -85, 1, 0)
+        lbl.Position = UDim2.new(0, 12, 0, 0)
+        lbl.BackgroundTransparency = 1
+        lbl.Text = labelText
+        lbl.TextColor3 = C_WHITE
+        lbl.Font = Enum.Font.Bangers
+        lbl.TextSize = 12
+        lbl.TextXAlignment = Enum.TextXAlignment.Left
+
+        local boxFrame = createButtonFrameC(row, UDim2.new(0, 60, 0, 24), UDim2.new(1, -70, 0.5, -12), 5)
+        local box = Instance.new("TextBox", boxFrame)
+        box.Size = UDim2.new(1, -2, 1, -2)
+        box.Position = UDim2.new(0, 1, 0, 1)
+        box.BackgroundTransparency = 1
+        box.Text = tostring(defaultVal)
+        box.TextColor3 = C_ACCENT
+        box.Font = Enum.Font.Bangers
+        box.TextSize = 12
+        box.ClearTextOnFocus = false
+        box.FocusLost:Connect(function()
+            local n = tonumber(box.Text)
+            if n then
+                if onChanged then onChanged(n) end
+            else
+                box.Text = tostring(defaultVal)
+            end
+        end)
+    end
+
+    local order = 1
+    makeSection(featFrame, " COMBAT", order); order = order + 1
+    makeToggle(featFrame, "TRACK PLAYER", order, function() clickByTextC("TRACK\nPLAYER") end); order = order + 1
+    makeToggle(featFrame, "HIT CIRCLE", order, function() clickByTextC("HIT\nCIRCLE") end); order = order + 1
+    makeToggle(featFrame, "DESYNC", order, function() clickByTextC("DESYNC") end); order = order + 1
+    makeToggle(featFrame, "LAGGER", order, function() clickByTextC("LAGGER") end); order = order + 1
+    makeToggle(featFrame, "JUKE", order, function() clickByTextC("JUKE") end); order = order + 1
+
+    makeSection(featFrame, " MOVEMENT", order); order = order + 1
+    makeToggle(featFrame, "SPEED BOOSTER", order, function(v)
+        SpeedBooster.Enabled = v
+        if v then startSpeedBooster() else stopSpeedBooster() end
+    end); order = order + 1
+    makeToggle(featFrame, "UNWALK", order, function(v)
+        UnwalkEnabled = v
+        if v then startUnwalk() else stopUnwalk() end
+    end); order = order + 1
+    makeToggle(featFrame, "SPIN BOT", order, function(v)
+        SpinBotEnabled = v
+        if v then startSpinBot() else stopSpinBot() end
+    end); order = order + 1
+    makeToggle(featFrame, "INF JUMP", order, function(v)
+        InfJumpEnabled = v
+        if v then startInfJump() else stopInfJump() end
+    end); order = order + 1
+    makeToggle(featFrame, "FLOAT UP", order, function(v)
+        floatEnabled = v
+        if v then startFloat() else stopFloat() end
+    end); order = order + 1
+    makeToggle(featFrame, "FOV LOCK", order, function(v)
+        fovEnabled = v
+        if v then
+            updateFOV()
+        else
+            camera.FieldOfView = 70
+            if fovConnection then fovConnection:Disconnect() fovConnection = nil end
+        end
+    end); order = order + 1
+
+    makeSection(featFrame, " AUTO PATH", order); order = order + 1
+    makeToggle(featFrame, "AUTO LEFT", order, function() clickByTextC("AUTO\nLEFT") end); order = order + 1
+    makeToggle(featFrame, "AUTO RIGHT", order, function() clickByTextC("AUTO\nRIGHT") end); order = order + 1
+    makeToggle(featFrame, "AUTO MEDUSA", order, function() clickByTextC("AUTO\nMEDUSA") end); order = order + 1
+
+    makeSection(featFrame, " DEFENSE", order); order = order + 1
+    makeToggle(featFrame, "ANTI RAGDOLL", order, function(v)
+        AntiRagdollEnabled = v
+        if v then enableAntiRagdoll() else disableAntiRagdoll() end
+    end); order = order + 1
+    makeToggle(featFrame, "RAGDOLL TP", order, function(v)
+        RagdollTP.enabled = v
+        if v then startRagdollTP() else stopRagdollTP() end
+    end); order = order + 1
+    makeToggle(featFrame, "HITBOX", order, function(v)
+        if v then enableHitbox() else disableHitbox() end
+    end); order = order + 1
+    makeToggle(featFrame, "ANTI DEATH", order, function(v)
+        AntiDeathEnabled = v
+        if v then
+            if not AntiDeath.Conn then
+                AntiDeath.Conn = RunService.Heartbeat:Connect(function()
+                    if character and character:FindFirstChild("Humanoid") then
+                        if character.Humanoid.Health <= 0 then
+                            character.Humanoid.Health = 100
+                        end
+                    end
+                end)
+            end
+        else
+            if AntiDeath.Conn then
+                AntiDeath.Conn:Disconnect()
+                AntiDeath.Conn = nil
+            end
+        end
+    end); order = order + 1
+
+    makeSection(featFrame, " ACTIONS", order); order = order + 1
+    makeActionButton(featFrame, "▼ DROP", order, function() doDrop() end); order = order + 1
+    makeActionButton(featFrame, "⬇ TP DOWN", order, function() tpDownToGround() end); order = order + 1
+    makeActionButton(featFrame, "⚡ FPS BOOSTER", order, function() enableFPSBooster() end); order = order + 1
+    makeActionButton(featFrame, "🛠 OPTIMIZER", order, function() enableOptimizer() end); order = order + 1
+
+    local setOrder = 1
+    makeSection(setFrame, " SPEEDS", setOrder); setOrder = setOrder + 1
+    makeNumInput(setFrame, "NORMAL SPEED", SpeedBooster.NormalSpeed, setOrder, function(v)
+        SpeedBooster.NormalSpeed = v
+        if normalSpeedBox then normalSpeedBox.Text = tostring(v) end
+    end); setOrder = setOrder + 1
+    makeNumInput(setFrame, "STEAL SPEED", SpeedBooster.StealSpeed, setOrder, function(v)
+        SpeedBooster.StealSpeed = v
+        if stealSpeedBox then stealSpeedBox.Text = tostring(v) end
+    end); setOrder = setOrder + 1
+    makeNumInput(setFrame, "JUMP POWER", SpeedBooster.JumpPower, setOrder, function(v)
+        SpeedBooster.JumpPower = v
+    end); setOrder = setOrder + 1
+    makeSection(setFrame, " CAMERA / RANGE", setOrder); setOrder = setOrder + 1
+    makeNumInput(setFrame, "FOV", fovValue or 70, setOrder, function(v)
+        fovValue = v
+        if fovSliderBox then fovSliderBox.Text = tostring(v) end
+    end); setOrder = setOrder + 1
+    makeNumInput(setFrame, "STEAL RADIUS", InstaSteal and InstaSteal.Radius or 9, setOrder, function(v)
+        if InstaSteal then InstaSteal.Radius = math.max(1, v) end
+        if RadiusValue then RadiusValue.Text = tostring(math.max(1, v)) end
+    end); setOrder = setOrder + 1
+    makeNumInput(setFrame, "TRACK SPEED", BAT_MOVE_SPEED or 56.5, setOrder, function(v)
+        BAT_MOVE_SPEED = v
+    end); setOrder = setOrder + 1
+    makeActionButton(setFrame, "💾 SAVE CONFIG", setOrder, function() SaveConfig() end)
+
+    menuBtn.MouseButton1Click:Connect(function()
+        mainFrame.Visible = not mainFrame.Visible
+    end)
+
+    closeBtn.MouseButton1Click:Connect(function()
+        mainFrame.Visible = false
+    end)
+
+    runServiceC.Heartbeat:Connect(function(dt)
+        for _, gradient in ipairs(rotatingStrokesC) do
+            if gradient and gradient.Parent then
+                gradient.Rotation = (gradient.Rotation + 90 * dt) % 360
+            end
+        end
+    end)
+end
