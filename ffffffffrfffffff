@@ -1666,13 +1666,32 @@ local SmallButtonOrder = {
 }
 
 local function refreshSmallButtonPositions()
-    -- Keep buttons in their own UI positions; do not auto-rearrange on click.
+    -- Fixed top-screen layout so buttons never jump to random places.
+    local visibleFrames = {}
     for _, name in ipairs(SmallButtonOrder) do
         local entry = SmallGUIInstances[name]
-        if entry and entry.Frame then
-            entry.Frame.Size = UDim2.new(0, 80, 0, 20)
-            entry.Frame.Draggable = false
+        if entry and entry.Frame and entry.Frame.Visible then
+            table.insert(visibleFrames, entry.Frame)
         end
+    end
+
+    local columns = 5
+    local buttonWidth = 86
+    local buttonHeight = 24
+    local gapX = 8
+    local gapY = 8
+    local topPadding = 8
+    local viewport = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1280, 720)
+    local totalWidth = columns * buttonWidth + (columns - 1) * gapX
+    local startX = math.max(8, math.floor((viewport.X - totalWidth) / 2))
+
+    for index, frame in ipairs(visibleFrames) do
+        local row = math.floor((index - 1) / columns)
+        local col = (index - 1) % columns
+        frame.Size = UDim2.new(0, buttonWidth, 0, buttonHeight)
+        frame.Position = UDim2.new(0, startX + col * (buttonWidth + gapX), 0, topPadding + row * (buttonHeight + gapY))
+        frame.Draggable = false
+        frame.Active = false
     end
 end
 
@@ -1717,6 +1736,7 @@ do
         for _, item in ipairs(buttonItems) do
             item.gui.Visible = buttonsTaskOn and perButtonEnabled[item.name]
         end
+        refreshSmallButtonPositions()
     end
 
     local function styleToggle(toggleButton, isEnabled)
@@ -1962,6 +1982,8 @@ local function setButtonsDraggable(enabled)
         SmallAntiRagGUI,
         SmallRagdollTPGUI,
         SmallDropGUI,
+        SmallTPDownGUI,
+        SmallTPUpGUI,
     }) do
         if gui then
             gui.Draggable = false
