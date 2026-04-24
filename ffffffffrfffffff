@@ -41,8 +41,7 @@ player.CharacterAdded:Connect(setupCharacter)
 -- CONFIG SAVE/LOAD SYSTEM (AUTO-LOADS!)
 -- ═══════════════════════════════════════════════════════
 
-local CONFIG_FILE = "celestialhub_config.json"
-local LEGACY_CONFIG_FILE = "timcheeseduels_config.json"
+local CONFIG_FILE = "timcheeseduels_config.json"
 
 local ConfigData = {
     speedEnabled = false,
@@ -94,10 +93,9 @@ local function SaveConfig()
 end
 
 local function LoadConfig()
-    if readfile and isfile and (isfile(CONFIG_FILE) or isfile(LEGACY_CONFIG_FILE)) then
-        local configToRead = isfile(CONFIG_FILE) and CONFIG_FILE or LEGACY_CONFIG_FILE
+    if readfile and isfile and isfile(CONFIG_FILE) then
         local success, data = pcall(function()
-            return HttpService:JSONDecode(readfile(configToRead))
+            return HttpService:JSONDecode(readfile(CONFIG_FILE))
         end)
         if success and data then
             ConfigData = data
@@ -1405,7 +1403,7 @@ local GUI_SIZES = {
 -- ═══════════════════════════════════════════════════════
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "CelestialHubGUI"
+ScreenGui.Name = "TimCheeseDuelsGUI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = PlayerGui
@@ -1441,8 +1439,6 @@ startRainbowOutline()
 -- Apply white half-transparent background with gold glow stroke (Celestial Hub theme)
 local function applyWhiteHalfStyle()
     local pulseInfo = TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
-    local hoverInfo = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    local pressInfo = TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
     for _, v in pairs(ScreenGui:GetDescendants()) do
         local ok, name = pcall(function() return v.Name end)
@@ -1459,23 +1455,10 @@ local function applyWhiteHalfStyle()
             -- no-op
         elseif v:IsA("TextButton") or v:IsA("TextBox") or (v:IsA("Frame") and (name == "MainFrame" or name:match("GUI$") or name:match("^Small"))) or name == "StealBarContainer" then
             pcall(function()
-                local isButton = v:IsA("TextButton") or v:IsA("ImageButton")
-
-                if isButton then
-                    v.BackgroundColor3 = Color3.fromRGB(250, 248, 240)
-                    v.BackgroundTransparency = 0.02
-                    if v:IsA("TextButton") then
-                        v.TextColor3 = Color3.fromRGB(185, 145, 35)
-                    end
-                else
-                    v.BackgroundColor3 = Color3.fromRGB(245, 241, 225)
-                    v.BackgroundTransparency = 0.12
-                end
-
+                v.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
+                v.BackgroundTransparency = 0.05
                 if v:IsA("TextBox") then
-                    v.BackgroundColor3 = Color3.fromRGB(255, 252, 242)
-                    v.BackgroundTransparency = 0.04
-                    v.TextColor3 = Color3.fromRGB(170, 130, 30)
+                    v.TextColor3 = Color3.fromRGB(255, 255, 255)
                 end
 
                 -- Remove old strokes
@@ -1486,7 +1469,7 @@ local function applyWhiteHalfStyle()
                 -- Gold base stroke (replaces old black)
                 local goldStroke = Instance.new("UIStroke")
                 goldStroke.Color = GOLD_DEEP
-                goldStroke.Thickness = isButton and 2.4 or 2
+                goldStroke.Thickness = 2
                 goldStroke.Transparency = 0
                 goldStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
                 goldStroke.Parent = v
@@ -1494,7 +1477,7 @@ local function applyWhiteHalfStyle()
                 -- White animated wave stroke (inner glow)
                 local waveStroke = Instance.new("UIStroke")
                 waveStroke.Color = Color3.fromRGB(255, 255, 255)
-                waveStroke.Thickness = isButton and 1.8 or 2
+                waveStroke.Thickness = 2
                 waveStroke.Transparency = 0.4
                 waveStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
                 waveStroke.Parent = v
@@ -1510,7 +1493,7 @@ local function applyWhiteHalfStyle()
                 waveGrad.Rotation = math.random(0, 360)
                 waveGrad.Parent = waveStroke
 
-                TweenService:Create(waveStroke, pulseInfo, {Thickness = isButton and 3 or 3.5, Transparency = 0.08}):Play()
+                TweenService:Create(waveStroke, pulseInfo, {Thickness = 3.5, Transparency = 0.08}):Play()
 
                 RunService.Heartbeat:Connect(function(dt)
                     pcall(function()
@@ -1528,104 +1511,31 @@ local function applyWhiteHalfStyle()
                     bgGrad.Name = "CelestialBg"
                     bgGrad.Rotation = 115
                     bgGrad.Color = ColorSequence.new({
-                        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 250)),
-                        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 245, 214)),
-                        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 251, 236)),
+                        ColorSequenceKeypoint.new(0, Color3.fromRGB(35, 30, 15)),
+                        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(22, 20, 14)),
+                        ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 32, 12)),
                     })
                     bgGrad.Parent = v
                 end
 
-                -- Boxed square style (small corner radius)
+                -- Rounded corners
                 local hasCorner = false
                 for _, c in pairs(v:GetChildren()) do
                     if c:IsA("UICorner") then
-                        c.CornerRadius = UDim.new(0, isButton and 4 or 6)
+                        c.CornerRadius = UDim.new(0, 10)
                         hasCorner = true
                     end
                 end
                 if not hasCorner then
                     local corner = Instance.new("UICorner")
-                    corner.CornerRadius = UDim.new(0, isButton and 4 or 6)
+                    corner.CornerRadius = UDim.new(0, 10)
                     corner.Parent = v
-                end
-
-                if isButton and not v:GetAttribute("CelestialEnhanced") then
-                    v:SetAttribute("CelestialEnhanced", true)
-                    v.MouseEnter:Connect(function()
-                        pcall(function()
-                            TweenService:Create(v, hoverInfo, {BackgroundColor3 = Color3.fromRGB(255, 250, 230)}):Play()
-                        end)
-                    end)
-                    v.MouseLeave:Connect(function()
-                        pcall(function()
-                            TweenService:Create(v, hoverInfo, {BackgroundColor3 = Color3.fromRGB(250, 248, 240)}):Play()
-                        end)
-                    end)
-                    v.MouseButton1Down:Connect(function()
-                        pcall(function()
-                            TweenService:Create(v, pressInfo, {BackgroundColor3 = Color3.fromRGB(255, 237, 180)}):Play()
-                        end)
-                    end)
-                    v.MouseButton1Up:Connect(function()
-                        pcall(function()
-                            TweenService:Create(v, hoverInfo, {BackgroundColor3 = Color3.fromRGB(255, 250, 230)}):Play()
-                        end)
-                    end)
                 end
 
                 if v:IsA("GuiObject") then
                     v.ZIndex = 100
                 end
             end)
-        end
-    end
-end
-
-local function enforceGoldButtonPalette()
-    for _, ui in pairs(ScreenGui:GetDescendants()) do
-        if ui:IsA("TextButton") then
-            local skip = false
-            pcall(function()
-                skip = ui.GetAttribute and ui:GetAttribute("CelestialSkipStyle") == true
-            end)
-            if not skip then
-                local bg = ui.BackgroundColor3
-                local delta = math.max(bg.R, bg.G, bg.B) - math.min(bg.R, bg.G, bg.B)
-
-                if (bg.R + bg.G + bg.B) < 1.2 then
-                    ui.BackgroundColor3 = Color3.fromRGB(250, 248, 240)
-                elseif delta > 0.22 and not (bg.R > 0.88 and bg.G > 0.68 and bg.B < 0.65) then
-                    ui.BackgroundColor3 = Color3.fromRGB(255, 225, 150)
-                end
-                if ui.TextColor3 ~= Color3.fromRGB(185, 145, 35) then
-                    ui.TextColor3 = Color3.fromRGB(185, 145, 35)
-                end
-
-                local hasCorner = false
-                local hasStroke = false
-                for _, c in pairs(ui:GetChildren()) do
-                    if c:IsA("UICorner") then
-                        c.CornerRadius = UDim.new(0, 4)
-                        hasCorner = true
-                    elseif c:IsA("UIStroke") then
-                        c.Color = GOLD_DEEP
-                        c.Thickness = 2
-                        hasStroke = true
-                    end
-                end
-                if not hasCorner then
-                    local corner = Instance.new("UICorner")
-                    corner.CornerRadius = UDim.new(0, 4)
-                    corner.Parent = ui
-                end
-                if not hasStroke then
-                    local stroke = Instance.new("UIStroke")
-                    stroke.Color = GOLD_DEEP
-                    stroke.Thickness = 2
-                    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-                    stroke.Parent = ui
-                end
-            end
         end
     end
 end
@@ -1680,7 +1590,7 @@ SmallButtonsBox.Parent = ScreenGui
 
 do
     local boxCorner = Instance.new("UICorner")
-    boxCorner.CornerRadius = UDim.new(0, 6)
+    boxCorner.CornerRadius = UDim.new(0, 16)
     boxCorner.Parent = SmallButtonsBox
 
     local boxStrokeGold = Instance.new("UIStroke")
@@ -1759,7 +1669,7 @@ local function createSmallGUI(name, yPosition)
     SmallGUI.Parent = SmallButtonsBox
 
     local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 4)
+    Corner.CornerRadius = UDim.new(0, 10)
     Corner.Parent = SmallGUI
 
     -- Gold background sheen
@@ -1820,7 +1730,7 @@ local function createSmallGUI(name, yPosition)
     DotCorner.Parent = GreenDot
 
     local DotStroke = Instance.new("UIStroke")
-    DotStroke.Color = Color3.fromRGB(255, 255, 255)
+    DotStroke.Color = Color3.fromRGB(255, 215, 0)
     DotStroke.Thickness = 0.6
     DotStroke.Transparency = 0.4
     DotStroke.Parent = GreenDot
@@ -2001,7 +1911,7 @@ do
     BTaskFrame.Parent = BTaskGui
     Instance.new("UICorner", BTaskFrame).CornerRadius = UDim.new(0, 10)
     local BTaskStroke = Instance.new("UIStroke")
-    BTaskStroke.Color = Color3.fromRGB(255, 255, 255)
+    BTaskStroke.Color = Color3.fromRGB(255, 215, 0)
     BTaskStroke.Thickness = 2
     BTaskStroke.Transparency = 0.5
     BTaskStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -2051,7 +1961,7 @@ do
     BTaskPanel.Draggable = true
     Instance.new("UICorner", BTaskPanel).CornerRadius = UDim.new(0, 10)
     local BTaskPanelStroke = Instance.new("UIStroke")
-    BTaskPanelStroke.Color = Color3.fromRGB(255, 255, 255)
+    BTaskPanelStroke.Color = Color3.fromRGB(255, 215, 0)
     BTaskPanelStroke.Thickness = 2
     BTaskPanelStroke.Transparency = 0.45
     BTaskPanelStroke.Parent = BTaskPanel
@@ -2150,7 +2060,7 @@ do
     BTaskToggle.MouseButton1Click:Connect(function()
         buttonsTaskOn = not buttonsTaskOn
         styleToggle(BTaskToggle, buttonsTaskOn)
-        BTaskStroke.Color = buttonsTaskOn and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(255, 80, 80)
+        BTaskStroke.Color = buttonsTaskOn and Color3.fromRGB(255, 215, 0) or Color3.fromRGB(255, 80, 80)
         applyButtonVisibility()
     end)
 
@@ -2492,7 +2402,7 @@ ContainerCorner.CornerRadius = UDim.new(0, 15)
 ContainerCorner.Parent = StealBarContainer
 
 local ContainerStroke = Instance.new("UIStroke")
-ContainerStroke.Color = Color3.fromRGB(255, 255, 255)
+ContainerStroke.Color = Color3.fromRGB(255, 215, 0)
 ContainerStroke.Thickness = 2
 ContainerStroke.Parent = StealBarContainer
 
@@ -2985,7 +2895,7 @@ local function createMainGUI(device)
     SpeedCorner.Parent = SpeedSettingsGUI
 
     local SpeedStroke = Instance.new("UIStroke")
-    SpeedStroke.Color = Color3.fromRGB(255, 255, 255)
+    SpeedStroke.Color = Color3.fromRGB(255, 215, 0)
     SpeedStroke.Thickness = 2
     SpeedStroke.Parent = SpeedSettingsGUI
 
@@ -3261,7 +3171,7 @@ local function createMainGUI(device)
     FOVCorner.Parent = FOVSettingsGUI
 
     local FOVStroke = Instance.new("UIStroke")
-    FOVStroke.Color = Color3.fromRGB(255, 255, 255)
+    FOVStroke.Color = Color3.fromRGB(255, 215, 0)
     FOVStroke.Thickness = 2
     FOVStroke.Parent = FOVSettingsGUI
 
@@ -3642,13 +3552,6 @@ local function initializeGUI(device)
 
     -- Apply dark semi-transparent style and rounded corners to all UI
     applyWhiteHalfStyle()
-    enforceGoldButtonPalette()
-    task.spawn(function()
-        while ScreenGui and ScreenGui.Parent do
-            task.wait(0.25)
-            pcall(enforceGoldButtonPalette)
-        end
-    end)
 
     -- ✅ AUTO-LOAD CONFIG ON START!
     if ConfigData.speedEnabled then
@@ -3748,7 +3651,7 @@ function createAutoButtons(device)
     LeftCorner.Parent = AutoLeftButton
 
     local LeftBlackStroke = Instance.new("UIStroke")
-    LeftBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+    LeftBlackStroke.Color = Color3.fromRGB(160, 120, 20)
     LeftBlackStroke.Thickness = 4
     LeftBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     LeftBlackStroke.Parent = AutoLeftButton
@@ -3778,7 +3681,7 @@ function createAutoButtons(device)
     MedusaCorner.Parent = AutoMedusaButton
 
     local MedusaBlackStroke = Instance.new("UIStroke")
-    MedusaBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+    MedusaBlackStroke.Color = Color3.fromRGB(160, 120, 20)
     MedusaBlackStroke.Thickness = 4
     MedusaBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     MedusaBlackStroke.Parent = AutoMedusaButton
@@ -3921,7 +3824,7 @@ function createAutoButtons(device)
     RightCorner.Parent = AutoRightButton
 
     local RightBlackStroke = Instance.new("UIStroke")
-    RightBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+    RightBlackStroke.Color = Color3.fromRGB(160, 120, 20)
     RightBlackStroke.Thickness = 4
     RightBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     RightBlackStroke.Parent = AutoRightButton
@@ -3985,7 +3888,7 @@ function createRightButtons(device)
     RBCorner.CornerRadius = UDim.new(0, 12)
     RBCorner.Parent = RightButtonBox
     local RBStroke = Instance.new("UIStroke")
-    RBStroke.Color = Color3.fromRGB(255, 255, 255)
+    RBStroke.Color = Color3.fromRGB(255, 215, 0)
     RBStroke.Thickness = 2
     RBStroke.Transparency = 0.5
     RBStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -4008,7 +3911,7 @@ function createRightButtons(device)
     DesyncCorner.Parent = DesyncButton
 
     local DesyncBlackStroke = Instance.new("UIStroke")
-    DesyncBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+    DesyncBlackStroke.Color = Color3.fromRGB(160, 120, 20)
     DesyncBlackStroke.Thickness = 4
     DesyncBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     DesyncBlackStroke.Parent = DesyncButton
@@ -4126,7 +4029,7 @@ function createRightButtons(device)
         LaggerCorner.Parent = LaggerButton
 
         local LaggerBlackStroke = Instance.new("UIStroke")
-        LaggerBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+        LaggerBlackStroke.Color = Color3.fromRGB(160, 120, 20)
         LaggerBlackStroke.Thickness = 4
         LaggerBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
         LaggerBlackStroke.Parent = LaggerButton
@@ -4262,7 +4165,7 @@ function createRightButtons(device)
 
         Instance.new("UICorner", LaggerSettings).CornerRadius = UDim.new(0, 8)
         local LSBlackStroke = Instance.new("UIStroke", LaggerSettings)
-        LSBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+        LSBlackStroke.Color = Color3.fromRGB(160, 120, 20)
         LSBlackStroke.Thickness = 4
         LSBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
         local LSStroke = Instance.new("UIStroke", LaggerSettings)
@@ -4465,7 +4368,7 @@ function createRightButtons(device)
     TrackCorner.Parent = TrackPlayerButton
 
     local TrackBlackStroke = Instance.new("UIStroke")
-    TrackBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+    TrackBlackStroke.Color = Color3.fromRGB(160, 120, 20)
     TrackBlackStroke.Thickness = 4
     TrackBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     TrackBlackStroke.Parent = TrackPlayerButton
@@ -4507,7 +4410,7 @@ function createRightButtons(device)
     HitCorner.Parent = HitCircleButton
 
     local HitBlackStroke = Instance.new("UIStroke")
-    HitBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+    HitBlackStroke.Color = Color3.fromRGB(160, 120, 20)
     HitBlackStroke.Thickness = 4
     HitBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     HitBlackStroke.Parent = HitCircleButton
@@ -4558,7 +4461,7 @@ function createRightButtons(device)
     JukeCorner.Parent = JukeButton
 
     local JukeBlackStroke = Instance.new("UIStroke")
-    JukeBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+    JukeBlackStroke.Color = Color3.fromRGB(160, 120, 20)
     JukeBlackStroke.Thickness = 4
     JukeBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     JukeBlackStroke.Parent = JukeButton
@@ -4604,7 +4507,7 @@ function createRightButtons(device)
     JSCorner.Parent = JukeSettings
 
     local JSBlackStroke = Instance.new("UIStroke")
-    JSBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+    JSBlackStroke.Color = Color3.fromRGB(160, 120, 20)
     JSBlackStroke.Thickness = 4
     JSBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     JSBlackStroke.Parent = JukeSettings
