@@ -1730,6 +1730,54 @@ local SmallDropGUI, SmallDropButton, DropDot = createSmallGUI("Drop Brainrot", 4
 SmallTPDownGUI, SmallTPDownButton, TPDownDot = createSmallGUI("TP Down", 505)
 SmallTPUpGUI, SmallTPUpButton, TPUpDot = createSmallGUI("TP Up", 550)
 
+local speedGlowStroke = Instance.new("UIStroke")
+speedGlowStroke.Name = "SpeedGlowStroke"
+speedGlowStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+speedGlowStroke.Parent = SmallSpeedGUI
+
+local speedGlowGradient = Instance.new("UIGradient")
+speedGlowGradient.Name = "SpeedGlowGradient"
+speedGlowGradient.Parent = speedGlowStroke
+
+RunService.Heartbeat:Connect(function(dt)
+    if speedGlowGradient and speedGlowGradient.Parent then
+        speedGlowGradient.Rotation = (speedGlowGradient.Rotation + 120 * dt) % 360
+    end
+end)
+
+local function updateSpeedBoosterVisuals()
+    if SpeedBooster.Enabled then
+        SmallSpeedGUI.BackgroundColor3 = Color3.fromRGB(92, 170, 118)
+        SpeedDot.BackgroundColor3 = Color3.fromRGB(0, 255, 85)
+        speedGlowStroke.Color = Color3.fromRGB(180, 255, 210)
+        speedGlowStroke.Thickness = 3
+        speedGlowStroke.Transparency = 0.08
+        speedGlowGradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(215, 235, 225)),
+            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 255, 120)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(215, 235, 225))
+        })
+        speedGlowGradient.Transparency = NumberSequence.new({
+            NumberSequenceKeypoint.new(0, 0.4),
+            NumberSequenceKeypoint.new(0.5, 0),
+            NumberSequenceKeypoint.new(1, 0.4)
+        })
+    else
+        SmallSpeedGUI.BackgroundColor3 = Color3.fromRGB(34, 34, 38)
+        SpeedDot.BackgroundColor3 = Color3.fromRGB(115, 115, 122)
+        speedGlowStroke.Color = Color3.fromRGB(150, 150, 158)
+        speedGlowStroke.Thickness = 2
+        speedGlowStroke.Transparency = 0.55
+        speedGlowGradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(150, 150, 158)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(150, 150, 158))
+        })
+        speedGlowGradient.Transparency = NumberSequence.new(0.75)
+    end
+end
+
+updateSpeedBoosterVisuals()
+
 -- ═══════════════════════════════════════════════════════
 -- ✅ BUTTONS TASK GUI (master + per-button on/off list)
 -- ═══════════════════════════════════════════════════════
@@ -2198,14 +2246,11 @@ SmallSpeedButton.MouseButton1Click:Connect(function()
     SpeedBooster.Enabled = not SpeedBooster.Enabled
     
     if SpeedBooster.Enabled then
-        SmallSpeedGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        SpeedDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0) -- ✅ GREEN DOT!
         startSpeedBooster()
     else
-        SmallSpeedGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        SpeedDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100) -- ✅ GRAY DOT!
         stopSpeedBooster()
     end
+    updateSpeedBoosterVisuals()
     SaveConfig()
 end)
 
@@ -2863,13 +2908,7 @@ local function createMainGUI(device)
         SmallSpeedGUI.Visible = true
         SpeedLabel.Text = "Speed Booster"
         SpeedMainBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-        if SpeedBooster.Enabled then
-            SmallSpeedGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-            SpeedDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-        else
-            SmallSpeedGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-            SpeedDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        end
+        updateSpeedBoosterVisuals()
         refreshSmallButtonPositions()
     end, true)
 
@@ -2891,8 +2930,8 @@ local function createMainGUI(device)
     SpeedSettingsGUI.BackgroundTransparency = 0.08
     SpeedSettingsGUI.BorderSizePixel = 0
     SpeedSettingsGUI.Visible = false
-    SpeedSettingsGUI.Active = false
-    SpeedSettingsGUI.Draggable = false
+    SpeedSettingsGUI.Active = true
+    SpeedSettingsGUI.Draggable = true
     SpeedSettingsGUI.ClipsDescendants = true
     SpeedSettingsGUI.Parent = ScreenGui
 
@@ -2934,7 +2973,7 @@ local function createMainGUI(device)
     local S1 = Instance.new("TextButton", SpeedSettingsGUI)
     S1.Size = UDim2.new(0, 60, 0, 22)
     S1.Position = UDim2.new(0, 12, 0, 35)
-    S1.Text = "S1"
+    S1.Text = "Normal"
     S1.TextColor3 = THEME.TEXT
     S1.Font = Enum.Font.GothamBold
     S1.TextSize = 11
@@ -2943,7 +2982,7 @@ local function createMainGUI(device)
     local S2 = Instance.new("TextButton", SpeedSettingsGUI)
     S2.Size = UDim2.new(0, 60, 0, 22)
     S2.Position = UDim2.new(1, -72, 0, 35)
-    S2.Text = "S2"
+    S2.Text = "Desync"
     S2.TextColor3 = THEME.TEXT
     S2.Font = Enum.Font.GothamBold
     S2.TextSize = 11
@@ -3472,8 +3511,7 @@ local function initializeGUI(device)
         -- ✅ Speed Booster - AUTO ON + SHOW SMALL GUI
         SpeedBooster.Enabled = true
         SmallSpeedGUI.Visible = true
-        SmallSpeedGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        SpeedDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        updateSpeedBoosterVisuals()
         startSpeedBooster()
         
         -- ✅ Unwalk - AUTO ON + SHOW SMALL GUI
