@@ -1452,7 +1452,7 @@ local function applyWhiteHalfStyle()
 
                 -- Gold base stroke
                 local blackStroke = Instance.new("UIStroke")
-                blackStroke.Color = Color3.fromRGB(0, 0, 0)
+                blackStroke.Color = Color3.fromRGB(255, 200, 0)
                 blackStroke.Thickness = 4
                 blackStroke.Transparency = 0
                 blackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -1508,16 +1508,15 @@ local function applyWhiteHalfStyle()
     end
 end
 
--- Ensure enabled / green GUIs are always in front (periodic check)
+-- Ensure enabled / silver GUIs are always in front (periodic check)
 local function bringEnabledToFront()
     for _, v in pairs(ScreenGui:GetDescendants()) do
         local ok, bg = pcall(function() return v.BackgroundColor3 end)
         if ok and bg then
             local r,g,b = bg.R, bg.G, bg.B
-            -- check for silver-ish backgrounds used for enabled state
+            -- check for silver-like backgrounds used for enabled state
             if math.abs(r - g) < 0.08 and math.abs(g - b) < 0.08 and r > 0.65 then
                 pcall(function()
-                    v.Parent = ScreenGui
                     if v:IsA("GuiObject") then
                         v.ZIndex = 100
                     end
@@ -1538,32 +1537,70 @@ end)
 -- -------------------------------------------------------
 
 local SmallGUIInstances = {}
+local UI_ON_SILVER = Color3.fromRGB(192, 192, 192)
+local UI_OFF_GOLD = Color3.fromRGB(255, 200, 0)
+local UI_WAVE_WHITE = Color3.fromRGB(255, 255, 255)
+
+local OnScreenButtonsBox = Instance.new("Frame")
+OnScreenButtonsBox.Name = "OnScreenButtonsBox"
+OnScreenButtonsBox.Size = UDim2.new(0, 230, 0, 240)
+OnScreenButtonsBox.Position = UDim2.new(0.5, -115, 0, 70)
+OnScreenButtonsBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+OnScreenButtonsBox.BackgroundTransparency = 0.08
+OnScreenButtonsBox.BorderSizePixel = 0
+OnScreenButtonsBox.Active = true
+OnScreenButtonsBox.Draggable = true
+OnScreenButtonsBox.Parent = ScreenGui
+Instance.new("UICorner", OnScreenButtonsBox).CornerRadius = UDim.new(0, 10)
+
+local OnScreenButtonsStroke = Instance.new("UIStroke", OnScreenButtonsBox)
+OnScreenButtonsStroke.Color = UI_OFF_GOLD
+OnScreenButtonsStroke.Thickness = 2
+OnScreenButtonsStroke.Transparency = 0.15
+
+local OnScreenButtonsTitle = Instance.new("TextLabel")
+OnScreenButtonsTitle.Size = UDim2.new(1, -12, 0, 22)
+OnScreenButtonsTitle.Position = UDim2.new(0, 8, 0, 4)
+OnScreenButtonsTitle.BackgroundTransparency = 1
+OnScreenButtonsTitle.Text = "On-Screen Buttons"
+OnScreenButtonsTitle.TextColor3 = UI_WAVE_WHITE
+OnScreenButtonsTitle.Font = Enum.Font.GothamBold
+OnScreenButtonsTitle.TextSize = 11
+OnScreenButtonsTitle.TextXAlignment = Enum.TextXAlignment.Left
+OnScreenButtonsTitle.Parent = OnScreenButtonsBox
+
+local OnScreenButtonsHolder = Instance.new("Frame")
+OnScreenButtonsHolder.Size = UDim2.new(1, -12, 1, -34)
+OnScreenButtonsHolder.Position = UDim2.new(0, 6, 0, 28)
+OnScreenButtonsHolder.BackgroundTransparency = 1
+OnScreenButtonsHolder.BorderSizePixel = 0
+OnScreenButtonsHolder.Parent = OnScreenButtonsBox
 
 local function createSmallGUI(name, yPosition)
     local SmallGUI = Instance.new("Frame")
     SmallGUI.Name = "Small"..name.."GUI"
     SmallGUI.Size = UDim2.new(0, 80, 0, 20) -- Smaller width and height
-    SmallGUI.Position = UDim2.new(0.5, -40, 0, yPosition)
-    SmallGUI.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
+    SmallGUI.Position = UDim2.new(0, 0, 0, 0)
+    SmallGUI.BackgroundColor3 = UI_OFF_GOLD
     SmallGUI.BackgroundTransparency = 0
     SmallGUI.BorderSizePixel = 0
     SmallGUI.Visible = false
     SmallGUI.Active = true
-    SmallGUI.Draggable = true  -- ? DRAGGABLE!
-    SmallGUI.Parent = ScreenGui
+    SmallGUI.Draggable = false
+    SmallGUI.Parent = OnScreenButtonsHolder
 
     local Corner = Instance.new("UICorner")
     Corner.CornerRadius = UDim.new(0, 8)
     Corner.Parent = SmallGUI
 
     local Stroke = Instance.new("UIStroke")
-    Stroke.Color = Color3.fromRGB(0, 0, 0)
+    Stroke.Color = UI_OFF_GOLD
     Stroke.Thickness = 4
     Stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     Stroke.Parent = SmallGUI
 
     local WaveStroke = Instance.new("UIStroke")
-    WaveStroke.Color = Color3.fromRGB(255, 255, 255)
+    WaveStroke.Color = UI_WAVE_WHITE
     WaveStroke.Thickness = 2.5
     WaveStroke.Transparency = 0.35
     WaveStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -1571,7 +1608,7 @@ local function createSmallGUI(name, yPosition)
     WaveStroke.Parent = SmallGUI
 
     local WaveGrad = Instance.new("UIGradient")
-    WaveGrad.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
+    WaveGrad.Color = ColorSequence.new(UI_WAVE_WHITE)
     WaveGrad.Transparency = NumberSequence.new({
         NumberSequenceKeypoint.new(0, 1),
         NumberSequenceKeypoint.new(0.4, 0),
@@ -1591,7 +1628,7 @@ local function createSmallGUI(name, yPosition)
     local GreenDot = Instance.new("Frame")
     GreenDot.Size = UDim2.new(0, 7, 0, 7)
     GreenDot.Position = UDim2.new(0, 5, 0.5, -3)
-    GreenDot.BackgroundColor3 = Color3.fromRGB(255, 200, 0) -- GRAY by default
+    GreenDot.BackgroundColor3 = UI_OFF_GOLD
     GreenDot.BorderSizePixel = 0
     GreenDot.Parent = SmallGUI
 
@@ -1650,27 +1687,17 @@ local function refreshSmallButtonPositions()
         end
     end
 
-    local rows = 2
-    local columns = math.max(1, math.ceil(#visibleFrames / rows))
-    local buttonHeight = 30
-    local gapX = 8
-    local gapY = 8
-    local topPadding = 8
-    local sidePadding = 10
-    local viewport = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1280, 720)
-    local availableWidth = math.max(400, viewport.X - sidePadding * 2)
-    local buttonWidth = math.floor((availableWidth - gapX * (columns - 1)) / columns)
-    buttonWidth = math.clamp(buttonWidth, 70, 150)
-    local totalWidth = columns * buttonWidth + (columns - 1) * gapX
-    local startX = math.max(sidePadding, math.floor((viewport.X - totalWidth) / 2))
-    local startY = topPadding
+    local columns = 2
+    local buttonHeight = 22
+    local gapX = 6
+    local gapY = 6
+    local availableWidth = math.max(120, OnScreenButtonsHolder.AbsoluteSize.X)
+    local buttonWidth = math.floor((availableWidth - gapX) / columns)
+    buttonWidth = math.clamp(buttonWidth, 80, 120)
+    local startX = 0
+    local startY = 0
 
     for index, frame in ipairs(visibleFrames) do
-        if index > (rows * columns) then
-            frame.Visible = false
-            continue
-        end
-
         frame.Size = UDim2.new(0, buttonWidth, 0, buttonHeight)
         local row = math.floor((index - 1) / columns)
         local col = (index - 1) % columns
@@ -1696,6 +1723,20 @@ local SmallRagdollTPGUI, SmallRagdollTPButton, RagdollTPDot = createSmallGUI("Ra
 local SmallDropGUI, SmallDropButton, DropDot = createSmallGUI("Drop Brainrot", 460) -- ? NEW!
 SmallTPDownGUI, SmallTPDownButton, TPDownDot = createSmallGUI("TP Down", 505)
 SmallTPUpGUI, SmallTPUpButton, TPUpDot = createSmallGUI("TP Up", 550)
+
+local function syncSmallButtonPalette()
+    for _, entry in pairs(SmallGUIInstances) do
+        local dot = entry.Dot
+        local frame = entry.Frame
+        if dot and frame then
+            local isOn = dot.BackgroundColor3.R > 0.7 and dot.BackgroundColor3.G > 0.7 and dot.BackgroundColor3.B > 0.7
+            frame.BackgroundColor3 = isOn and UI_ON_SILVER or UI_OFF_GOLD
+            dot.BackgroundColor3 = isOn and UI_ON_SILVER or UI_OFF_GOLD
+        end
+    end
+end
+
+RunService.Heartbeat:Connect(syncSmallButtonPalette)
 
 -- -------------------------------------------------------
 -- ? BUTTONS TASK GUI (master + per-button on/off list)
@@ -1729,7 +1770,7 @@ do
 
     local function styleToggle(toggleButton, isEnabled)
         toggleButton.Text = isEnabled and "ON" or "OFF"
-        toggleButton.BackgroundColor3 = isEnabled and Color3.fromRGB(192, 192, 192) or Color3.fromRGB(255, 200, 0)
+        toggleButton.BackgroundColor3 = isEnabled and UI_ON_SILVER or UI_OFF_GOLD
     end
 
     local BTaskGui = Instance.new("ScreenGui")
@@ -1897,7 +1938,7 @@ do
     BTaskToggle.MouseButton1Click:Connect(function()
         buttonsTaskOn = not buttonsTaskOn
         styleToggle(BTaskToggle, buttonsTaskOn)
-        BTaskStroke.Color = buttonsTaskOn and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(255, 80, 80)
+        BTaskStroke.Color = buttonsTaskOn and Color3.fromRGB(255, 255, 255) or UI_OFF_GOLD
         applyButtonVisibility()
     end)
 
@@ -3444,41 +3485,19 @@ iPhoneButton.MouseButton1Click:Connect(function() initializeGUI("iPhone") end)
 
 function createOpenButton(device)
     local buttonSize = device == "iPhone" and 55 or 70
-    local spacing = 10
-    local pad = 10
-    local boxW = pad * 2 + buttonSize * 2 + spacing
-    local boxH = pad * 2 + buttonSize * 2 + spacing
 
-    -- Box container for left-side auto buttons (2 rows)
-    local LeftButtonBox = Instance.new("Frame")
-    LeftButtonBox.Size = UDim2.new(0, boxW, 0, boxH)
-    LeftButtonBox.Position = UDim2.new(0, 15, 0.5, -boxH/2)
-    LeftButtonBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    LeftButtonBox.BackgroundTransparency = 0.25
-    LeftButtonBox.Parent = ScreenGui
-
-    local LBCorner = Instance.new("UICorner")
-    LBCorner.CornerRadius = UDim.new(0, 12)
-    LBCorner.Parent = LeftButtonBox
-
-    local LBStroke = Instance.new("UIStroke")
-    LBStroke.Color = Color3.fromRGB(255, 255, 255)
-    LBStroke.Thickness = 2
-    LBStroke.Transparency = 0.5
-    LBStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    LBStroke.Parent = LeftButtonBox
     local OpenButton = Instance.new("TextButton")
-    -- ✅ AUTO LEFT Button
+    OpenButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     OpenButton.Position = UDim2.new(0, 15, 0.5, -buttonSize/2)
     OpenButton.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-    AutoLeftButton.Position = UDim2.new(0, pad, 0, pad)
-    AutoLeftButton.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
+    OpenButton.BackgroundTransparency = 0.2
+    OpenButton.Text = "OPEN"
     OpenButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     OpenButton.Font = Enum.Font.GothamBold
     OpenButton.TextSize = device == "iPhone" and 10 or 14
     OpenButton.Parent = ScreenGui
 
-    AutoLeftButton.Parent = LeftButtonBox
+    local OpenCorner = Instance.new("UICorner")
     OpenCorner.CornerRadius = UDim.new(0, 15)
     OpenCorner.Parent = OpenButton
 
@@ -3521,47 +3540,26 @@ local AutoLeftSmallGUI, AutoRightSmallGUI
 
 function createAutoButtons(device)
     local buttonSize = device == "iPhone" and 55 or 70
-    local spacing = 10
-    local pad = 10
-    local boxW = pad * 2 + buttonSize * 2 + spacing
-    local boxH = pad * 2 + buttonSize * 2 + spacing
+    local yOffset = buttonSize + 10
 
-    local LeftButtonBox = Instance.new("Frame")
-    LeftButtonBox.Size = UDim2.new(0, boxW, 0, boxH)
-    LeftButtonBox.Position = UDim2.new(0, 15, 0.5, -boxH/2)
-    LeftButtonBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    LeftButtonBox.BackgroundTransparency = 0.25
-    LeftButtonBox.Parent = ScreenGui
-
-    local LBCorner = Instance.new("UICorner")
-    LBCorner.CornerRadius = UDim.new(0, 12)
-    LBCorner.Parent = LeftButtonBox
-
-    local LBStroke = Instance.new("UIStroke")
-    LBStroke.Color = Color3.fromRGB(255, 255, 255)
-    LBStroke.Thickness = 2
-    LBStroke.Transparency = 0.5
-    LBStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    LBStroke.Parent = LeftButtonBox
-
-    -- ? AUTO LEFT Button
+    -- ? AUTO LEFT Button (GRAY!)
     local AutoLeftButton = Instance.new("TextButton")
     AutoLeftButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    AutoLeftButton.Position = UDim2.new(0, pad, 0, pad)
+    AutoLeftButton.Position = UDim2.new(0, 15, 0.5, -buttonSize/2 + yOffset)
     AutoLeftButton.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
     AutoLeftButton.BackgroundTransparency = 0
     AutoLeftButton.Text = "AUTO\nLEFT"
     AutoLeftButton.TextColor3 = Color3.fromRGB(220, 220, 220)
     AutoLeftButton.Font = Enum.Font.GothamBold
     AutoLeftButton.TextSize = device == "iPhone" and 9 or 12
-    AutoLeftButton.Parent = LeftButtonBox
+    AutoLeftButton.Parent = ScreenGui
 
     local LeftCorner = Instance.new("UICorner")
     LeftCorner.CornerRadius = UDim.new(0, 8)
     LeftCorner.Parent = AutoLeftButton
 
     local LeftBlackStroke = Instance.new("UIStroke")
-    LeftBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+    LeftBlackStroke.Color = Color3.fromRGB(255, 200, 0)
     LeftBlackStroke.Thickness = 4
     LeftBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     LeftBlackStroke.Parent = AutoLeftButton
@@ -3577,21 +3575,21 @@ function createAutoButtons(device)
     -- ? AUTO MEDUSA Button (above Auto Right)
     local AutoMedusaButton = Instance.new("TextButton")
     AutoMedusaButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    AutoMedusaButton.Position = UDim2.new(0, pad, 0, pad + buttonSize + spacing)
+    AutoMedusaButton.Position = UDim2.new(0, 15 + buttonSize + 10, 0.5, -buttonSize*1.5 + yOffset - 10)
     AutoMedusaButton.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
     AutoMedusaButton.BackgroundTransparency = 0
     AutoMedusaButton.Text = "AUTO\nMEDUSA"
     AutoMedusaButton.TextColor3 = Color3.fromRGB(220, 220, 220)
     AutoMedusaButton.Font = Enum.Font.GothamBold
     AutoMedusaButton.TextSize = device == "iPhone" and 9 or 12
-    AutoMedusaButton.Parent = LeftButtonBox
+    AutoMedusaButton.Parent = ScreenGui
 
     local MedusaCorner = Instance.new("UICorner")
     MedusaCorner.CornerRadius = UDim.new(0, 8)
     MedusaCorner.Parent = AutoMedusaButton
 
     local MedusaBlackStroke = Instance.new("UIStroke")
-    MedusaBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+    MedusaBlackStroke.Color = Color3.fromRGB(255, 200, 0)
     MedusaBlackStroke.Thickness = 4
     MedusaBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     MedusaBlackStroke.Parent = AutoMedusaButton
@@ -3720,21 +3718,21 @@ function createAutoButtons(device)
     end)
     local AutoRightButton = Instance.new("TextButton")
     AutoRightButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    AutoRightButton.Position = UDim2.new(0, pad + buttonSize + spacing, 0, pad)
+    AutoRightButton.Position = UDim2.new(0, 15 + buttonSize + 10, 0.5, -buttonSize/2 + yOffset)
     AutoRightButton.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
     AutoRightButton.BackgroundTransparency = 0
     AutoRightButton.Text = "AUTO\nRIGHT"
     AutoRightButton.TextColor3 = Color3.fromRGB(220, 220, 220)
     AutoRightButton.Font = Enum.Font.GothamBold
     AutoRightButton.TextSize = device == "iPhone" and 9 or 12
-    AutoRightButton.Parent = LeftButtonBox
+    AutoRightButton.Parent = ScreenGui
 
     local RightCorner = Instance.new("UICorner")
     RightCorner.CornerRadius = UDim.new(0, 8)
     RightCorner.Parent = AutoRightButton
 
     local RightBlackStroke = Instance.new("UIStroke")
-    RightBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+    RightBlackStroke.Color = Color3.fromRGB(255, 200, 0)
     RightBlackStroke.Thickness = 4
     RightBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     RightBlackStroke.Parent = AutoRightButton
@@ -3821,7 +3819,7 @@ function createRightButtons(device)
     DesyncCorner.Parent = DesyncButton
 
     local DesyncBlackStroke = Instance.new("UIStroke")
-    DesyncBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+    DesyncBlackStroke.Color = Color3.fromRGB(255, 200, 0)
     DesyncBlackStroke.Thickness = 4
     DesyncBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     DesyncBlackStroke.Parent = DesyncButton
@@ -3939,7 +3937,7 @@ function createRightButtons(device)
         LaggerCorner.Parent = LaggerButton
 
         local LaggerBlackStroke = Instance.new("UIStroke")
-        LaggerBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+        LaggerBlackStroke.Color = Color3.fromRGB(255, 200, 0)
         LaggerBlackStroke.Thickness = 4
         LaggerBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
         LaggerBlackStroke.Parent = LaggerButton
@@ -4037,7 +4035,7 @@ function createRightButtons(device)
         LaggerButton.MouseButton1Click:Connect(function()
             laggerEnabled = not laggerEnabled
             if laggerEnabled then
-                LaggerButton.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
+                LaggerButton.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
                 startLagger()
             else
                 LaggerButton.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
@@ -4075,7 +4073,7 @@ function createRightButtons(device)
 
         Instance.new("UICorner", LaggerSettings).CornerRadius = UDim.new(0, 8)
         local LSBlackStroke = Instance.new("UIStroke", LaggerSettings)
-        LSBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+        LSBlackStroke.Color = Color3.fromRGB(255, 200, 0)
         LSBlackStroke.Thickness = 4
         LSBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
         local LSStroke = Instance.new("UIStroke", LaggerSettings)
@@ -4253,7 +4251,7 @@ function createRightButtons(device)
     DesyncButton.MouseButton1Click:Connect(function()
         desyncEnabled = not desyncEnabled
         if desyncEnabled then
-            DesyncButton.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
+            DesyncButton.BackgroundColor3 = Color3.fromRGB(120, 60, 255)
             startDesyncLogic()
         else
             DesyncButton.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
@@ -4278,7 +4276,7 @@ function createRightButtons(device)
     TrackCorner.Parent = TrackPlayerButton
 
     local TrackBlackStroke = Instance.new("UIStroke")
-    TrackBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+    TrackBlackStroke.Color = Color3.fromRGB(255, 200, 0)
     TrackBlackStroke.Thickness = 4
     TrackBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     TrackBlackStroke.Parent = TrackPlayerButton
@@ -4320,7 +4318,7 @@ function createRightButtons(device)
     HitCorner.Parent = HitCircleButton
 
     local HitBlackStroke = Instance.new("UIStroke")
-    HitBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+    HitBlackStroke.Color = Color3.fromRGB(255, 200, 0)
     HitBlackStroke.Thickness = 4
     HitBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     HitBlackStroke.Parent = HitCircleButton
@@ -4371,7 +4369,7 @@ function createRightButtons(device)
     JukeCorner.Parent = JukeButton
 
     local JukeBlackStroke = Instance.new("UIStroke")
-    JukeBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+    JukeBlackStroke.Color = Color3.fromRGB(255, 200, 0)
     JukeBlackStroke.Thickness = 4
     JukeBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     JukeBlackStroke.Parent = JukeButton
@@ -4417,7 +4415,7 @@ function createRightButtons(device)
     JSCorner.Parent = JukeSettings
 
     local JSBlackStroke = Instance.new("UIStroke")
-    JSBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+    JSBlackStroke.Color = Color3.fromRGB(255, 200, 0)
     JSBlackStroke.Thickness = 4
     JSBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     JSBlackStroke.Parent = JukeSettings
