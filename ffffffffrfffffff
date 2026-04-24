@@ -29,13 +29,13 @@ local hrp
 local hum
 
 local THEME = {
-    BG = Color3.fromRGB(10, 8, 14),
-    PANEL = Color3.fromRGB(22, 14, 26),
-    PINK = Color3.fromRGB(255, 92, 186),
+    BG = Color3.fromRGB(255, 255, 255),
+    PANEL = Color3.fromRGB(255, 255, 255),
+    PINK = Color3.fromRGB(255, 203, 92),
     GOLD = Color3.fromRGB(255, 203, 92),
-    TEXT = Color3.fromRGB(255, 236, 245),
-    OFF = Color3.fromRGB(38, 28, 40),
-    ON = Color3.fromRGB(200, 82, 146),
+    TEXT = Color3.fromRGB(30, 30, 30),
+    OFF = Color3.fromRGB(245, 245, 245),
+    ON = Color3.fromRGB(255, 225, 140),
 }
 
 local function setupCharacter(char)
@@ -1403,9 +1403,9 @@ end
 
 local selectedDevice = nil
 local GUI_SIZES = {
-    PC = {Width = 520, Height = 400},
-    iPad = {Width = 420, Height = 360},
-    iPhone = {Width = 260, Height = 360}
+    PC = {Width = 460, Height = 340},
+    iPad = {Width = 380, Height = 320},
+    iPhone = {Width = 240, Height = 320}
 }
 
 -- ═══════════════════════════════════════════════════════
@@ -1422,9 +1422,7 @@ ScreenGui.Parent = PlayerGui
 local function startRainbowOutline()
     task.spawn(function()
         while task.wait(0.05) do
-            local t = tick()
-            local pulse = (math.sin(t * 2.2) + 1) * 0.5
-            local color = THEME.PINK:Lerp(THEME.GOLD, pulse)
+            local color = THEME.GOLD
             for _, v in pairs(ScreenGui:GetDescendants()) do
                 if v:IsA("UIStroke") then
                     local p = v.Parent
@@ -1480,9 +1478,9 @@ local function applyWhiteHalfStyle()
 
                 local waveGrad = Instance.new("UIGradient")
                 waveGrad.Color = ColorSequence.new({
-                    ColorSequenceKeypoint.new(0, THEME.PINK),
+                    ColorSequenceKeypoint.new(0, THEME.GOLD),
                     ColorSequenceKeypoint.new(0.5, THEME.GOLD),
-                    ColorSequenceKeypoint.new(1, THEME.PINK)
+                    ColorSequenceKeypoint.new(1, THEME.GOLD)
                 })
                 waveGrad.Transparency = NumberSequence.new({
                     NumberSequenceKeypoint.new(0, 1),
@@ -1587,9 +1585,9 @@ local function createSmallGUI(name, yPosition)
 
     local WaveGrad = Instance.new("UIGradient")
     WaveGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, THEME.PINK),
+        ColorSequenceKeypoint.new(0, THEME.GOLD),
         ColorSequenceKeypoint.new(0.5, THEME.GOLD),
-        ColorSequenceKeypoint.new(1, THEME.PINK)
+        ColorSequenceKeypoint.new(1, THEME.GOLD)
     })
     WaveGrad.Transparency = NumberSequence.new({
         NumberSequenceKeypoint.new(0, 1),
@@ -1805,6 +1803,106 @@ do
     BTaskToggle.TextSize = 11
     BTaskToggle.Parent = BTaskFrame
     Instance.new("UICorner", BTaskToggle).CornerRadius = UDim.new(0, 8)
+
+    local BTaskMinus = Instance.new("TextButton")
+    BTaskMinus.Size = UDim2.new(0, 18, 0, 18)
+    BTaskMinus.Position = UDim2.new(1, -98, 0.5, -9)
+    BTaskMinus.BackgroundColor3 = Color3.fromRGB(220, 220, 220)
+    BTaskMinus.Text = "-"
+    BTaskMinus.TextColor3 = Color3.fromRGB(40, 40, 40)
+    BTaskMinus.Font = Enum.Font.GothamBold
+    BTaskMinus.TextSize = 14
+    BTaskMinus.Parent = BTaskFrame
+    Instance.new("UICorner", BTaskMinus).CornerRadius = UDim.new(0, 5)
+
+    local BTaskPlus = Instance.new("TextButton")
+    BTaskPlus.Size = UDim2.new(0, 18, 0, 18)
+    BTaskPlus.Position = UDim2.new(1, -120, 0.5, -9)
+    BTaskPlus.BackgroundColor3 = Color3.fromRGB(220, 220, 220)
+    BTaskPlus.Text = "+"
+    BTaskPlus.TextColor3 = Color3.fromRGB(40, 40, 40)
+    BTaskPlus.Font = Enum.Font.GothamBold
+    BTaskPlus.TextSize = 14
+    BTaskPlus.Parent = BTaskFrame
+    Instance.new("UICorner", BTaskPlus).CornerRadius = UDim.new(0, 5)
+
+    local function resizeGameplayButtons(delta)
+        -- resize top small draggable frames
+        for _, entry in pairs(SmallGUIInstances) do
+            if entry and entry.Frame then
+                local w = math.clamp(entry.Frame.Size.X.Offset + delta, 50, 180)
+                local h = math.clamp(entry.Frame.Size.Y.Offset + math.floor(delta * 0.3), 14, 44)
+                entry.Frame.Size = UDim2.new(0, w, 0, h)
+            end
+        end
+        if refreshSmallButtonPositions then refreshSmallButtonPositions() end
+
+        local autoLeft, autoRight, autoMedusa
+        local rightList = {}
+        for _, child in ipairs(ScreenGui:GetChildren()) do
+            if child:IsA("TextButton") then
+                local t = child.Text or ""
+                if t:find("AUTO\nLEFT") then autoLeft = child end
+                if t:find("AUTO\nRIGHT") then autoRight = child end
+                if t:find("AUTO\nMEDUSA") then autoMedusa = child end
+                if t:find("DESYNC") or t:find("LAGGER") or t:find("TRACK") or t:find("HIT") or t:find("JUKE") then
+                    table.insert(rightList, child)
+                end
+            end
+        end
+
+        local function setFontBySize(btn)
+            btn.TextSize = math.clamp(math.floor(btn.Size.X.Offset * 0.18), 8, 16)
+        end
+
+        if autoLeft and autoRight and autoMedusa then
+            local newAuto = math.clamp(autoLeft.Size.X.Offset + delta, 30, 120)
+            local sp = 10
+            local x1 = -(newAuto * 3 + sp * 2 + 20)
+            local x2 = x1 + newAuto + sp
+            local x3 = x2 + newAuto + sp
+            local y = -(newAuto * 2 + sp * 2)
+
+            autoLeft.Size = UDim2.new(0, newAuto, 0, newAuto)
+            autoRight.Size = UDim2.new(0, newAuto, 0, newAuto)
+            autoMedusa.Size = UDim2.new(0, newAuto, 0, newAuto)
+
+            autoLeft.Position = UDim2.new(1, x1, 0.5, y)
+            autoRight.Position = UDim2.new(1, x2, 0.5, y)
+            autoMedusa.Position = UDim2.new(1, x3, 0.5, y)
+
+            setFontBySize(autoLeft)
+            setFontBySize(autoRight)
+            setFontBySize(autoMedusa)
+
+            if #rightList > 0 then
+                local newRight = math.clamp(rightList[1].Size.X.Offset + delta, 24, 90)
+                local rx1 = -(newRight * 3 + sp * 2 + 20)
+                local rx2 = rx1 + newRight + sp
+                local rx3 = rx2 + newRight + sp
+                local ry1 = y + newAuto + 14
+                local ry2 = ry1 + newRight + sp
+
+                for _, btn in ipairs(rightList) do
+                    btn.Size = UDim2.new(0, newRight, 0, newRight)
+                    setFontBySize(btn)
+                    if btn.Text:find("DESYNC") then btn.Position = UDim2.new(1, rx1, 0.5, ry1) end
+                    if btn.Text:find("LAGGER") then btn.Position = UDim2.new(1, rx2, 0.5, ry1) end
+                    if btn.Text:find("TRACK") then btn.Position = UDim2.new(1, rx3, 0.5, ry1) end
+                    if btn.Text:find("HIT") then btn.Position = UDim2.new(1, rx1, 0.5, ry2) end
+                    if btn.Text:find("JUKE") then btn.Position = UDim2.new(1, rx2, 0.5, ry2) end
+                end
+            end
+        end
+    end
+
+    BTaskMinus.MouseButton1Click:Connect(function()
+        resizeGameplayButtons(-4)
+    end)
+
+    BTaskPlus.MouseButton1Click:Connect(function()
+        resizeGameplayButtons(4)
+    end)
 
     local BTaskPanel = Instance.new("Frame")
     BTaskPanel.Size = UDim2.new(0, 205, 0, 300)
@@ -3576,7 +3674,7 @@ function createAutoButtons(device)
     -- ✅ AUTO MEDUSA Button (above Auto Right)
     local AutoMedusaButton = Instance.new("TextButton")
     AutoMedusaButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    AutoMedusaButton.Position = UDim2.new(1, rowX2, 0.5, rowY)
+    AutoMedusaButton.Position = UDim2.new(1, rowX3, 0.5, rowY)
     AutoMedusaButton.BackgroundColor3 = THEME.OFF
     AutoMedusaButton.BackgroundTransparency = 0
     AutoMedusaButton.Text = "AUTO\nMEDUSA\nOFF"
@@ -3721,7 +3819,7 @@ function createAutoButtons(device)
     end)
     local AutoRightButton = Instance.new("TextButton")
     AutoRightButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    AutoRightButton.Position = UDim2.new(1, rowX3, 0.5, rowY)
+    AutoRightButton.Position = UDim2.new(1, rowX2, 0.5, rowY)
     AutoRightButton.BackgroundColor3 = THEME.OFF
     AutoRightButton.BackgroundTransparency = 0
     AutoRightButton.Text = "AUTO\nRIGHT\nOFF"
@@ -3795,7 +3893,9 @@ function createRightButtons(device)
     local x1 = -(buttonSize * 3 + spacing * 2 + 20)
     local x2 = x1 + buttonSize + spacing
     local x3 = x2 + buttonSize + spacing
-    local y1 = -math.floor(buttonSize * 0.95)
+    local autoSize = device == "iPhone" and 55 or 70
+    local autoY = -(autoSize * 2 + spacing * 2)
+    local y1 = autoY + autoSize + 14
     local y2 = y1 + buttonSize + spacing
 
     -- ✅ DESYNC Button (TOP ROW, LEFT)
@@ -4690,7 +4790,9 @@ function createRightButtons(device)
         local baseX = -(newSize * 3 + sp * 2 + 20)
         local col2 = baseX + newSize + sp
         local col3 = col2 + newSize + sp
-        local row1 = -math.floor(newSize * 0.95)
+        local autoSz = device == "iPhone" and 55 or 70
+        local autoTop = -(autoSz * 2 + sp * 2)
+        local row1 = autoTop + autoSz + 14
         local row2 = row1 + newSize + sp
         for _, btn in ipairs(allRightButtons) do
             btn.Size = UDim2.new(0, newSize, 0, newSize)
