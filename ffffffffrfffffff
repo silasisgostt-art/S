@@ -1,8 +1,8 @@
--- TIM CHEESE DUELS
+-- CELESTIAL HUB
 
 --[[
 ══════════════════════════════════════════════════════════════
-                TIM CHEESE DUELS
+                 CELESTIAL HUB
 ══════════════════════════════════════════════════════════════
 ✅ Speed, Unwalk, Inf Jump, Ragdoll TP, Drop Brainrot
 ✅ FPS, Optimizer, Hitbox, auto buttons, right-side controls
@@ -80,14 +80,14 @@ local function SaveConfig()
             writefile(CONFIG_FILE, HttpService:JSONEncode(ConfigData))
         end)
         if success then
-            print("[Celestial hub] ✅ Config saved!")
+            print("[CELESTIAL HUB] ✅ Config saved!")
             return true
         else
-            warn("[Celestial hub] ❌ Save failed:", err)
+            warn("[CELESTIAL HUB] ❌ Save failed:", err)
             return false
         end
     else
-        warn("[Celestial hub] ⚠️ writefile not available")
+        warn("[CELESTIAL HUB] ⚠️ writefile not available")
         return false
     end
 end
@@ -100,7 +100,7 @@ local function LoadConfig()
         if success and data then
             ConfigData = data
             buttonsLocked = ConfigData.buttonsLocked or false
-            print("[Celestial hub] ✅ Config loaded!")
+            print("[CELESTIAL HUB] ✅ Config loaded!")
             return true
         end
     end
@@ -2520,7 +2520,7 @@ local function createMainGUI(device)
     TitleLabel.Size = UDim2.new(0, 150, 1, 0)
     TitleLabel.Position = UDim2.new(0, 50, 0, 0)
     TitleLabel.BackgroundTransparency = 1
-    TitleLabel.Text = "Celestial hub"
+    TitleLabel.Text = "CELESTIAL HUB"
     TitleLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
     TitleLabel.Font = Enum.Font.GothamBold
     TitleLabel.TextSize = titleSize
@@ -2600,7 +2600,10 @@ local function createMainGUI(device)
         return TabButton
     end
 
-    local MainTab = createTab("✨", "FEATURES", 1)
+    local MainTab = createTab("🛡️", "FEATURES", 1)
+    local MISCTab = createTab("🎯", "AIMBOT", 2)
+    local SettingsTab = createTab("⚙️", "SETTINGS", 3)
+    local CreditsTab = createTab("⭐", "INFO", 4)
 
     local ContentContainer = Instance.new("Frame")
     ContentContainer.Size = UDim2.new(1, -sidebarWidth - 20, 1, -70)
@@ -2634,9 +2637,9 @@ local function createMainGUI(device)
     end
 
     local MainContent = createContentFrame("FEATURES")
-    local MISCContent = MainContent
-    local SettingsContent = MainContent
-    local CreditsContent = MainContent
+    local MISCContent = createContentFrame("AIMBOT")
+    local SettingsContent = createContentFrame("SETTINGS")
+    local CreditsContent = createContentFrame("INFO")
 
     MainContent.Visible = true
 
@@ -2661,6 +2664,9 @@ local function createMainGUI(device)
     end
 
     MainTab.MouseButton1Click:Connect(function() switchTab("FEATURES") end)
+    MISCTab.MouseButton1Click:Connect(function() switchTab("AIMBOT") end)
+    SettingsTab.MouseButton1Click:Connect(function() switchTab("SETTINGS") end)
+    CreditsTab.MouseButton1Click:Connect(function() switchTab("INFO") end)
 
     switchTab("FEATURES")
 
@@ -3154,7 +3160,7 @@ local function createMainGUI(device)
             antiDeathButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
         end
         
-        print("[Celestial hub] ✅ Auto-enabled ALL MISC: FPS Booster, Optimizer, Hitbox, Anti Death")
+        print("[CELESTIAL HUB] ✅ Auto-enabled ALL MISC: FPS Booster, Optimizer, Hitbox, Anti Death")
     end)
 
     local function createMISCButton(name, order, callback)
@@ -3166,8 +3172,8 @@ local function createMainGUI(device)
         Button.TextColor3 = Color3.fromRGB(255, 255, 255)
         Button.Font = Enum.Font.GothamBold
         Button.TextSize = device == "iPhone" and 11 or 14
-        Button.LayoutOrder = order
-        Button.Parent = MISCContent
+        Button.LayoutOrder = order + 20
+        Button.Parent = MainContent
 
         local Corner = Instance.new("UICorner")
         Corner.CornerRadius = UDim.new(0, 10)
@@ -3394,9 +3400,9 @@ local function initializeGUI(device)
         end
         
         refreshSmallButtonPositions()
-        print("[Celestial hub] ✅ Auto-enabled for "..device..": Speed, Unwalk, Anti Rag, Ragdoll TP")
-        print("[Celestial hub] ✅ Visible Small GUIs: Speed, Unwalk, Anti Rag, Ragdoll TP, Drop (OFF)")
-        print("[Celestial hub] ⚪ Hidden Small GUIs: Inf Jump, Spin Bot, Float, FOV (turn on from Main tab)")
+        print("[CELESTIAL HUB] ✅ Auto-enabled for "..device..": Speed, Unwalk, Anti Rag, Ragdoll TP")
+        print("[CELESTIAL HUB] ✅ Visible Small GUIs: Speed, Unwalk, Anti Rag, Ragdoll TP, Drop (OFF)")
+        print("[CELESTIAL HUB] ⚪ Hidden Small GUIs: Inf Jump, Spin Bot, Float, FOV (turn on from Features tab)")
     end)
 
     createMainGUI(device)
@@ -3444,7 +3450,7 @@ function createOpenButton(device)
     OpenButton.Position = UDim2.new(0, 15, 0.5, -buttonSize/2)
     OpenButton.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
     OpenButton.BackgroundTransparency = 0.2
-    OpenButton.Text = "OPEN"
+    OpenButton.Text = "HUB"
     OpenButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     OpenButton.Font = Enum.Font.GothamBold
     OpenButton.TextSize = device == "iPhone" and 10 or 14
@@ -3461,7 +3467,7 @@ function createOpenButton(device)
         isOpen = not isOpen
 
         if isOpen then
-            OpenButton.Text = "CLOSE"
+            OpenButton.Text = "HIDE"
             MainFrame.Visible = true
             MainFrame.Position = UDim2.new(0, -size.Width - 100, 0.5, -size.Height/2)
 
@@ -3471,7 +3477,7 @@ function createOpenButton(device)
                 {Position = UDim2.new(0.5, -size.Width/2, 0.5, -size.Height/2)}
             ):Play()
         else
-            OpenButton.Text = "OPEN"
+            OpenButton.Text = "HUB"
 
             local slideOut = TweenService:Create(
                 MainFrame,
@@ -3501,7 +3507,7 @@ function createAutoButtons(device)
     AutoLeftButton.Position = UDim2.new(0, 15, 0.5, -buttonSize/2 + yOffset)
     AutoLeftButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     AutoLeftButton.BackgroundTransparency = 0
-    AutoLeftButton.Text = "AUTO\nLEFT"
+    AutoLeftButton.Text = "AUTO\nLEFT\nOFF"
     AutoLeftButton.TextColor3 = Color3.fromRGB(220, 220, 220)
     AutoLeftButton.Font = Enum.Font.GothamBold
     AutoLeftButton.TextSize = device == "iPhone" and 9 or 12
@@ -3531,7 +3537,7 @@ function createAutoButtons(device)
     AutoMedusaButton.Position = UDim2.new(0, 15 + buttonSize + 10, 0.5, -buttonSize*1.5 + yOffset - 10)
     AutoMedusaButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     AutoMedusaButton.BackgroundTransparency = 0
-    AutoMedusaButton.Text = "AUTO\nMEDUSA"
+    AutoMedusaButton.Text = "AUTO\nMEDUSA\nOFF"
     AutoMedusaButton.TextColor3 = Color3.fromRGB(220, 220, 220)
     AutoMedusaButton.Font = Enum.Font.GothamBold
     AutoMedusaButton.TextSize = device == "iPhone" and 9 or 12
@@ -3663,9 +3669,11 @@ function createAutoButtons(device)
         autoMedusaEnabled = not autoMedusaEnabled
         if autoMedusaEnabled then
             AutoMedusaButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+            AutoMedusaButton.Text = "AUTO\nMEDUSA\nON"
             startAutoMedusa()
         else
             AutoMedusaButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            AutoMedusaButton.Text = "AUTO\nMEDUSA\nOFF"
             stopAutoMedusa()
         end
     end)
@@ -3674,7 +3682,7 @@ function createAutoButtons(device)
     AutoRightButton.Position = UDim2.new(0, 15 + buttonSize + 10, 0.5, -buttonSize/2 + yOffset)
     AutoRightButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     AutoRightButton.BackgroundTransparency = 0
-    AutoRightButton.Text = "AUTO\nRIGHT"
+    AutoRightButton.Text = "AUTO\nRIGHT\nOFF"
     AutoRightButton.TextColor3 = Color3.fromRGB(220, 220, 220)
     AutoRightButton.Font = Enum.Font.GothamBold
     AutoRightButton.TextSize = device == "iPhone" and 9 or 12
@@ -3703,11 +3711,15 @@ function createAutoButtons(device)
         if pathActive then
             stopStealPath()
             AutoLeftButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            AutoLeftButton.Text = "AUTO\nLEFT\nOFF"
             AutoRightButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            AutoRightButton.Text = "AUTO\nRIGHT\nOFF"
         else
             stopStealPath()
             AutoLeftButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+            AutoLeftButton.Text = "AUTO\nLEFT\nON"
             AutoRightButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            AutoRightButton.Text = "AUTO\nRIGHT\nOFF"
             startStealPath(stealPath2) -- ✅ LEFT PATH!
         end
     end)
@@ -3717,11 +3729,15 @@ function createAutoButtons(device)
         if pathActive then
             stopStealPath()
             AutoLeftButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            AutoLeftButton.Text = "AUTO\nLEFT\nOFF"
             AutoRightButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            AutoRightButton.Text = "AUTO\nRIGHT\nOFF"
         else
             stopStealPath()
             AutoLeftButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            AutoLeftButton.Text = "AUTO\nLEFT\nOFF"
             AutoRightButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+            AutoRightButton.Text = "AUTO\nRIGHT\nON"
             startStealPath(stealPath1) -- ✅ RIGHT PATH!
         end
     end)
@@ -4986,7 +5002,7 @@ function createRightButtons(device)
 end
 
 print("══════════════════════════════════════════════")
-print("   CELESTIAL HUB LOADED")
+print("   TIM CHEESE DUELS LOADED")
 print("══════════════════════════════════════════════")
 print("✅ VISIBLE SMALL GUIs (5):")
 print("   Speed (ON), Unwalk (ON), Anti Rag (ON),")
@@ -5003,6 +5019,6 @@ print("════════════════════════�
 game:GetService("Players").PlayerRemoving:Connect(function(plr)
     if plr == player then
         SaveConfig()
-        print("[Celestial hub] ✅ Auto-saved config on leave!")
+        print("[TIM CHEESE DUELS] ✅ Auto-saved config on leave!")
     end
 end)
