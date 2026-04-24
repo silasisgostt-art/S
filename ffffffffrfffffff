@@ -42,6 +42,7 @@ player.CharacterAdded:Connect(setupCharacter)
 -- ═══════════════════════════════════════════════════════
 
 local CONFIG_FILE = "celestialhub_config.json"
+local LEGACY_CONFIG_FILE = "timcheeseduels_config.json"
 
 local ConfigData = {
     speedEnabled = false,
@@ -93,9 +94,10 @@ local function SaveConfig()
 end
 
 local function LoadConfig()
-    if readfile and isfile and isfile(CONFIG_FILE) then
+    if readfile and isfile and (isfile(CONFIG_FILE) or isfile(LEGACY_CONFIG_FILE)) then
+        local configToRead = isfile(CONFIG_FILE) and CONFIG_FILE or LEGACY_CONFIG_FILE
         local success, data = pcall(function()
-            return HttpService:JSONDecode(readfile(CONFIG_FILE))
+            return HttpService:JSONDecode(readfile(configToRead))
         end)
         if success and data then
             ConfigData = data
@@ -1412,8 +1414,6 @@ ScreenGui.Parent = PlayerGui
 local GOLD_COLOR = Color3.fromRGB(255, 215, 0)
 local GOLD_DEEP = Color3.fromRGB(212, 175, 55)
 local GOLD_LIGHT = Color3.fromRGB(255, 236, 140)
-local WHITE_SOFT = Color3.fromRGB(255, 250, 238)
-local WHITE_CARD = Color3.fromRGB(248, 240, 222)
 local function startRainbowOutline()
     task.spawn(function()
         while task.wait(0.05) do
@@ -1438,85 +1438,140 @@ end
 startRainbowOutline()
 
 
--- Apply Celestial white/gold background and premium square-button styling
+-- Apply white half-transparent background with gold glow stroke (Celestial Hub theme)
 local function applyWhiteHalfStyle()
+    local pulseInfo = TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+    local hoverInfo = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local pressInfo = TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
     for _, v in pairs(ScreenGui:GetDescendants()) do
         local ok, name = pcall(function() return v.Name end)
         if not ok then name = "" end
 
+        -- Allow opting out of restyling (used by small lightning click buttons)
         local skip = false
         pcall(function()
             if v.GetAttribute and v:GetAttribute("CelestialSkipStyle") == true then
                 skip = true
             end
         end)
-
         if skip then
             -- no-op
-        elseif v:IsA("TextButton") or v:IsA("ImageButton") then
+        elseif v:IsA("TextButton") or v:IsA("TextBox") or (v:IsA("Frame") and (name == "MainFrame" or name:match("GUI$") or name:match("^Small"))) or name == "StealBarContainer" then
             pcall(function()
-                v.BackgroundColor3 = WHITE_SOFT
-                v.BackgroundTransparency = 0.03
-                if v:IsA("TextButton") then
-                    v.TextColor3 = GOLD_DEEP
+                local isButton = v:IsA("TextButton") or v:IsA("ImageButton")
+
+                if isButton then
+                    v.BackgroundColor3 = Color3.fromRGB(250, 248, 240)
+                    v.BackgroundTransparency = 0.02
+                    if v:IsA("TextButton") then
+                        v.TextColor3 = Color3.fromRGB(185, 145, 35)
+                    end
+                else
+                    v.BackgroundColor3 = Color3.fromRGB(245, 241, 225)
+                    v.BackgroundTransparency = 0.12
                 end
 
-                local stroke = v:FindFirstChild("CelestialStroke")
-                if not stroke then
-                    stroke = Instance.new("UIStroke")
-                    stroke.Name = "CelestialStroke"
-                    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-                    stroke.Parent = v
-                end
-                stroke.Color = GOLD_DEEP
-                stroke.Thickness = 2
-                stroke.Transparency = 0
-
-                local grad = v:FindFirstChild("CelestialBg")
-                if not grad then
-                    grad = Instance.new("UIGradient")
-                    grad.Name = "CelestialBg"
-                    grad.Parent = v
-                end
-                grad.Rotation = 108
-                grad.Color = ColorSequence.new({
-                    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-                    ColorSequenceKeypoint.new(0.5, WHITE_CARD),
-                    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 232, 170)),
-                })
-
-                local corner = v:FindFirstChildOfClass("UICorner")
-                if not corner then
-                    corner = Instance.new("UICorner")
-                    corner.Parent = v
-                end
-                corner.CornerRadius = UDim.new(0, 0) -- square buttons
-            end)
-        elseif v:IsA("TextBox") or (v:IsA("Frame") and (name == "MainFrame" or name:match("GUI$") or name:match("^Small"))) or name == "StealBarContainer" then
-            pcall(function()
-                v.BackgroundColor3 = WHITE_CARD
-                v.BackgroundTransparency = 0.05
                 if v:IsA("TextBox") then
-                    v.TextColor3 = GOLD_DEEP
+                    v.BackgroundColor3 = Color3.fromRGB(255, 252, 242)
+                    v.BackgroundTransparency = 0.04
+                    v.TextColor3 = Color3.fromRGB(170, 130, 30)
                 end
 
-                local stroke = v:FindFirstChild("CelestialStroke")
-                if not stroke then
-                    stroke = Instance.new("UIStroke")
-                    stroke.Name = "CelestialStroke"
-                    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-                    stroke.Parent = v
+                -- Remove old strokes
+                for _, c in pairs(v:GetChildren()) do
+                    if c:IsA("UIStroke") then c:Destroy() end
                 end
-                stroke.Color = GOLD_DEEP
-                stroke.Thickness = 2
-                stroke.Transparency = 0
 
-                local corner = v:FindFirstChildOfClass("UICorner")
-                if not corner then
-                    corner = Instance.new("UICorner")
+                -- Gold base stroke (replaces old black)
+                local goldStroke = Instance.new("UIStroke")
+                goldStroke.Color = GOLD_DEEP
+                goldStroke.Thickness = isButton and 2.4 or 2
+                goldStroke.Transparency = 0
+                goldStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+                goldStroke.Parent = v
+
+                -- White animated wave stroke (inner glow)
+                local waveStroke = Instance.new("UIStroke")
+                waveStroke.Color = Color3.fromRGB(255, 255, 255)
+                waveStroke.Thickness = isButton and 1.8 or 2
+                waveStroke.Transparency = 0.4
+                waveStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+                waveStroke.Parent = v
+
+                local waveGrad = Instance.new("UIGradient")
+                waveGrad.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
+                waveGrad.Transparency = NumberSequence.new({
+                    NumberSequenceKeypoint.new(0, 1),
+                    NumberSequenceKeypoint.new(0.4, 0),
+                    NumberSequenceKeypoint.new(0.6, 0),
+                    NumberSequenceKeypoint.new(1, 1)
+                })
+                waveGrad.Rotation = math.random(0, 360)
+                waveGrad.Parent = waveStroke
+
+                TweenService:Create(waveStroke, pulseInfo, {Thickness = isButton and 3 or 3.5, Transparency = 0.08}):Play()
+
+                RunService.Heartbeat:Connect(function(dt)
+                    pcall(function()
+                        waveGrad.Rotation = (waveGrad.Rotation + 140 * dt) % 360
+                    end)
+                end)
+
+                -- Subtle gold->white diagonal gradient on background
+                local bgGrad
+                for _, c in pairs(v:GetChildren()) do
+                    if c:IsA("UIGradient") and c.Name == "CelestialBg" then bgGrad = c break end
+                end
+                if not bgGrad then
+                    bgGrad = Instance.new("UIGradient")
+                    bgGrad.Name = "CelestialBg"
+                    bgGrad.Rotation = 115
+                    bgGrad.Color = ColorSequence.new({
+                        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 250)),
+                        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 245, 214)),
+                        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 251, 236)),
+                    })
+                    bgGrad.Parent = v
+                end
+
+                -- Boxed square style (small corner radius)
+                local hasCorner = false
+                for _, c in pairs(v:GetChildren()) do
+                    if c:IsA("UICorner") then
+                        c.CornerRadius = UDim.new(0, isButton and 4 or 6)
+                        hasCorner = true
+                    end
+                end
+                if not hasCorner then
+                    local corner = Instance.new("UICorner")
+                    corner.CornerRadius = UDim.new(0, isButton and 4 or 6)
                     corner.Parent = v
                 end
-                corner.CornerRadius = UDim.new(0, 6)
+
+                if isButton and not v:GetAttribute("CelestialEnhanced") then
+                    v:SetAttribute("CelestialEnhanced", true)
+                    v.MouseEnter:Connect(function()
+                        pcall(function()
+                            TweenService:Create(v, hoverInfo, {BackgroundColor3 = Color3.fromRGB(255, 250, 230)}):Play()
+                        end)
+                    end)
+                    v.MouseLeave:Connect(function()
+                        pcall(function()
+                            TweenService:Create(v, hoverInfo, {BackgroundColor3 = Color3.fromRGB(250, 248, 240)}):Play()
+                        end)
+                    end)
+                    v.MouseButton1Down:Connect(function()
+                        pcall(function()
+                            TweenService:Create(v, pressInfo, {BackgroundColor3 = Color3.fromRGB(255, 237, 180)}):Play()
+                        end)
+                    end)
+                    v.MouseButton1Up:Connect(function()
+                        pcall(function()
+                            TweenService:Create(v, hoverInfo, {BackgroundColor3 = Color3.fromRGB(255, 250, 230)}):Play()
+                        end)
+                    end)
+                end
 
                 if v:IsA("GuiObject") then
                     v.ZIndex = 100
@@ -1526,25 +1581,51 @@ local function applyWhiteHalfStyle()
     end
 end
 
-local function applyGoldStateOverrides()
-    for _, v in pairs(ScreenGui:GetDescendants()) do
-        if v:IsA("GuiObject") then
+local function enforceGoldButtonPalette()
+    for _, ui in pairs(ScreenGui:GetDescendants()) do
+        if ui:IsA("TextButton") then
+            local skip = false
             pcall(function()
-                local bg = v.BackgroundColor3
-                if bg.G > 0.55 and bg.R < 0.45 then
-                    v.BackgroundColor3 = Color3.fromRGB(255, 218, 120)
-                end
-                if bg.R < 0.2 and bg.G < 0.2 and bg.B < 0.2 then
-                    v.BackgroundColor3 = WHITE_CARD
-                end
+                skip = ui.GetAttribute and ui:GetAttribute("CelestialSkipStyle") == true
             end)
-        end
-        if v:IsA("TextLabel") or v:IsA("TextButton") or v:IsA("TextBox") then
-            pcall(function()
-                if v.TextColor3.R > 0.95 and v.TextColor3.G > 0.95 and v.TextColor3.B > 0.95 then
-                    v.TextColor3 = GOLD_DEEP
+            if not skip then
+                local bg = ui.BackgroundColor3
+                local delta = math.max(bg.R, bg.G, bg.B) - math.min(bg.R, bg.G, bg.B)
+
+                if (bg.R + bg.G + bg.B) < 1.2 then
+                    ui.BackgroundColor3 = Color3.fromRGB(250, 248, 240)
+                elseif delta > 0.22 and not (bg.R > 0.88 and bg.G > 0.68 and bg.B < 0.65) then
+                    ui.BackgroundColor3 = Color3.fromRGB(255, 225, 150)
                 end
-            end)
+                if ui.TextColor3 ~= Color3.fromRGB(185, 145, 35) then
+                    ui.TextColor3 = Color3.fromRGB(185, 145, 35)
+                end
+
+                local hasCorner = false
+                local hasStroke = false
+                for _, c in pairs(ui:GetChildren()) do
+                    if c:IsA("UICorner") then
+                        c.CornerRadius = UDim.new(0, 4)
+                        hasCorner = true
+                    elseif c:IsA("UIStroke") then
+                        c.Color = GOLD_DEEP
+                        c.Thickness = 2
+                        hasStroke = true
+                    end
+                end
+                if not hasCorner then
+                    local corner = Instance.new("UICorner")
+                    corner.CornerRadius = UDim.new(0, 4)
+                    corner.Parent = ui
+                end
+                if not hasStroke then
+                    local stroke = Instance.new("UIStroke")
+                    stroke.Color = GOLD_DEEP
+                    stroke.Thickness = 2
+                    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+                    stroke.Parent = ui
+                end
+            end
         end
     end
 end
@@ -1559,8 +1640,8 @@ local function bringEnabledToFront()
         local ok, bg = pcall(function() return v.BackgroundColor3 end)
         if ok and bg then
             local r,g,b = bg.R, bg.G, bg.B
-            -- check for gold-ish enabled backgrounds
-            if (g > 0.6 and r > 0.7 and b < 0.55) or (g > 0.6 and r < 0.4) then
+            -- check for green-ish backgrounds used for enabled state
+            if g > 0.6 and r < 0.4 then
                 pcall(function()
                     v.Parent = ScreenGui
                     if v:IsA("GuiObject") then
@@ -1589,7 +1670,7 @@ local SmallButtonsBox = Instance.new("Frame")
 SmallButtonsBox.Name = "CelestialSmallButtonsBox"
 SmallButtonsBox.Size = UDim2.new(0, 380, 0, 380) -- square
 SmallButtonsBox.Position = UDim2.new(0.5, -190, 0, 60)
-SmallButtonsBox.BackgroundColor3 = Color3.fromRGB(250, 242, 224)
+SmallButtonsBox.BackgroundColor3 = Color3.fromRGB(14, 14, 18)
 SmallButtonsBox.BackgroundTransparency = 0.08
 SmallButtonsBox.BorderSizePixel = 0
 SmallButtonsBox.Active = true
@@ -1669,7 +1750,7 @@ local function createSmallGUI(name, yPosition)
     SmallGUI.Name = "Small"..name.."GUI"
     SmallGUI.Size = UDim2.new(0, 80, 0, 30)
     SmallGUI.Position = UDim2.new(0, 0, 0, yPosition)
-    SmallGUI.BackgroundColor3 = Color3.fromRGB(255, 248, 232)
+    SmallGUI.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
     SmallGUI.BackgroundTransparency = 0.05
     SmallGUI.BorderSizePixel = 0
     SmallGUI.Visible = false
@@ -1678,7 +1759,7 @@ local function createSmallGUI(name, yPosition)
     SmallGUI.Parent = SmallButtonsBox
 
     local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 0)
+    Corner.CornerRadius = UDim.new(0, 4)
     Corner.Parent = SmallGUI
 
     -- Gold background sheen
@@ -1729,7 +1810,7 @@ local function createSmallGUI(name, yPosition)
     local GreenDot = Instance.new("Frame")
     GreenDot.Size = UDim2.new(0, 8, 0, 8)
     GreenDot.Position = UDim2.new(0, 6, 0.5, -4)
-    GreenDot.BackgroundColor3 = Color3.fromRGB(160, 130, 60)
+    GreenDot.BackgroundColor3 = Color3.fromRGB(90, 90, 100)
     GreenDot.BorderSizePixel = 0
     GreenDot.ZIndex = 53
     GreenDot.Parent = SmallGUI
@@ -1749,7 +1830,7 @@ local function createSmallGUI(name, yPosition)
     Label.Position = UDim2.new(0, 20, 0, 0)
     Label.BackgroundTransparency = 1
     Label.Text = name
-    Label.TextColor3 = Color3.fromRGB(145, 110, 20)
+    Label.TextColor3 = Color3.fromRGB(255, 255, 255)
     Label.Font = Enum.Font.GothamBold
     Label.TextSize = 11
     Label.TextXAlignment = Enum.TextXAlignment.Left
@@ -1770,7 +1851,7 @@ local function createSmallGUI(name, yPosition)
     Button.Position = UDim2.new(1, -22, 0, 0)
     Button.BackgroundTransparency = 1
     Button.Text = "⚡"
-    Button.TextColor3 = Color3.fromRGB(145, 110, 20)
+    Button.TextColor3 = Color3.fromRGB(255, 215, 0)
     Button.Font = Enum.Font.GothamBold
     Button.TextSize = 14
     Button.ZIndex = 54
@@ -2617,7 +2698,7 @@ local function createMainGUI(device)
     MainFrame.Name = "MainFrame"
     MainFrame.Size = UDim2.new(0, width, 0, height)
     MainFrame.Position = UDim2.new(0.5, -width/2, 0.5, -height/2)
-    MainFrame.BackgroundColor3 = Color3.fromRGB(248, 240, 222)
+    MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
     MainFrame.BackgroundTransparency = 0.1
     MainFrame.BorderSizePixel = 0
     MainFrame.Active = true
@@ -2631,7 +2712,7 @@ local function createMainGUI(device)
 
     local Header = Instance.new("Frame")
     Header.Size = UDim2.new(1, 0, 0, 50)
-    Header.BackgroundColor3 = Color3.fromRGB(255, 244, 214)
+    Header.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
     Header.BorderSizePixel = 0
     Header.Parent = MainFrame
 
@@ -2642,7 +2723,7 @@ local function createMainGUI(device)
     local HeaderMask = Instance.new("Frame")
     HeaderMask.Size = UDim2.new(1, 0, 0, 15)
     HeaderMask.Position = UDim2.new(0, 0, 1, -15)
-    HeaderMask.BackgroundColor3 = Color3.fromRGB(255, 244, 214)
+    HeaderMask.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
     HeaderMask.BorderSizePixel = 0
     HeaderMask.Parent = Header
 
@@ -2653,7 +2734,7 @@ local function createMainGUI(device)
     LogoIcon.Size = UDim2.new(0, 40, 0, 40)
     LogoIcon.Position = UDim2.new(0, 10, 0.5, -20)
     LogoIcon.BackgroundTransparency = 1
-    LogoIcon.Text = "✦"
+    LogoIcon.Text = "🧀"
     LogoIcon.TextSize = logoSize
     LogoIcon.Font = Enum.Font.GothamBold
     LogoIcon.Parent = Header
@@ -2672,9 +2753,9 @@ local function createMainGUI(device)
     local CloseButton = Instance.new("TextButton")
     CloseButton.Size = UDim2.new(0, 30, 0, 30)
     CloseButton.Position = UDim2.new(1, -35, 0.5, -15)
-    CloseButton.BackgroundColor3 = Color3.fromRGB(255, 248, 232)
+    CloseButton.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
     CloseButton.Text = "-"
-    CloseButton.TextColor3 = Color3.fromRGB(145, 110, 20)
+    CloseButton.TextColor3 = Color3.fromRGB(200, 200, 200)
     CloseButton.Font = Enum.Font.GothamBold
     CloseButton.TextSize = 18
     CloseButton.Parent = Header
@@ -2707,7 +2788,7 @@ local function createMainGUI(device)
         TabButton.Name = name
         TabButton.Size = UDim2.new(1, -10, 0, device == "iPhone" and 55 or 50)
         TabButton.Position = UDim2.new(0, 5, 0, (order - 1) * (device == "iPhone" and 60 or 60))
-        TabButton.BackgroundColor3 = Color3.fromRGB(255, 248, 232)
+        TabButton.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
         TabButton.BorderSizePixel = 0
         TabButton.Text = ""
         TabButton.Parent = Sidebar
@@ -2723,7 +2804,7 @@ local function createMainGUI(device)
         IconLabel.Text = icon
         IconLabel.TextSize = device == "iPhone" and 16 or 20
         IconLabel.Font = Enum.Font.GothamBold
-        IconLabel.TextColor3 = Color3.fromRGB(145, 110, 20)
+        IconLabel.TextColor3 = Color3.fromRGB(150, 150, 160)
         IconLabel.Parent = TabButton
 
         local TextLabel = Instance.new("TextLabel")
@@ -2731,7 +2812,7 @@ local function createMainGUI(device)
         TextLabel.Position = device == "iPhone" and UDim2.new(0, 0, 1, -20) or UDim2.new(0, 45, 0, 0)
         TextLabel.BackgroundTransparency = 1
         TextLabel.Text = name
-        TextLabel.TextColor3 = Color3.fromRGB(145, 110, 20)
+        TextLabel.TextColor3 = Color3.fromRGB(150, 150, 160)
         TextLabel.Font = Enum.Font.GothamBold
         TextLabel.TextSize = device == "iPhone" and 8 or (device == "iPad" and 12 or 16)
         TextLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -2790,13 +2871,13 @@ local function createMainGUI(device)
 
         for name, elements in pairs(tabButtons) do
             if name == tabName then
-                elements.Button.BackgroundColor3 = Color3.fromRGB(255, 232, 170)
-                elements.Text.TextColor3 = Color3.fromRGB(120, 88, 15)
-                elements.Icon.TextColor3 = Color3.fromRGB(120, 88, 15)
+                elements.Button.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                elements.Text.TextColor3 = Color3.fromRGB(30, 30, 35)
+                elements.Icon.TextColor3 = Color3.fromRGB(30, 30, 35)
             else
-                elements.Button.BackgroundColor3 = Color3.fromRGB(255, 248, 232)
-                elements.Text.TextColor3 = Color3.fromRGB(145, 110, 20)
-                elements.Icon.TextColor3 = Color3.fromRGB(145, 110, 20)
+                elements.Button.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+                elements.Text.TextColor3 = Color3.fromRGB(150, 150, 160)
+                elements.Icon.TextColor3 = Color3.fromRGB(150, 150, 160)
             end
         end
 
@@ -2828,13 +2909,13 @@ local function createMainGUI(device)
         local Button = Instance.new("TextButton")
         Button.Size = UDim2.new(1, buttonWidth, 0, 50)
         Button.Position = UDim2.new(0, 0, 0, 0)
-        Button.BackgroundColor3 = Color3.fromRGB(255, 248, 232)
+        Button.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
         Button.BorderSizePixel = 0
         Button.Text = ""
         Button.Parent = Container
 
         local Corner = Instance.new("UICorner")
-        Corner.CornerRadius = UDim.new(0, 0)
+        Corner.CornerRadius = UDim.new(0, 10)
         Corner.Parent = Button
 
         local Label = Instance.new("TextLabel")
@@ -2842,7 +2923,7 @@ local function createMainGUI(device)
         Label.Position = UDim2.new(0, 15, 0, 0)
         Label.BackgroundTransparency = 1
         Label.Text = name
-        Label.TextColor3 = Color3.fromRGB(145, 110, 20)
+        Label.TextColor3 = Color3.fromRGB(255, 255, 255)
         Label.Font = Enum.Font.GothamBold
         Label.TextSize = device == "iPhone" and 11 or 14
         Label.TextXAlignment = Enum.TextXAlignment.Left
@@ -2854,15 +2935,15 @@ local function createMainGUI(device)
             local SettingsButton = Instance.new("TextButton")
             SettingsButton.Size = UDim2.new(0, 50, 0, 50)
             SettingsButton.Position = UDim2.new(1, -50, 0, 0)
-            SettingsButton.BackgroundColor3 = Color3.fromRGB(255, 232, 170)
+            SettingsButton.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
             SettingsButton.Text = "⚙️"
-            SettingsButton.TextColor3 = Color3.fromRGB(120, 88, 15)
+            SettingsButton.TextColor3 = Color3.fromRGB(255, 255, 255)
             SettingsButton.Font = Enum.Font.GothamBold
             SettingsButton.TextSize = device == "iPhone" and 16 or 20
             SettingsButton.Parent = Container
 
             local SettingsCorner = Instance.new("UICorner")
-            SettingsCorner.CornerRadius = UDim.new(0, 0)
+            SettingsCorner.CornerRadius = UDim.new(0, 10)
             SettingsCorner.Parent = SettingsButton
 
             return Container, SettingsButton, Button, Label
@@ -3559,12 +3640,13 @@ local function initializeGUI(device)
     createAutoButtons(device)
     createRightButtons(device)
 
-    -- Apply Celestial white/gold style
+    -- Apply dark semi-transparent style and rounded corners to all UI
     applyWhiteHalfStyle()
-    applyGoldStateOverrides()
+    enforceGoldButtonPalette()
     task.spawn(function()
-        while task.wait(0.6) do
-            pcall(applyGoldStateOverrides)
+        while ScreenGui and ScreenGui.Parent do
+            task.wait(0.25)
+            pcall(enforceGoldButtonPalette)
         end
     end)
 
