@@ -41,7 +41,7 @@ player.CharacterAdded:Connect(setupCharacter)
 -- CONFIG SAVE/LOAD SYSTEM (AUTO-LOADS!)
 -- ═══════════════════════════════════════════════════════
 
-local CONFIG_FILE = "timcheeseduels_config.json"
+local CONFIG_FILE = "celestialhub_config.json"
 
 local ConfigData = {
     speedEnabled = false,
@@ -1403,7 +1403,7 @@ local GUI_SIZES = {
 -- ═══════════════════════════════════════════════════════
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "TimCheeseDuelsGUI"
+ScreenGui.Name = "CelestialHubGUI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = PlayerGui
@@ -1412,6 +1412,7 @@ ScreenGui.Parent = PlayerGui
 local GOLD_COLOR = Color3.fromRGB(255, 215, 0)
 local GOLD_DEEP = Color3.fromRGB(212, 175, 55)
 local GOLD_LIGHT = Color3.fromRGB(255, 236, 140)
+local ThemeRefreshStarted = false
 local function startRainbowOutline()
     task.spawn(function()
         while task.wait(0.05) do
@@ -1455,10 +1456,13 @@ local function applyWhiteHalfStyle()
             -- no-op
         elseif v:IsA("TextButton") or v:IsA("TextBox") or (v:IsA("Frame") and (name == "MainFrame" or name:match("GUI$") or name:match("^Small"))) or name == "StealBarContainer" then
             pcall(function()
-                v.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
-                v.BackgroundTransparency = 0.05
+                v.BackgroundColor3 = Color3.fromRGB(255, 250, 235)
+                v.BackgroundTransparency = 0.08
                 if v:IsA("TextBox") then
-                    v.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    v.TextColor3 = Color3.fromRGB(212, 175, 55)
+                elseif v:IsA("TextButton") then
+                    v.TextColor3 = Color3.fromRGB(184, 134, 11)
+                    v.AutoButtonColor = false
                 end
 
                 -- Remove old strokes
@@ -1511,24 +1515,32 @@ local function applyWhiteHalfStyle()
                     bgGrad.Name = "CelestialBg"
                     bgGrad.Rotation = 115
                     bgGrad.Color = ColorSequence.new({
-                        ColorSequenceKeypoint.new(0, Color3.fromRGB(35, 30, 15)),
-                        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(22, 20, 14)),
-                        ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 32, 12)),
+                        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+                        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 244, 204)),
+                        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 235, 170)),
                     })
                     bgGrad.Parent = v
                 end
 
-                -- Rounded corners
+                -- Square button boxes + softer frames
                 local hasCorner = false
                 for _, c in pairs(v:GetChildren()) do
                     if c:IsA("UICorner") then
-                        c.CornerRadius = UDim.new(0, 10)
+                        if v:IsA("TextButton") then
+                            c.CornerRadius = UDim.new(0, 0)
+                        else
+                            c.CornerRadius = UDim.new(0, 6)
+                        end
                         hasCorner = true
                     end
                 end
                 if not hasCorner then
                     local corner = Instance.new("UICorner")
-                    corner.CornerRadius = UDim.new(0, 10)
+                    if v:IsA("TextButton") then
+                        corner.CornerRadius = UDim.new(0, 0)
+                    else
+                        corner.CornerRadius = UDim.new(0, 6)
+                    end
                     corner.Parent = v
                 end
 
@@ -1580,7 +1592,7 @@ local SmallButtonsBox = Instance.new("Frame")
 SmallButtonsBox.Name = "CelestialSmallButtonsBox"
 SmallButtonsBox.Size = UDim2.new(0, 380, 0, 380) -- square
 SmallButtonsBox.Position = UDim2.new(0.5, -190, 0, 60)
-SmallButtonsBox.BackgroundColor3 = Color3.fromRGB(14, 14, 18)
+SmallButtonsBox.BackgroundColor3 = Color3.fromRGB(255, 250, 235)
 SmallButtonsBox.BackgroundTransparency = 0.08
 SmallButtonsBox.BorderSizePixel = 0
 SmallButtonsBox.Active = true
@@ -1610,9 +1622,9 @@ do
     local boxGrad = Instance.new("UIGradient")
     boxGrad.Rotation = 125
     boxGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(28, 24, 14)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(14, 14, 18)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(32, 26, 12)),
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 244, 204)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 235, 170)),
     })
     boxGrad.Parent = SmallButtonsBox
 
@@ -1660,7 +1672,7 @@ local function createSmallGUI(name, yPosition)
     SmallGUI.Name = "Small"..name.."GUI"
     SmallGUI.Size = UDim2.new(0, 80, 0, 30)
     SmallGUI.Position = UDim2.new(0, 0, 0, yPosition)
-    SmallGUI.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
+    SmallGUI.BackgroundColor3 = Color3.fromRGB(255, 248, 224)
     SmallGUI.BackgroundTransparency = 0.05
     SmallGUI.BorderSizePixel = 0
     SmallGUI.Visible = false
@@ -1677,9 +1689,9 @@ local function createSmallGUI(name, yPosition)
     BgGrad.Name = "CelestialBg"
     BgGrad.Rotation = 110
     BgGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(44, 36, 14)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(20, 20, 26)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(44, 36, 14)),
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 244, 204)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 235, 170)),
     })
     BgGrad.Parent = SmallGUI
 
@@ -1720,7 +1732,7 @@ local function createSmallGUI(name, yPosition)
     local GreenDot = Instance.new("Frame")
     GreenDot.Size = UDim2.new(0, 8, 0, 8)
     GreenDot.Position = UDim2.new(0, 6, 0.5, -4)
-    GreenDot.BackgroundColor3 = Color3.fromRGB(90, 90, 100)
+    GreenDot.BackgroundColor3 = Color3.fromRGB(190, 160, 80)
     GreenDot.BorderSizePixel = 0
     GreenDot.ZIndex = 53
     GreenDot.Parent = SmallGUI
@@ -1740,7 +1752,7 @@ local function createSmallGUI(name, yPosition)
     Label.Position = UDim2.new(0, 20, 0, 0)
     Label.BackgroundTransparency = 1
     Label.Text = name
-    Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Label.TextColor3 = Color3.fromRGB(176, 132, 32)
     Label.Font = Enum.Font.GothamBold
     Label.TextSize = 11
     Label.TextXAlignment = Enum.TextXAlignment.Left
@@ -3550,8 +3562,16 @@ local function initializeGUI(device)
     createAutoButtons(device)
     createRightButtons(device)
 
-    -- Apply dark semi-transparent style and rounded corners to all UI
+    -- Apply Celestial white/gold style and square button boxes to all UI
     applyWhiteHalfStyle()
+    if not ThemeRefreshStarted then
+        ThemeRefreshStarted = true
+        task.spawn(function()
+            while task.wait(0.8) do
+                pcall(applyWhiteHalfStyle)
+            end
+        end)
+    end
 
     -- ✅ AUTO-LOAD CONFIG ON START!
     if ConfigData.speedEnabled then
