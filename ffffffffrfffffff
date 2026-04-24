@@ -42,6 +42,7 @@ player.CharacterAdded:Connect(setupCharacter)
 -- ═══════════════════════════════════════════════════════
 
 local CONFIG_FILE = "celestialhub_config.json"
+local LEGACY_CONFIG_FILE = "timcheeseduels_config.json"
 
 local ConfigData = {
     speedEnabled = false,
@@ -93,15 +94,20 @@ local function SaveConfig()
 end
 
 local function LoadConfig()
-    if readfile and isfile and isfile(CONFIG_FILE) then
-        local success, data = pcall(function()
-            return HttpService:JSONDecode(readfile(CONFIG_FILE))
-        end)
-        if success and data then
-            ConfigData = data
-            buttonsLocked = ConfigData.buttonsLocked or false
-            print("[CELESTIAL HUB] ✅ Config loaded!")
-            return true
+    if readfile and isfile then
+        local candidates = {CONFIG_FILE, LEGACY_CONFIG_FILE}
+        for _, cfg in ipairs(candidates) do
+            if isfile(cfg) then
+                local success, data = pcall(function()
+                    return HttpService:JSONDecode(readfile(cfg))
+                end)
+                if success and data then
+                    ConfigData = data
+                    buttonsLocked = ConfigData.buttonsLocked or false
+                    print("[CELESTIAL HUB] ✅ Config loaded!")
+                    return true
+                end
+            end
         end
     end
     return false
@@ -1412,7 +1418,6 @@ ScreenGui.Parent = PlayerGui
 local GOLD_COLOR = Color3.fromRGB(255, 215, 0)
 local GOLD_DEEP = Color3.fromRGB(212, 175, 55)
 local GOLD_LIGHT = Color3.fromRGB(255, 236, 140)
-local ThemeRefreshStarted = false
 local function startRainbowOutline()
     task.spawn(function()
         while task.wait(0.05) do
@@ -1456,13 +1461,10 @@ local function applyWhiteHalfStyle()
             -- no-op
         elseif v:IsA("TextButton") or v:IsA("TextBox") or (v:IsA("Frame") and (name == "MainFrame" or name:match("GUI$") or name:match("^Small"))) or name == "StealBarContainer" then
             pcall(function()
-                v.BackgroundColor3 = Color3.fromRGB(255, 250, 235)
-                v.BackgroundTransparency = 0.08
+                v.BackgroundColor3 = Color3.fromRGB(255, 248, 232)
+                v.BackgroundTransparency = 0.12
                 if v:IsA("TextBox") then
-                    v.TextColor3 = Color3.fromRGB(212, 175, 55)
-                elseif v:IsA("TextButton") then
-                    v.TextColor3 = Color3.fromRGB(184, 134, 11)
-                    v.AutoButtonColor = false
+                    v.TextColor3 = GOLD_DEEP
                 end
 
                 -- Remove old strokes
@@ -1515,32 +1517,24 @@ local function applyWhiteHalfStyle()
                     bgGrad.Name = "CelestialBg"
                     bgGrad.Rotation = 115
                     bgGrad.Color = ColorSequence.new({
-                        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-                        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 244, 204)),
-                        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 235, 170)),
+                        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 252, 242)),
+                        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 243, 205)),
+                        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 249, 232)),
                     })
                     bgGrad.Parent = v
                 end
 
-                -- Square button boxes + softer frames
+                -- Rounded corners
                 local hasCorner = false
                 for _, c in pairs(v:GetChildren()) do
                     if c:IsA("UICorner") then
-                        if v:IsA("TextButton") then
-                            c.CornerRadius = UDim.new(0, 0)
-                        else
-                            c.CornerRadius = UDim.new(0, 6)
-                        end
+                        c.CornerRadius = UDim.new(0, 10)
                         hasCorner = true
                     end
                 end
                 if not hasCorner then
                     local corner = Instance.new("UICorner")
-                    if v:IsA("TextButton") then
-                        corner.CornerRadius = UDim.new(0, 0)
-                    else
-                        corner.CornerRadius = UDim.new(0, 6)
-                    end
+                    corner.CornerRadius = UDim.new(0, 10)
                     corner.Parent = v
                 end
 
@@ -1551,6 +1545,80 @@ local function applyWhiteHalfStyle()
         end
     end
 end
+
+local function ensureStroke(parent, name, color, thickness, transparency)
+    local stroke = parent:FindFirstChild(name)
+    if not (stroke and stroke:IsA("UIStroke")) then
+        stroke = Instance.new("UIStroke")
+        stroke.Name = name
+        stroke.Parent = parent
+    end
+    stroke.Color = color
+    stroke.Thickness = thickness
+    stroke.Transparency = transparency
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    return stroke
+end
+
+local function enforceCelestialButtonTheme()
+    for _, v in pairs(ScreenGui:GetDescendants()) do
+        if v:IsA("TextLabel") or v:IsA("TextButton") then
+            local txt = tostring(v.Text or "")
+            if txt:lower():find("tim cheese") then
+                v.Text = txt:gsub("[Tt][Ii][Mm]%s*[Cc][Hh][Ee][Ee][Ss][Ee]", "CELESTIAL HUB")
+            end
+        end
+
+        if v:IsA("TextButton") then
+            local skip = false
+            pcall(function()
+                if v.GetAttribute and v:GetAttribute("CelestialSkipStyle") == true then
+                    skip = true
+                end
+            end)
+
+            if not skip then
+                v.BackgroundColor3 = Color3.fromRGB(255, 248, 232)
+                v.BackgroundTransparency = 0.08
+                v.TextColor3 = GOLD_DEEP
+                v.TextStrokeTransparency = 0.85
+
+                local corner = v:FindFirstChildOfClass("UICorner") or Instance.new("UICorner")
+                corner.CornerRadius = UDim.new(0, 4)
+                corner.Parent = v
+
+                local grad = v:FindFirstChild("CelestialButtonBg")
+                if not (grad and grad:IsA("UIGradient")) then
+                    grad = Instance.new("UIGradient")
+                    grad.Name = "CelestialButtonBg"
+                    grad.Parent = v
+                end
+                grad.Rotation = 120
+                grad.Color = ColorSequence.new({
+                    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+                    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 236, 182)),
+                    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 246, 216)),
+                })
+
+                ensureStroke(v, "CelestialGoldStroke", GOLD_DEEP, 2, 0)
+                ensureStroke(v, "CelestialWhiteStroke", Color3.fromRGB(255, 255, 255), 1, 0.35)
+            end
+        elseif v:IsA("Frame") and v.Name:lower():find("dot") then
+            local c = v.BackgroundColor3
+            if c.G > c.R and c.G > c.B then
+                v.BackgroundColor3 = GOLD_COLOR
+            elseif c.R < 0.6 and c.G < 0.6 and c.B < 0.6 then
+                v.BackgroundColor3 = Color3.fromRGB(245, 245, 245)
+            end
+        end
+    end
+end
+
+task.spawn(function()
+    while task.wait(0.35) do
+        pcall(enforceCelestialButtonTheme)
+    end
+end)
 
 -- Ensure enabled / green GUIs are always in front (periodic check)
 local function bringEnabledToFront()
@@ -1592,8 +1660,8 @@ local SmallButtonsBox = Instance.new("Frame")
 SmallButtonsBox.Name = "CelestialSmallButtonsBox"
 SmallButtonsBox.Size = UDim2.new(0, 380, 0, 380) -- square
 SmallButtonsBox.Position = UDim2.new(0.5, -190, 0, 60)
-SmallButtonsBox.BackgroundColor3 = Color3.fromRGB(255, 250, 235)
-SmallButtonsBox.BackgroundTransparency = 0.08
+SmallButtonsBox.BackgroundColor3 = Color3.fromRGB(255, 250, 236)
+SmallButtonsBox.BackgroundTransparency = 0.12
 SmallButtonsBox.BorderSizePixel = 0
 SmallButtonsBox.Active = true
 SmallButtonsBox.Draggable = true
@@ -1602,7 +1670,7 @@ SmallButtonsBox.Parent = ScreenGui
 
 do
     local boxCorner = Instance.new("UICorner")
-    boxCorner.CornerRadius = UDim.new(0, 16)
+    boxCorner.CornerRadius = UDim.new(0, 4)
     boxCorner.Parent = SmallButtonsBox
 
     local boxStrokeGold = Instance.new("UIStroke")
@@ -1622,9 +1690,9 @@ do
     local boxGrad = Instance.new("UIGradient")
     boxGrad.Rotation = 125
     boxGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 244, 204)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 235, 170)),
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 246)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 245, 216)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 252, 238)),
     })
     boxGrad.Parent = SmallButtonsBox
 
@@ -1670,10 +1738,10 @@ end
 local function createSmallGUI(name, yPosition)
     local SmallGUI = Instance.new("Frame")
     SmallGUI.Name = "Small"..name.."GUI"
-    SmallGUI.Size = UDim2.new(0, 80, 0, 30)
+    SmallGUI.Size = UDim2.new(0, 106, 0, 74)
     SmallGUI.Position = UDim2.new(0, 0, 0, yPosition)
-    SmallGUI.BackgroundColor3 = Color3.fromRGB(255, 248, 224)
-    SmallGUI.BackgroundTransparency = 0.05
+    SmallGUI.BackgroundColor3 = Color3.fromRGB(255, 248, 232)
+    SmallGUI.BackgroundTransparency = 0.08
     SmallGUI.BorderSizePixel = 0
     SmallGUI.Visible = false
     SmallGUI.Active = true
@@ -1681,7 +1749,7 @@ local function createSmallGUI(name, yPosition)
     SmallGUI.Parent = SmallButtonsBox
 
     local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 10)
+    Corner.CornerRadius = UDim.new(0, 4)
     Corner.Parent = SmallGUI
 
     -- Gold background sheen
@@ -1689,9 +1757,9 @@ local function createSmallGUI(name, yPosition)
     BgGrad.Name = "CelestialBg"
     BgGrad.Rotation = 110
     BgGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 244, 204)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 235, 170)),
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 248)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 242, 204)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 250, 230)),
     })
     BgGrad.Parent = SmallGUI
 
@@ -1732,7 +1800,7 @@ local function createSmallGUI(name, yPosition)
     local GreenDot = Instance.new("Frame")
     GreenDot.Size = UDim2.new(0, 8, 0, 8)
     GreenDot.Position = UDim2.new(0, 6, 0.5, -4)
-    GreenDot.BackgroundColor3 = Color3.fromRGB(190, 160, 80)
+    GreenDot.BackgroundColor3 = Color3.fromRGB(90, 90, 100)
     GreenDot.BorderSizePixel = 0
     GreenDot.ZIndex = 53
     GreenDot.Parent = SmallGUI
@@ -1752,10 +1820,10 @@ local function createSmallGUI(name, yPosition)
     Label.Position = UDim2.new(0, 20, 0, 0)
     Label.BackgroundTransparency = 1
     Label.Text = name
-    Label.TextColor3 = Color3.fromRGB(176, 132, 32)
+    Label.TextColor3 = GOLD_DEEP
     Label.Font = Enum.Font.GothamBold
-    Label.TextSize = 11
-    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.TextSize = 12
+    Label.TextXAlignment = Enum.TextXAlignment.Center
     Label.ZIndex = 53
     Label.Parent = SmallGUI
 
@@ -1770,7 +1838,7 @@ local function createSmallGUI(name, yPosition)
     -- ✅ CLICK BUTTON (gold lightning, right side)
     local Button = Instance.new("TextButton")
     Button.Size = UDim2.new(0, 22, 1, 0)
-    Button.Position = UDim2.new(1, -22, 0, 0)
+    Button.Position = UDim2.new(1, -24, 0, 0)
     Button.BackgroundTransparency = 1
     Button.Text = "⚡"
     Button.TextColor3 = Color3.fromRGB(255, 215, 0)
@@ -3562,16 +3630,9 @@ local function initializeGUI(device)
     createAutoButtons(device)
     createRightButtons(device)
 
-    -- Apply Celestial white/gold style and square button boxes to all UI
+    -- Apply dark semi-transparent style and rounded corners to all UI
     applyWhiteHalfStyle()
-    if not ThemeRefreshStarted then
-        ThemeRefreshStarted = true
-        task.spawn(function()
-            while task.wait(0.8) do
-                pcall(applyWhiteHalfStyle)
-            end
-        end)
-    end
+    enforceCelestialButtonTheme()
 
     -- ✅ AUTO-LOAD CONFIG ON START!
     if ConfigData.speedEnabled then
