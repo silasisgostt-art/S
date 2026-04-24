@@ -29,13 +29,13 @@ local hrp
 local hum
 
 local THEME = {
-    BG = Color3.fromRGB(255, 255, 255),
-    PANEL = Color3.fromRGB(255, 255, 255),
-    PINK = Color3.fromRGB(255, 203, 92),
+    BG = Color3.fromRGB(255, 196, 230),
+    PANEL = Color3.fromRGB(255, 236, 246),
+    PINK = Color3.fromRGB(255, 115, 198),
     GOLD = Color3.fromRGB(255, 203, 92),
-    TEXT = Color3.fromRGB(30, 30, 30),
-    OFF = Color3.fromRGB(245, 245, 245),
-    ON = Color3.fromRGB(255, 225, 140),
+    TEXT = Color3.fromRGB(255, 115, 198),
+    OFF = Color3.fromRGB(255, 226, 241),
+    ON = Color3.fromRGB(255, 190, 226),
 }
 
 local function setupCharacter(char)
@@ -1403,9 +1403,9 @@ end
 
 local selectedDevice = nil
 local GUI_SIZES = {
-    PC = {Width = 460, Height = 340},
-    iPad = {Width = 380, Height = 320},
-    iPhone = {Width = 240, Height = 320}
+    PC = {Width = 430, Height = 300},
+    iPad = {Width = 340, Height = 280},
+    iPhone = {Width = 220, Height = 280}
 }
 
 -- ═══════════════════════════════════════════════════════
@@ -1451,6 +1451,9 @@ local function applyWhiteHalfStyle()
                 v.BackgroundColor3 = THEME.PANEL
                 v.BackgroundTransparency = 0
                 if v:IsA("TextBox") then
+                    v.TextColor3 = THEME.TEXT
+                end
+                if v:IsA("TextButton") then
                     v.TextColor3 = THEME.TEXT
                 end
 
@@ -1520,6 +1523,19 @@ local function applyWhiteHalfStyle()
         end
     end
 end
+
+local function enforcePinkButtonText()
+    task.spawn(function()
+        while task.wait(0.25) do
+            for _, v in pairs(ScreenGui:GetDescendants()) do
+                if v:IsA("TextButton") then
+                    v.TextColor3 = THEME.TEXT
+                end
+            end
+        end
+    end)
+end
+enforcePinkButtonText()
 
 -- Ensure enabled / green GUIs are always in front (periodic check)
 local function bringEnabledToFront()
@@ -2628,7 +2644,7 @@ local function createMainGUI(device)
     LogoIcon.Size = UDim2.new(0, 40, 0, 40)
     LogoIcon.Position = UDim2.new(0, 10, 0.5, -20)
     LogoIcon.BackgroundTransparency = 1
-    LogoIcon.Text = "🧀"
+    LogoIcon.Text = "⭐"
     LogoIcon.TextSize = logoSize
     LogoIcon.Font = Enum.Font.GothamBold
     LogoIcon.Parent = Header
@@ -2718,9 +2734,7 @@ local function createMainGUI(device)
     end
 
     local MainTab = createTab("🛡️", "FEATURES", 1)
-    local MISCTab = createTab("🎯", "AIMBOT", 2)
-    local SettingsTab = createTab("⚙️", "SETTINGS", 3)
-    local CreditsTab = createTab("⭐", "INFO", 4)
+    local SettingsTab = createTab("⚙️", "SETTINGS", 2)
 
     local ContentContainer = Instance.new("Frame")
     ContentContainer.Size = UDim2.new(1, -sidebarWidth - 20, 1, -70)
@@ -2781,9 +2795,7 @@ local function createMainGUI(device)
     end
 
     MainTab.MouseButton1Click:Connect(function() switchTab("FEATURES") end)
-    MISCTab.MouseButton1Click:Connect(function() switchTab("AIMBOT") end)
     SettingsTab.MouseButton1Click:Connect(function() switchTab("SETTINGS") end)
-    CreditsTab.MouseButton1Click:Connect(function() switchTab("INFO") end)
 
     switchTab("FEATURES")
 
@@ -2879,8 +2891,8 @@ local function createMainGUI(device)
     SpeedSettingsGUI.BackgroundTransparency = 0.08
     SpeedSettingsGUI.BorderSizePixel = 0
     SpeedSettingsGUI.Visible = false
-    SpeedSettingsGUI.Active = true
-    SpeedSettingsGUI.Draggable = true
+    SpeedSettingsGUI.Active = false
+    SpeedSettingsGUI.Draggable = false
     SpeedSettingsGUI.ClipsDescendants = true
     SpeedSettingsGUI.Parent = ScreenGui
 
@@ -2914,7 +2926,7 @@ local function createMainGUI(device)
     local HeaderButton = Instance.new("TextButton", SpeedSettingsGUI)
     HeaderButton.Size = UDim2.new(1, 0, 0, 30)
     HeaderButton.BackgroundTransparency = 1
-    HeaderButton.Text = "SPEED SETUP"
+    HeaderButton.Text = "SPEED BOOSTER"
     HeaderButton.TextColor3 = THEME.GOLD
     HeaderButton.Font = Enum.Font.GothamBold
     HeaderButton.TextSize = 12
