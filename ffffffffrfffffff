@@ -1,14 +1,14 @@
 -- Celestial Hub
 
 --[[
-══════════════════════════════════════════════════════════════
+--------------------------------------------------------------
                 Celestial Hub
-══════════════════════════════════════════════════════════════
-✅ Speed, Unwalk, Inf Jump, Ragdoll TP, Drop Brainrot
-✅ FPS, Optimizer, Hitbox, auto buttons, right-side controls
-✅ Draggable small GUI buttons
-✅ Config auto-loads on join
-══════════════════════════════════════════════════════════════
+--------------------------------------------------------------
+? Speed, Unwalk, Inf Jump, Ragdoll TP, Drop Brainrot
+? FPS, Optimizer, Hitbox, auto buttons, right-side controls
+? Draggable small GUI buttons
+? Config auto-loads on join
+--------------------------------------------------------------
 ]]
 
 repeat task.wait() until game:IsLoaded()
@@ -37,9 +37,9 @@ end
 if player.Character then setupCharacter(player.Character) end
 player.CharacterAdded:Connect(setupCharacter)
 
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
 -- CONFIG SAVE/LOAD SYSTEM (AUTO-LOADS!)
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
 
 local CONFIG_FILE = "timcheeseduels_config.json"
 
@@ -80,14 +80,14 @@ local function SaveConfig()
             writefile(CONFIG_FILE, HttpService:JSONEncode(ConfigData))
         end)
         if success then
-            print("[TIM CHEESE DUELS] ✅ Config saved!")
+            print("[TIM CHEESE DUELS] ? Config saved!")
             return true
         else
-            warn("[TIM CHEESE DUELS] ❌ Save failed:", err)
+            warn("[TIM CHEESE DUELS] ? Save failed:", err)
             return false
         end
     else
-        warn("[TIM CHEESE DUELS] ⚠️ writefile not available")
+        warn("[TIM CHEESE DUELS] ?? writefile not available")
         return false
     end
 end
@@ -100,20 +100,20 @@ local function LoadConfig()
         if success and data then
             ConfigData = data
             buttonsLocked = ConfigData.buttonsLocked or false
-            print("[TIM CHEESE DUELS] ✅ Config loaded!")
+            print("[TIM CHEESE DUELS] ? Config loaded!")
             return true
         end
     end
     return false
 end
 
--- ✅ LOAD CONFIG ON START!
+-- ? LOAD CONFIG ON START!
 LoadConfig()
 buttonsLocked = ConfigData.buttonsLocked or false
 
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
 -- SPEED BOOSTER (EXACT 57.9/29.6/25.8 - CONNECTED!)
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
 
 SpeedBooster = {
     Enabled = ConfigData.speedEnabled or false,
@@ -173,9 +173,9 @@ local function stopSpeedBooster()
     if SpeedBooster.JumpConn then SpeedBooster.JumpConn:Disconnect() SpeedBooster.JumpConn = nil end
 end
 
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
 -- AUTO PLAY PATH SYSTEM (EXACT FROM YESTERDAY!)
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
 
 local pathActive = false
 local lastFlatVel = Vector3.zero
@@ -348,9 +348,9 @@ local function stopStealPath()
     if hrpLocal then hrpLocal.AssemblyLinearVelocity = Vector3.zero end
 end
 
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
 -- UNWALK
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
 
 local UnwalkEnabled = false
 local savedAnimate = nil
@@ -380,9 +380,9 @@ local function stopUnwalk()
     end
 end
 
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
 -- SPIN BOT
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
 
 local SpinBotEnabled = false
 local spinBAV = nil
@@ -421,9 +421,9 @@ local function stopSpinBot()
     cleanupSpinBot()
 end
 
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
 -- INF JUMP
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
 
 local InfJumpEnabled = false
 local INF_JUMP_POWER = 50
@@ -457,9 +457,9 @@ local function stopInfJump()
     end
 end
 
--- ═══════════════════════════════════════════════════════
--- ✅ FOV SYSTEM (MAX 120 - ACTUALLY WORKS NOW!)
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
+-- ? FOV SYSTEM (MAX 120 - ACTUALLY WORKS NOW!)
+-- -------------------------------------------------------
 
 fovValue = ConfigData.fovValue or 120
 fovEnabled = ConfigData.fovEnabled or false
@@ -468,10 +468,10 @@ local camera = workspace.CurrentCamera
 
 local function updateFOV()
     if fovEnabled then
-        -- ✅ DIRECT CAMERA FOV UPDATE - THIS ACTUALLY WORKS!
+        -- ? DIRECT CAMERA FOV UPDATE - THIS ACTUALLY WORKS!
         camera.FieldOfView = fovValue
         
-        -- ✅ LOCK IT IN PLACE WITH RENDERSTEP
+        -- ? LOCK IT IN PLACE WITH RENDERSTEP
         if not fovConnection then
             fovConnection = RunService.RenderStepped:Connect(function()
                 if fovEnabled and camera then
@@ -480,7 +480,7 @@ local function updateFOV()
             end)
         end
     else
-        -- ✅ DISCONNECT AND RESET
+        -- ? DISCONNECT AND RESET
         if fovConnection then 
             fovConnection:Disconnect() 
             fovConnection = nil 
@@ -489,9 +489,9 @@ local function updateFOV()
     end
 end
 
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
 -- INSTA STEAL (ALWAYS ON - 0.2s DURATION)
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
 
 InstaSteal = {
     Radius = ConfigData.stealRadius or 9,
@@ -695,7 +695,7 @@ local function executeInternalStealAsync(prompt)
         end
         
         local startTime = tick()
-        local duration = 0.2 -- ✅ 0.2 seconds!
+        local duration = 0.2 -- ? 0.2 seconds!
         
         while tick() - startTime < duration do
             local progress = (tick() - startTime) / duration
@@ -754,11 +754,11 @@ local function autoStealLoop()
 end
 
 initializeScanner()
-autoStealLoop() -- ✅ STARTS IMMEDIATELY!
+autoStealLoop() -- ? STARTS IMMEDIATELY!
 
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
 -- FPS BOOSTER, OPTIMIZER, HITBOX, ANTI DEATH/RAGDOLL, FLOAT
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
 
 local fpsBoosterActive = false
 
@@ -960,9 +960,9 @@ local function disableAntiRagdoll()
     AntiRagdollConns = {}
 end
 
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
 -- RAGDOLL TP
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
 
 local RAGDOLL_COORDS = {
     right = {
@@ -1059,9 +1059,9 @@ if player.Character then
     RagdollTP.currentHumanoid = player.Character:FindFirstChildOfClass("Humanoid")
 end
 
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
 -- DROP BRAINROT
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
 
 local dropBusy = false
 local FLOAT_DROP_HEIGHT = 20
@@ -1157,9 +1157,9 @@ local function stopFloat()
     end
 end
 
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
 -- TRACK PLAYER (BAT AIMBOT)
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
 
 -- IMPROVED BAT AIMBOT (restored original follow, better TP up/down prediction)
 local batAimbotToggled = false
@@ -1290,7 +1290,7 @@ RunService.Heartbeat:Connect(function()
         predictedPos = predictedPos + Vector3.new(0, targetHum.Jump and 4 or 2, 0)
     end
 
-    -- ✅ SPLIT HORIZONTAL + VERTICAL TRACKING (tracks up/down properly!)
+    -- ? SPLIT HORIZONTAL + VERTICAL TRACKING (tracks up/down properly!)
     -- Horizontal: move toward target XZ at full speed
     local hrpPos = hrp.Position
     local xzDir = Vector3.new(predictedPos.X - hrpPos.X, 0, predictedPos.Z - hrpPos.Z)
@@ -1318,9 +1318,9 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
 -- HIT CIRCLE
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
 
 local hitCircleEnabled = false
 local hitCircleConn = nil
@@ -1387,9 +1387,9 @@ local function stopHitCircle()
     end
 end
 
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
 -- GUI SIZES
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
 
 local selectedDevice = nil
 local GUI_SIZES = {
@@ -1398,9 +1398,9 @@ local GUI_SIZES = {
     iPhone = {Width = 260, Height = 360}
 }
 
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
 -- MAIN SCREENGUI
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "CelestialHubGUI"
@@ -1439,7 +1439,7 @@ local function applyWhiteHalfStyle()
 
         if v:IsA("TextButton") or v:IsA("TextBox") or (v:IsA("Frame") and (name == "MainFrame" or name:match("GUI$") or name:match("^Small"))) or name == "StealBarContainer" then
             pcall(function()
-                v.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+                v.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
                 v.BackgroundTransparency = 0
                 if v:IsA("TextBox") then
                     v.TextColor3 = Color3.fromRGB(220, 220, 220)
@@ -1452,7 +1452,7 @@ local function applyWhiteHalfStyle()
 
                 -- Gold base stroke
                 local blackStroke = Instance.new("UIStroke")
-                blackStroke.Color = Color3.fromRGB(255, 200, 0)
+                blackStroke.Color = Color3.fromRGB(0, 0, 0)
                 blackStroke.Thickness = 4
                 blackStroke.Transparency = 0
                 blackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -1460,7 +1460,7 @@ local function applyWhiteHalfStyle()
 
                 -- Gold animated wave stroke
                 local waveStroke = Instance.new("UIStroke")
-                waveStroke.Color = Color3.fromRGB(255, 230, 80)
+                waveStroke.Color = Color3.fromRGB(255, 255, 255)
                 waveStroke.Thickness = 2.5
                 waveStroke.Transparency = 0.35
                 waveStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -1468,7 +1468,7 @@ local function applyWhiteHalfStyle()
                 waveStroke.Parent = v
 
                 local waveGrad = Instance.new("UIGradient")
-                waveGrad.Color = ColorSequence.new(Color3.fromRGB(255, 230, 80))
+                waveGrad.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
                 waveGrad.Transparency = NumberSequence.new({
                     NumberSequenceKeypoint.new(0, 1),
                     NumberSequenceKeypoint.new(0.4, 0),
@@ -1514,8 +1514,8 @@ local function bringEnabledToFront()
         local ok, bg = pcall(function() return v.BackgroundColor3 end)
         if ok and bg then
             local r,g,b = bg.R, bg.G, bg.B
-            -- check for green-ish backgrounds used for enabled state
-            if g > 0.6 and r < 0.4 then
+            -- check for silver-ish backgrounds used for enabled state
+            if math.abs(r - g) < 0.08 and math.abs(g - b) < 0.08 and r > 0.65 then
                 pcall(function()
                     v.Parent = ScreenGui
                     if v:IsA("GuiObject") then
@@ -1533,9 +1533,9 @@ task.spawn(function()
     end
 end)
 
--- ═══════════════════════════════════════════════════════
--- ✅ SMALL GUI CREATOR WITH GREEN DOT!
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
+-- ? SMALL GUI CREATOR WITH GREEN DOT!
+-- -------------------------------------------------------
 
 local SmallGUIInstances = {}
 
@@ -1544,12 +1544,12 @@ local function createSmallGUI(name, yPosition)
     SmallGUI.Name = "Small"..name.."GUI"
     SmallGUI.Size = UDim2.new(0, 80, 0, 20) -- Smaller width and height
     SmallGUI.Position = UDim2.new(0.5, -40, 0, yPosition)
-    SmallGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    SmallGUI.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
     SmallGUI.BackgroundTransparency = 0
     SmallGUI.BorderSizePixel = 0
     SmallGUI.Visible = false
     SmallGUI.Active = true
-    SmallGUI.Draggable = true  -- ✅ DRAGGABLE!
+    SmallGUI.Draggable = true  -- ? DRAGGABLE!
     SmallGUI.Parent = ScreenGui
 
     local Corner = Instance.new("UICorner")
@@ -1557,13 +1557,13 @@ local function createSmallGUI(name, yPosition)
     Corner.Parent = SmallGUI
 
     local Stroke = Instance.new("UIStroke")
-    Stroke.Color = Color3.fromRGB(255, 200, 0)
+    Stroke.Color = Color3.fromRGB(0, 0, 0)
     Stroke.Thickness = 4
     Stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     Stroke.Parent = SmallGUI
 
     local WaveStroke = Instance.new("UIStroke")
-    WaveStroke.Color = Color3.fromRGB(255, 230, 80)
+    WaveStroke.Color = Color3.fromRGB(255, 255, 255)
     WaveStroke.Thickness = 2.5
     WaveStroke.Transparency = 0.35
     WaveStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -1571,7 +1571,7 @@ local function createSmallGUI(name, yPosition)
     WaveStroke.Parent = SmallGUI
 
     local WaveGrad = Instance.new("UIGradient")
-    WaveGrad.Color = ColorSequence.new(Color3.fromRGB(255, 230, 80))
+    WaveGrad.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
     WaveGrad.Transparency = NumberSequence.new({
         NumberSequenceKeypoint.new(0, 1),
         NumberSequenceKeypoint.new(0.4, 0),
@@ -1587,11 +1587,11 @@ local function createSmallGUI(name, yPosition)
         pcall(function() WaveGrad.Rotation = (WaveGrad.Rotation + 140 * dt) % 360 end)
     end)
 
-    -- ✅ GREEN DOT!
+    -- ? GREEN DOT!
     local GreenDot = Instance.new("Frame")
     GreenDot.Size = UDim2.new(0, 7, 0, 7)
     GreenDot.Position = UDim2.new(0, 5, 0.5, -3)
-    GreenDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100) -- GRAY by default
+    GreenDot.BackgroundColor3 = Color3.fromRGB(255, 200, 0) -- GRAY by default
     GreenDot.BorderSizePixel = 0
     GreenDot.Parent = SmallGUI
 
@@ -1610,12 +1610,12 @@ local function createSmallGUI(name, yPosition)
     Label.TextXAlignment = Enum.TextXAlignment.Left
     Label.Parent = SmallGUI
 
-    -- ✅ CLICK BUTTON (smaller, on right side only - doesn't block dragging!)
+    -- ? CLICK BUTTON (smaller, on right side only - doesn't block dragging!)
     local Button = Instance.new("TextButton")
     Button.Size = UDim2.new(0, 20, 1, 0)
     Button.Position = UDim2.new(1, -20, 0, 0)
     Button.BackgroundTransparency = 1
-    Button.Text = "⚡"
+    Button.Text = "?"
     Button.TextColor3 = Color3.fromRGB(220, 220, 220)
     Button.Font = Enum.Font.GothamBold
     Button.TextSize = 12 -- Smaller icon
@@ -1650,9 +1650,9 @@ local function refreshSmallButtonPositions()
         end
     end
 
-    local columns = 5
+    local rows = 2
+    local columns = math.max(1, math.ceil(#visibleFrames / rows))
     local buttonHeight = 30
-    local rows = 3
     local gapX = 8
     local gapY = 8
     local topPadding = 8
@@ -1684,22 +1684,22 @@ local function refreshSmallButtonPositions()
     end
 end
 
--- ✅ CREATE ALL SMALL GUIs WITH GREEN DOTS!
+-- ? CREATE ALL SMALL GUIs WITH GREEN DOTS!
 local SmallSpeedGUI, SmallSpeedButton, SpeedDot = createSmallGUI("Speed", 100)
 local SmallUnwalkGUI, SmallUnwalkButton, UnwalkDot = createSmallGUI("Unwalk", 145)
 local SmallSpinBotGUI, SmallSpinBotButton, SpinDot = createSmallGUI("Spin Bot", 190)
 local SmallInfJumpGUI, SmallInfJumpButton, InfJumpDot = createSmallGUI("Inf Jump", 235)
 local SmallFloatGUI, SmallFloatButton, FloatDot = createSmallGUI("Float Up", 280)
 local SmallFOVGUI, SmallFOVButton, FOVDot = createSmallGUI("FOV", 325)
-local SmallAntiRagGUI, SmallAntiRagButton, AntiRagDot = createSmallGUI("Anti Ragdoll", 370) -- ✅ Standalone!
-local SmallRagdollTPGUI, SmallRagdollTPButton, RagdollTPDot = createSmallGUI("Ragdoll TP", 415) -- ✅ NEW!
-local SmallDropGUI, SmallDropButton, DropDot = createSmallGUI("Drop Brainrot", 460) -- ✅ NEW!
+local SmallAntiRagGUI, SmallAntiRagButton, AntiRagDot = createSmallGUI("Anti Ragdoll", 370) -- ? Standalone!
+local SmallRagdollTPGUI, SmallRagdollTPButton, RagdollTPDot = createSmallGUI("Ragdoll TP", 415) -- ? NEW!
+local SmallDropGUI, SmallDropButton, DropDot = createSmallGUI("Drop Brainrot", 460) -- ? NEW!
 SmallTPDownGUI, SmallTPDownButton, TPDownDot = createSmallGUI("TP Down", 505)
 SmallTPUpGUI, SmallTPUpButton, TPUpDot = createSmallGUI("TP Up", 550)
 
--- ═══════════════════════════════════════════════════════
--- ✅ BUTTONS TASK GUI (master + per-button on/off list)
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
+-- ? BUTTONS TASK GUI (master + per-button on/off list)
+-- -------------------------------------------------------
 do
     local buttonItems = {
         {name = "Speed", gui = SmallSpeedGUI},
@@ -1729,7 +1729,7 @@ do
 
     local function styleToggle(toggleButton, isEnabled)
         toggleButton.Text = isEnabled and "ON" or "OFF"
-        toggleButton.BackgroundColor3 = isEnabled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(180, 50, 50)
+        toggleButton.BackgroundColor3 = isEnabled and Color3.fromRGB(192, 192, 192) or Color3.fromRGB(255, 200, 0)
     end
 
     local BTaskGui = Instance.new("ScreenGui")
@@ -1769,7 +1769,7 @@ do
     BTaskSettings.Size = UDim2.new(0, 22, 0, 22)
     BTaskSettings.Position = UDim2.new(1, -72, 0.5, -11)
     BTaskSettings.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    BTaskSettings.Text = "⋮"
+    BTaskSettings.Text = "?"
     BTaskSettings.TextColor3 = Color3.fromRGB(220, 220, 220)
     BTaskSettings.Font = Enum.Font.GothamBold
     BTaskSettings.TextSize = 14
@@ -1779,7 +1779,7 @@ do
     local BTaskToggle = Instance.new("TextButton")
     BTaskToggle.Size = UDim2.new(0, 38, 0, 22)
     BTaskToggle.Position = UDim2.new(1, -44, 0.5, -11)
-    BTaskToggle.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+    BTaskToggle.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
     BTaskToggle.Text = "ON"
     BTaskToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
     BTaskToggle.Font = Enum.Font.GothamBold
@@ -2033,7 +2033,7 @@ SpinBotScreenToggleCorner.Parent = SpinBotScreenToggle
 local function updateSpinBotScreenState()
     if SpinBotEnabled then
         SpinBotScreenToggle.Text = "STOP SPIN"
-        SpinBotScreenToggle.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        SpinBotScreenToggle.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
     else
         SpinBotScreenToggle.Text = "START SPIN"
         SpinBotScreenToggle.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
@@ -2048,75 +2048,75 @@ SpinBotScreenToggle.MouseButton1Click:Connect(function()
     SpinBotEnabled = not SpinBotEnabled
     if SpinBotEnabled then
         startSpinBot()
-        SmallSpinBotGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        SpinDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        SmallSpinBotGUI.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
+        SpinDot.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
     else
         stopSpinBot()
         SmallSpinBotGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        SpinDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        SpinDot.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
     end
     updateSpinBotScreenState()
 end)
 
 updateSpinBotScreenState()
 
--- ✅ SPEED SMALL GUI TOGGLE
+-- ? SPEED SMALL GUI TOGGLE
 SmallSpeedButton.MouseButton1Click:Connect(function()
     SpeedBooster.Enabled = not SpeedBooster.Enabled
     
     if SpeedBooster.Enabled then
-        SmallSpeedGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        SpeedDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0) -- ✅ GREEN DOT!
+        SmallSpeedGUI.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
+        SpeedDot.BackgroundColor3 = Color3.fromRGB(192, 192, 192) -- ? GREEN DOT!
         startSpeedBooster()
     else
         SmallSpeedGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        SpeedDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100) -- ✅ GRAY DOT!
+        SpeedDot.BackgroundColor3 = Color3.fromRGB(255, 200, 0) -- ? GRAY DOT!
         stopSpeedBooster()
     end
     SaveConfig()
 end)
 
--- ✅ UNWALK SMALL GUI TOGGLE
+-- ? UNWALK SMALL GUI TOGGLE
 SmallUnwalkButton.MouseButton1Click:Connect(function()
     UnwalkEnabled = not UnwalkEnabled
     
     if UnwalkEnabled then
-        SmallUnwalkGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        UnwalkDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        SmallUnwalkGUI.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
+        UnwalkDot.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
         startUnwalk()
     else
         SmallUnwalkGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        UnwalkDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        UnwalkDot.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
         stopUnwalk()
     end
 end)
 
--- ✅ SPIN BOT SMALL GUI TOGGLE
+-- ? SPIN BOT SMALL GUI TOGGLE
 SmallSpinBotButton.MouseButton1Click:Connect(function()
     SpinBotEnabled = not SpinBotEnabled
     if SpinBotEnabled then
-        SmallSpinBotGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        SpinDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        SmallSpinBotGUI.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
+        SpinDot.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
         startSpinBot()
     else
         SmallSpinBotGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        SpinDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        SpinDot.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
         stopSpinBot()
     end
 end)
 
--- ✅ TP DOWN SMALL GUI BUTTON
+-- ? TP DOWN SMALL GUI BUTTON
 SmallTPDownButton.MouseButton1Click:Connect(function()
     tpDownToGround()
     SaveConfig()
 end)
 
--- ✅ TP UP SMALL GUI TOGGLE
+-- ? TP UP SMALL GUI TOGGLE
 SmallTPUpButton.MouseButton1Click:Connect(function()
     TPUpEnabled = not TPUpEnabled
     if TPUpEnabled then
-        SmallTPUpGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        TPUpDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        SmallTPUpGUI.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
+        TPUpDot.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
         if TPUpJumpConn then TPUpJumpConn:Disconnect() TPUpJumpConn = nil end
         TPUpJumpConn = UserInputService.JumpRequest:Connect(function()
             if hrp then
@@ -2128,93 +2128,93 @@ SmallTPUpButton.MouseButton1Click:Connect(function()
         end)
     else
         SmallTPUpGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        TPUpDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        TPUpDot.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
         if TPUpJumpConn then TPUpJumpConn:Disconnect() TPUpJumpConn = nil end
     end
     SaveConfig()
     refreshSmallButtonPositions()
 end)
 
--- ✅ INF JUMP SMALL GUI TOGGLE
+-- ? INF JUMP SMALL GUI TOGGLE
 SmallInfJumpButton.MouseButton1Click:Connect(function()
     InfJumpEnabled = not InfJumpEnabled
     
     if InfJumpEnabled then
-        SmallInfJumpGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        InfJumpDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        SmallInfJumpGUI.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
+        InfJumpDot.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
         startInfJump()
     else
         SmallInfJumpGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        InfJumpDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        InfJumpDot.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
         stopInfJump()
     end
 end)
 
--- ✅ FLOAT UP SMALL GUI TOGGLE
+-- ? FLOAT UP SMALL GUI TOGGLE
 SmallFloatButton.MouseButton1Click:Connect(function()
     floatEnabled = not floatEnabled
     
     if floatEnabled then
-        SmallFloatGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        FloatDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        SmallFloatGUI.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
+        FloatDot.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
         startFloat()
     else
         SmallFloatGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        FloatDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        FloatDot.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
         stopFloat()
     end
 end)
 
--- ✅ FOV SMALL GUI TOGGLE
+-- ? FOV SMALL GUI TOGGLE
 SmallFOVButton.MouseButton1Click:Connect(function()
     fovEnabled = not fovEnabled
     
     if fovEnabled then
-        SmallFOVGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        FOVDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        SmallFOVGUI.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
+        FOVDot.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
         updateFOV()
     else
         SmallFOVGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        FOVDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        FOVDot.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
         camera.FieldOfView = 70 -- Reset to default
         if fovConnection then fovConnection:Disconnect() fovConnection = nil end
     end
     SaveConfig()
 end)
 
--- ✅ ANTI RAGDOLL SMALL GUI TOGGLE (Advanced version!)
+-- ? ANTI RAGDOLL SMALL GUI TOGGLE (Advanced version!)
 local AntiRagdollEnabled = false
 
 SmallAntiRagButton.MouseButton1Click:Connect(function()
     AntiRagdollEnabled = not AntiRagdollEnabled
     
     if AntiRagdollEnabled then
-        SmallAntiRagGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        AntiRagDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        SmallAntiRagGUI.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
+        AntiRagDot.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
         enableAntiRagdoll()
     else
         SmallAntiRagGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        AntiRagDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        AntiRagDot.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
         disableAntiRagdoll()
     end
 end)
 
--- ✅ RAGDOLL TP SMALL GUI TOGGLE (NEW!)
+-- ? RAGDOLL TP SMALL GUI TOGGLE (NEW!)
 SmallRagdollTPButton.MouseButton1Click:Connect(function()
     RagdollTP.enabled = not RagdollTP.enabled
     
     if RagdollTP.enabled then
-        SmallRagdollTPGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        RagdollTPDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        SmallRagdollTPGUI.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
+        RagdollTPDot.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
         startRagdollTP()
     else
         SmallRagdollTPGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        RagdollTPDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        RagdollTPDot.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
         stopRagdollTP()
     end
 end)
 
--- ✅ DROP BRAINROT SMALL GUI TOGGLE - SEPARATE STANDALONE TOGGLE!
+-- ? DROP BRAINROT SMALL GUI TOGGLE - SEPARATE STANDALONE TOGGLE!
 local DropBrainrotEnabled = false
 local dropBrainrotLoop = nil
 
@@ -2242,19 +2242,19 @@ SmallDropButton.MouseButton1Click:Connect(function()
     DropBrainrotEnabled = not DropBrainrotEnabled
     
     if DropBrainrotEnabled then
-        SmallDropGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        DropDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        SmallDropGUI.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
+        DropDot.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
         startDropBrainrot()
     else
         SmallDropGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        DropDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        DropDot.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
         stopDropBrainrot()
     end
 end)
 
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
 -- STEAL BAR (ALWAYS VISIBLE - INSTA STEAL ON)
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
 
 local StealBarContainer = Instance.new("Frame")
 StealBarContainer.Name = "StealBarContainer"
@@ -2278,7 +2278,7 @@ OnLabel.Size = UDim2.new(0, 30, 0, 20)
 OnLabel.Position = UDim2.new(0, 10, 0, 5)
 OnLabel.BackgroundTransparency = 1
 OnLabel.Text = "On"
-OnLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+OnLabel.TextColor3 = Color3.fromRGB(192, 192, 192)
 OnLabel.Font = Enum.Font.Gotham
 OnLabel.TextSize = 12
 OnLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -2319,7 +2319,7 @@ ProgressBgCorner.Parent = ProgressBarBg
 
 ProgressBarFill = Instance.new("Frame")
 ProgressBarFill.Size = UDim2.new(0, 0, 1, 0)
-ProgressBarFill.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+ProgressBarFill.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
 ProgressBarFill.BorderSizePixel = 0
 ProgressBarFill.Parent = ProgressBarBg
 
@@ -2363,9 +2363,9 @@ PlusArea.MouseButton1Click:Connect(function()
     end
 end)
 
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
 -- DEVICE SELECTION SCREEN
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
 
 local DeviceSelectFrame = Instance.new("Frame")
 DeviceSelectFrame.Name = "DeviceSelect"
@@ -2450,13 +2450,13 @@ local function createDeviceButton(deviceName, icon, yPos)
     return Button
 end
 
-local PCButton = createDeviceButton("PC", "💻", 80)
-local iPadButton = createDeviceButton("iPad", "📱", 145)
-local iPhoneButton = createDeviceButton("iPhone", "📱", 210)
+local PCButton = createDeviceButton("PC", "??", 80)
+local iPadButton = createDeviceButton("iPad", "??", 145)
+local iPhoneButton = createDeviceButton("iPhone", "??", 210)
 
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
 -- MAIN GUI CREATION
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
 
 local MainFrame
 local currentTab = "Main"
@@ -2511,7 +2511,7 @@ local function createMainGUI(device)
     LogoIcon.Size = UDim2.new(0, 40, 0, 40)
     LogoIcon.Position = UDim2.new(0, 10, 0.5, -20)
     LogoIcon.BackgroundTransparency = 1
-    LogoIcon.Text = "🧀"
+    LogoIcon.Text = "??"
     LogoIcon.TextSize = logoSize
     LogoIcon.Font = Enum.Font.GothamBold
     LogoIcon.Parent = Header
@@ -2600,10 +2600,10 @@ local function createMainGUI(device)
         return TabButton
     end
 
-    local MainTab = createTab("🛡️", "Main", 1)
-    local MISCTab = createTab("🔧", "MISC", 2)
-    local SettingsTab = createTab("⚙️", "Settings", 3)
-    local CreditsTab = createTab("⭐", "Info", 4)
+    local MainTab = createTab("???", "Main", 1)
+    local MISCTab = createTab("??", "MISC", 2)
+    local SettingsTab = createTab("??", "Settings", 3)
+    local CreditsTab = createTab("?", "Info", 4)
 
     local ContentContainer = Instance.new("Frame")
     ContentContainer.Size = UDim2.new(1, -sidebarWidth - 20, 1, -70)
@@ -2670,9 +2670,9 @@ local function createMainGUI(device)
 
     switchTab("Main")
 
-    -- ═══════════════════════════════════════════════════════
-    -- ✅ MAIN TAB CONTENT (WITH SETTINGS BUTTONS NEXT TO FEATURES!)
-    -- ═══════════════════════════════════════════════════════
+    -- -------------------------------------------------------
+    -- ? MAIN TAB CONTENT (WITH SETTINGS BUTTONS NEXT TO FEATURES!)
+    -- -------------------------------------------------------
 
     local function createMainButton(name, order, callback, hasSettings)
         local Container = Instance.new("Frame")
@@ -2713,7 +2713,7 @@ local function createMainGUI(device)
             SettingsButton.Size = UDim2.new(0, 50, 0, 50)
             SettingsButton.Position = UDim2.new(1, -50, 0, 0)
             SettingsButton.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
-            SettingsButton.Text = "⚙️"
+            SettingsButton.Text = "??"
             SettingsButton.TextColor3 = Color3.fromRGB(255, 255, 255)
             SettingsButton.Font = Enum.Font.GothamBold
             SettingsButton.TextSize = device == "iPhone" and 16 or 20
@@ -2729,22 +2729,22 @@ local function createMainGUI(device)
         return Container, Button, Label
     end
 
-    -- ✅ SPEED BOOSTER WITH SETTINGS BUTTON!
+    -- ? SPEED BOOSTER WITH SETTINGS BUTTON!
     local SpeedContainer, SpeedSettingsBtn, SpeedMainBtn, SpeedLabel = createMainButton("Speed Booster", 1, function()
         SmallSpeedGUI.Visible = true
         SpeedLabel.Text = "Speed Booster"
         SpeedMainBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
         if SpeedBooster.Enabled then
-            SmallSpeedGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-            SpeedDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+            SmallSpeedGUI.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
+            SpeedDot.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
         else
             SmallSpeedGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-            SpeedDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+            SpeedDot.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
         end
         refreshSmallButtonPositions()
     end, true)
 
-    -- ✅ SPEED SETTINGS POPUP (NEXT TO BUTTON!)
+    -- ? SPEED SETTINGS POPUP (NEXT TO BUTTON!)
     local SpeedSettingsGUI = Instance.new("Frame")
     SpeedSettingsGUI.Name = "SpeedSettingsGUI"
     SpeedSettingsGUI.Size = UDim2.new(0, 200, 0, 150)
@@ -2895,27 +2895,27 @@ local function createMainGUI(device)
         SpeedSettingsGUI.Visible = not SpeedSettingsGUI.Visible
     end)
 
-    -- ✅ TP DOWN (under Speed)
+    -- ? TP DOWN (under Speed)
     local TPDownContainer, TPDownBtn, TPDownLabel = createMainButton("TP Down", 2, function()
         SmallTPDownGUI.Visible = true
         SmallTPDownGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        TPDownDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        TPDownBtn.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        TPDownDot.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
+        TPDownBtn.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
         if TPDownLabel then TPDownLabel.Text = "TP Down" end
         refreshSmallButtonPositions()
     end)
 
-    -- ✅ UNWALK, SPIN, INF JUMP (NO SETTINGS)
+    -- ? UNWALK, SPIN, INF JUMP (NO SETTINGS)
     local UnwalkContainer, UnwalkBtn, UnwalkLabel = createMainButton("Unwalk", 3, function()
         SmallUnwalkGUI.Visible = true
         if UnwalkEnabled then
             UnwalkLabel.Text = "Unwalk"
-            SmallUnwalkGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-            UnwalkDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+            SmallUnwalkGUI.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
+            UnwalkDot.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
         else
             UnwalkLabel.Text = "Unwalk"
             SmallUnwalkGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-            UnwalkDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+            UnwalkDot.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
         end
         refreshSmallButtonPositions()
     end)
@@ -2924,12 +2924,12 @@ local function createMainGUI(device)
         SmallSpinBotGUI.Visible = true
         if SpinBotEnabled then
             SpinLabel.Text = "Spin Bot"
-            SmallSpinBotGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-            SpinDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+            SmallSpinBotGUI.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
+            SpinDot.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
         else
             SpinLabel.Text = "Spin Bot"
             SmallSpinBotGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-            SpinDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+            SpinDot.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
         end
         refreshSmallButtonPositions()
     end)
@@ -2938,89 +2938,89 @@ local function createMainGUI(device)
         SmallInfJumpGUI.Visible = true
         if InfJumpEnabled then
             InfLabel.Text = "Inf Jump"
-            InfJumpDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+            InfJumpDot.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
         else
             InfLabel.Text = "Inf Jump"
-            InfJumpDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+            InfJumpDot.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
         end
         refreshSmallButtonPositions()
     end)
 
-    -- ✅ FOV WITH SETTINGS BUTTON!
+    -- ? FOV WITH SETTINGS BUTTON!
     local FOVContainer, FOVSettingsBtn, FOVBtn, FOVLabel = createMainButton("FOV Changer", 6, function()
         SmallFOVGUI.Visible = true
         if fovEnabled then
             FOVLabel.Text = "FOV Changer"
-            SmallFOVGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-            FOVDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+            SmallFOVGUI.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
+            FOVDot.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
         else
             FOVLabel.Text = "FOV Changer"
             SmallFOVGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-            FOVDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+            FOVDot.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
         end
         refreshSmallButtonPositions()
     end, true)
     
-    -- ✅ ANTI RAGDOLL (NO SETTINGS)
+    -- ? ANTI RAGDOLL (NO SETTINGS)
     local AntiRagContainer, AntiRagBtn, AntiRagLabel = createMainButton("Anti Ragdoll", 7, function()
         SmallAntiRagGUI.Visible = true
         if AntiRagdollEnabled then
             AntiRagLabel.Text = "Anti Ragdoll"
-            SmallAntiRagGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-            AntiRagDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+            SmallAntiRagGUI.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
+            AntiRagDot.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
         else
             AntiRagLabel.Text = "Anti Ragdoll"
             SmallAntiRagGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-            AntiRagDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+            AntiRagDot.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
         end
         refreshSmallButtonPositions()
     end)
     
-    -- ✅ RAGDOLL TP (NO SETTINGS)
+    -- ? RAGDOLL TP (NO SETTINGS)
     local RagdollTPContainer, RagdollTPBtn, RagdollTPLabel = createMainButton("Ragdoll TP", 8, function()
         SmallRagdollTPGUI.Visible = true
         if RagdollTP.enabled then
             RagdollTPLabel.Text = "Ragdoll TP"
-            SmallRagdollTPGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-            RagdollTPDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+            SmallRagdollTPGUI.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
+            RagdollTPDot.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
         else
             RagdollTPLabel.Text = "Ragdoll TP"
             SmallRagdollTPGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-            RagdollTPDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+            RagdollTPDot.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
         end
         refreshSmallButtonPositions()
     end)
     
-    -- ✅ DROP BRAINROT (NO SETTINGS)
+    -- ? DROP BRAINROT (NO SETTINGS)
     local DropContainer, DropBtn, DropLabel = createMainButton("Drop Brainrot", 9, function()
         SmallDropGUI.Visible = true
         if DropBrainrotEnabled then
             DropLabel.Text = "Drop Brainrot"
-            SmallDropGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-            DropDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+            SmallDropGUI.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
+            DropDot.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
         else
             DropLabel.Text = "Drop Brainrot"
             SmallDropGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-            DropDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+            DropDot.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
         end
         refreshSmallButtonPositions()
     end)
 
-    -- ✅ TP UP (teleport up on jump) main button
+    -- ? TP UP (teleport up on jump) main button
     local TPUpContainer, TPUpBtn, TPUpLabel = createMainButton("TP Up", 10, function()
         SmallTPUpGUI.Visible = true
         TPUpBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
         if TPUpEnabled then
-            SmallTPUpGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-            TPUpDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+            SmallTPUpGUI.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
+            TPUpDot.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
         else
             SmallTPUpGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-            TPUpDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+            TPUpDot.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
         end
         refreshSmallButtonPositions()
     end)
 
-    -- ✅ FOV SETTINGS POPUP (NEXT TO BUTTON!)
+    -- ? FOV SETTINGS POPUP (NEXT TO BUTTON!)
     local FOVSettingsGUI = Instance.new("Frame")
     FOVSettingsGUI.Name = "FOVSettingsGUI"
     FOVSettingsGUI.Size = UDim2.new(0, 200, 0, 100)
@@ -3076,7 +3076,7 @@ local function createMainGUI(device)
     FOVBoxCorner.CornerRadius = UDim.new(0, 6)
     FOVBoxCorner.Parent = fovSliderBox
 
-    -- ✅ FOV ACTUALLY UPDATES!
+    -- ? FOV ACTUALLY UPDATES!
     fovSliderBox.FocusLost:Connect(function()
         local val = tonumber(fovSliderBox.Text)
         if val then
@@ -3095,7 +3095,7 @@ local function createMainGUI(device)
         FOVSettingsGUI.Visible = not FOVSettingsGUI.Visible
     end)
     
-    -- ⚠️ FOV WARNING LABEL
+    -- ?? FOV WARNING LABEL
     local FOVWarning = Instance.new("Frame")
     FOVWarning.Size = UDim2.new(1, 0, 0, 35)
     FOVWarning.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
@@ -3112,40 +3112,40 @@ local function createMainGUI(device)
     WarnLabel.Size = UDim2.new(1, -10, 1, 0)
     WarnLabel.Position = UDim2.new(0, 5, 0, 0)
     WarnLabel.BackgroundTransparency = 1
-    WarnLabel.Text = "⚠️ Must use ⚙️ FOV settings or it won't work!"
+    WarnLabel.Text = "?? Must use ?? FOV settings or it won't work!"
     WarnLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
     WarnLabel.Font = Enum.Font.GothamBold
     WarnLabel.TextSize = device == "iPhone" and 9 or 11
     WarnLabel.TextWrapped = true
     WarnLabel.Parent = FOVWarning
 
-    -- ═══════════════════════════════════════════════════════
+    -- -------------------------------------------------------
     -- MISC TAB CONTENT (NO SMALL GUIS)
-    -- ═══════════════════════════════════════════════════════
+    -- -------------------------------------------------------
     
-    -- ✅ AUTO-ENABLE ALL MISC FEATURES ON SCRIPT LOAD!
+    -- ? AUTO-ENABLE ALL MISC FEATURES ON SCRIPT LOAD!
     task.spawn(function()
         task.wait(1)
         
-        -- ✅ FPS Booster
+        -- ? FPS Booster
         enableFPSBooster()
         if fpsButton then
-            fpsButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+            fpsButton.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
         end
         
-        -- ✅ Optimizer
+        -- ? Optimizer
         enableOptimizer()
         if optimizerButton then
-            optimizerButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+            optimizerButton.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
         end
         
-        -- ✅ Hitbox Expander
+        -- ? Hitbox Expander
         enableHitbox()
         if hitboxButton then
-            hitboxButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+            hitboxButton.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
         end
         
-        -- ✅ Anti Death
+        -- ? Anti Death
         AntiDeathEnabled = true
         if not AntiDeath.Conn then
             AntiDeath.Conn = RunService.Heartbeat:Connect(function()
@@ -3157,10 +3157,10 @@ local function createMainGUI(device)
             end)
         end
         if antiDeathButton then
-            antiDeathButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+            antiDeathButton.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
         end
         
-        print("[TIM CHEESE DUELS] ✅ Auto-enabled ALL MISC: FPS Booster, Optimizer, Hitbox, Anti Death")
+        print("[TIM CHEESE DUELS] ? Auto-enabled ALL MISC: FPS Booster, Optimizer, Hitbox, Anti Death")
     end)
 
     local function createMISCButton(name, order, callback)
@@ -3186,12 +3186,12 @@ local function createMainGUI(device)
 
     local fpsButton = createMISCButton("FPS Booster", 1, function()
         enableFPSBooster()
-        fpsButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        fpsButton.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
     end)
 
     local optimizerButton = createMISCButton("Optimizer", 2, function()
         enableOptimizer()
-        optimizerButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        optimizerButton.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
     end)
 
     local hitboxButton = createMISCButton("Hitbox Expander", 3, function()
@@ -3200,7 +3200,7 @@ local function createMainGUI(device)
             hitboxButton.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
         else
             enableHitbox()
-            hitboxButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+            hitboxButton.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
         end
     end)
 
@@ -3217,7 +3217,7 @@ local function createMainGUI(device)
                     end
                 end)
             end
-            antiDeathButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+            antiDeathButton.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
         else
             if AntiDeath.Conn then
                 AntiDeath.Conn:Disconnect()
@@ -3236,7 +3236,7 @@ local function createMainGUI(device)
 
         if buttonsLocked then
             LockLayoutButton.Text = "Locked"
-            LockLayoutButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+            LockLayoutButton.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
         else
             LockLayoutButton.Text = "Lock Layout"
             LockLayoutButton.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
@@ -3244,7 +3244,7 @@ local function createMainGUI(device)
     end)
     if buttonsLocked then
         LockLayoutButton.Text = "Locked"
-        LockLayoutButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        LockLayoutButton.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
     end
 
     createMISCButton("Float Up", 6, function()
@@ -3252,15 +3252,15 @@ local function createMainGUI(device)
         refreshSmallButtonPositions()
     end)
 
-    -- ═══════════════════════════════════════════════════════
+    -- -------------------------------------------------------
     -- SETTINGS TAB CONTENT
-    -- ═══════════════════════════════════════════════════════
+    -- -------------------------------------------------------
 
     -- Settings tab no longer needs manual config buttons. Settings will auto-save on change.
 
-    -- ═══════════════════════════════════════════════════════
+    -- -------------------------------------------------------
     -- CREDITS TAB CONTENT
-    -- ═══════════════════════════════════════════════════════
+    -- -------------------------------------------------------
 
     local CreditsTitle = Instance.new("TextLabel")
     CreditsTitle.Size = UDim2.new(1, 0, 0, 40)
@@ -3286,7 +3286,7 @@ local function createMainGUI(device)
     CreditsCorner.CornerRadius = UDim.new(0, 10)
     CreditsCorner.Parent = CreditsText
     
-    -- ✅ TUTORIAL SECTION
+    -- ? TUTORIAL SECTION
     local TutorialTitle = Instance.new("TextLabel")
     TutorialTitle.Size = UDim2.new(1, 0, 0, 40)
     TutorialTitle.BackgroundTransparency = 1
@@ -3317,76 +3317,76 @@ local function initializeGUI(device)
     selectedDevice = device
     DeviceSelectFrame:Destroy()
 
-    -- ✅ AUTO-ENABLE MAIN TAB FEATURES FOR ALL DEVICES (PC, iPad, iPhone)
+    -- ? AUTO-ENABLE MAIN TAB FEATURES FOR ALL DEVICES (PC, iPad, iPhone)
     task.spawn(function()
         task.wait(1.5) -- Wait for GUI to fully load
         
-        -- ✅ Speed Booster - AUTO ON + SHOW SMALL GUI
+        -- ? Speed Booster - AUTO ON + SHOW SMALL GUI
         SpeedBooster.Enabled = true
         SmallSpeedGUI.Visible = true
-        SmallSpeedGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        SpeedDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        SmallSpeedGUI.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
+        SpeedDot.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
         startSpeedBooster()
         
-        -- ✅ Unwalk - AUTO ON + SHOW SMALL GUI
+        -- ? Unwalk - AUTO ON + SHOW SMALL GUI
         UnwalkEnabled = true
         SmallUnwalkGUI.Visible = true
-        SmallUnwalkGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        UnwalkDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        SmallUnwalkGUI.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
+        UnwalkDot.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
         startUnwalk()
         
-        -- ⚪ Spin Bot - SHOW AS ON-SCREEN BUTTON
+        -- ? Spin Bot - SHOW AS ON-SCREEN BUTTON
         SmallSpinBotGUI.Visible = true
         SmallSpinBotGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        SpinDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        SpinDot.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
         
-        -- ⚪ Inf Jump - SHOW AS ON-SCREEN BUTTON
+        -- ? Inf Jump - SHOW AS ON-SCREEN BUTTON
         SmallInfJumpGUI.Visible = true
         SmallInfJumpGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        InfJumpDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        InfJumpDot.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
         
-        -- ⚪ Float Up - HIDDEN (user must turn on from Main tab or MISC)
+        -- ? Float Up - HIDDEN (user must turn on from Main tab or MISC)
         SmallFloatGUI.Visible = false
         
-        -- ⚪ FOV - SHOW AS ON-SCREEN BUTTON
+        -- ? FOV - SHOW AS ON-SCREEN BUTTON
         SmallFOVGUI.Visible = true
         if ConfigData.fovEnabled then
-            SmallFOVGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-            FOVDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+            SmallFOVGUI.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
+            FOVDot.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
         else
             SmallFOVGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-            FOVDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+            FOVDot.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
         end
         
-        -- ✅ Anti Ragdoll - AUTO ON + SHOW SMALL GUI
+        -- ? Anti Ragdoll - AUTO ON + SHOW SMALL GUI
         AntiRagdollEnabled = true
         SmallAntiRagGUI.Visible = true
-        SmallAntiRagGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        AntiRagDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        SmallAntiRagGUI.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
+        AntiRagDot.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
         enableAntiRagdoll()
         
-        -- ✅ Ragdoll TP - AUTO ON + SHOW SMALL GUI
+        -- ? Ragdoll TP - AUTO ON + SHOW SMALL GUI
         RagdollTP.enabled = true
         SmallRagdollTPGUI.Visible = true
-        SmallRagdollTPGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        RagdollTPDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        SmallRagdollTPGUI.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
+        RagdollTPDot.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
         startRagdollTP()
         
-        -- ✅ Drop Brainrot - SHOW SMALL GUI but STAYS OFF (gray dot)
+        -- ? Drop Brainrot - SHOW SMALL GUI but STAYS OFF (gray dot)
         SmallDropGUI.Visible = true
         SmallDropGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        DropDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        -- ✅ TP Down - show small button on screen by default
+        DropDot.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
+        -- ? TP Down - show small button on screen by default
         SmallTPDownGUI.Visible = true
         SmallTPDownGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        TPDownDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        TPDownDot.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
         
         -- Restore TP Up / TP Down visibility from config
         if ConfigData.tpUpEnabled then
             TPUpEnabled = true
             SmallTPUpGUI.Visible = true
-            SmallTPUpGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-            TPUpDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+            SmallTPUpGUI.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
+            TPUpDot.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
             if TPUpJumpConn then TPUpJumpConn:Disconnect() TPUpJumpConn = nil end
             TPUpJumpConn = UserInputService.JumpRequest:Connect(function()
                 if hrp then pcall(function()
@@ -3400,9 +3400,9 @@ local function initializeGUI(device)
         end
         
         refreshSmallButtonPositions()
-        print("[TIM CHEESE DUELS] ✅ Auto-enabled for "..device..": Speed, Unwalk, Anti Rag, Ragdoll TP")
-        print("[TIM CHEESE DUELS] ✅ Visible Small GUIs: Speed, Unwalk, Anti Rag, Ragdoll TP, Drop (OFF)")
-        print("[TIM CHEESE DUELS] ⚪ Hidden Small GUIs: Inf Jump, Spin Bot, Float, FOV (turn on from Main tab)")
+        print("[TIM CHEESE DUELS] ? Auto-enabled for "..device..": Speed, Unwalk, Anti Rag, Ragdoll TP")
+        print("[TIM CHEESE DUELS] ? Visible Small GUIs: Speed, Unwalk, Anti Rag, Ragdoll TP, Drop (OFF)")
+        print("[TIM CHEESE DUELS] ? Hidden Small GUIs: Inf Jump, Spin Bot, Float, FOV (turn on from Main tab)")
     end)
 
     createMainGUI(device)
@@ -3420,20 +3420,20 @@ local function initializeGUI(device)
     -- Apply dark semi-transparent style and rounded corners to all UI
     applyWhiteHalfStyle()
 
-    -- ✅ AUTO-LOAD CONFIG ON START!
+    -- ? AUTO-LOAD CONFIG ON START!
     if ConfigData.speedEnabled then
         SpeedBooster.Enabled = true
         SmallSpeedGUI.Visible = true
-        SmallSpeedGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        SpeedDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        SmallSpeedGUI.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
+        SpeedDot.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
         startSpeedBooster()
     end
     
     if ConfigData.fovEnabled then
         fovEnabled = true
         SmallFOVGUI.Visible = true
-        SmallFOVGUI.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        FOVDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        SmallFOVGUI.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
+        FOVDot.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
         updateFOV()
     end
 end
@@ -3444,19 +3444,41 @@ iPhoneButton.MouseButton1Click:Connect(function() initializeGUI("iPhone") end)
 
 function createOpenButton(device)
     local buttonSize = device == "iPhone" and 55 or 70
+    local spacing = 10
+    local pad = 10
+    local boxW = pad * 2 + buttonSize * 2 + spacing
+    local boxH = pad * 2 + buttonSize * 2 + spacing
 
+    -- Box container for left-side auto buttons (2 rows)
+    local LeftButtonBox = Instance.new("Frame")
+    LeftButtonBox.Size = UDim2.new(0, boxW, 0, boxH)
+    LeftButtonBox.Position = UDim2.new(0, 15, 0.5, -boxH/2)
+    LeftButtonBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    LeftButtonBox.BackgroundTransparency = 0.25
+    LeftButtonBox.Parent = ScreenGui
+
+    local LBCorner = Instance.new("UICorner")
+    LBCorner.CornerRadius = UDim.new(0, 12)
+    LBCorner.Parent = LeftButtonBox
+
+    local LBStroke = Instance.new("UIStroke")
+    LBStroke.Color = Color3.fromRGB(255, 255, 255)
+    LBStroke.Thickness = 2
+    LBStroke.Transparency = 0.5
+    LBStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    LBStroke.Parent = LeftButtonBox
     local OpenButton = Instance.new("TextButton")
-    OpenButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
+    -- ✅ AUTO LEFT Button
     OpenButton.Position = UDim2.new(0, 15, 0.5, -buttonSize/2)
     OpenButton.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-    OpenButton.BackgroundTransparency = 0.2
-    OpenButton.Text = "OPEN"
+    AutoLeftButton.Position = UDim2.new(0, pad, 0, pad)
+    AutoLeftButton.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
     OpenButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     OpenButton.Font = Enum.Font.GothamBold
     OpenButton.TextSize = device == "iPhone" and 10 or 14
     OpenButton.Parent = ScreenGui
 
-    local OpenCorner = Instance.new("UICorner")
+    AutoLeftButton.Parent = LeftButtonBox
     OpenCorner.CornerRadius = UDim.new(0, 15)
     OpenCorner.Parent = OpenButton
 
@@ -3491,70 +3513,91 @@ function createOpenButton(device)
     end)
 end
 
--- ═══════════════════════════════════════════════════════
--- ✅ AUTO LEFT/RIGHT BUTTONS (SIDE BY SIDE - GRAY!)
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
+-- ? AUTO LEFT/RIGHT BUTTONS (SIDE BY SIDE - GRAY!)
+-- -------------------------------------------------------
 
 local AutoLeftSmallGUI, AutoRightSmallGUI
 
 function createAutoButtons(device)
     local buttonSize = device == "iPhone" and 55 or 70
-    local yOffset = buttonSize + 10
+    local spacing = 10
+    local pad = 10
+    local boxW = pad * 2 + buttonSize * 2 + spacing
+    local boxH = pad * 2 + buttonSize * 2 + spacing
 
-    -- ✅ AUTO LEFT Button (GRAY!)
+    local LeftButtonBox = Instance.new("Frame")
+    LeftButtonBox.Size = UDim2.new(0, boxW, 0, boxH)
+    LeftButtonBox.Position = UDim2.new(0, 15, 0.5, -boxH/2)
+    LeftButtonBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    LeftButtonBox.BackgroundTransparency = 0.25
+    LeftButtonBox.Parent = ScreenGui
+
+    local LBCorner = Instance.new("UICorner")
+    LBCorner.CornerRadius = UDim.new(0, 12)
+    LBCorner.Parent = LeftButtonBox
+
+    local LBStroke = Instance.new("UIStroke")
+    LBStroke.Color = Color3.fromRGB(255, 255, 255)
+    LBStroke.Thickness = 2
+    LBStroke.Transparency = 0.5
+    LBStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    LBStroke.Parent = LeftButtonBox
+
+    -- ? AUTO LEFT Button
     local AutoLeftButton = Instance.new("TextButton")
     AutoLeftButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    AutoLeftButton.Position = UDim2.new(0, 15, 0.5, -buttonSize/2 + yOffset)
-    AutoLeftButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    AutoLeftButton.Position = UDim2.new(0, pad, 0, pad)
+    AutoLeftButton.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
     AutoLeftButton.BackgroundTransparency = 0
     AutoLeftButton.Text = "AUTO\nLEFT"
     AutoLeftButton.TextColor3 = Color3.fromRGB(220, 220, 220)
     AutoLeftButton.Font = Enum.Font.GothamBold
     AutoLeftButton.TextSize = device == "iPhone" and 9 or 12
-    AutoLeftButton.Parent = ScreenGui
+    AutoLeftButton.Parent = LeftButtonBox
 
     local LeftCorner = Instance.new("UICorner")
     LeftCorner.CornerRadius = UDim.new(0, 8)
     LeftCorner.Parent = AutoLeftButton
 
     local LeftBlackStroke = Instance.new("UIStroke")
-    LeftBlackStroke.Color = Color3.fromRGB(255, 200, 0)
+    LeftBlackStroke.Color = Color3.fromRGB(0, 0, 0)
     LeftBlackStroke.Thickness = 4
     LeftBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     LeftBlackStroke.Parent = AutoLeftButton
 
     local LeftStroke = Instance.new("UIStroke")
-    LeftStroke.Color = Color3.fromRGB(255, 230, 80)
+    LeftStroke.Color = Color3.fromRGB(255, 255, 255)
     LeftStroke.Thickness = 2.5
     LeftStroke.Transparency = 0.35
     LeftStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     LeftStroke.ZIndex = 2
     LeftStroke.Parent = AutoLeftButton
 
-    -- ✅ AUTO MEDUSA Button (above Auto Right)
+    -- ? AUTO MEDUSA Button (above Auto Right)
     local AutoMedusaButton = Instance.new("TextButton")
     AutoMedusaButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    AutoMedusaButton.Position = UDim2.new(0, 15 + buttonSize + 10, 0.5, -buttonSize*1.5 + yOffset - 10)
-    AutoMedusaButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    AutoMedusaButton.Position = UDim2.new(0, pad, 0, pad + buttonSize + spacing)
+    AutoMedusaButton.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
     AutoMedusaButton.BackgroundTransparency = 0
     AutoMedusaButton.Text = "AUTO\nMEDUSA"
     AutoMedusaButton.TextColor3 = Color3.fromRGB(220, 220, 220)
     AutoMedusaButton.Font = Enum.Font.GothamBold
     AutoMedusaButton.TextSize = device == "iPhone" and 9 or 12
-    AutoMedusaButton.Parent = ScreenGui
+    AutoMedusaButton.Parent = LeftButtonBox
 
     local MedusaCorner = Instance.new("UICorner")
     MedusaCorner.CornerRadius = UDim.new(0, 8)
     MedusaCorner.Parent = AutoMedusaButton
 
     local MedusaBlackStroke = Instance.new("UIStroke")
-    MedusaBlackStroke.Color = Color3.fromRGB(255, 200, 0)
+    MedusaBlackStroke.Color = Color3.fromRGB(0, 0, 0)
     MedusaBlackStroke.Thickness = 4
     MedusaBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     MedusaBlackStroke.Parent = AutoMedusaButton
 
     local MedusaStroke = Instance.new("UIStroke")
-    MedusaStroke.Color = Color3.fromRGB(255, 230, 80)
+    MedusaStroke.Color = Color3.fromRGB(255, 255, 255)
     MedusaStroke.Thickness = 2.5
     MedusaStroke.Transparency = 0.35
     MedusaStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -3668,74 +3711,74 @@ function createAutoButtons(device)
     AutoMedusaButton.MouseButton1Click:Connect(function()
         autoMedusaEnabled = not autoMedusaEnabled
         if autoMedusaEnabled then
-            AutoMedusaButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+            AutoMedusaButton.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
             startAutoMedusa()
         else
-            AutoMedusaButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            AutoMedusaButton.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
             stopAutoMedusa()
         end
     end)
     local AutoRightButton = Instance.new("TextButton")
     AutoRightButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    AutoRightButton.Position = UDim2.new(0, 15 + buttonSize + 10, 0.5, -buttonSize/2 + yOffset)
-    AutoRightButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    AutoRightButton.Position = UDim2.new(0, pad + buttonSize + spacing, 0, pad)
+    AutoRightButton.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
     AutoRightButton.BackgroundTransparency = 0
     AutoRightButton.Text = "AUTO\nRIGHT"
     AutoRightButton.TextColor3 = Color3.fromRGB(220, 220, 220)
     AutoRightButton.Font = Enum.Font.GothamBold
     AutoRightButton.TextSize = device == "iPhone" and 9 or 12
-    AutoRightButton.Parent = ScreenGui
+    AutoRightButton.Parent = LeftButtonBox
 
     local RightCorner = Instance.new("UICorner")
     RightCorner.CornerRadius = UDim.new(0, 8)
     RightCorner.Parent = AutoRightButton
 
     local RightBlackStroke = Instance.new("UIStroke")
-    RightBlackStroke.Color = Color3.fromRGB(255, 200, 0)
+    RightBlackStroke.Color = Color3.fromRGB(0, 0, 0)
     RightBlackStroke.Thickness = 4
     RightBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     RightBlackStroke.Parent = AutoRightButton
 
     local RightStroke = Instance.new("UIStroke")
-    RightStroke.Color = Color3.fromRGB(255, 230, 80)
+    RightStroke.Color = Color3.fromRGB(255, 255, 255)
     RightStroke.Thickness = 2.5
     RightStroke.Transparency = 0.35
     RightStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     RightStroke.ZIndex = 2
     RightStroke.Parent = AutoRightButton
 
-    -- ✅ AUTO LEFT CLICK (WITH PATH!)
+    -- ? AUTO LEFT CLICK (WITH PATH!)
     AutoLeftButton.MouseButton1Click:Connect(function()
         if pathActive then
             stopStealPath()
-            AutoLeftButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-            AutoRightButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            AutoLeftButton.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
+            AutoRightButton.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
         else
             stopStealPath()
-            AutoLeftButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-            AutoRightButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-            startStealPath(stealPath2) -- ✅ LEFT PATH!
+            AutoLeftButton.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
+            AutoRightButton.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
+            startStealPath(stealPath2) -- ? LEFT PATH!
         end
     end)
 
-    -- ✅ AUTO RIGHT CLICK (WITH PATH!)
+    -- ? AUTO RIGHT CLICK (WITH PATH!)
     AutoRightButton.MouseButton1Click:Connect(function()
         if pathActive then
             stopStealPath()
-            AutoLeftButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-            AutoRightButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            AutoLeftButton.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
+            AutoRightButton.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
         else
             stopStealPath()
-            AutoLeftButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-            AutoRightButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-            startStealPath(stealPath1) -- ✅ RIGHT PATH!
+            AutoLeftButton.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
+            AutoRightButton.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
+            startStealPath(stealPath1) -- ? RIGHT PATH!
         end
     end)
 end
 
--- ═══════════════════════════════════════════════════════
--- ✅ TRACK PLAYER & HIT CIRCLE (RIGHT SIDE - GRAY!)
--- ═══════════════════════════════════════════════════════
+-- -------------------------------------------------------
+-- ? TRACK PLAYER & HIT CIRCLE (RIGHT SIDE - GRAY!)
+-- -------------------------------------------------------
 
 function createRightButtons(device)
     local buttonSize = device == "iPhone" and 38 or 48
@@ -3744,7 +3787,7 @@ function createRightButtons(device)
     local boxW = pad*2 + buttonSize*3 + spacing*2
     local boxH = pad*2 + buttonSize*2 + spacing
 
-    -- ✅ Container box for all 5 right buttons
+    -- ? Container box for all 5 right buttons
     local RightButtonBox = Instance.new("Frame")
     RightButtonBox.Size = UDim2.new(0, boxW, 0, boxH)
     RightButtonBox.Position = UDim2.new(1, -(boxW + 12), 0.5, -boxH/2)
@@ -3761,11 +3804,11 @@ function createRightButtons(device)
     RBStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     RBStroke.Parent = RightButtonBox
 
-    -- ✅ DESYNC Button (TOP ROW, LEFT)
+    -- ? DESYNC Button (TOP ROW, LEFT)
     local DesyncButton = Instance.new("TextButton")
     DesyncButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     DesyncButton.Position = UDim2.new(0, pad, 0, pad)
-    DesyncButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    DesyncButton.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
     DesyncButton.BackgroundTransparency = 0
     DesyncButton.Text = "DESYNC"
     DesyncButton.TextColor3 = Color3.fromRGB(220, 220, 220)
@@ -3778,13 +3821,13 @@ function createRightButtons(device)
     DesyncCorner.Parent = DesyncButton
 
     local DesyncBlackStroke = Instance.new("UIStroke")
-    DesyncBlackStroke.Color = Color3.fromRGB(255, 200, 0)
+    DesyncBlackStroke.Color = Color3.fromRGB(0, 0, 0)
     DesyncBlackStroke.Thickness = 4
     DesyncBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     DesyncBlackStroke.Parent = DesyncButton
 
     local DesyncStroke = Instance.new("UIStroke")
-    DesyncStroke.Color = Color3.fromRGB(255, 230, 80)
+    DesyncStroke.Color = Color3.fromRGB(255, 255, 255)
     DesyncStroke.Thickness = 2.5
     DesyncStroke.Transparency = 0.35
     DesyncStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -3879,11 +3922,11 @@ function createRightButtons(device)
             end
         end)
     end
-        -- ✅ LAGGER Button (TOP ROW, MIDDLE)
+        -- ? LAGGER Button (TOP ROW, MIDDLE)
         local LaggerButton = Instance.new("TextButton")
         LaggerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
         LaggerButton.Position = UDim2.new(0, pad + buttonSize + spacing, 0, pad)
-        LaggerButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        LaggerButton.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
         LaggerButton.BackgroundTransparency = 0
         LaggerButton.Text = "LAGGER"
         LaggerButton.TextColor3 = Color3.fromRGB(220, 220, 220)
@@ -3896,13 +3939,13 @@ function createRightButtons(device)
         LaggerCorner.Parent = LaggerButton
 
         local LaggerBlackStroke = Instance.new("UIStroke")
-        LaggerBlackStroke.Color = Color3.fromRGB(255, 200, 0)
+        LaggerBlackStroke.Color = Color3.fromRGB(0, 0, 0)
         LaggerBlackStroke.Thickness = 4
         LaggerBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
         LaggerBlackStroke.Parent = LaggerButton
 
         local LaggerStroke = Instance.new("UIStroke")
-        LaggerStroke.Color = Color3.fromRGB(255, 230, 80)
+        LaggerStroke.Color = Color3.fromRGB(255, 255, 255)
         LaggerStroke.Thickness = 2.5
         LaggerStroke.Transparency = 0.35
         LaggerStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -3994,29 +4037,29 @@ function createRightButtons(device)
         LaggerButton.MouseButton1Click:Connect(function()
             laggerEnabled = not laggerEnabled
             if laggerEnabled then
-                LaggerButton.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+                LaggerButton.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
                 startLagger()
             else
-                LaggerButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+                LaggerButton.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
                 stopLaggerLoop()
             end
         end)
 
-        -- ⚙ Lagger Gear Button
+        -- ? Lagger Gear Button
         local LaggerGear = Instance.new("TextButton")
         LaggerGear.Size = UDim2.new(0, 18, 0, 18)
         LaggerGear.Position = UDim2.new(1, -16, 0, -2)
         LaggerGear.BackgroundTransparency = 1
-        LaggerGear.Text = "⚙"
+        LaggerGear.Text = "?"
         LaggerGear.TextColor3 = Color3.fromRGB(200, 200, 200)
         LaggerGear.Font = Enum.Font.GothamBold
         LaggerGear.TextSize = 14
         LaggerGear.ZIndex = 3
         LaggerGear.Parent = LaggerButton
 
-        -- ═══════════════════════════════════════════════════════
-        -- ✅ LAGGER SETTINGS PANEL
-        -- ═══════════════════════════════════════════════════════
+        -- -------------------------------------------------------
+        -- ? LAGGER SETTINGS PANEL
+        -- -------------------------------------------------------
 
         local LaggerSettings = Instance.new("Frame")
         LaggerSettings.Name = "LaggerSettings"
@@ -4032,17 +4075,17 @@ function createRightButtons(device)
 
         Instance.new("UICorner", LaggerSettings).CornerRadius = UDim.new(0, 8)
         local LSBlackStroke = Instance.new("UIStroke", LaggerSettings)
-        LSBlackStroke.Color = Color3.fromRGB(255, 200, 0)
+        LSBlackStroke.Color = Color3.fromRGB(0, 0, 0)
         LSBlackStroke.Thickness = 4
         LSBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
         local LSStroke = Instance.new("UIStroke", LaggerSettings)
-        LSStroke.Color = Color3.fromRGB(255, 230, 80)
+        LSStroke.Color = Color3.fromRGB(255, 255, 255)
         LSStroke.Thickness = 2.5
         LSStroke.Transparency = 0.35
         LSStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
         LSStroke.ZIndex = 2
         local LSWaveGrad = Instance.new("UIGradient")
-        LSWaveGrad.Color = ColorSequence.new(Color3.fromRGB(255, 230, 80))
+        LSWaveGrad.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
         LSWaveGrad.Transparency = NumberSequence.new({
             NumberSequenceKeypoint.new(0, 1),
             NumberSequenceKeypoint.new(0.4, 0),
@@ -4057,7 +4100,7 @@ function createRightButtons(device)
         local LSTitle = Instance.new("TextLabel")
         LSTitle.Size = UDim2.new(1, 0, 0, 30)
         LSTitle.BackgroundTransparency = 1
-        LSTitle.Text = "⚙ Lagger Settings"
+        LSTitle.Text = "? Lagger Settings"
         LSTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
         LSTitle.Font = Enum.Font.GothamBold
         LSTitle.TextSize = 14
@@ -4068,7 +4111,7 @@ function createRightButtons(device)
         LSClose.Size = UDim2.new(0, 24, 0, 24)
         LSClose.Position = UDim2.new(1, -28, 0, 3)
         LSClose.BackgroundTransparency = 1
-        LSClose.Text = "✕"
+        LSClose.Text = "?"
         LSClose.TextColor3 = Color3.fromRGB(255, 80, 80)
         LSClose.Font = Enum.Font.GothamBold
         LSClose.TextSize = 14
@@ -4104,7 +4147,7 @@ function createRightButtons(device)
             local minus = Instance.new("TextButton")
             minus.Size = UDim2.new(0, 22, 0, 22)
             minus.Position = UDim2.new(1, -48, 0, yPos + 2)
-            minus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            minus.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
             minus.Text = "-"
             minus.TextColor3 = Color3.fromRGB(255, 255, 255)
             minus.Font = Enum.Font.GothamBold
@@ -4116,7 +4159,7 @@ function createRightButtons(device)
             local plus = Instance.new("TextButton")
             plus.Size = UDim2.new(0, 22, 0, 22)
             plus.Position = UDim2.new(1, -22, 0, yPos + 2)
-            plus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            plus.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
             plus.Text = "+"
             plus.TextColor3 = Color3.fromRGB(255, 255, 255)
             plus.Font = Enum.Font.GothamBold
@@ -4145,7 +4188,7 @@ function createRightButtons(device)
         LSSave.Size = UDim2.new(0.44, 0, 0, 28)
         LSSave.Position = UDim2.new(0.03, 0, 0, 130)
         LSSave.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
-        LSSave.Text = "💾 Save"
+        LSSave.Text = "?? Save"
         LSSave.TextColor3 = Color3.fromRGB(255, 255, 255)
         LSSave.Font = Enum.Font.GothamBold
         LSSave.TextSize = 12
@@ -4157,7 +4200,7 @@ function createRightButtons(device)
         LSReset.Size = UDim2.new(0.44, 0, 0, 28)
         LSReset.Position = UDim2.new(0.53, 0, 0, 130)
         LSReset.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-        LSReset.Text = "🔄 Reset"
+        LSReset.Text = "?? Reset"
         LSReset.TextColor3 = Color3.fromRGB(255, 255, 255)
         LSReset.Font = Enum.Font.GothamBold
         LSReset.TextSize = 12
@@ -4183,7 +4226,7 @@ function createRightButtons(device)
             ConfigData.laggerTries = LAGGER_CONFIG.Tries
             ConfigData.laggerLoopWait = LAGGER_CONFIG.LoopWaitTime
             SaveConfig()
-            LSStatus.Text = "✅ Saved!"
+            LSStatus.Text = "? Saved!"
             LSStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
             task.delay(2, function() LSStatus.Text = "" end)
         end)
@@ -4194,7 +4237,7 @@ function createRightButtons(device)
             LAGGER_CONFIG.LoopWaitTime = DEFAULT_LAGGER.LoopWaitTime
             LaggerSettings.Visible = false
             LaggerSettings.Visible = true -- refresh
-            LSStatus.Text = "🔄 Reset!"
+            LSStatus.Text = "?? Reset!"
             LSStatus.TextColor3 = Color3.fromRGB(255, 200, 80)
             task.delay(2, function() LSStatus.Text = "" end)
         end)
@@ -4210,19 +4253,19 @@ function createRightButtons(device)
     DesyncButton.MouseButton1Click:Connect(function()
         desyncEnabled = not desyncEnabled
         if desyncEnabled then
-            DesyncButton.BackgroundColor3 = Color3.fromRGB(120, 60, 255)
+            DesyncButton.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
             startDesyncLogic()
         else
-            DesyncButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            DesyncButton.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
             stopDesyncLogic()
         end
     end)
 
-    -- ✅ TRACK PLAYER Button (TOP ROW, RIGHT)
+    -- ? TRACK PLAYER Button (TOP ROW, RIGHT)
     local TrackPlayerButton = Instance.new("TextButton")
     TrackPlayerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     TrackPlayerButton.Position = UDim2.new(0, pad + buttonSize*2 + spacing*2, 0, pad)
-    TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
     TrackPlayerButton.BackgroundTransparency = 0
     TrackPlayerButton.Text = "TRACK\nPLAYER"
     TrackPlayerButton.TextColor3 = Color3.fromRGB(220, 220, 220)
@@ -4235,13 +4278,13 @@ function createRightButtons(device)
     TrackCorner.Parent = TrackPlayerButton
 
     local TrackBlackStroke = Instance.new("UIStroke")
-    TrackBlackStroke.Color = Color3.fromRGB(255, 200, 0)
+    TrackBlackStroke.Color = Color3.fromRGB(0, 0, 0)
     TrackBlackStroke.Thickness = 4
     TrackBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     TrackBlackStroke.Parent = TrackPlayerButton
 
     local TrackStroke = Instance.new("UIStroke")
-    TrackStroke.Color = Color3.fromRGB(255, 230, 80)
+    TrackStroke.Color = Color3.fromRGB(255, 255, 255)
     TrackStroke.Thickness = 2.5
     TrackStroke.Transparency = 0.35
     TrackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -4253,18 +4296,18 @@ function createRightButtons(device)
         
         if batAimbotToggled then
             startBatAimbot()
-            TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+            TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
         else
             stopBatAimbot()
-            TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
         end
     end)
 
-    -- ✅ HIT CIRCLE Button (BOTTOM ROW, LEFT)
+    -- ? HIT CIRCLE Button (BOTTOM ROW, LEFT)
     local HitCircleButton = Instance.new("TextButton")
     HitCircleButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     HitCircleButton.Position = UDim2.new(0, pad, 0, pad + buttonSize + spacing)
-    HitCircleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    HitCircleButton.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
     HitCircleButton.BackgroundTransparency = 0
     HitCircleButton.Text = "HIT\nCIRCLE"
     HitCircleButton.TextColor3 = Color3.fromRGB(220, 220, 220)
@@ -4277,13 +4320,13 @@ function createRightButtons(device)
     HitCorner.Parent = HitCircleButton
 
     local HitBlackStroke = Instance.new("UIStroke")
-    HitBlackStroke.Color = Color3.fromRGB(255, 200, 0)
+    HitBlackStroke.Color = Color3.fromRGB(0, 0, 0)
     HitBlackStroke.Thickness = 4
     HitBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     HitBlackStroke.Parent = HitCircleButton
 
     local HitStroke = Instance.new("UIStroke")
-    HitStroke.Color = Color3.fromRGB(255, 230, 80)
+    HitStroke.Color = Color3.fromRGB(255, 255, 255)
     HitStroke.Thickness = 2.5
     HitStroke.Transparency = 0.35
     HitStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -4295,16 +4338,16 @@ function createRightButtons(device)
         
         if hitCircleEnabled then
             startHitCircle()
-            HitCircleButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+            HitCircleButton.BackgroundColor3 = Color3.fromRGB(192, 192, 192)
         else
             stopHitCircle()
-            HitCircleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            HitCircleButton.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
         end
     end)
 
-    -- ═══════════════════════════════════════════════════════
-    -- ✅ JUKE BUTTON (BELOW HIT CIRCLE) WITH SETTINGS GEAR
-    -- ═══════════════════════════════════════════════════════
+    -- -------------------------------------------------------
+    -- ? JUKE BUTTON (BELOW HIT CIRCLE) WITH SETTINGS GEAR
+    -- -------------------------------------------------------
 
     local jukeFloatY = 5
     local jukeTPDelay = 0.35
@@ -4315,7 +4358,7 @@ function createRightButtons(device)
     local JukeButton = Instance.new("TextButton")
     JukeButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     JukeButton.Position = UDim2.new(0, pad + buttonSize + spacing, 0, pad + buttonSize + spacing)
-    JukeButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    JukeButton.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
     JukeButton.BackgroundTransparency = 0
     JukeButton.Text = "JUKE"
     JukeButton.TextColor3 = Color3.fromRGB(220, 220, 220)
@@ -4328,34 +4371,34 @@ function createRightButtons(device)
     JukeCorner.Parent = JukeButton
 
     local JukeBlackStroke = Instance.new("UIStroke")
-    JukeBlackStroke.Color = Color3.fromRGB(255, 200, 0)
+    JukeBlackStroke.Color = Color3.fromRGB(0, 0, 0)
     JukeBlackStroke.Thickness = 4
     JukeBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     JukeBlackStroke.Parent = JukeButton
 
     local JukeStroke = Instance.new("UIStroke")
-    JukeStroke.Color = Color3.fromRGB(255, 230, 80)
+    JukeStroke.Color = Color3.fromRGB(255, 255, 255)
     JukeStroke.Thickness = 2.5
     JukeStroke.Transparency = 0.35
     JukeStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     JukeStroke.ZIndex = 2
     JukeStroke.Parent = JukeButton
 
-    -- ⚙ Gear Settings Button (top-right corner of JUKE)
+    -- ? Gear Settings Button (top-right corner of JUKE)
     local JukeGear = Instance.new("TextButton")
     JukeGear.Size = UDim2.new(0, 18, 0, 18)
     JukeGear.Position = UDim2.new(1, -16, 0, -2)
     JukeGear.BackgroundTransparency = 1
-    JukeGear.Text = "⚙"
+    JukeGear.Text = "?"
     JukeGear.TextColor3 = Color3.fromRGB(200, 200, 200)
     JukeGear.Font = Enum.Font.GothamBold
     JukeGear.TextSize = 14
     JukeGear.ZIndex = 3
     JukeGear.Parent = JukeButton
 
-    -- ═══════════════════════════════════════════════════════
-    -- ✅ JUKE SETTINGS PANEL
-    -- ═══════════════════════════════════════════════════════
+    -- -------------------------------------------------------
+    -- ? JUKE SETTINGS PANEL
+    -- -------------------------------------------------------
 
     local JukeSettings = Instance.new("Frame")
     JukeSettings.Name = "JukeSettings"
@@ -4374,13 +4417,13 @@ function createRightButtons(device)
     JSCorner.Parent = JukeSettings
 
     local JSBlackStroke = Instance.new("UIStroke")
-    JSBlackStroke.Color = Color3.fromRGB(255, 200, 0)
+    JSBlackStroke.Color = Color3.fromRGB(0, 0, 0)
     JSBlackStroke.Thickness = 4
     JSBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     JSBlackStroke.Parent = JukeSettings
 
     local JSStroke = Instance.new("UIStroke")
-    JSStroke.Color = Color3.fromRGB(255, 230, 80)
+    JSStroke.Color = Color3.fromRGB(255, 255, 255)
     JSStroke.Thickness = 2.5
     JSStroke.Transparency = 0.35
     JSStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -4388,7 +4431,7 @@ function createRightButtons(device)
     JSStroke.Parent = JukeSettings
 
     local JSWaveGrad = Instance.new("UIGradient")
-    JSWaveGrad.Color = ColorSequence.new(Color3.fromRGB(255, 230, 80))
+    JSWaveGrad.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
     JSWaveGrad.Transparency = NumberSequence.new({
         NumberSequenceKeypoint.new(0, 1),
         NumberSequenceKeypoint.new(0.4, 0),
@@ -4404,7 +4447,7 @@ function createRightButtons(device)
     local JSTitle = Instance.new("TextLabel")
     JSTitle.Size = UDim2.new(1, 0, 0, 30)
     JSTitle.BackgroundTransparency = 1
-    JSTitle.Text = "⚙ Hub Settings"
+    JSTitle.Text = "? Hub Settings"
     JSTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
     JSTitle.Font = Enum.Font.GothamBold
     JSTitle.TextSize = 14
@@ -4416,7 +4459,7 @@ function createRightButtons(device)
     JSClose.Size = UDim2.new(0, 24, 0, 24)
     JSClose.Position = UDim2.new(1, -28, 0, 3)
     JSClose.BackgroundTransparency = 1
-    JSClose.Text = "✕"
+    JSClose.Text = "?"
     JSClose.TextColor3 = Color3.fromRGB(255, 80, 80)
     JSClose.Font = Enum.Font.GothamBold
     JSClose.TextSize = 14
@@ -4451,7 +4494,7 @@ function createRightButtons(device)
     local FloatMinus = Instance.new("TextButton")
     FloatMinus.Size = UDim2.new(0, 22, 0, 22)
     FloatMinus.Position = UDim2.new(1, -48, 0, 37)
-    FloatMinus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    FloatMinus.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
     FloatMinus.Text = "-"
     FloatMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
     FloatMinus.Font = Enum.Font.GothamBold
@@ -4463,7 +4506,7 @@ function createRightButtons(device)
     local FloatPlus = Instance.new("TextButton")
     FloatPlus.Size = UDim2.new(0, 22, 0, 22)
     FloatPlus.Position = UDim2.new(1, -22, 0, 37)
-    FloatPlus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    FloatPlus.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
     FloatPlus.Text = "+"
     FloatPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
     FloatPlus.Font = Enum.Font.GothamBold
@@ -4508,7 +4551,7 @@ function createRightButtons(device)
     local DelayMinus = Instance.new("TextButton")
     DelayMinus.Size = UDim2.new(0, 22, 0, 22)
     DelayMinus.Position = UDim2.new(1, -48, 0, 67)
-    DelayMinus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    DelayMinus.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
     DelayMinus.Text = "-"
     DelayMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
     DelayMinus.Font = Enum.Font.GothamBold
@@ -4520,7 +4563,7 @@ function createRightButtons(device)
     local DelayPlus = Instance.new("TextButton")
     DelayPlus.Size = UDim2.new(0, 22, 0, 22)
     DelayPlus.Position = UDim2.new(1, -22, 0, 67)
-    DelayPlus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    DelayPlus.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
     DelayPlus.Text = "+"
     DelayPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
     DelayPlus.Font = Enum.Font.GothamBold
@@ -4565,7 +4608,7 @@ function createRightButtons(device)
     local SpeedMinus = Instance.new("TextButton")
     SpeedMinus.Size = UDim2.new(0, 22, 0, 22)
     SpeedMinus.Position = UDim2.new(1, -48, 0, 97)
-    SpeedMinus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    SpeedMinus.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
     SpeedMinus.Text = "-"
     SpeedMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
     SpeedMinus.Font = Enum.Font.GothamBold
@@ -4577,7 +4620,7 @@ function createRightButtons(device)
     local SpeedPlus = Instance.new("TextButton")
     SpeedPlus.Size = UDim2.new(0, 22, 0, 22)
     SpeedPlus.Position = UDim2.new(1, -22, 0, 97)
-    SpeedPlus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    SpeedPlus.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
     SpeedPlus.Text = "+"
     SpeedPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
     SpeedPlus.Font = Enum.Font.GothamBold
@@ -4595,9 +4638,9 @@ function createRightButtons(device)
         SpeedValLabel.Text = tostring(jukeFloatSpeed)
     end)
 
-    -- ═══════════════════════════════════════════════════════
-    -- ✅ BUTTON SIZE +/- (resizes right-side buttons)
-    -- ═══════════════════════════════════════════════════════
+    -- -------------------------------------------------------
+    -- ? BUTTON SIZE +/- (resizes right-side buttons)
+    -- -------------------------------------------------------
 
     local allRightButtons = {DesyncButton, LaggerButton, TrackPlayerButton, HitCircleButton, JukeButton}
 
@@ -4627,7 +4670,7 @@ function createRightButtons(device)
     local BtnSizeMinus = Instance.new("TextButton")
     BtnSizeMinus.Size = UDim2.new(0, 22, 0, 22)
     BtnSizeMinus.Position = UDim2.new(1, -48, 0, 127)
-    BtnSizeMinus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    BtnSizeMinus.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
     BtnSizeMinus.Text = "-"
     BtnSizeMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
     BtnSizeMinus.Font = Enum.Font.GothamBold
@@ -4639,7 +4682,7 @@ function createRightButtons(device)
     local BtnSizePlus = Instance.new("TextButton")
     BtnSizePlus.Size = UDim2.new(0, 22, 0, 22)
     BtnSizePlus.Position = UDim2.new(1, -22, 0, 127)
-    BtnSizePlus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    BtnSizePlus.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
     BtnSizePlus.Text = "+"
     BtnSizePlus.TextColor3 = Color3.fromRGB(255, 255, 255)
     BtnSizePlus.Font = Enum.Font.GothamBold
@@ -4679,9 +4722,9 @@ function createRightButtons(device)
         relayoutRightButtons(buttonSize)
     end)
 
-    -- ═══════════════════════════════════════════════════════
-    -- ✅ LEFT BUTTON SIZE +/- (resizes left-side buttons)
-    -- ═══════════════════════════════════════════════════════
+    -- -------------------------------------------------------
+    -- ? LEFT BUTTON SIZE +/- (resizes left-side buttons)
+    -- -------------------------------------------------------
 
     local leftBtnSize = device == "iPhone" and 55 or 70
     local leftYOffset = leftBtnSize + 10
@@ -4712,7 +4755,7 @@ function createRightButtons(device)
     local LeftBtnMinus = Instance.new("TextButton")
     LeftBtnMinus.Size = UDim2.new(0, 22, 0, 22)
     LeftBtnMinus.Position = UDim2.new(1, -48, 0, 157)
-    LeftBtnMinus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    LeftBtnMinus.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
     LeftBtnMinus.Text = "-"
     LeftBtnMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
     LeftBtnMinus.Font = Enum.Font.GothamBold
@@ -4724,7 +4767,7 @@ function createRightButtons(device)
     local LeftBtnPlus = Instance.new("TextButton")
     LeftBtnPlus.Size = UDim2.new(0, 22, 0, 22)
     LeftBtnPlus.Position = UDim2.new(1, -22, 0, 157)
-    LeftBtnPlus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    LeftBtnPlus.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
     LeftBtnPlus.Text = "+"
     LeftBtnPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
     LeftBtnPlus.Font = Enum.Font.GothamBold
@@ -4767,9 +4810,9 @@ function createRightButtons(device)
         relayoutLeftButtons(leftBtnSize)
     end)
 
-    -- ═══════════════════════════════════════════════════════
-    -- ✅ SMALL GUI SIZE +/- (resizes top small GUI buttons)
-    -- ═══════════════════════════════════════════════════════
+    -- -------------------------------------------------------
+    -- ? SMALL GUI SIZE +/- (resizes top small GUI buttons)
+    -- -------------------------------------------------------
 
     local smallGuiWidth = 80
     local smallGuiHeight = 20
@@ -4800,7 +4843,7 @@ function createRightButtons(device)
     local SmallGuiMinus = Instance.new("TextButton")
     SmallGuiMinus.Size = UDim2.new(0, 22, 0, 22)
     SmallGuiMinus.Position = UDim2.new(1, -48, 0, 187)
-    SmallGuiMinus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    SmallGuiMinus.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
     SmallGuiMinus.Text = "-"
     SmallGuiMinus.TextColor3 = Color3.fromRGB(255, 255, 255)
     SmallGuiMinus.Font = Enum.Font.GothamBold
@@ -4812,7 +4855,7 @@ function createRightButtons(device)
     local SmallGuiPlus = Instance.new("TextButton")
     SmallGuiPlus.Size = UDim2.new(0, 22, 0, 22)
     SmallGuiPlus.Position = UDim2.new(1, -22, 0, 187)
-    SmallGuiPlus.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    SmallGuiPlus.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
     SmallGuiPlus.Text = "+"
     SmallGuiPlus.TextColor3 = Color3.fromRGB(255, 255, 255)
     SmallGuiPlus.Font = Enum.Font.GothamBold
@@ -4845,9 +4888,9 @@ function createRightButtons(device)
         resizeSmallGUIs(smallGuiWidth, smallGuiHeight)
     end)
 
-    -- ═══════════════════════════════════════════════════════
-    -- ✅ SAVE & RESET BUTTONS
-    -- ═══════════════════════════════════════════════════════
+    -- -------------------------------------------------------
+    -- ? SAVE & RESET BUTTONS
+    -- -------------------------------------------------------
 
     local DEFAULT_JUKE = {floatY = 5, tpDelay = 0.35, floatSpeed = 40, btnSize = device == "iPhone" and 38 or 48, leftBtnSize = device == "iPhone" and 55 or 70, smallW = 80, smallH = 20}
 
@@ -4855,7 +4898,7 @@ function createRightButtons(device)
     SaveBtn.Size = UDim2.new(0.44, 0, 0, 28)
     SaveBtn.Position = UDim2.new(0.03, 0, 0, 220)
     SaveBtn.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
-    SaveBtn.Text = "💾 Save"
+    SaveBtn.Text = "?? Save"
     SaveBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     SaveBtn.Font = Enum.Font.GothamBold
     SaveBtn.TextSize = 12
@@ -4867,7 +4910,7 @@ function createRightButtons(device)
     ResetBtn.Size = UDim2.new(0.44, 0, 0, 28)
     ResetBtn.Position = UDim2.new(0.53, 0, 0, 220)
     ResetBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-    ResetBtn.Text = "🔄 Reset"
+    ResetBtn.Text = "?? Reset"
     ResetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     ResetBtn.Font = Enum.Font.GothamBold
     ResetBtn.TextSize = 12
@@ -4895,7 +4938,7 @@ function createRightButtons(device)
         ConfigData.smallGuiWidth = smallGuiWidth
         ConfigData.smallGuiHeight = smallGuiHeight
         SaveConfig()
-        SaveStatus.Text = "✅ Saved!"
+        SaveStatus.Text = "? Saved!"
         SaveStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
         task.delay(2, function() SaveStatus.Text = "" end)
     end)
@@ -4917,7 +4960,7 @@ function createRightButtons(device)
         relayoutRightButtons(buttonSize)
         relayoutLeftButtons(leftBtnSize)
         resizeSmallGUIs(smallGuiWidth, smallGuiHeight)
-        SaveStatus.Text = "🔄 Reset to defaults!"
+        SaveStatus.Text = "?? Reset to defaults!"
         SaveStatus.TextColor3 = Color3.fromRGB(255, 200, 80)
         task.delay(2, function() SaveStatus.Text = "" end)
     end)
@@ -4940,9 +4983,9 @@ function createRightButtons(device)
         JukeSettings.Visible = not JukeSettings.Visible
     end)
 
-    -- ═══════════════════════════════════════════════════════
-    -- ✅ JUKE LOGIC: Float up, spam tool, wait, then TP down
-    -- ═══════════════════════════════════════════════════════
+    -- -------------------------------------------------------
+    -- ? JUKE LOGIC: Float up, spam tool, wait, then TP down
+    -- -------------------------------------------------------
 
     JukeButton.MouseButton1Click:Connect(function()
         if jukeActive then return end
@@ -4982,7 +5025,7 @@ function createRightButtons(device)
                         rrr.AssemblyLinearVelocity = Vector3.zero
                     end
                     jukeActive = false
-                    JukeButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+                    JukeButton.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
                 end)
                 return
             end
@@ -4991,24 +5034,24 @@ function createRightButtons(device)
     end)
 end
 
-print("══════════════════════════════════════════════")
+print("----------------------------------------------")
 print("   Celestial Hub LOADED")
-print("══════════════════════════════════════════════")
-print("✅ VISIBLE SMALL GUIs (5):")
+print("----------------------------------------------")
+print("? VISIBLE SMALL GUIs (5):")
 print("   Speed (ON), Unwalk (ON), Anti Rag (ON),")
 print("   Ragdoll TP (ON), Drop Brainrot (OFF)")
-print("✅ AUTO-ENABLED MAIN:")
+print("? AUTO-ENABLED MAIN:")
 print("   Speed, Unwalk, Anti Rag, Ragdoll TP")
-print("✅ AUTO-ENABLED MISC:")
+print("? AUTO-ENABLED MISC:")
 print("   FPS, Optimizer, Hitbox, Anti Death")
-print("⚪ Hidden until you turn on:")
+print("? Hidden until you turn on:")
 print("   Inf Jump, Spin Bot, Float, FOV")
-print("✅ WORKS ON: PC, iPad, iPhone!")
-print("══════════════════════════════════════════════")
+print("? WORKS ON: PC, iPad, iPhone!")
+print("----------------------------------------------")
 
 game:GetService("Players").PlayerRemoving:Connect(function(plr)
     if plr == player then
         SaveConfig()
-        print("[TIM CHEESE DUELS] ✅ Auto-saved config on leave!")
+        print("[TIM CHEESE DUELS] ? Auto-saved config on leave!")
     end
 end)
