@@ -1884,7 +1884,7 @@ do
         end
 
         if autoLeft and autoRight and autoMedusa then
-            local newAuto = math.clamp(autoLeft.Size.X.Offset + delta, 30, 120)
+            local newAuto = math.clamp(autoLeft.Size.X.Offset + delta, 16, 46)
             local sp = 10
             local x1 = -(newAuto * 3 + sp * 2 + 20)
             local x2 = x1 + newAuto + sp
@@ -1904,7 +1904,7 @@ do
             setFontBySize(autoMedusa)
 
             if #rightList > 0 then
-                local newRight = math.clamp(rightList[1].Size.X.Offset + delta, 24, 90)
+                local newRight = math.clamp(rightList[1].Size.X.Offset + delta, 13, 34)
                 local rx1 = -(newRight * 3 + sp * 2 + 20)
                 local rx2 = rx1 + newRight + sp
                 local rx3 = rx2 + newRight + sp
@@ -1925,11 +1925,11 @@ do
     end
 
     BTaskMinus.MouseButton1Click:Connect(function()
-        resizeGameplayButtons(-4)
+        resizeGameplayButtons(-2)
     end)
 
     BTaskPlus.MouseButton1Click:Connect(function()
-        resizeGameplayButtons(4)
+        resizeGameplayButtons(2)
     end)
 
     local BTaskPanel = Instance.new("Frame")
@@ -3658,7 +3658,7 @@ end
 local AutoLeftSmallGUI, AutoRightSmallGUI
 
 function createAutoButtons(device)
-    local buttonSize = device == "iPhone" and 55 or 70
+    local buttonSize = math.max(16, math.floor((device == "iPhone" and 55 or 70) / 3))
     local spacing = 10
     local rowX1 = -(buttonSize * 3 + spacing * 2 + 20)
     local rowX2 = rowX1 + buttonSize + spacing
@@ -3912,7 +3912,7 @@ end
 -- ═══════════════════════════════════════════════════════
 
 function createRightButtons(device)
-    local buttonSize = device == "iPhone" and 38 or 48
+    local buttonSize = math.max(13, math.floor((device == "iPhone" and 38 or 48) / 3))
     local spacing = 10
     local x1 = -(buttonSize * 3 + spacing * 2 + 20)
     local x2 = x1 + buttonSize + spacing
@@ -4829,12 +4829,12 @@ function createRightButtons(device)
     end
 
     BtnSizeMinus.MouseButton1Click:Connect(function()
-        buttonSize = math.max(24, buttonSize - 4)
+        buttonSize = math.max(13, buttonSize - 2)
         BtnSizeValLabel.Text = tostring(buttonSize)
         relayoutRightButtons(buttonSize)
     end)
     BtnSizePlus.MouseButton1Click:Connect(function()
-        buttonSize = math.min(80, buttonSize + 4)
+        buttonSize = math.min(34, buttonSize + 2)
         BtnSizeValLabel.Text = tostring(buttonSize)
         relayoutRightButtons(buttonSize)
     end)
