@@ -69,6 +69,7 @@ local ConfigData = {
 
 local buttonsLocked = false
 local getButtonPositions
+local _onScreenGameButtons = {} -- tracks all draggable game buttons (auto + right-side)
 local SmallTPDownGUI, SmallTPDownButton, TPDownDot
 local SmallTPUpGUI, SmallTPUpButton, TPUpDot
 
@@ -1569,91 +1570,91 @@ end)
 local SmallGUIInstances = {}
 
 local function createSmallGUI(name, yPosition)
-    -- Outer wrapper: transparent so external BackgroundColor3 assignments (legacy callers) have no visual effect
     local SmallGUI = Instance.new("Frame")
     SmallGUI.Name = "Small"..name.."GUI"
-    SmallGUI.Size = UDim2.new(0, 145, 0, 52)
-    SmallGUI.Position = UDim2.new(0.5, -72, 0, yPosition)
-    SmallGUI.BackgroundTransparency = 1
+    SmallGUI.Size = UDim2.new(0, 80, 0, 20) -- Smaller width and height
+    SmallGUI.Position = UDim2.new(0.5, -40, 0, yPosition)
+    SmallGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    SmallGUI.BackgroundTransparency = 0
     SmallGUI.BorderSizePixel = 0
     SmallGUI.Visible = false
     SmallGUI.Active = true
-    SmallGUI.Draggable = true
+    SmallGUI.Draggable = true  -- ✅ DRAGGABLE!
     SmallGUI.Parent = ScreenGui
 
-    -- Visual body (styled like reference widget, Celestial Hub colors)
-    local body = Instance.new("Frame", SmallGUI)
-    body.Size = UDim2.new(1, 0, 1, 0)
-    body.BackgroundColor3 = Color3.fromRGB(12, 8, 22)
-    body.BackgroundTransparency = 0.3
-    body.BorderSizePixel = 0
-    Instance.new("UICorner", body).CornerRadius = UDim.new(0, 10)
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 8)
+    Corner.Parent = SmallGUI
 
-    local Stroke = Instance.new("UIStroke", body)
-    Stroke.Color = THEME.PINK
-    Stroke.Thickness = 1.5
+    local Stroke = Instance.new("UIStroke")
+    Stroke.Color = THEME.BG
+    Stroke.Thickness = 4
     Stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    Stroke.Parent = SmallGUI
 
-    -- Collapse/expand arrow (top-left)
-    local ArrowBtn = Instance.new("TextButton", body)
-    ArrowBtn.Size = UDim2.new(0, 14, 0, 14)
-    ArrowBtn.Position = UDim2.new(0, 4, 0, 4)
-    ArrowBtn.BackgroundTransparency = 1
-    ArrowBtn.Text = "▲"
-    ArrowBtn.TextColor3 = THEME.PINK
-    ArrowBtn.TextScaled = true
-    ArrowBtn.Font = Enum.Font.GothamBold
-    ArrowBtn.ZIndex = 3
+    local WaveStroke = Instance.new("UIStroke")
+    WaveStroke.Color = THEME.GOLD
+    WaveStroke.Thickness = 2.5
+    WaveStroke.Transparency = 0.35
+    WaveStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    WaveStroke.ZIndex = 2
+    WaveStroke.Parent = SmallGUI
 
-    -- Feature name label
-    local Label = Instance.new("TextLabel", body)
-    Label.Size = UDim2.new(1, -24, 0, 16)
-    Label.Position = UDim2.new(0, 22, 0, 2)
+    local WaveGrad = Instance.new("UIGradient")
+    WaveGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, THEME.GOLD),
+        ColorSequenceKeypoint.new(0.5, THEME.GOLD),
+        ColorSequenceKeypoint.new(1, THEME.GOLD)
+    })
+    WaveGrad.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 1),
+        NumberSequenceKeypoint.new(0.4, 0),
+        NumberSequenceKeypoint.new(0.6, 0),
+        NumberSequenceKeypoint.new(1, 1)
+    })
+    WaveGrad.Rotation = 0
+    WaveGrad.Parent = WaveStroke
+
+    local pulseSmall = TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+    TweenService:Create(WaveStroke, pulseSmall, {Thickness = 4.2, Transparency = 0.08}):Play()
+    RunService.Heartbeat:Connect(function(dt)
+        pcall(function() WaveGrad.Rotation = (WaveGrad.Rotation + 140 * dt) % 360 end)
+    end)
+
+    -- ✅ GREEN DOT!
+    local GreenDot = Instance.new("Frame")
+    GreenDot.Size = UDim2.new(0, 7, 0, 7)
+    GreenDot.Position = UDim2.new(0, 5, 0.5, -3)
+    GreenDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100) -- GRAY by default
+    GreenDot.BorderSizePixel = 0
+    GreenDot.Parent = SmallGUI
+
+    local DotCorner = Instance.new("UICorner")
+    DotCorner.CornerRadius = UDim.new(1, 0)
+    DotCorner.Parent = GreenDot
+
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(1, -32, 1, 0)
+    Label.Position = UDim2.new(0, 18, 0, 0)
     Label.BackgroundTransparency = 1
     Label.Text = name
-    Label.TextColor3 = THEME.GOLD
-    Label.TextScaled = true
+    Label.TextColor3 = Color3.fromRGB(220, 220, 220)
     Label.Font = Enum.Font.GothamBold
+    Label.TextSize = 9 -- Smaller text
     Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = SmallGUI
 
-    -- Main ON/OFF toggle button (wide, spans bottom of frame)
-    local Button = Instance.new("TextButton", body)
-    Button.Size = UDim2.new(1, -10, 0, 22)
-    Button.Position = UDim2.new(0, 5, 0, 24)
-    Button.BackgroundColor3 = THEME.OFF
-    Button.Text = "OFF"
-    Button.TextColor3 = THEME.TEXT
-    Button.TextScaled = true
+    -- ✅ CLICK BUTTON (smaller, on right side only - doesn't block dragging!)
+    local Button = Instance.new("TextButton")
+    Button.Size = UDim2.new(0, 20, 1, 0)
+    Button.Position = UDim2.new(1, -20, 0, 0)
+    Button.BackgroundTransparency = 1
+    Button.Text = "⚡"
+    Button.TextColor3 = Color3.fromRGB(220, 220, 220)
     Button.Font = Enum.Font.GothamBold
-    Button.ZIndex = 3
-    Instance.new("UICorner", Button).CornerRadius = UDim.new(0, 5)
-
-    -- Invisible stub Frame returned as "GreenDot" for backward compat.
-    -- Its BackgroundColor3 is set by 50+ existing callers to indicate ON/OFF state.
-    -- A signal here auto-drives the Button's text and color — no caller changes needed.
-    local GreenDot = Instance.new("Frame", SmallGUI)
-    GreenDot.Size = UDim2.new(0, 1, 0, 1)
-    GreenDot.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-    GreenDot.BackgroundTransparency = 1
-    GreenDot.BorderSizePixel = 0
-
-    GreenDot:GetPropertyChangedSignal("BackgroundColor3"):Connect(function()
-        -- Callers use: Color3.fromRGB(0,255,0) for ON  (R=0)
-        --              Color3.fromRGB(100,100,100) for OFF (R≈0.39)
-        local isOn = GreenDot.BackgroundColor3.R < 0.1
-        Button.Text = isOn and "ON" or "OFF"
-        Button.BackgroundColor3 = isOn and THEME.PINK or THEME.OFF
-        Button.TextColor3 = isOn and Color3.fromRGB(12, 8, 22) or THEME.TEXT
-    end)
-
-    -- Collapse behavior
-    local collapsed = false
-    ArrowBtn.MouseButton1Click:Connect(function()
-        collapsed = not collapsed
-        ArrowBtn.Text = collapsed and "▼" or "▲"
-        SmallGUI.Size = collapsed and UDim2.new(0, 145, 0, 22) or UDim2.new(0, 145, 0, 52)
-        Button.Visible = not collapsed
-    end)
+    Button.TextSize = 12 -- Smaller icon
+    Button.ZIndex = 2
+    Button.Parent = SmallGUI
 
     SmallGUIInstances[name] = {Frame = SmallGUI, Label = Label, Button = Button, Dot = GreenDot}
 
@@ -1684,7 +1685,7 @@ local function refreshSmallButtonPositions()
     end
 
     local columns = 5
-    local buttonHeight = 52
+    local buttonHeight = 30
     local rows = 3
     local gapX = 8
     local gapY = 8
@@ -1693,7 +1694,7 @@ local function refreshSmallButtonPositions()
     local viewport = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1280, 720)
     local availableWidth = math.max(400, viewport.X - sidePadding * 2)
     local buttonWidth = math.floor((availableWidth - gapX * (columns - 1)) / columns)
-    buttonWidth = math.clamp(buttonWidth, 120, 180)
+    buttonWidth = math.clamp(buttonWidth, 70, 150)
     local totalWidth = columns * buttonWidth + (columns - 1) * gapX
     local startX = math.max(sidePadding, math.floor((viewport.X - totalWidth) / 2))
     local startY = topPadding
@@ -1859,19 +1860,78 @@ do
         -- resize top small draggable frames
         for _, entry in pairs(SmallGUIInstances) do
             if entry and entry.Frame then
-                local w = math.clamp(entry.Frame.Size.X.Offset + delta, 120, 220)
-                entry.Frame.Size = UDim2.new(0, w, 0, entry.Frame.Size.Y.Offset)
+                local w = math.clamp(entry.Frame.Size.X.Offset + delta, 50, 180)
+                local h = math.clamp(entry.Frame.Size.Y.Offset + math.floor(delta * 0.3), 14, 44)
+                entry.Frame.Size = UDim2.new(0, w, 0, h)
             end
         end
         if refreshSmallButtonPositions then refreshSmallButtonPositions() end
+
+        local autoLeft, autoRight, autoMedusa
+        local rightList = {}
+        for _, child in ipairs(ScreenGui:GetChildren()) do
+            if child:IsA("TextButton") then
+                local t = child.Text or ""
+                if t:find("AUTO\nLEFT") then autoLeft = child end
+                if t:find("AUTO\nRIGHT") then autoRight = child end
+                if t:find("AUTO\nMEDUSA") then autoMedusa = child end
+                if t:find("DESYNC") or t:find("LAGGER") or t:find("TRACK") or t:find("HIT") or t:find("JUKE") then
+                    table.insert(rightList, child)
+                end
+            end
+        end
+
+        local function setFontBySize(btn)
+            btn.TextSize = math.clamp(math.floor(btn.Size.X.Offset * 0.18), 8, 16)
+        end
+
+        if autoLeft and autoRight and autoMedusa then
+            local newAuto = math.clamp(autoLeft.Size.X.Offset + delta, 30, 120)
+            local sp = 10
+            local x1 = -(newAuto * 3 + sp * 2 + 20)
+            local x2 = x1 + newAuto + sp
+            local x3 = x2 + newAuto + sp
+            local y = -(newAuto * 2 + sp * 2)
+
+            autoLeft.Size = UDim2.new(0, newAuto, 0, newAuto)
+            autoRight.Size = UDim2.new(0, newAuto, 0, newAuto)
+            autoMedusa.Size = UDim2.new(0, newAuto, 0, newAuto)
+
+            autoLeft.Position = UDim2.new(1, x1, 0.5, y)
+            autoRight.Position = UDim2.new(1, x2, 0.5, y)
+            autoMedusa.Position = UDim2.new(1, x3, 0.5, y)
+
+            setFontBySize(autoLeft)
+            setFontBySize(autoRight)
+            setFontBySize(autoMedusa)
+
+            if #rightList > 0 then
+                local newRight = math.clamp(rightList[1].Size.X.Offset + delta, 24, 90)
+                local rx1 = -(newRight * 3 + sp * 2 + 20)
+                local rx2 = rx1 + newRight + sp
+                local rx3 = rx2 + newRight + sp
+                local ry1 = y + newAuto + 14
+                local ry2 = ry1 + newRight + sp
+
+                for _, btn in ipairs(rightList) do
+                    btn.Size = UDim2.new(0, newRight, 0, newRight)
+                    setFontBySize(btn)
+                    if btn.Text:find("DESYNC") then btn.Position = UDim2.new(1, rx1, 0.5, ry1) end
+                    if btn.Text:find("LAGGER") then btn.Position = UDim2.new(1, rx2, 0.5, ry1) end
+                    if btn.Text:find("TRACK") then btn.Position = UDim2.new(1, rx3, 0.5, ry1) end
+                    if btn.Text:find("HIT") then btn.Position = UDim2.new(1, rx1, 0.5, ry2) end
+                    if btn.Text:find("JUKE") then btn.Position = UDim2.new(1, rx2, 0.5, ry2) end
+                end
+            end
+        end
     end
 
     BTaskMinus.MouseButton1Click:Connect(function()
-        resizeGameplayButtons(-2)
+        resizeGameplayButtons(-4)
     end)
 
     BTaskPlus.MouseButton1Click:Connect(function()
-        resizeGameplayButtons(2)
+        resizeGameplayButtons(4)
     end)
 
     local BTaskPanel = Instance.new("Frame")
@@ -1988,6 +2048,64 @@ do
         applyButtonVisibility()
     end)
 
+    -- ══════════════════════════════════════════
+    -- SAVE LAYOUT + LOCK IN buttons at panel bottom
+    -- ══════════════════════════════════════════
+    BTaskPanel.Size = UDim2.new(0, 205, 0, 370)
+    BTaskList.Size = UDim2.new(1, -12, 1, -112)
+
+    local BTaskSaveBtn = Instance.new("TextButton")
+    BTaskSaveBtn.Size = UDim2.new(1, -16, 0, 30)
+    BTaskSaveBtn.Position = UDim2.new(0, 8, 1, -100)
+    BTaskSaveBtn.BackgroundColor3 = Color3.fromRGB(30, 160, 80)
+    BTaskSaveBtn.Text = "💾  SAVE LAYOUT"
+    BTaskSaveBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    BTaskSaveBtn.Font = Enum.Font.GothamBold
+    BTaskSaveBtn.TextSize = 12
+    BTaskSaveBtn.Parent = BTaskPanel
+    Instance.new("UICorner", BTaskSaveBtn).CornerRadius = UDim.new(0, 8)
+
+    local BTaskSaveFeedback = Instance.new("TextLabel")
+    BTaskSaveFeedback.Size = UDim2.new(1, -16, 0, 14)
+    BTaskSaveFeedback.Position = UDim2.new(0, 8, 1, -66)
+    BTaskSaveFeedback.BackgroundTransparency = 1
+    BTaskSaveFeedback.Text = ""
+    BTaskSaveFeedback.TextColor3 = Color3.fromRGB(100, 220, 130)
+    BTaskSaveFeedback.Font = Enum.Font.Gotham
+    BTaskSaveFeedback.TextSize = 10
+    BTaskSaveFeedback.TextXAlignment = Enum.TextXAlignment.Center
+    BTaskSaveFeedback.Parent = BTaskPanel
+
+    local BTaskLockBtn = Instance.new("TextButton")
+    BTaskLockBtn.Size = UDim2.new(1, -16, 0, 30)
+    BTaskLockBtn.Position = UDim2.new(0, 8, 1, -48)
+    BTaskLockBtn.BackgroundColor3 = buttonsLocked and Color3.fromRGB(200, 60, 60) or Color3.fromRGB(60, 100, 200)
+    BTaskLockBtn.Text = buttonsLocked and "🔒  LOCKED" or "🔓  LOCK IN"
+    BTaskLockBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    BTaskLockBtn.Font = Enum.Font.GothamBold
+    BTaskLockBtn.TextSize = 12
+    BTaskLockBtn.Parent = BTaskPanel
+    Instance.new("UICorner", BTaskLockBtn).CornerRadius = UDim.new(0, 8)
+
+    BTaskSaveBtn.MouseButton1Click:Connect(function()
+        local ok = SaveConfig()
+        BTaskSaveFeedback.Text = ok and "✅ Saved!" or "❌ Save failed"
+        task.delay(2, function() BTaskSaveFeedback.Text = "" end)
+    end)
+
+    BTaskLockBtn.MouseButton1Click:Connect(function()
+        buttonsLocked = not buttonsLocked
+        setButtonsDraggable(not buttonsLocked)
+        if buttonsLocked then
+            BTaskLockBtn.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+            BTaskLockBtn.Text = "🔒  LOCKED"
+        else
+            BTaskLockBtn.BackgroundColor3 = Color3.fromRGB(60, 100, 200)
+            BTaskLockBtn.Text = "🔓  LOCK IN"
+        end
+        SaveConfig()
+    end)
+
     applyButtonVisibility()
 end
 
@@ -2006,7 +2124,7 @@ local function deserializeUDim2(data)
 end
 
 getButtonPositions = function()
-    return {
+    local pos = {
         Speed = serializeUDim2(SmallSpeedGUI.Position),
         Unwalk = serializeUDim2(SmallUnwalkGUI.Position),
         ["Spin Bot"] = serializeUDim2(SmallSpinBotGUI.Position),
@@ -2019,6 +2137,12 @@ getButtonPositions = function()
         ["TP Down"] = serializeUDim2(SmallTPDownGUI.Position),
         ["TP Up"] = serializeUDim2(SmallTPUpGUI.Position),
     }
+    for _, entry in ipairs(_onScreenGameButtons) do
+        if entry and entry.btn and entry.btn.Parent then
+            pos["_game_" .. entry.name] = serializeUDim2(entry.btn.Position)
+        end
+    end
+    return pos
 end
 
 local function applyButtonPositions(data)
@@ -2044,6 +2168,15 @@ local function applyButtonPositions(data)
             end
         end
     end
+    for _, entry in ipairs(_onScreenGameButtons) do
+        local key = "_game_" .. entry.name
+        if entry.btn and entry.btn.Parent and data[key] then
+            local position = deserializeUDim2(data[key])
+            if position then
+                entry.btn.Position = position
+            end
+        end
+    end
 end
 
 local function setButtonsDraggable(enabled)
@@ -2060,6 +2193,11 @@ local function setButtonsDraggable(enabled)
     }) do
         if gui then
             gui.Draggable = enabled
+        end
+    end
+    for _, entry in ipairs(_onScreenGameButtons) do
+        if entry and entry.btn and entry.btn.Parent then
+            entry.btn.Draggable = enabled
         end
     end
 end
@@ -3600,7 +3738,7 @@ end
 local AutoLeftSmallGUI, AutoRightSmallGUI
 
 function createAutoButtons(device)
-    local buttonSize = math.max(16, math.floor((device == "iPhone" and 55 or 70) / 3))
+    local buttonSize = device == "iPhone" and 55 or 70
     local spacing = 10
     local rowX1 = -(buttonSize * 3 + spacing * 2 + 20)
     local rowX2 = rowX1 + buttonSize + spacing
@@ -3617,7 +3755,10 @@ function createAutoButtons(device)
     AutoLeftButton.TextColor3 = THEME.TEXT
     AutoLeftButton.Font = Enum.Font.GothamBold
     AutoLeftButton.TextSize = device == "iPhone" and 9 or 12
+    AutoLeftButton.Active = true
+    AutoLeftButton.Draggable = true
     AutoLeftButton.Parent = ScreenGui
+    table.insert(_onScreenGameButtons, {name="AutoLeft", btn=AutoLeftButton})
 
     local LeftCorner = Instance.new("UICorner")
     LeftCorner.CornerRadius = UDim.new(0, 8)
@@ -3647,7 +3788,10 @@ function createAutoButtons(device)
     AutoMedusaButton.TextColor3 = THEME.TEXT
     AutoMedusaButton.Font = Enum.Font.GothamBold
     AutoMedusaButton.TextSize = device == "iPhone" and 9 or 12
+    AutoMedusaButton.Active = true
+    AutoMedusaButton.Draggable = true
     AutoMedusaButton.Parent = ScreenGui
+    table.insert(_onScreenGameButtons, {name="AutoMedusa", btn=AutoMedusaButton})
 
     local MedusaCorner = Instance.new("UICorner")
     MedusaCorner.CornerRadius = UDim.new(0, 8)
@@ -3792,7 +3936,10 @@ function createAutoButtons(device)
     AutoRightButton.TextColor3 = THEME.TEXT
     AutoRightButton.Font = Enum.Font.GothamBold
     AutoRightButton.TextSize = device == "iPhone" and 9 or 12
+    AutoRightButton.Active = true
+    AutoRightButton.Draggable = true
     AutoRightButton.Parent = ScreenGui
+    table.insert(_onScreenGameButtons, {name="AutoRight", btn=AutoRightButton})
 
     local RightCorner = Instance.new("UICorner")
     RightCorner.CornerRadius = UDim.new(0, 8)
@@ -3854,7 +4001,7 @@ end
 -- ═══════════════════════════════════════════════════════
 
 function createRightButtons(device)
-    local buttonSize = math.max(13, math.floor((device == "iPhone" and 38 or 48) / 3))
+    local buttonSize = device == "iPhone" and 38 or 48
     local spacing = 10
     local x1 = -(buttonSize * 3 + spacing * 2 + 20)
     local x2 = x1 + buttonSize + spacing
@@ -3874,7 +4021,10 @@ function createRightButtons(device)
     DesyncButton.TextColor3 = THEME.TEXT
     DesyncButton.Font = Enum.Font.GothamBold
     DesyncButton.TextSize = device == "iPhone" and 9 or 12
+    DesyncButton.Active = true
+    DesyncButton.Draggable = true
     DesyncButton.Parent = ScreenGui
+    table.insert(_onScreenGameButtons, {name="Desync", btn=DesyncButton})
 
     local DesyncCorner = Instance.new("UICorner")
     DesyncCorner.CornerRadius = UDim.new(0, 8)
@@ -3992,7 +4142,10 @@ function createRightButtons(device)
         LaggerButton.TextColor3 = THEME.TEXT
         LaggerButton.Font = Enum.Font.GothamBold
         LaggerButton.TextSize = device == "iPhone" and 9 or 12
+        LaggerButton.Active = true
+        LaggerButton.Draggable = true
         LaggerButton.Parent = ScreenGui
+        table.insert(_onScreenGameButtons, {name="Lagger", btn=LaggerButton})
 
         local LaggerCorner = Instance.new("UICorner")
         LaggerCorner.CornerRadius = UDim.new(0, 8)
@@ -4331,7 +4484,10 @@ function createRightButtons(device)
     TrackPlayerButton.TextColor3 = THEME.TEXT
     TrackPlayerButton.Font = Enum.Font.GothamBold
     TrackPlayerButton.TextSize = device == "iPhone" and 9 or 12
+    TrackPlayerButton.Active = true
+    TrackPlayerButton.Draggable = true
     TrackPlayerButton.Parent = ScreenGui
+    table.insert(_onScreenGameButtons, {name="Track", btn=TrackPlayerButton})
 
     local TrackCorner = Instance.new("UICorner")
     TrackCorner.CornerRadius = UDim.new(0, 8)
@@ -4373,7 +4529,10 @@ function createRightButtons(device)
     HitCircleButton.TextColor3 = THEME.TEXT
     HitCircleButton.Font = Enum.Font.GothamBold
     HitCircleButton.TextSize = device == "iPhone" and 9 or 12
+    HitCircleButton.Active = true
+    HitCircleButton.Draggable = true
     HitCircleButton.Parent = ScreenGui
+    table.insert(_onScreenGameButtons, {name="HitCircle", btn=HitCircleButton})
 
     local HitCorner = Instance.new("UICorner")
     HitCorner.CornerRadius = UDim.new(0, 8)
@@ -4424,7 +4583,10 @@ function createRightButtons(device)
     JukeButton.TextColor3 = THEME.TEXT
     JukeButton.Font = Enum.Font.GothamBold
     JukeButton.TextSize = device == "iPhone" and 9 or 12
+    JukeButton.Active = true
+    JukeButton.Draggable = true
     JukeButton.Parent = ScreenGui
+    table.insert(_onScreenGameButtons, {name="Juke", btn=JukeButton})
 
     local JukeCorner = Instance.new("UICorner")
     JukeCorner.CornerRadius = UDim.new(0, 8)
@@ -4771,12 +4933,12 @@ function createRightButtons(device)
     end
 
     BtnSizeMinus.MouseButton1Click:Connect(function()
-        buttonSize = math.max(13, buttonSize - 2)
+        buttonSize = math.max(24, buttonSize - 4)
         BtnSizeValLabel.Text = tostring(buttonSize)
         relayoutRightButtons(buttonSize)
     end)
     BtnSizePlus.MouseButton1Click:Connect(function()
-        buttonSize = math.min(34, buttonSize + 2)
+        buttonSize = math.min(80, buttonSize + 4)
         BtnSizeValLabel.Text = tostring(buttonSize)
         relayoutRightButtons(buttonSize)
     end)
