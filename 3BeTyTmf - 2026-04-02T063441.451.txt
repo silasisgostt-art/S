@@ -1,8 +1,8 @@
--- TIM CHEESE DUELS
+-- CELESTIAL HUB
 
 --[[
 ══════════════════════════════════════════════════════════════
-                TIM CHEESE DUELS
+                 CELESTIAL HUB
 ══════════════════════════════════════════════════════════════
 ✅ Speed, Unwalk, Inf Jump, Ragdoll TP, Drop Brainrot
 ✅ FPS, Optimizer, Hitbox, auto buttons, right-side controls
@@ -28,6 +28,16 @@ local character
 local hrp
 local hum
 
+local THEME = {
+    BG = Color3.fromRGB(255, 196, 230),
+    PANEL = Color3.fromRGB(255, 236, 246),
+    PINK = Color3.fromRGB(255, 115, 198),
+    GOLD = Color3.fromRGB(255, 203, 92),
+    TEXT = Color3.fromRGB(255, 115, 198),
+    OFF = Color3.fromRGB(255, 226, 241),
+    ON = Color3.fromRGB(255, 190, 226),
+}
+
 local function setupCharacter(char)
     character = char
     hrp = character:WaitForChild("HumanoidRootPart")
@@ -41,7 +51,7 @@ player.CharacterAdded:Connect(setupCharacter)
 -- CONFIG SAVE/LOAD SYSTEM (AUTO-LOADS!)
 -- ═══════════════════════════════════════════════════════
 
-local CONFIG_FILE = "timcheeseduels_config.json"
+local CONFIG_FILE = "celestial_hub_config.json"
 
 local ConfigData = {
     speedEnabled = false,
@@ -80,14 +90,14 @@ local function SaveConfig()
             writefile(CONFIG_FILE, HttpService:JSONEncode(ConfigData))
         end)
         if success then
-            print("[TIM CHEESE DUELS] ✅ Config saved!")
+            print("[CELESTIAL HUB] ✅ Config saved!")
             return true
         else
-            warn("[TIM CHEESE DUELS] ❌ Save failed:", err)
+            warn("[CELESTIAL HUB] ❌ Save failed:", err)
             return false
         end
     else
-        warn("[TIM CHEESE DUELS] ⚠️ writefile not available")
+        warn("[CELESTIAL HUB] ⚠️ writefile not available")
         return false
     end
 end
@@ -100,7 +110,7 @@ local function LoadConfig()
         if success and data then
             ConfigData = data
             buttonsLocked = ConfigData.buttonsLocked or false
-            print("[TIM CHEESE DUELS] ✅ Config loaded!")
+            print("[CELESTIAL HUB] ✅ Config loaded!")
             return true
         end
     end
@@ -1393,9 +1403,9 @@ end
 
 local selectedDevice = nil
 local GUI_SIZES = {
-    PC = {Width = 520, Height = 400},
-    iPad = {Width = 420, Height = 360},
-    iPhone = {Width = 260, Height = 360}
+    PC = {Width = 430, Height = 300},
+    iPad = {Width = 340, Height = 280},
+    iPhone = {Width = 220, Height = 280}
 }
 
 -- ═══════════════════════════════════════════════════════
@@ -1403,7 +1413,7 @@ local GUI_SIZES = {
 -- ═══════════════════════════════════════════════════════
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "TimCheeseDuelsGUI"
+ScreenGui.Name = "CelestialHubGUI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = PlayerGui
@@ -1412,8 +1422,7 @@ ScreenGui.Parent = PlayerGui
 local function startRainbowOutline()
     task.spawn(function()
         while task.wait(0.05) do
-            local hue = (tick() * 0.12) % 1
-            local color = Color3.fromHSV(hue, 0.6, 0.75) -- less bright
+            local color = THEME.GOLD
             for _, v in pairs(ScreenGui:GetDescendants()) do
                 if v:IsA("UIStroke") then
                     local p = v.Parent
@@ -1439,10 +1448,13 @@ local function applyWhiteHalfStyle()
 
         if v:IsA("TextButton") or v:IsA("TextBox") or (v:IsA("Frame") and (name == "MainFrame" or name:match("GUI$") or name:match("^Small"))) or name == "StealBarContainer" then
             pcall(function()
-                v.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+                v.BackgroundColor3 = THEME.PANEL
                 v.BackgroundTransparency = 0
                 if v:IsA("TextBox") then
-                    v.TextColor3 = Color3.fromRGB(220, 220, 220)
+                    v.TextColor3 = THEME.TEXT
+                end
+                if v:IsA("TextButton") then
+                    v.TextColor3 = THEME.TEXT
                 end
 
                 -- Remove old strokes
@@ -1452,15 +1464,15 @@ local function applyWhiteHalfStyle()
 
                 -- Black base stroke
                 local blackStroke = Instance.new("UIStroke")
-                blackStroke.Color = Color3.fromRGB(0, 0, 0)
+                blackStroke.Color = THEME.BG
                 blackStroke.Thickness = 4
                 blackStroke.Transparency = 0
                 blackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
                 blackStroke.Parent = v
 
-                -- White animated wave stroke
+                -- Pink-gold animated wave stroke
                 local waveStroke = Instance.new("UIStroke")
-                waveStroke.Color = Color3.fromRGB(255, 255, 255)
+                waveStroke.Color = THEME.GOLD
                 waveStroke.Thickness = 2.5
                 waveStroke.Transparency = 0.35
                 waveStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -1468,7 +1480,11 @@ local function applyWhiteHalfStyle()
                 waveStroke.Parent = v
 
                 local waveGrad = Instance.new("UIGradient")
-                waveGrad.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
+                waveGrad.Color = ColorSequence.new({
+                    ColorSequenceKeypoint.new(0, THEME.GOLD),
+                    ColorSequenceKeypoint.new(0.5, THEME.GOLD),
+                    ColorSequenceKeypoint.new(1, THEME.GOLD)
+                })
                 waveGrad.Transparency = NumberSequence.new({
                     NumberSequenceKeypoint.new(0, 1),
                     NumberSequenceKeypoint.new(0.4, 0),
@@ -1507,6 +1523,19 @@ local function applyWhiteHalfStyle()
         end
     end
 end
+
+local function enforcePinkButtonText()
+    task.spawn(function()
+        while task.wait(0.25) do
+            for _, v in pairs(ScreenGui:GetDescendants()) do
+                if v:IsA("TextButton") then
+                    v.TextColor3 = THEME.TEXT
+                end
+            end
+        end
+    end)
+end
+enforcePinkButtonText()
 
 -- Ensure enabled / green GUIs are always in front (periodic check)
 local function bringEnabledToFront()
@@ -1557,13 +1586,13 @@ local function createSmallGUI(name, yPosition)
     Corner.Parent = SmallGUI
 
     local Stroke = Instance.new("UIStroke")
-    Stroke.Color = Color3.fromRGB(0, 0, 0)
+    Stroke.Color = THEME.BG
     Stroke.Thickness = 4
     Stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     Stroke.Parent = SmallGUI
 
     local WaveStroke = Instance.new("UIStroke")
-    WaveStroke.Color = Color3.fromRGB(255, 255, 255)
+    WaveStroke.Color = THEME.GOLD
     WaveStroke.Thickness = 2.5
     WaveStroke.Transparency = 0.35
     WaveStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -1571,7 +1600,11 @@ local function createSmallGUI(name, yPosition)
     WaveStroke.Parent = SmallGUI
 
     local WaveGrad = Instance.new("UIGradient")
-    WaveGrad.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
+    WaveGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, THEME.GOLD),
+        ColorSequenceKeypoint.new(0.5, THEME.GOLD),
+        ColorSequenceKeypoint.new(1, THEME.GOLD)
+    })
     WaveGrad.Transparency = NumberSequence.new({
         NumberSequenceKeypoint.new(0, 1),
         NumberSequenceKeypoint.new(0.4, 0),
@@ -1729,7 +1762,20 @@ do
 
     local function styleToggle(toggleButton, isEnabled)
         toggleButton.Text = isEnabled and "ON" or "OFF"
-        toggleButton.BackgroundColor3 = isEnabled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(180, 50, 50)
+        toggleButton.BackgroundColor3 = isEnabled and Color3.fromRGB(70, 255, 150) or Color3.fromRGB(155, 155, 165)
+        toggleButton.TextColor3 = isEnabled and Color3.fromRGB(10, 40, 20) or Color3.fromRGB(75, 75, 85)
+
+        local glowStroke = toggleButton:FindFirstChild("ToggleGlowStroke")
+        if not glowStroke then
+            glowStroke = Instance.new("UIStroke")
+            glowStroke.Name = "ToggleGlowStroke"
+            glowStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+            glowStroke.Parent = toggleButton
+        end
+
+        glowStroke.Thickness = isEnabled and 3 or 1.5
+        glowStroke.Transparency = isEnabled and 0.12 or 0.3
+        glowStroke.Color = isEnabled and Color3.fromRGB(160, 255, 205) or Color3.fromRGB(210, 210, 220)
     end
 
     local BTaskGui = Instance.new("ScreenGui")
@@ -1786,6 +1832,106 @@ do
     BTaskToggle.TextSize = 11
     BTaskToggle.Parent = BTaskFrame
     Instance.new("UICorner", BTaskToggle).CornerRadius = UDim.new(0, 8)
+
+    local BTaskMinus = Instance.new("TextButton")
+    BTaskMinus.Size = UDim2.new(0, 18, 0, 18)
+    BTaskMinus.Position = UDim2.new(1, -98, 0.5, -9)
+    BTaskMinus.BackgroundColor3 = Color3.fromRGB(220, 220, 220)
+    BTaskMinus.Text = "-"
+    BTaskMinus.TextColor3 = Color3.fromRGB(40, 40, 40)
+    BTaskMinus.Font = Enum.Font.GothamBold
+    BTaskMinus.TextSize = 14
+    BTaskMinus.Parent = BTaskFrame
+    Instance.new("UICorner", BTaskMinus).CornerRadius = UDim.new(0, 5)
+
+    local BTaskPlus = Instance.new("TextButton")
+    BTaskPlus.Size = UDim2.new(0, 18, 0, 18)
+    BTaskPlus.Position = UDim2.new(1, -120, 0.5, -9)
+    BTaskPlus.BackgroundColor3 = Color3.fromRGB(220, 220, 220)
+    BTaskPlus.Text = "+"
+    BTaskPlus.TextColor3 = Color3.fromRGB(40, 40, 40)
+    BTaskPlus.Font = Enum.Font.GothamBold
+    BTaskPlus.TextSize = 14
+    BTaskPlus.Parent = BTaskFrame
+    Instance.new("UICorner", BTaskPlus).CornerRadius = UDim.new(0, 5)
+
+    local function resizeGameplayButtons(delta)
+        -- resize top small draggable frames
+        for _, entry in pairs(SmallGUIInstances) do
+            if entry and entry.Frame then
+                local w = math.clamp(entry.Frame.Size.X.Offset + delta, 50, 180)
+                local h = math.clamp(entry.Frame.Size.Y.Offset + math.floor(delta * 0.3), 14, 44)
+                entry.Frame.Size = UDim2.new(0, w, 0, h)
+            end
+        end
+        if refreshSmallButtonPositions then refreshSmallButtonPositions() end
+
+        local autoLeft, autoRight, autoMedusa
+        local rightList = {}
+        for _, child in ipairs(ScreenGui:GetChildren()) do
+            if child:IsA("TextButton") then
+                local t = child.Text or ""
+                if t:find("AUTO\nLEFT") then autoLeft = child end
+                if t:find("AUTO\nRIGHT") then autoRight = child end
+                if t:find("AUTO\nMEDUSA") then autoMedusa = child end
+                if t:find("DESYNC") or t:find("LAGGER") or t:find("TRACK") or t:find("HIT") or t:find("JUKE") then
+                    table.insert(rightList, child)
+                end
+            end
+        end
+
+        local function setFontBySize(btn)
+            btn.TextSize = math.clamp(math.floor(btn.Size.X.Offset * 0.18), 8, 16)
+        end
+
+        if autoLeft and autoRight and autoMedusa then
+            local newAuto = math.clamp(autoLeft.Size.X.Offset + delta, 30, 120)
+            local sp = 10
+            local x1 = -(newAuto * 3 + sp * 2 + 20)
+            local x2 = x1 + newAuto + sp
+            local x3 = x2 + newAuto + sp
+            local y = -(newAuto * 2 + sp * 2)
+
+            autoLeft.Size = UDim2.new(0, newAuto, 0, newAuto)
+            autoRight.Size = UDim2.new(0, newAuto, 0, newAuto)
+            autoMedusa.Size = UDim2.new(0, newAuto, 0, newAuto)
+
+            autoLeft.Position = UDim2.new(1, x1, 0.5, y)
+            autoRight.Position = UDim2.new(1, x2, 0.5, y)
+            autoMedusa.Position = UDim2.new(1, x3, 0.5, y)
+
+            setFontBySize(autoLeft)
+            setFontBySize(autoRight)
+            setFontBySize(autoMedusa)
+
+            if #rightList > 0 then
+                local newRight = math.clamp(rightList[1].Size.X.Offset + delta, 24, 90)
+                local rx1 = -(newRight * 3 + sp * 2 + 20)
+                local rx2 = rx1 + newRight + sp
+                local rx3 = rx2 + newRight + sp
+                local ry1 = y + newAuto + 14
+                local ry2 = ry1 + newRight + sp
+
+                for _, btn in ipairs(rightList) do
+                    btn.Size = UDim2.new(0, newRight, 0, newRight)
+                    setFontBySize(btn)
+                    if btn.Text:find("DESYNC") then btn.Position = UDim2.new(1, rx1, 0.5, ry1) end
+                    if btn.Text:find("LAGGER") then btn.Position = UDim2.new(1, rx2, 0.5, ry1) end
+                    if btn.Text:find("TRACK") then btn.Position = UDim2.new(1, rx3, 0.5, ry1) end
+                    if btn.Text:find("HIT") then btn.Position = UDim2.new(1, rx1, 0.5, ry2) end
+                    if btn.Text:find("JUKE") then btn.Position = UDim2.new(1, rx2, 0.5, ry2) end
+                end
+            end
+        end
+    end
+
+    BTaskMinus.MouseButton1Click:Connect(function()
+        resizeGameplayButtons(-4)
+    end)
+
+    BTaskPlus.MouseButton1Click:Connect(function()
+        resizeGameplayButtons(4)
+    end)
 
     local BTaskPanel = Instance.new("Frame")
     BTaskPanel.Size = UDim2.new(0, 205, 0, 300)
@@ -2511,7 +2657,7 @@ local function createMainGUI(device)
     LogoIcon.Size = UDim2.new(0, 40, 0, 40)
     LogoIcon.Position = UDim2.new(0, 10, 0.5, -20)
     LogoIcon.BackgroundTransparency = 1
-    LogoIcon.Text = "🧀"
+    LogoIcon.Text = "⭐"
     LogoIcon.TextSize = logoSize
     LogoIcon.Font = Enum.Font.GothamBold
     LogoIcon.Parent = Header
@@ -2520,7 +2666,7 @@ local function createMainGUI(device)
     TitleLabel.Size = UDim2.new(0, 150, 1, 0)
     TitleLabel.Position = UDim2.new(0, 50, 0, 0)
     TitleLabel.BackgroundTransparency = 1
-    TitleLabel.Text = "TIM CHEESE DUELS"
+    TitleLabel.Text = "CELESTIAL HUB"
     TitleLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
     TitleLabel.Font = Enum.Font.GothamBold
     TitleLabel.TextSize = titleSize
@@ -2600,10 +2746,8 @@ local function createMainGUI(device)
         return TabButton
     end
 
-    local MainTab = createTab("🛡️", "Main", 1)
-    local MISCTab = createTab("🔧", "MISC", 2)
-    local SettingsTab = createTab("⚙️", "Settings", 3)
-    local CreditsTab = createTab("⭐", "Info", 4)
+    local MainTab = createTab("🛡️", "FEATURES", 1)
+    local SettingsTab = createTab("⚙️", "SETTINGS", 2)
 
     local ContentContainer = Instance.new("Frame")
     ContentContainer.Size = UDim2.new(1, -sidebarWidth - 20, 1, -70)
@@ -2636,10 +2780,10 @@ local function createMainGUI(device)
         return Content
     end
 
-    local MainContent = createContentFrame("Main")
-    local MISCContent = createContentFrame("MISC")
-    local SettingsContent = createContentFrame("Settings")
-    local CreditsContent = createContentFrame("Credits")
+    local MainContent = createContentFrame("FEATURES")
+    local MISCContent = createContentFrame("AIMBOT")
+    local SettingsContent = createContentFrame("SETTINGS")
+    local CreditsContent = createContentFrame("INFO")
 
     MainContent.Visible = true
 
@@ -2663,12 +2807,10 @@ local function createMainGUI(device)
         end
     end
 
-    MainTab.MouseButton1Click:Connect(function() switchTab("Main") end)
-    MISCTab.MouseButton1Click:Connect(function() switchTab("MISC") end)
-    SettingsTab.MouseButton1Click:Connect(function() switchTab("Settings") end)
-    CreditsTab.MouseButton1Click:Connect(function() switchTab("Credits") end)
+    MainTab.MouseButton1Click:Connect(function() switchTab("FEATURES") end)
+    SettingsTab.MouseButton1Click:Connect(function() switchTab("SETTINGS") end)
 
-    switchTab("Main")
+    switchTab("FEATURES")
 
     -- ═══════════════════════════════════════════════════════
     -- ✅ MAIN TAB CONTENT (WITH SETTINGS BUTTONS NEXT TO FEATURES!)
@@ -2744,152 +2886,171 @@ local function createMainGUI(device)
         refreshSmallButtonPositions()
     end, true)
 
-    -- ✅ SPEED SETTINGS POPUP (NEXT TO BUTTON!)
+    -- ✅ SPEED CUSTOMIZER (S1/S2 COLLAPSIBLE)
+    local SpeedCustomizer = {
+        Collapsed = false,
+        CurrentPreset = "Normal",
+        Presets = {
+            Normal = {Speed = SpeedBooster.NormalSpeed, Steal = SpeedBooster.StealSpeed, Jump = SpeedBooster.JumpPower},
+            Desync = {Speed = SpeedBooster.NormalSpeed, Steal = SpeedBooster.StealSpeed, Jump = SpeedBooster.JumpPower}
+        }
+    }
+
     local SpeedSettingsGUI = Instance.new("Frame")
     SpeedSettingsGUI.Name = "SpeedSettingsGUI"
-    SpeedSettingsGUI.Size = UDim2.new(0, 200, 0, 150)
-    SpeedSettingsGUI.Position = UDim2.new(0.5, -100, 0.5, -75)
-    SpeedSettingsGUI.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-    SpeedSettingsGUI.BackgroundTransparency = 0.1
+    SpeedSettingsGUI.Size = UDim2.new(0, 150, 0, 195)
+    SpeedSettingsGUI.Position = UDim2.new(0.5, 180, 0.5, -95)
+    SpeedSettingsGUI.BackgroundColor3 = THEME.PANEL
+    SpeedSettingsGUI.BackgroundTransparency = 0.08
     SpeedSettingsGUI.BorderSizePixel = 0
     SpeedSettingsGUI.Visible = false
     SpeedSettingsGUI.Active = true
     SpeedSettingsGUI.Draggable = true
+    SpeedSettingsGUI.ClipsDescendants = true
     SpeedSettingsGUI.Parent = ScreenGui
 
-    local SpeedCorner = Instance.new("UICorner")
-    SpeedCorner.CornerRadius = UDim.new(0, 12)
-    SpeedCorner.Parent = SpeedSettingsGUI
-
-    local SpeedStroke = Instance.new("UIStroke")
-    SpeedStroke.Color = Color3.fromRGB(255, 255, 255)
-    SpeedStroke.Thickness = 2
-    SpeedStroke.Parent = SpeedSettingsGUI
-
-    local SpeedTitle = Instance.new("TextLabel")
-    SpeedTitle.Size = UDim2.new(1, 0, 0, 30)
-    SpeedTitle.BackgroundTransparency = 1
-    SpeedTitle.Text = "SPEED SETTINGS"
-    SpeedTitle.TextColor3 = Color3.fromRGB(255, 200, 100)
-    SpeedTitle.Font = Enum.Font.GothamBold
-    SpeedTitle.TextSize = 14
-    SpeedTitle.Parent = SpeedSettingsGUI
-
-    local NormalLabel = Instance.new("TextLabel")
-    NormalLabel.Size = UDim2.new(0.6, 0, 0, 25)
-    NormalLabel.Position = UDim2.new(0, 10, 0, 35)
-    NormalLabel.BackgroundTransparency = 1
-    NormalLabel.Text = "Normal Speed:"
-    NormalLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    NormalLabel.Font = Enum.Font.Gotham
-    NormalLabel.TextSize = 12
-    NormalLabel.TextXAlignment = Enum.TextXAlignment.Left
-    NormalLabel.Parent = SpeedSettingsGUI
-
-    normalSpeedBox = Instance.new("TextBox")
-    normalSpeedBox.Size = UDim2.new(0, 60, 0, 25)
-    normalSpeedBox.Position = UDim2.new(1, -70, 0, 35)
-    normalSpeedBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-    normalSpeedBox.Text = tostring(SpeedBooster.NormalSpeed)
-    normalSpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-    normalSpeedBox.Font = Enum.Font.GothamBold
-    normalSpeedBox.TextSize = 12
-    normalSpeedBox.Parent = SpeedSettingsGUI
-
-    local NormalCorner = Instance.new("UICorner")
-    NormalCorner.CornerRadius = UDim.new(0, 6)
-    NormalCorner.Parent = normalSpeedBox
-
-    local StealLabel = Instance.new("TextLabel")
-    StealLabel.Size = UDim2.new(0.6, 0, 0, 25)
-    StealLabel.Position = UDim2.new(0, 10, 0, 65)
-    StealLabel.BackgroundTransparency = 1
-    StealLabel.Text = "Steal Speed:"
-    StealLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    StealLabel.Font = Enum.Font.Gotham
-    StealLabel.TextSize = 12
-    StealLabel.TextXAlignment = Enum.TextXAlignment.Left
-    StealLabel.Parent = SpeedSettingsGUI
-
-    stealSpeedBox = Instance.new("TextBox")
-    stealSpeedBox.Size = UDim2.new(0, 60, 0, 25)
-    stealSpeedBox.Position = UDim2.new(1, -70, 0, 65)
-    stealSpeedBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-    stealSpeedBox.Text = tostring(SpeedBooster.StealSpeed)
-    stealSpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-    stealSpeedBox.Font = Enum.Font.GothamBold
-    stealSpeedBox.TextSize = 12
-    stealSpeedBox.Parent = SpeedSettingsGUI
-
-    local StealCorner = Instance.new("UICorner")
-    StealCorner.CornerRadius = UDim.new(0, 6)
-    StealCorner.Parent = stealSpeedBox
-
-    local JumpLabel = Instance.new("TextLabel")
-    JumpLabel.Size = UDim2.new(0.6, 0, 0, 25)
-    JumpLabel.Position = UDim2.new(0, 10, 0, 95)
-    JumpLabel.BackgroundTransparency = 1
-    JumpLabel.Text = "Jump Power:"
-    JumpLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    JumpLabel.Font = Enum.Font.Gotham
-    JumpLabel.TextSize = 12
-    JumpLabel.TextXAlignment = Enum.TextXAlignment.Left
-    JumpLabel.Parent = SpeedSettingsGUI
-
-    local JumpPowerBox = Instance.new("TextBox")
-    JumpPowerBox.Size = UDim2.new(0, 60, 0, 25)
-    JumpPowerBox.Position = UDim2.new(1, -70, 0, 95)
-    JumpPowerBox.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
-    JumpPowerBox.Text = tostring(SpeedBooster.JumpPower)
-    JumpPowerBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-    JumpPowerBox.Font = Enum.Font.GothamBold
-    JumpPowerBox.TextSize = 12
-    JumpPowerBox.ClearTextOnFocus = false
-    JumpPowerBox.Parent = SpeedSettingsGUI
-
-    local JumpCorner = Instance.new("UICorner")
-    JumpCorner.CornerRadius = UDim.new(0, 6)
-    JumpCorner.Parent = JumpPowerBox
-
-    JumpPowerBox.FocusLost:Connect(function()
-        local value = tonumber(JumpPowerBox.Text)
-        if value then
-            SpeedBooster.JumpPower = value
-            SaveConfig()
-        else
-            JumpPowerBox.Text = tostring(SpeedBooster.JumpPower)
+    Instance.new("UICorner", SpeedSettingsGUI).CornerRadius = UDim.new(0, 8)
+    local speedBaseStroke = Instance.new("UIStroke", SpeedSettingsGUI)
+    speedBaseStroke.Color = THEME.BG
+    speedBaseStroke.Thickness = 3
+    local speedWaveStroke = Instance.new("UIStroke", SpeedSettingsGUI)
+    speedWaveStroke.Color = THEME.GOLD
+    speedWaveStroke.Thickness = 2
+    speedWaveStroke.Transparency = 0.25
+    speedWaveStroke.ZIndex = 2
+    local speedWaveGrad = Instance.new("UIGradient", speedWaveStroke)
+    speedWaveGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, THEME.PINK),
+        ColorSequenceKeypoint.new(0.5, THEME.GOLD),
+        ColorSequenceKeypoint.new(1, THEME.PINK)
+    })
+    speedWaveGrad.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 1),
+        NumberSequenceKeypoint.new(0.4, 0),
+        NumberSequenceKeypoint.new(0.6, 0),
+        NumberSequenceKeypoint.new(1, 1)
+    })
+    RunService.Heartbeat:Connect(function(dt)
+        if SpeedSettingsGUI and SpeedSettingsGUI.Parent then
+            speedWaveGrad.Rotation = (speedWaveGrad.Rotation + 140 * dt) % 360
         end
     end)
 
-    normalSpeedBox.FocusLost:Connect(function()
-        local value = tonumber(normalSpeedBox.Text)
-        if value then
-            SpeedBooster.NormalSpeed = value
-            if SpeedBooster.Enabled then
-                stopSpeedBooster()
-                task.wait(0.1)
-                startSpeedBooster()
+    local HeaderButton = Instance.new("TextButton", SpeedSettingsGUI)
+    HeaderButton.Size = UDim2.new(1, 0, 0, 30)
+    HeaderButton.BackgroundTransparency = 1
+    HeaderButton.Text = "SPEED BOOSTER"
+    HeaderButton.TextColor3 = THEME.GOLD
+    HeaderButton.Font = Enum.Font.GothamBold
+    HeaderButton.TextSize = 12
+
+    local S1 = Instance.new("TextButton", SpeedSettingsGUI)
+    S1.Size = UDim2.new(0, 60, 0, 22)
+    S1.Position = UDim2.new(0, 12, 0, 35)
+    S1.Text = "NORMAL"
+    S1.TextColor3 = THEME.TEXT
+    S1.Font = Enum.Font.GothamBold
+    S1.TextSize = 11
+    Instance.new("UICorner", S1).CornerRadius = UDim.new(0, 4)
+
+    local S2 = Instance.new("TextButton", SpeedSettingsGUI)
+    S2.Size = UDim2.new(0, 60, 0, 22)
+    S2.Position = UDim2.new(1, -72, 0, 35)
+    S2.Text = "DESYNC"
+    S2.TextColor3 = THEME.TEXT
+    S2.Font = Enum.Font.GothamBold
+    S2.TextSize = 11
+    Instance.new("UICorner", S2).CornerRadius = UDim.new(0, 4)
+
+    local InputContainer = Instance.new("Frame", SpeedSettingsGUI)
+    InputContainer.Size = UDim2.new(1, 0, 1, -65)
+    InputContainer.Position = UDim2.new(0, 0, 0, 65)
+    InputContainer.BackgroundTransparency = 1
+
+    local boxes = {}
+    local function applyPreset()
+        local p = SpeedCustomizer.Presets[SpeedCustomizer.CurrentPreset]
+        SpeedBooster.NormalSpeed = p.Speed
+        SpeedBooster.StealSpeed = p.Steal
+        SpeedBooster.JumpPower = p.Jump
+        if SpeedBooster.Enabled then
+            stopSpeedBooster()
+            task.wait(0.05)
+            startSpeedBooster()
+        end
+        if boxes.SpeedValue then
+            boxes.SpeedValue.Text = tostring(p.Speed)
+            boxes.StealValue.Text = tostring(p.Steal)
+            boxes.JumpValue.Text = tostring(p.Jump)
+        end
+        S1.BackgroundColor3 = (SpeedCustomizer.CurrentPreset == "Normal") and THEME.PINK or THEME.OFF
+        S2.BackgroundColor3 = (SpeedCustomizer.CurrentPreset == "Desync") and THEME.PINK or THEME.OFF
+        SaveConfig()
+    end
+
+    local function createSpeedInput(label, yPos, key)
+        local row = Instance.new("Frame", InputContainer)
+        row.Size = UDim2.new(1, 0, 0, 30)
+        row.Position = UDim2.new(0, 0, 0, yPos)
+        row.BackgroundTransparency = 1
+
+        local lbl = Instance.new("TextLabel", row)
+        lbl.Size = UDim2.new(0, 60, 1, 0)
+        lbl.Position = UDim2.new(0, 12, 0, 0)
+        lbl.BackgroundTransparency = 1
+        lbl.Text = label
+        lbl.TextColor3 = THEME.TEXT
+        lbl.Font = Enum.Font.GothamBold
+        lbl.TextSize = 11
+        lbl.TextXAlignment = Enum.TextXAlignment.Left
+
+        local box = Instance.new("TextBox", row)
+        box.Size = UDim2.new(0, 55, 0, 25)
+        box.Position = UDim2.new(1, -67, 0, 0)
+        box.BackgroundColor3 = THEME.OFF
+        box.TextColor3 = THEME.TEXT
+        box.Font = Enum.Font.GothamBold
+        box.TextSize = 11
+        box.ClearTextOnFocus = false
+        Instance.new("UICorner", box).CornerRadius = UDim.new(0, 4)
+        boxes[key] = box
+
+        box.FocusLost:Connect(function()
+            local n = tonumber(box.Text)
+            if n then
+                SpeedCustomizer.Presets[SpeedCustomizer.CurrentPreset][key:gsub("Value", "")] = n
+                applyPreset()
+            else
+                applyPreset()
             end
-            SaveConfig()
+        end)
+    end
+
+    createSpeedInput("Speed", 5, "SpeedValue")
+    createSpeedInput("Steal", 40, "StealValue")
+    createSpeedInput("Jump", 75, "JumpValue")
+
+    HeaderButton.MouseButton1Click:Connect(function()
+        SpeedCustomizer.Collapsed = not SpeedCustomizer.Collapsed
+        if SpeedCustomizer.Collapsed then
+            SpeedSettingsGUI:TweenSize(UDim2.new(0, 150, 0, 65), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
+            InputContainer.Visible = false
         else
-            normalSpeedBox.Text = tostring(SpeedBooster.NormalSpeed)
+            SpeedSettingsGUI:TweenSize(UDim2.new(0, 150, 0, 195), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
+            task.delay(0.1, function() InputContainer.Visible = true end)
         end
     end)
 
-    stealSpeedBox.FocusLost:Connect(function()
-        local value = tonumber(stealSpeedBox.Text)
-        if value then
-            SpeedBooster.StealSpeed = value
-            if SpeedBooster.Enabled then
-                stopSpeedBooster()
-                task.wait(0.1)
-                startSpeedBooster()
-            end
-            SaveConfig()
-        else
-            stealSpeedBox.Text = tostring(SpeedBooster.StealSpeed)
-        end
+    S1.MouseButton1Click:Connect(function()
+        SpeedCustomizer.CurrentPreset = "Normal"
+        applyPreset()
     end)
+    S2.MouseButton1Click:Connect(function()
+        SpeedCustomizer.CurrentPreset = "Desync"
+        applyPreset()
+    end)
+
+    applyPreset()
 
     SpeedSettingsBtn.MouseButton1Click:Connect(function()
         SpeedSettingsGUI.Visible = not SpeedSettingsGUI.Visible
@@ -3160,7 +3321,7 @@ local function createMainGUI(device)
             antiDeathButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
         end
         
-        print("[TIM CHEESE DUELS] ✅ Auto-enabled ALL MISC: FPS Booster, Optimizer, Hitbox, Anti Death")
+        print("[CELESTIAL HUB] ✅ Auto-enabled ALL MISC: FPS Booster, Optimizer, Hitbox, Anti Death")
     end)
 
     local function createMISCButton(name, order, callback)
@@ -3172,8 +3333,8 @@ local function createMainGUI(device)
         Button.TextColor3 = Color3.fromRGB(255, 255, 255)
         Button.Font = Enum.Font.GothamBold
         Button.TextSize = device == "iPhone" and 11 or 14
-        Button.LayoutOrder = order
-        Button.Parent = MISCContent
+        Button.LayoutOrder = order + 20
+        Button.Parent = MainContent
 
         local Corner = Instance.new("UICorner")
         Corner.CornerRadius = UDim.new(0, 10)
@@ -3400,9 +3561,9 @@ local function initializeGUI(device)
         end
         
         refreshSmallButtonPositions()
-        print("[TIM CHEESE DUELS] ✅ Auto-enabled for "..device..": Speed, Unwalk, Anti Rag, Ragdoll TP")
-        print("[TIM CHEESE DUELS] ✅ Visible Small GUIs: Speed, Unwalk, Anti Rag, Ragdoll TP, Drop (OFF)")
-        print("[TIM CHEESE DUELS] ⚪ Hidden Small GUIs: Inf Jump, Spin Bot, Float, FOV (turn on from Main tab)")
+        print("[CELESTIAL HUB] ✅ Auto-enabled for "..device..": Speed, Unwalk, Anti Rag, Ragdoll TP")
+        print("[CELESTIAL HUB] ✅ Visible Small GUIs: Speed, Unwalk, Anti Rag, Ragdoll TP, Drop (OFF)")
+        print("[CELESTIAL HUB] ⚪ Hidden Small GUIs: Inf Jump, Spin Bot, Float, FOV (turn on from Features tab)")
     end)
 
     createMainGUI(device)
@@ -3450,7 +3611,7 @@ function createOpenButton(device)
     OpenButton.Position = UDim2.new(0, 15, 0.5, -buttonSize/2)
     OpenButton.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
     OpenButton.BackgroundTransparency = 0.2
-    OpenButton.Text = "OPEN"
+    OpenButton.Text = "HUB"
     OpenButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     OpenButton.Font = Enum.Font.GothamBold
     OpenButton.TextSize = device == "iPhone" and 10 or 14
@@ -3467,7 +3628,7 @@ function createOpenButton(device)
         isOpen = not isOpen
 
         if isOpen then
-            OpenButton.Text = "CLOSE"
+            OpenButton.Text = "HIDE"
             MainFrame.Visible = true
             MainFrame.Position = UDim2.new(0, -size.Width - 100, 0.5, -size.Height/2)
 
@@ -3477,7 +3638,7 @@ function createOpenButton(device)
                 {Position = UDim2.new(0.5, -size.Width/2, 0.5, -size.Height/2)}
             ):Play()
         else
-            OpenButton.Text = "OPEN"
+            OpenButton.Text = "HUB"
 
             local slideOut = TweenService:Create(
                 MainFrame,
@@ -3499,16 +3660,20 @@ local AutoLeftSmallGUI, AutoRightSmallGUI
 
 function createAutoButtons(device)
     local buttonSize = device == "iPhone" and 55 or 70
-    local yOffset = buttonSize + 10
+    local spacing = 10
+    local rowX1 = -(buttonSize * 3 + spacing * 2 + 20)
+    local rowX2 = rowX1 + buttonSize + spacing
+    local rowX3 = rowX2 + buttonSize + spacing
+    local rowY = -(buttonSize * 2 + spacing * 2)
 
     -- ✅ AUTO LEFT Button (GRAY!)
     local AutoLeftButton = Instance.new("TextButton")
     AutoLeftButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    AutoLeftButton.Position = UDim2.new(0, 15, 0.5, -buttonSize/2 + yOffset)
-    AutoLeftButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    AutoLeftButton.Position = UDim2.new(1, rowX1, 0.5, rowY)
+    AutoLeftButton.BackgroundColor3 = THEME.OFF
     AutoLeftButton.BackgroundTransparency = 0
-    AutoLeftButton.Text = "AUTO\nLEFT"
-    AutoLeftButton.TextColor3 = Color3.fromRGB(220, 220, 220)
+    AutoLeftButton.Text = "AUTO\nLEFT\nOFF"
+    AutoLeftButton.TextColor3 = THEME.TEXT
     AutoLeftButton.Font = Enum.Font.GothamBold
     AutoLeftButton.TextSize = device == "iPhone" and 9 or 12
     AutoLeftButton.Parent = ScreenGui
@@ -3518,13 +3683,13 @@ function createAutoButtons(device)
     LeftCorner.Parent = AutoLeftButton
 
     local LeftBlackStroke = Instance.new("UIStroke")
-    LeftBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+    LeftBlackStroke.Color = THEME.BG
     LeftBlackStroke.Thickness = 4
     LeftBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     LeftBlackStroke.Parent = AutoLeftButton
 
     local LeftStroke = Instance.new("UIStroke")
-    LeftStroke.Color = Color3.fromRGB(255, 255, 255)
+    LeftStroke.Color = THEME.GOLD
     LeftStroke.Thickness = 2.5
     LeftStroke.Transparency = 0.35
     LeftStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -3534,11 +3699,11 @@ function createAutoButtons(device)
     -- ✅ AUTO MEDUSA Button (above Auto Right)
     local AutoMedusaButton = Instance.new("TextButton")
     AutoMedusaButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    AutoMedusaButton.Position = UDim2.new(0, 15 + buttonSize + 10, 0.5, -buttonSize*1.5 + yOffset - 10)
-    AutoMedusaButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    AutoMedusaButton.Position = UDim2.new(1, rowX3, 0.5, rowY)
+    AutoMedusaButton.BackgroundColor3 = THEME.OFF
     AutoMedusaButton.BackgroundTransparency = 0
-    AutoMedusaButton.Text = "AUTO\nMEDUSA"
-    AutoMedusaButton.TextColor3 = Color3.fromRGB(220, 220, 220)
+    AutoMedusaButton.Text = "AUTO\nMEDUSA\nOFF"
+    AutoMedusaButton.TextColor3 = THEME.TEXT
     AutoMedusaButton.Font = Enum.Font.GothamBold
     AutoMedusaButton.TextSize = device == "iPhone" and 9 or 12
     AutoMedusaButton.Parent = ScreenGui
@@ -3548,13 +3713,13 @@ function createAutoButtons(device)
     MedusaCorner.Parent = AutoMedusaButton
 
     local MedusaBlackStroke = Instance.new("UIStroke")
-    MedusaBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+    MedusaBlackStroke.Color = THEME.BG
     MedusaBlackStroke.Thickness = 4
     MedusaBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     MedusaBlackStroke.Parent = AutoMedusaButton
 
     local MedusaStroke = Instance.new("UIStroke")
-    MedusaStroke.Color = Color3.fromRGB(255, 255, 255)
+    MedusaStroke.Color = THEME.GOLD
     MedusaStroke.Thickness = 2.5
     MedusaStroke.Transparency = 0.35
     MedusaStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -3668,20 +3833,22 @@ function createAutoButtons(device)
     AutoMedusaButton.MouseButton1Click:Connect(function()
         autoMedusaEnabled = not autoMedusaEnabled
         if autoMedusaEnabled then
-            AutoMedusaButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+            AutoMedusaButton.BackgroundColor3 = THEME.ON
+            AutoMedusaButton.Text = "AUTO\nMEDUSA\nON"
             startAutoMedusa()
         else
-            AutoMedusaButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            AutoMedusaButton.BackgroundColor3 = THEME.OFF
+            AutoMedusaButton.Text = "AUTO\nMEDUSA\nOFF"
             stopAutoMedusa()
         end
     end)
     local AutoRightButton = Instance.new("TextButton")
     AutoRightButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    AutoRightButton.Position = UDim2.new(0, 15 + buttonSize + 10, 0.5, -buttonSize/2 + yOffset)
-    AutoRightButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    AutoRightButton.Position = UDim2.new(1, rowX2, 0.5, rowY)
+    AutoRightButton.BackgroundColor3 = THEME.OFF
     AutoRightButton.BackgroundTransparency = 0
-    AutoRightButton.Text = "AUTO\nRIGHT"
-    AutoRightButton.TextColor3 = Color3.fromRGB(220, 220, 220)
+    AutoRightButton.Text = "AUTO\nRIGHT\nOFF"
+    AutoRightButton.TextColor3 = THEME.TEXT
     AutoRightButton.Font = Enum.Font.GothamBold
     AutoRightButton.TextSize = device == "iPhone" and 9 or 12
     AutoRightButton.Parent = ScreenGui
@@ -3691,13 +3858,13 @@ function createAutoButtons(device)
     RightCorner.Parent = AutoRightButton
 
     local RightBlackStroke = Instance.new("UIStroke")
-    RightBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+    RightBlackStroke.Color = THEME.BG
     RightBlackStroke.Thickness = 4
     RightBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     RightBlackStroke.Parent = AutoRightButton
 
     local RightStroke = Instance.new("UIStroke")
-    RightStroke.Color = Color3.fromRGB(255, 255, 255)
+    RightStroke.Color = THEME.GOLD
     RightStroke.Thickness = 2.5
     RightStroke.Transparency = 0.35
     RightStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -3708,12 +3875,16 @@ function createAutoButtons(device)
     AutoLeftButton.MouseButton1Click:Connect(function()
         if pathActive then
             stopStealPath()
-            AutoLeftButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-            AutoRightButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            AutoLeftButton.BackgroundColor3 = THEME.OFF
+            AutoLeftButton.Text = "AUTO\nLEFT\nOFF"
+            AutoRightButton.BackgroundColor3 = THEME.OFF
+            AutoRightButton.Text = "AUTO\nRIGHT\nOFF"
         else
             stopStealPath()
-            AutoLeftButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-            AutoRightButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            AutoLeftButton.BackgroundColor3 = THEME.ON
+            AutoLeftButton.Text = "AUTO\nLEFT\nON"
+            AutoRightButton.BackgroundColor3 = THEME.OFF
+            AutoRightButton.Text = "AUTO\nRIGHT\nOFF"
             startStealPath(stealPath2) -- ✅ LEFT PATH!
         end
     end)
@@ -3722,12 +3893,16 @@ function createAutoButtons(device)
     AutoRightButton.MouseButton1Click:Connect(function()
         if pathActive then
             stopStealPath()
-            AutoLeftButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-            AutoRightButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            AutoLeftButton.BackgroundColor3 = THEME.OFF
+            AutoLeftButton.Text = "AUTO\nLEFT\nOFF"
+            AutoRightButton.BackgroundColor3 = THEME.OFF
+            AutoRightButton.Text = "AUTO\nRIGHT\nOFF"
         else
             stopStealPath()
-            AutoLeftButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-            AutoRightButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+            AutoLeftButton.BackgroundColor3 = THEME.OFF
+            AutoLeftButton.Text = "AUTO\nLEFT\nOFF"
+            AutoRightButton.BackgroundColor3 = THEME.ON
+            AutoRightButton.Text = "AUTO\nRIGHT\nON"
             startStealPath(stealPath1) -- ✅ RIGHT PATH!
         end
     end)
@@ -3740,51 +3915,38 @@ end
 function createRightButtons(device)
     local buttonSize = device == "iPhone" and 38 or 48
     local spacing = 10
-    local pad = 8
-    local boxW = pad*2 + buttonSize*3 + spacing*2
-    local boxH = pad*2 + buttonSize*2 + spacing
-
-    -- ✅ Container box for all 5 right buttons
-    local RightButtonBox = Instance.new("Frame")
-    RightButtonBox.Size = UDim2.new(0, boxW, 0, boxH)
-    RightButtonBox.Position = UDim2.new(1, -(boxW + 12), 0.5, -boxH/2)
-    RightButtonBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    RightButtonBox.BackgroundTransparency = 0.25
-    RightButtonBox.Parent = ScreenGui
-    local RBCorner = Instance.new("UICorner")
-    RBCorner.CornerRadius = UDim.new(0, 12)
-    RBCorner.Parent = RightButtonBox
-    local RBStroke = Instance.new("UIStroke")
-    RBStroke.Color = Color3.fromRGB(255, 255, 255)
-    RBStroke.Thickness = 2
-    RBStroke.Transparency = 0.5
-    RBStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    RBStroke.Parent = RightButtonBox
+    local x1 = -(buttonSize * 3 + spacing * 2 + 20)
+    local x2 = x1 + buttonSize + spacing
+    local x3 = x2 + buttonSize + spacing
+    local autoSize = device == "iPhone" and 55 or 70
+    local autoY = -(autoSize * 2 + spacing * 2)
+    local y1 = autoY + autoSize + 14
+    local y2 = y1 + buttonSize + spacing
 
     -- ✅ DESYNC Button (TOP ROW, LEFT)
     local DesyncButton = Instance.new("TextButton")
     DesyncButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    DesyncButton.Position = UDim2.new(0, pad, 0, pad)
-    DesyncButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    DesyncButton.Position = UDim2.new(1, x1, 0.5, y1)
+    DesyncButton.BackgroundColor3 = THEME.OFF
     DesyncButton.BackgroundTransparency = 0
     DesyncButton.Text = "DESYNC"
-    DesyncButton.TextColor3 = Color3.fromRGB(220, 220, 220)
+    DesyncButton.TextColor3 = THEME.TEXT
     DesyncButton.Font = Enum.Font.GothamBold
     DesyncButton.TextSize = device == "iPhone" and 9 or 12
-    DesyncButton.Parent = RightButtonBox
+    DesyncButton.Parent = ScreenGui
 
     local DesyncCorner = Instance.new("UICorner")
     DesyncCorner.CornerRadius = UDim.new(0, 8)
     DesyncCorner.Parent = DesyncButton
 
     local DesyncBlackStroke = Instance.new("UIStroke")
-    DesyncBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+    DesyncBlackStroke.Color = THEME.BG
     DesyncBlackStroke.Thickness = 4
     DesyncBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     DesyncBlackStroke.Parent = DesyncButton
 
     local DesyncStroke = Instance.new("UIStroke")
-    DesyncStroke.Color = Color3.fromRGB(255, 255, 255)
+    DesyncStroke.Color = THEME.GOLD
     DesyncStroke.Thickness = 2.5
     DesyncStroke.Transparency = 0.35
     DesyncStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -3882,27 +4044,27 @@ function createRightButtons(device)
         -- ✅ LAGGER Button (TOP ROW, MIDDLE)
         local LaggerButton = Instance.new("TextButton")
         LaggerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-        LaggerButton.Position = UDim2.new(0, pad + buttonSize + spacing, 0, pad)
-        LaggerButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        LaggerButton.Position = UDim2.new(1, x2, 0.5, y1)
+        LaggerButton.BackgroundColor3 = THEME.OFF
         LaggerButton.BackgroundTransparency = 0
         LaggerButton.Text = "LAGGER"
-        LaggerButton.TextColor3 = Color3.fromRGB(220, 220, 220)
+        LaggerButton.TextColor3 = THEME.TEXT
         LaggerButton.Font = Enum.Font.GothamBold
         LaggerButton.TextSize = device == "iPhone" and 9 or 12
-        LaggerButton.Parent = RightButtonBox
+        LaggerButton.Parent = ScreenGui
 
         local LaggerCorner = Instance.new("UICorner")
         LaggerCorner.CornerRadius = UDim.new(0, 8)
         LaggerCorner.Parent = LaggerButton
 
         local LaggerBlackStroke = Instance.new("UIStroke")
-        LaggerBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+        LaggerBlackStroke.Color = THEME.BG
         LaggerBlackStroke.Thickness = 4
         LaggerBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
         LaggerBlackStroke.Parent = LaggerButton
 
         local LaggerStroke = Instance.new("UIStroke")
-        LaggerStroke.Color = Color3.fromRGB(255, 255, 255)
+        LaggerStroke.Color = THEME.GOLD
         LaggerStroke.Thickness = 2.5
         LaggerStroke.Transparency = 0.35
         LaggerStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -3994,10 +4156,10 @@ function createRightButtons(device)
         LaggerButton.MouseButton1Click:Connect(function()
             laggerEnabled = not laggerEnabled
             if laggerEnabled then
-                LaggerButton.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+                LaggerButton.BackgroundColor3 = THEME.ON
                 startLagger()
             else
-                LaggerButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+                LaggerButton.BackgroundColor3 = THEME.OFF
                 stopLaggerLoop()
             end
         end)
@@ -4210,10 +4372,10 @@ function createRightButtons(device)
     DesyncButton.MouseButton1Click:Connect(function()
         desyncEnabled = not desyncEnabled
         if desyncEnabled then
-            DesyncButton.BackgroundColor3 = Color3.fromRGB(120, 60, 255)
+            DesyncButton.BackgroundColor3 = THEME.ON
             startDesyncLogic()
         else
-            DesyncButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            DesyncButton.BackgroundColor3 = THEME.OFF
             stopDesyncLogic()
         end
     end)
@@ -4221,27 +4383,27 @@ function createRightButtons(device)
     -- ✅ TRACK PLAYER Button (TOP ROW, RIGHT)
     local TrackPlayerButton = Instance.new("TextButton")
     TrackPlayerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    TrackPlayerButton.Position = UDim2.new(0, pad + buttonSize*2 + spacing*2, 0, pad)
-    TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    TrackPlayerButton.Position = UDim2.new(1, x3, 0.5, y1)
+    TrackPlayerButton.BackgroundColor3 = THEME.OFF
     TrackPlayerButton.BackgroundTransparency = 0
     TrackPlayerButton.Text = "TRACK\nPLAYER"
-    TrackPlayerButton.TextColor3 = Color3.fromRGB(220, 220, 220)
+    TrackPlayerButton.TextColor3 = THEME.TEXT
     TrackPlayerButton.Font = Enum.Font.GothamBold
     TrackPlayerButton.TextSize = device == "iPhone" and 9 or 12
-    TrackPlayerButton.Parent = RightButtonBox
+    TrackPlayerButton.Parent = ScreenGui
 
     local TrackCorner = Instance.new("UICorner")
     TrackCorner.CornerRadius = UDim.new(0, 8)
     TrackCorner.Parent = TrackPlayerButton
 
     local TrackBlackStroke = Instance.new("UIStroke")
-    TrackBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+    TrackBlackStroke.Color = THEME.BG
     TrackBlackStroke.Thickness = 4
     TrackBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     TrackBlackStroke.Parent = TrackPlayerButton
 
     local TrackStroke = Instance.new("UIStroke")
-    TrackStroke.Color = Color3.fromRGB(255, 255, 255)
+    TrackStroke.Color = THEME.GOLD
     TrackStroke.Thickness = 2.5
     TrackStroke.Transparency = 0.35
     TrackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -4253,37 +4415,37 @@ function createRightButtons(device)
         
         if batAimbotToggled then
             startBatAimbot()
-            TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+            TrackPlayerButton.BackgroundColor3 = THEME.ON
         else
             stopBatAimbot()
-            TrackPlayerButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            TrackPlayerButton.BackgroundColor3 = THEME.OFF
         end
     end)
 
     -- ✅ HIT CIRCLE Button (BOTTOM ROW, LEFT)
     local HitCircleButton = Instance.new("TextButton")
     HitCircleButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    HitCircleButton.Position = UDim2.new(0, pad, 0, pad + buttonSize + spacing)
-    HitCircleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    HitCircleButton.Position = UDim2.new(1, x1, 0.5, y2)
+    HitCircleButton.BackgroundColor3 = THEME.OFF
     HitCircleButton.BackgroundTransparency = 0
     HitCircleButton.Text = "HIT\nCIRCLE"
-    HitCircleButton.TextColor3 = Color3.fromRGB(220, 220, 220)
+    HitCircleButton.TextColor3 = THEME.TEXT
     HitCircleButton.Font = Enum.Font.GothamBold
     HitCircleButton.TextSize = device == "iPhone" and 9 or 12
-    HitCircleButton.Parent = RightButtonBox
+    HitCircleButton.Parent = ScreenGui
 
     local HitCorner = Instance.new("UICorner")
     HitCorner.CornerRadius = UDim.new(0, 8)
     HitCorner.Parent = HitCircleButton
 
     local HitBlackStroke = Instance.new("UIStroke")
-    HitBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+    HitBlackStroke.Color = THEME.BG
     HitBlackStroke.Thickness = 4
     HitBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     HitBlackStroke.Parent = HitCircleButton
 
     local HitStroke = Instance.new("UIStroke")
-    HitStroke.Color = Color3.fromRGB(255, 255, 255)
+    HitStroke.Color = THEME.GOLD
     HitStroke.Thickness = 2.5
     HitStroke.Transparency = 0.35
     HitStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -4295,10 +4457,10 @@ function createRightButtons(device)
         
         if hitCircleEnabled then
             startHitCircle()
-            HitCircleButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+            HitCircleButton.BackgroundColor3 = THEME.ON
         else
             stopHitCircle()
-            HitCircleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            HitCircleButton.BackgroundColor3 = THEME.OFF
         end
     end)
 
@@ -4314,27 +4476,27 @@ function createRightButtons(device)
     -- JUKE Button (BOTTOM ROW, RIGHT)
     local JukeButton = Instance.new("TextButton")
     JukeButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    JukeButton.Position = UDim2.new(0, pad + buttonSize + spacing, 0, pad + buttonSize + spacing)
-    JukeButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    JukeButton.Position = UDim2.new(1, x2, 0.5, y2)
+    JukeButton.BackgroundColor3 = THEME.OFF
     JukeButton.BackgroundTransparency = 0
     JukeButton.Text = "JUKE"
-    JukeButton.TextColor3 = Color3.fromRGB(220, 220, 220)
+    JukeButton.TextColor3 = THEME.TEXT
     JukeButton.Font = Enum.Font.GothamBold
     JukeButton.TextSize = device == "iPhone" and 9 or 12
-    JukeButton.Parent = RightButtonBox
+    JukeButton.Parent = ScreenGui
 
     local JukeCorner = Instance.new("UICorner")
     JukeCorner.CornerRadius = UDim.new(0, 8)
     JukeCorner.Parent = JukeButton
 
     local JukeBlackStroke = Instance.new("UIStroke")
-    JukeBlackStroke.Color = Color3.fromRGB(0, 0, 0)
+    JukeBlackStroke.Color = THEME.BG
     JukeBlackStroke.Thickness = 4
     JukeBlackStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     JukeBlackStroke.Parent = JukeButton
 
     local JukeStroke = Instance.new("UIStroke")
-    JukeStroke.Color = Color3.fromRGB(255, 255, 255)
+    JukeStroke.Color = THEME.GOLD
     JukeStroke.Thickness = 2.5
     JukeStroke.Transparency = 0.35
     JukeStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -4650,22 +4812,21 @@ function createRightButtons(device)
 
     local function relayoutRightButtons(newSize)
         local sp = 10
-        local p = 8
-        local newW = p*2 + newSize*3 + sp*2
-        local newH = p*2 + newSize*2 + sp
+        local baseX = -(newSize * 3 + sp * 2 + 20)
+        local col2 = baseX + newSize + sp
+        local col3 = col2 + newSize + sp
+        local autoSz = device == "iPhone" and 55 or 70
+        local autoTop = -(autoSz * 2 + sp * 2)
+        local row1 = autoTop + autoSz + 14
+        local row2 = row1 + newSize + sp
         for _, btn in ipairs(allRightButtons) do
             btn.Size = UDim2.new(0, newSize, 0, newSize)
         end
-        -- Resize the box
-        RightButtonBox.Size = UDim2.new(0, newW, 0, newH)
-        RightButtonBox.Position = UDim2.new(1, -(newW + 12), 0.5, -newH/2)
-        -- Top row
-        DesyncButton.Position = UDim2.new(0, p, 0, p)
-        LaggerButton.Position = UDim2.new(0, p + newSize + sp, 0, p)
-        TrackPlayerButton.Position = UDim2.new(0, p + newSize*2 + sp*2, 0, p)
-        -- Bottom row
-        HitCircleButton.Position = UDim2.new(0, p, 0, p + newSize + sp)
-        JukeButton.Position = UDim2.new(0, p + newSize + sp, 0, p + newSize + sp)
+        DesyncButton.Position = UDim2.new(1, baseX, 0.5, row1)
+        LaggerButton.Position = UDim2.new(1, col2, 0.5, row1)
+        TrackPlayerButton.Position = UDim2.new(1, col3, 0.5, row1)
+        HitCircleButton.Position = UDim2.new(1, baseX, 0.5, row2)
+        JukeButton.Position = UDim2.new(1, col2, 0.5, row2)
     end
 
     BtnSizeMinus.MouseButton1Click:Connect(function()
@@ -4950,7 +5111,7 @@ function createRightButtons(device)
         local r = c and c:FindFirstChild("HumanoidRootPart")
         if not r then return end
         jukeActive = true
-        JukeButton.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+        JukeButton.BackgroundColor3 = THEME.PINK
 
         local startPos = r.Position
         local targetY = startPos.Y + jukeFloatY
@@ -4982,7 +5143,7 @@ function createRightButtons(device)
                         rrr.AssemblyLinearVelocity = Vector3.zero
                     end
                     jukeActive = false
-                    JukeButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+                    JukeButton.BackgroundColor3 = THEME.OFF
                 end)
                 return
             end
@@ -4992,7 +5153,7 @@ function createRightButtons(device)
 end
 
 print("══════════════════════════════════════════════")
-print("   TIM CHEESE DUELS LOADED")
+print("   CELESTIAL HUB LOADED")
 print("══════════════════════════════════════════════")
 print("✅ VISIBLE SMALL GUIs (5):")
 print("   Speed (ON), Unwalk (ON), Anti Rag (ON),")
@@ -5009,6 +5170,6 @@ print("════════════════════════�
 game:GetService("Players").PlayerRemoving:Connect(function(plr)
     if plr == player then
         SaveConfig()
-        print("[TIM CHEESE DUELS] ✅ Auto-saved config on leave!")
+        print("[CELESTIAL HUB] ✅ Auto-saved config on leave!")
     end
 end)
