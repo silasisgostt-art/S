@@ -1864,64 +1864,6 @@ do
             end
         end
         if refreshSmallButtonPositions then refreshSmallButtonPositions() end
-
-        local autoLeft, autoRight, autoMedusa
-        local rightList = {}
-        for _, child in ipairs(ScreenGui:GetChildren()) do
-            if child:IsA("TextButton") then
-                local t = child.Text or ""
-                if t:find("AUTO\nLEFT") then autoLeft = child end
-                if t:find("AUTO\nRIGHT") then autoRight = child end
-                if t:find("AUTO\nMEDUSA") then autoMedusa = child end
-                if t:find("DESYNC") or t:find("LAGGER") or t:find("TRACK") or t:find("HIT") or t:find("JUKE") then
-                    table.insert(rightList, child)
-                end
-            end
-        end
-
-        local function setFontBySize(btn)
-            btn.TextSize = math.clamp(math.floor(btn.Size.X.Offset * 0.18), 8, 16)
-        end
-
-        if autoLeft and autoRight and autoMedusa then
-            local newAuto = math.clamp(autoLeft.Size.X.Offset + delta, 16, 46)
-            local sp = 10
-            local x1 = -(newAuto * 3 + sp * 2 + 20)
-            local x2 = x1 + newAuto + sp
-            local x3 = x2 + newAuto + sp
-            local y = -(newAuto * 2 + sp * 2)
-
-            autoLeft.Size = UDim2.new(0, newAuto, 0, newAuto)
-            autoRight.Size = UDim2.new(0, newAuto, 0, newAuto)
-            autoMedusa.Size = UDim2.new(0, newAuto, 0, newAuto)
-
-            autoLeft.Position = UDim2.new(1, x1, 0.5, y)
-            autoRight.Position = UDim2.new(1, x2, 0.5, y)
-            autoMedusa.Position = UDim2.new(1, x3, 0.5, y)
-
-            setFontBySize(autoLeft)
-            setFontBySize(autoRight)
-            setFontBySize(autoMedusa)
-
-            if #rightList > 0 then
-                local newRight = math.clamp(rightList[1].Size.X.Offset + delta, 13, 34)
-                local rx1 = -(newRight * 3 + sp * 2 + 20)
-                local rx2 = rx1 + newRight + sp
-                local rx3 = rx2 + newRight + sp
-                local ry1 = y + newAuto + 14
-                local ry2 = ry1 + newRight + sp
-
-                for _, btn in ipairs(rightList) do
-                    btn.Size = UDim2.new(0, newRight, 0, newRight)
-                    setFontBySize(btn)
-                    if btn.Text:find("DESYNC") then btn.Position = UDim2.new(1, rx1, 0.5, ry1) end
-                    if btn.Text:find("LAGGER") then btn.Position = UDim2.new(1, rx2, 0.5, ry1) end
-                    if btn.Text:find("TRACK") then btn.Position = UDim2.new(1, rx3, 0.5, ry1) end
-                    if btn.Text:find("HIT") then btn.Position = UDim2.new(1, rx1, 0.5, ry2) end
-                    if btn.Text:find("JUKE") then btn.Position = UDim2.new(1, rx2, 0.5, ry2) end
-                end
-            end
-        end
     end
 
     BTaskMinus.MouseButton1Click:Connect(function()
