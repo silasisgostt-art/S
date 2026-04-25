@@ -199,9 +199,6 @@ local PATH_SMOOTH_FACTOR = 0.10
 local PATH_CHECKPOINT_RADIUS = 12
 local PATH_TP_STEP_DISTANCE = 2.5
 local PATH_TP_STEP_DELAY = 0.05
-local PATH_FINAL_SPEED_MULT = 1.45
-local PATH_FINAL_TP_SPEED = 44.0
-local autoFloatPendingAt = 0
 
 local stealPath1 = {
     -- Auto Right (switched spots)
@@ -277,13 +274,12 @@ local function runStealPath(path)
     local i = 1
     while i <= #path do
         local p = path[i]
-        local isFinalPoint = (i == #path)
         if not pathActive then return end
         -- Instead of teleport, walk to the target position using velocity
         if p.teleportHere then
             local offset = p.teleportOffset or Vector3.zero
             local targetPos = p.pos + offset
-            local walkSpeed = isFinalPoint and PATH_FINAL_TP_SPEED or 29.0
+            local walkSpeed = 29.0
             local stopDist = PATH_TP_STEP_DISTANCE
             local conn
             conn = RunService.Heartbeat:Connect(function()
@@ -308,9 +304,6 @@ local function runStealPath(path)
             speed = i > 2 and SpeedBooster.StealSpeed or SpeedBooster.NormalSpeed
         else
             speed = i > 2 and PATH_SECOND_SPEED or PATH_VELOCITY_SPEED
-        end
-        if isFinalPoint then
-            speed = speed * PATH_FINAL_SPEED_MULT
         end
         local nextP = path[i+1] and path[i+1].pos
         -- Ultra-smooth, lag-free, brain-speed bypass
@@ -351,11 +344,9 @@ end
 
 local function startStealPath(path)
     pathActive = true
-    autoFloatPendingAt = tick() + 1
     task.spawn(function() 
         runStealPath(path)
         pathActive = false
-        autoFloatPendingAt = 0
         local hrpLocal = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
         if hrpLocal then hrpLocal.AssemblyLinearVelocity = Vector3.zero end
     end)
@@ -363,7 +354,6 @@ end
 
 local function stopStealPath()
     pathActive = false
-    autoFloatPendingAt = 0
     local hrpLocal = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
     if hrpLocal then hrpLocal.AssemblyLinearVelocity = Vector3.zero end
 end
@@ -1177,16 +1167,6 @@ local function stopFloat()
     end
 end
 
-RunService.Heartbeat:Connect(function()
-    if autoFloatPendingAt <= 0 then return end
-    if tick() < autoFloatPendingAt then return end
-
-    autoFloatPendingAt = 0
-    if pathActive and floatEnabled and not floatConn then
-        startFloat()
-    end
-end)
-
 -- ═══════════════════════════════════════════════════════
 -- TRACK PLAYER (BAT AIMBOT)
 -- ═══════════════════════════════════════════════════════
@@ -1907,18 +1887,18 @@ do
         if autoLeft and autoRight and autoMedusa then
             local newAuto = math.clamp(autoLeft.Size.X.Offset + delta, 30, 120)
             local sp = 10
-            local x1 = -(newAuto * 3 + sp * 2 + 20)
+            local x1 = -(newAuto * 2 + sp + 20)
             local x2 = x1 + newAuto + sp
-            local x3 = x2 + newAuto + sp
-            local y = -(newAuto * 2 + sp * 2)
+            local autoRow1 = -(newAuto * 4 + sp * 3)
+            local autoRow2 = autoRow1 + newAuto + sp
 
             autoLeft.Size = UDim2.new(0, newAuto, 0, newAuto)
             autoRight.Size = UDim2.new(0, newAuto, 0, newAuto)
             autoMedusa.Size = UDim2.new(0, newAuto, 0, newAuto)
 
-            autoLeft.Position = UDim2.new(1, x1, 0.5, y)
-            autoRight.Position = UDim2.new(1, x2, 0.5, y)
-            autoMedusa.Position = UDim2.new(1, x3, 0.5, y)
+            autoLeft.Position = UDim2.new(1, x1, 0.5, autoRow1)
+            autoRight.Position = UDim2.new(1, x2, 0.5, autoRow1)
+            autoMedusa.Position = UDim2.new(1, x1, 0.5, autoRow2)
 
             setFontBySize(autoLeft)
             setFontBySize(autoRight)
@@ -1926,20 +1906,20 @@ do
 
             if #rightList > 0 then
                 local newRight = math.clamp(rightList[1].Size.X.Offset + delta, 24, 90)
-                local rx1 = -(newRight * 3 + sp * 2 + 20)
+                local rx1 = -(newRight * 2 + sp + 20)
                 local rx2 = rx1 + newRight + sp
-                local rx3 = rx2 + newRight + sp
-                local ry1 = y + newAuto + 14
+                local ry1 = autoRow2
                 local ry2 = ry1 + newRight + sp
+                local ry3 = ry2 + newRight + sp
 
                 for _, btn in ipairs(rightList) do
                     btn.Size = UDim2.new(0, newRight, 0, newRight)
                     setFontBySize(btn)
-                    if btn.Text:find("DESYNC") then btn.Position = UDim2.new(1, rx1, 0.5, ry1) end
-                    if btn.Text:find("LAGGER") then btn.Position = UDim2.new(1, rx2, 0.5, ry1) end
-                    if btn.Text:find("TRACK") then btn.Position = UDim2.new(1, rx3, 0.5, ry1) end
-                    if btn.Text:find("HIT") then btn.Position = UDim2.new(1, rx1, 0.5, ry2) end
-                    if btn.Text:find("JUKE") then btn.Position = UDim2.new(1, rx2, 0.5, ry2) end
+                    if btn.Text:find("DESYNC") then btn.Position = UDim2.new(1, rx2, 0.5, ry1) end
+                    if btn.Text:find("LAGGER") then btn.Position = UDim2.new(1, rx1, 0.5, ry2) end
+                    if btn.Text:find("TRACK") then btn.Position = UDim2.new(1, rx2, 0.5, ry2) end
+                    if btn.Text:find("HIT") then btn.Position = UDim2.new(1, rx1, 0.5, ry3) end
+                    if btn.Text:find("JUKE") then btn.Position = UDim2.new(1, rx2, 0.5, ry3) end
                 end
             end
         end
@@ -2918,7 +2898,7 @@ local function createMainGUI(device)
 
     local SpeedSettingsGUI = Instance.new("Frame")
     SpeedSettingsGUI.Name = "SpeedSettingsGUI"
-    SpeedSettingsGUI.Size = UDim2.new(0, 150, 0, 210)
+    SpeedSettingsGUI.Size = UDim2.new(0, 150, 0, 195)
     SpeedSettingsGUI.Position = UDim2.new(0.5, 180, 0.5, -95)
     SpeedSettingsGUI.BackgroundColor3 = THEME.PANEL
     SpeedSettingsGUI.BackgroundTransparency = 0.08
@@ -3050,35 +3030,13 @@ local function createMainGUI(device)
     createSpeedInput("Steal", 40, "StealValue")
     createSpeedInput("Jump", 75, "JumpValue")
 
-    local SaveSpeedBtn = Instance.new("TextButton", InputContainer)
-    SaveSpeedBtn.Size = UDim2.new(1, -24, 0, 24)
-    SaveSpeedBtn.Position = UDim2.new(0, 12, 0, 107)
-    SaveSpeedBtn.BackgroundColor3 = THEME.GOLD
-    SaveSpeedBtn.Text = "SAVE"
-    SaveSpeedBtn.TextColor3 = THEME.BG
-    SaveSpeedBtn.Font = Enum.Font.GothamBold
-    SaveSpeedBtn.TextSize = 11
-    Instance.new("UICorner", SaveSpeedBtn).CornerRadius = UDim.new(0, 4)
-
-    SaveSpeedBtn.MouseButton1Click:Connect(function()
-        local ok = SaveConfig()
-        SaveSpeedBtn.Text = ok and "SAVED" or "FAILED"
-        SaveSpeedBtn.BackgroundColor3 = ok and Color3.fromRGB(70, 255, 150) or Color3.fromRGB(255, 120, 120)
-        task.delay(0.8, function()
-            if SaveSpeedBtn and SaveSpeedBtn.Parent then
-                SaveSpeedBtn.Text = "SAVE"
-                SaveSpeedBtn.BackgroundColor3 = THEME.GOLD
-            end
-        end)
-    end)
-
     HeaderButton.MouseButton1Click:Connect(function()
         SpeedCustomizer.Collapsed = not SpeedCustomizer.Collapsed
         if SpeedCustomizer.Collapsed then
             SpeedSettingsGUI:TweenSize(UDim2.new(0, 150, 0, 65), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
             InputContainer.Visible = false
         else
-            SpeedSettingsGUI:TweenSize(UDim2.new(0, 150, 0, 210), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
+            SpeedSettingsGUI:TweenSize(UDim2.new(0, 150, 0, 195), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
             task.delay(0.1, function() InputContainer.Visible = true end)
         end
     end)
@@ -3703,15 +3661,15 @@ local AutoLeftSmallGUI, AutoRightSmallGUI
 function createAutoButtons(device)
     local buttonSize = device == "iPhone" and 55 or 70
     local spacing = 10
-    local rowX1 = -(buttonSize * 3 + spacing * 2 + 20)
-    local rowX2 = rowX1 + buttonSize + spacing
-    local rowX3 = rowX2 + buttonSize + spacing
-    local rowY = -(buttonSize * 2 + spacing * 2)
+    local colX1 = -(buttonSize * 2 + spacing + 20)
+    local colX2 = colX1 + buttonSize + spacing
+    local row1Y = -(buttonSize * 4 + spacing * 3)
+    local row2Y = row1Y + buttonSize + spacing
 
     -- ✅ AUTO LEFT Button (GRAY!)
     local AutoLeftButton = Instance.new("TextButton")
     AutoLeftButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    AutoLeftButton.Position = UDim2.new(1, rowX1, 0.5, rowY)
+    AutoLeftButton.Position = UDim2.new(1, colX1, 0.5, row1Y)
     AutoLeftButton.BackgroundColor3 = THEME.OFF
     AutoLeftButton.BackgroundTransparency = 0
     AutoLeftButton.Text = "AUTO\nLEFT\nOFF"
@@ -3741,7 +3699,7 @@ function createAutoButtons(device)
     -- ✅ AUTO MEDUSA Button (above Auto Right)
     local AutoMedusaButton = Instance.new("TextButton")
     AutoMedusaButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    AutoMedusaButton.Position = UDim2.new(1, rowX3, 0.5, rowY)
+    AutoMedusaButton.Position = UDim2.new(1, colX1, 0.5, row2Y)
     AutoMedusaButton.BackgroundColor3 = THEME.OFF
     AutoMedusaButton.BackgroundTransparency = 0
     AutoMedusaButton.Text = "AUTO\nMEDUSA\nOFF"
@@ -3886,7 +3844,7 @@ function createAutoButtons(device)
     end)
     local AutoRightButton = Instance.new("TextButton")
     AutoRightButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    AutoRightButton.Position = UDim2.new(1, rowX2, 0.5, rowY)
+    AutoRightButton.Position = UDim2.new(1, colX2, 0.5, row1Y)
     AutoRightButton.BackgroundColor3 = THEME.OFF
     AutoRightButton.BackgroundTransparency = 0
     AutoRightButton.Text = "AUTO\nRIGHT\nOFF"
@@ -3957,13 +3915,14 @@ end
 function createRightButtons(device)
     local buttonSize = device == "iPhone" and 38 or 48
     local spacing = 10
-    local x1 = -(buttonSize * 3 + spacing * 2 + 20)
+    local x1 = -(buttonSize * 2 + spacing + 20)
     local x2 = x1 + buttonSize + spacing
-    local x3 = x2 + buttonSize + spacing
     local autoSize = device == "iPhone" and 55 or 70
-    local autoY = -(autoSize * 2 + spacing * 2)
-    local y1 = autoY + autoSize + 14
+    local autoRow1Y = -(autoSize * 4 + spacing * 3)
+    local autoRow2Y = autoRow1Y + autoSize + spacing
+    local y1 = autoRow2Y
     local y2 = y1 + buttonSize + spacing
+    local y3 = y2 + buttonSize + spacing
 
     -- ✅ DESYNC Button (TOP ROW, LEFT)
     local DesyncButton = Instance.new("TextButton")
@@ -4086,7 +4045,7 @@ function createRightButtons(device)
         -- ✅ LAGGER Button (TOP ROW, MIDDLE)
         local LaggerButton = Instance.new("TextButton")
         LaggerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-        LaggerButton.Position = UDim2.new(1, x2, 0.5, y1)
+        LaggerButton.Position = UDim2.new(1, x1, 0.5, y2)
         LaggerButton.BackgroundColor3 = THEME.OFF
         LaggerButton.BackgroundTransparency = 0
         LaggerButton.Text = "LAGGER"
@@ -4425,7 +4384,7 @@ function createRightButtons(device)
     -- ✅ TRACK PLAYER Button (TOP ROW, RIGHT)
     local TrackPlayerButton = Instance.new("TextButton")
     TrackPlayerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    TrackPlayerButton.Position = UDim2.new(1, x3, 0.5, y1)
+    TrackPlayerButton.Position = UDim2.new(1, x2, 0.5, y2)
     TrackPlayerButton.BackgroundColor3 = THEME.OFF
     TrackPlayerButton.BackgroundTransparency = 0
     TrackPlayerButton.Text = "TRACK\nPLAYER"
@@ -4467,7 +4426,7 @@ function createRightButtons(device)
     -- ✅ HIT CIRCLE Button (BOTTOM ROW, LEFT)
     local HitCircleButton = Instance.new("TextButton")
     HitCircleButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    HitCircleButton.Position = UDim2.new(1, x1, 0.5, y2)
+    HitCircleButton.Position = UDim2.new(1, x1, 0.5, y3)
     HitCircleButton.BackgroundColor3 = THEME.OFF
     HitCircleButton.BackgroundTransparency = 0
     HitCircleButton.Text = "HIT\nCIRCLE"
@@ -4518,7 +4477,7 @@ function createRightButtons(device)
     -- JUKE Button (BOTTOM ROW, RIGHT)
     local JukeButton = Instance.new("TextButton")
     JukeButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
-    JukeButton.Position = UDim2.new(1, x2, 0.5, y2)
+    JukeButton.Position = UDim2.new(1, x2, 0.5, y3)
     JukeButton.BackgroundColor3 = THEME.OFF
     JukeButton.BackgroundTransparency = 0
     JukeButton.Text = "JUKE"
@@ -4854,21 +4813,22 @@ function createRightButtons(device)
 
     local function relayoutRightButtons(newSize)
         local sp = 10
-        local baseX = -(newSize * 3 + sp * 2 + 20)
+        local baseX = -(newSize * 2 + sp + 20)
         local col2 = baseX + newSize + sp
-        local col3 = col2 + newSize + sp
         local autoSz = device == "iPhone" and 55 or 70
-        local autoTop = -(autoSz * 2 + sp * 2)
-        local row1 = autoTop + autoSz + 14
+        local autoRow1 = -(autoSz * 4 + sp * 3)
+        local autoRow2 = autoRow1 + autoSz + sp
+        local row1 = autoRow2
         local row2 = row1 + newSize + sp
+        local row3 = row2 + newSize + sp
         for _, btn in ipairs(allRightButtons) do
             btn.Size = UDim2.new(0, newSize, 0, newSize)
         end
-        DesyncButton.Position = UDim2.new(1, baseX, 0.5, row1)
-        LaggerButton.Position = UDim2.new(1, col2, 0.5, row1)
-        TrackPlayerButton.Position = UDim2.new(1, col3, 0.5, row1)
-        HitCircleButton.Position = UDim2.new(1, baseX, 0.5, row2)
-        JukeButton.Position = UDim2.new(1, col2, 0.5, row2)
+        DesyncButton.Position = UDim2.new(1, col2, 0.5, row1)
+        LaggerButton.Position = UDim2.new(1, baseX, 0.5, row2)
+        TrackPlayerButton.Position = UDim2.new(1, col2, 0.5, row2)
+        HitCircleButton.Position = UDim2.new(1, baseX, 0.5, row3)
+        JukeButton.Position = UDim2.new(1, col2, 0.5, row3)
     end
 
     BtnSizeMinus.MouseButton1Click:Connect(function()
@@ -4954,8 +4914,16 @@ function createRightButtons(device)
         leftBtnSize = newSize
         leftYOffset = newSize + 10
         local leftBtns = getLeftButtons()
+        local sp = 10
+        local x1 = -(newSize * 2 + sp + 20)
+        local x2 = x1 + newSize + sp
+        local row1 = -(newSize * 4 + sp * 3)
+        local row2 = row1 + newSize + sp
         for _, btn in ipairs(leftBtns) do
             btn.Size = UDim2.new(0, newSize, 0, newSize)
+            if btn.Text:find("AUTO\nLEFT") then btn.Position = UDim2.new(1, x1, 0.5, row1) end
+            if btn.Text:find("AUTO\nRIGHT") then btn.Position = UDim2.new(1, x2, 0.5, row1) end
+            if btn.Text:find("AUTO\nMEDUSA") then btn.Position = UDim2.new(1, x1, 0.5, row2) end
         end
     end
 
