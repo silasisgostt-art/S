@@ -134,32 +134,6 @@ SpeedBooster = {
     JumpConn = nil
 }
 
-local FloatConfig = {
-    Enabled = false,
-    Height = 28,
-    Speed = 13,
-    _fCount = 0,
-    _conn = nil
-}
-
-local function startAutoFloat()
-    FloatConfig._fCount = 0
-    if FloatConfig._conn then FloatConfig._conn:Disconnect() end
-    FloatConfig._conn = RunService.Heartbeat:Connect(function(dt)
-        if not FloatConfig.Enabled then return end
-        local h = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-        if not h then return end
-        FloatConfig._fCount = FloatConfig._fCount + dt * FloatConfig.Speed
-        local vel = h.AssemblyLinearVelocity
-        h.AssemblyLinearVelocity = Vector3.new(vel.X, 0, vel.Z)
-        h.CFrame = h.CFrame * CFrame.new(0, math.sin(FloatConfig._fCount) * (FloatConfig.Height * 0.05), 0)
-    end)
-end
-
-local function stopAutoFloat()
-    if FloatConfig._conn then FloatConfig._conn:Disconnect(); FloatConfig._conn = nil end
-end
-
 local function startSpeedBooster()
     if SpeedBooster.HeartbeatConn then SpeedBooster.HeartbeatConn:Disconnect() end
     if SpeedBooster.JumpConn then SpeedBooster.JumpConn:Disconnect() end
@@ -225,6 +199,9 @@ local PATH_SMOOTH_FACTOR = 0.10
 local PATH_CHECKPOINT_RADIUS = 12
 local PATH_TP_STEP_DISTANCE = 2.5
 local PATH_TP_STEP_DELAY = 0.05
+local PATH_FINAL_SPEED_MULT = 1.45
+local PATH_FINAL_TP_SPEED = 44.0
+local autoFloatPendingAt = 0
 
 local stealPath1 = {
     -- Auto Right (switched spots)
@@ -300,12 +277,13 @@ local function runStealPath(path)
     local i = 1
     while i <= #path do
         local p = path[i]
+        local isFinalPoint = (i == #path)
         if not pathActive then return end
         -- Instead of teleport, walk to the target position using velocity
         if p.teleportHere then
             local offset = p.teleportOffset or Vector3.zero
             local targetPos = p.pos + offset
-            local walkSpeed = 75.0
+            local walkSpeed = isFinalPoint and PATH_FINAL_TP_SPEED or 29.0
             local stopDist = PATH_TP_STEP_DISTANCE
             local conn
             conn = RunService.Heartbeat:Connect(function()
@@ -330,6 +308,9 @@ local function runStealPath(path)
             speed = i > 2 and SpeedBooster.StealSpeed or SpeedBooster.NormalSpeed
         else
             speed = i > 2 and PATH_SECOND_SPEED or PATH_VELOCITY_SPEED
+        end
+        if isFinalPoint then
+            speed = speed * PATH_FINAL_SPEED_MULT
         end
         local nextP = path[i+1] and path[i+1].pos
         -- Ultra-smooth, lag-free, brain-speed bypass
@@ -370,9 +351,11 @@ end
 
 local function startStealPath(path)
     pathActive = true
+    autoFloatPendingAt = tick() + 1
     task.spawn(function() 
         runStealPath(path)
         pathActive = false
+        autoFloatPendingAt = 0
         local hrpLocal = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
         if hrpLocal then hrpLocal.AssemblyLinearVelocity = Vector3.zero end
     end)
@@ -380,6 +363,7 @@ end
 
 local function stopStealPath()
     pathActive = false
+    autoFloatPendingAt = 0
     local hrpLocal = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
     if hrpLocal then hrpLocal.AssemblyLinearVelocity = Vector3.zero end
 end
@@ -1192,6 +1176,16 @@ local function stopFloat()
         hrp.AssemblyLinearVelocity = Vector3.new(hrp.AssemblyLinearVelocity.X, -500, hrp.AssemblyLinearVelocity.Z)
     end
 end
+
+RunService.Heartbeat:Connect(function()
+    if autoFloatPendingAt <= 0 then return end
+    if tick() < autoFloatPendingAt then return end
+
+    autoFloatPendingAt = 0
+    if pathActive and floatEnabled and not floatConn then
+        startFloat()
+    end
+end)
 
 -- ═══════════════════════════════════════════════════════
 -- TRACK PLAYER (BAT AIMBOT)
@@ -2924,7 +2918,7 @@ local function createMainGUI(device)
 
     local SpeedSettingsGUI = Instance.new("Frame")
     SpeedSettingsGUI.Name = "SpeedSettingsGUI"
-    SpeedSettingsGUI.Size = UDim2.new(0, 150, 0, 250)
+    SpeedSettingsGUI.Size = UDim2.new(0, 150, 0, 210)
     SpeedSettingsGUI.Position = UDim2.new(0.5, 180, 0.5, -95)
     SpeedSettingsGUI.BackgroundColor3 = THEME.PANEL
     SpeedSettingsGUI.BackgroundTransparency = 0.08
@@ -3056,54 +3050,26 @@ local function createMainGUI(device)
     createSpeedInput("Steal", 40, "StealValue")
     createSpeedInput("Jump", 75, "JumpValue")
 
-    -- Float toggle row
-    local floatRow = Instance.new("Frame", InputContainer)
-    floatRow.Size = UDim2.new(1, 0, 0, 26)
-    floatRow.Position = UDim2.new(0, 0, 0, 110)
-    floatRow.BackgroundTransparency = 1
-    local floatLbl = Instance.new("TextLabel", floatRow)
-    floatLbl.Size = UDim2.new(0.5, 0, 1, 0)
-    floatLbl.Position = UDim2.new(0, 8, 0, 0)
-    floatLbl.BackgroundTransparency = 1
-    floatLbl.Text = "Float"
-    floatLbl.TextColor3 = THEME.TEXT
-    floatLbl.Font = Enum.Font.GothamBold
-    floatLbl.TextSize = 11
-    floatLbl.TextXAlignment = Enum.TextXAlignment.Left
-    local floatToggle = Instance.new("TextButton", floatRow)
-    floatToggle.Size = UDim2.new(0, 52, 0, 22)
-    floatToggle.Position = UDim2.new(1, -60, 0, 2)
-    floatToggle.Font = Enum.Font.GothamBold
-    floatToggle.TextSize = 11
-    Instance.new("UICorner", floatToggle).CornerRadius = UDim.new(0, 4)
-    local function updateFloatToggle()
-        floatToggle.Text = FloatConfig.Enabled and "ON" or "OFF"
-        floatToggle.BackgroundColor3 = FloatConfig.Enabled and Color3.fromRGB(70, 255, 150) or Color3.fromRGB(155, 155, 165)
-        floatToggle.TextColor3 = FloatConfig.Enabled and Color3.fromRGB(10, 40, 20) or Color3.fromRGB(75, 75, 85)
-    end
-    updateFloatToggle()
-    floatToggle.MouseButton1Click:Connect(function()
-        FloatConfig.Enabled = not FloatConfig.Enabled
-        if not FloatConfig.Enabled then stopAutoFloat() end
-        updateFloatToggle()
-    end)
-    -- Save button
-    local saveRowFrame = Instance.new("Frame", InputContainer)
-    saveRowFrame.Size = UDim2.new(1, -16, 0, 26)
-    saveRowFrame.Position = UDim2.new(0, 8, 0, 142)
-    saveRowFrame.BackgroundTransparency = 1
-    local saveBtn = Instance.new("TextButton", saveRowFrame)
-    saveBtn.Size = UDim2.new(1, 0, 1, 0)
-    saveBtn.BackgroundColor3 = THEME.GOLD
-    saveBtn.Text = "SAVE"
-    saveBtn.Font = Enum.Font.GothamBold
-    saveBtn.TextSize = 12
-    saveBtn.TextColor3 = Color3.fromRGB(30, 30, 30)
-    Instance.new("UICorner", saveBtn).CornerRadius = UDim.new(0, 4)
-    saveBtn.MouseButton1Click:Connect(function()
-        SaveConfig()
-        saveBtn.Text = "SAVED ✓"
-        task.delay(1.2, function() saveBtn.Text = "SAVE" end)
+    local SaveSpeedBtn = Instance.new("TextButton", InputContainer)
+    SaveSpeedBtn.Size = UDim2.new(1, -24, 0, 24)
+    SaveSpeedBtn.Position = UDim2.new(0, 12, 0, 107)
+    SaveSpeedBtn.BackgroundColor3 = THEME.GOLD
+    SaveSpeedBtn.Text = "SAVE"
+    SaveSpeedBtn.TextColor3 = THEME.BG
+    SaveSpeedBtn.Font = Enum.Font.GothamBold
+    SaveSpeedBtn.TextSize = 11
+    Instance.new("UICorner", SaveSpeedBtn).CornerRadius = UDim.new(0, 4)
+
+    SaveSpeedBtn.MouseButton1Click:Connect(function()
+        local ok = SaveConfig()
+        SaveSpeedBtn.Text = ok and "SAVED" or "FAILED"
+        SaveSpeedBtn.BackgroundColor3 = ok and Color3.fromRGB(70, 255, 150) or Color3.fromRGB(255, 120, 120)
+        task.delay(0.8, function()
+            if SaveSpeedBtn and SaveSpeedBtn.Parent then
+                SaveSpeedBtn.Text = "SAVE"
+                SaveSpeedBtn.BackgroundColor3 = THEME.GOLD
+            end
+        end)
     end)
 
     HeaderButton.MouseButton1Click:Connect(function()
@@ -3112,7 +3078,7 @@ local function createMainGUI(device)
             SpeedSettingsGUI:TweenSize(UDim2.new(0, 150, 0, 65), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
             InputContainer.Visible = false
         else
-            SpeedSettingsGUI:TweenSize(UDim2.new(0, 150, 0, 250), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
+            SpeedSettingsGUI:TweenSize(UDim2.new(0, 150, 0, 210), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
             task.delay(0.1, function() InputContainer.Visible = true end)
         end
     end)
@@ -3951,24 +3917,17 @@ function createAutoButtons(device)
     AutoLeftButton.MouseButton1Click:Connect(function()
         if pathActive then
             stopStealPath()
-            stopAutoFloat()
             AutoLeftButton.BackgroundColor3 = THEME.OFF
             AutoLeftButton.Text = "AUTO\nLEFT\nOFF"
             AutoRightButton.BackgroundColor3 = THEME.OFF
             AutoRightButton.Text = "AUTO\nRIGHT\nOFF"
         else
             stopStealPath()
-            stopAutoFloat()
             AutoLeftButton.BackgroundColor3 = THEME.ON
             AutoLeftButton.Text = "AUTO\nLEFT\nON"
             AutoRightButton.BackgroundColor3 = THEME.OFF
             AutoRightButton.Text = "AUTO\nRIGHT\nOFF"
             startStealPath(stealPath2) -- ✅ LEFT PATH!
-            if FloatConfig.Enabled then
-                task.delay(1, function()
-                    if pathActive then startAutoFloat() end
-                end)
-            end
         end
     end)
 
@@ -3976,24 +3935,17 @@ function createAutoButtons(device)
     AutoRightButton.MouseButton1Click:Connect(function()
         if pathActive then
             stopStealPath()
-            stopAutoFloat()
             AutoLeftButton.BackgroundColor3 = THEME.OFF
             AutoLeftButton.Text = "AUTO\nLEFT\nOFF"
             AutoRightButton.BackgroundColor3 = THEME.OFF
             AutoRightButton.Text = "AUTO\nRIGHT\nOFF"
         else
             stopStealPath()
-            stopAutoFloat()
             AutoLeftButton.BackgroundColor3 = THEME.OFF
             AutoLeftButton.Text = "AUTO\nLEFT\nOFF"
             AutoRightButton.BackgroundColor3 = THEME.ON
             AutoRightButton.Text = "AUTO\nRIGHT\nON"
             startStealPath(stealPath1) -- ✅ RIGHT PATH!
-            if FloatConfig.Enabled then
-                task.delay(1, function()
-                    if pathActive then startAutoFloat() end
-                end)
-            end
         end
     end)
 end
