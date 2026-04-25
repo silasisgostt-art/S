@@ -69,6 +69,8 @@ local ConfigData = {
 
 local buttonsLocked = false
 local getButtonPositions
+local applyButtonPositions
+local setButtonsDraggable
 local SmallTPDownGUI, SmallTPDownButton, TPDownDot
 local SmallTPUpGUI, SmallTPUpButton, TPUpDot
 
@@ -1934,7 +1936,7 @@ do
     end)
 
     local BTaskPanel = Instance.new("Frame")
-    BTaskPanel.Size = UDim2.new(0, 205, 0, 300)
+    BTaskPanel.Size = UDim2.new(0, 205, 0, 340)
     BTaskPanel.Position = UDim2.new(1, -205, 1, -365)
     BTaskPanel.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
     BTaskPanel.BackgroundTransparency = 0.08
@@ -1971,31 +1973,31 @@ do
     BTaskPanelClose.Parent = BTaskPanel
     Instance.new("UICorner", BTaskPanelClose).CornerRadius = UDim.new(0, 6)
 
-    local BTaskSaveLayout = Instance.new("TextButton")
-    BTaskSaveLayout.Size = UDim2.new(0.48, 0, 0, 22)
-    BTaskSaveLayout.Position = UDim2.new(0.02, 0, 0, 32)
-    BTaskSaveLayout.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
-    BTaskSaveLayout.Text = "SAVE LAYOUT"
-    BTaskSaveLayout.TextColor3 = Color3.fromRGB(255, 255, 255)
-    BTaskSaveLayout.Font = Enum.Font.GothamBold
-    BTaskSaveLayout.TextSize = 10
-    BTaskSaveLayout.Parent = BTaskPanel
-    Instance.new("UICorner", BTaskSaveLayout).CornerRadius = UDim.new(0, 6)
+    local SaveLayoutBtn = Instance.new("TextButton")
+    SaveLayoutBtn.Size = UDim2.new(0.47, 0, 0, 24)
+    SaveLayoutBtn.Position = UDim2.new(0.03, 0, 0, 32)
+    SaveLayoutBtn.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
+    SaveLayoutBtn.Text = "Save Layout"
+    SaveLayoutBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SaveLayoutBtn.Font = Enum.Font.GothamBold
+    SaveLayoutBtn.TextSize = 10
+    SaveLayoutBtn.Parent = BTaskPanel
+    Instance.new("UICorner", SaveLayoutBtn).CornerRadius = UDim.new(0, 6)
 
-    local BTaskLockLayout = Instance.new("TextButton")
-    BTaskLockLayout.Size = UDim2.new(0.48, 0, 0, 22)
-    BTaskLockLayout.Position = UDim2.new(0.5, 0, 0, 32)
-    BTaskLockLayout.BackgroundColor3 = buttonsLocked and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(40, 40, 45)
-    BTaskLockLayout.Text = buttonsLocked and "LOCKED" or "LOCK"
-    BTaskLockLayout.TextColor3 = Color3.fromRGB(255, 255, 255)
-    BTaskLockLayout.Font = Enum.Font.GothamBold
-    BTaskLockLayout.TextSize = 10
-    BTaskLockLayout.Parent = BTaskPanel
-    Instance.new("UICorner", BTaskLockLayout).CornerRadius = UDim.new(0, 6)
+    local LockLayoutBtn = Instance.new("TextButton")
+    LockLayoutBtn.Size = UDim2.new(0.47, 0, 0, 24)
+    LockLayoutBtn.Position = UDim2.new(0.50, 0, 0, 32)
+    LockLayoutBtn.BackgroundColor3 = buttonsLocked and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(60, 60, 70)
+    LockLayoutBtn.Text = buttonsLocked and "Locked" or "Unlocked"
+    LockLayoutBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    LockLayoutBtn.Font = Enum.Font.GothamBold
+    LockLayoutBtn.TextSize = 10
+    LockLayoutBtn.Parent = BTaskPanel
+    Instance.new("UICorner", LockLayoutBtn).CornerRadius = UDim.new(0, 6)
 
     local BTaskList = Instance.new("ScrollingFrame")
-    BTaskList.Size = UDim2.new(1, -12, 1, -68)
-    BTaskList.Position = UDim2.new(0, 6, 0, 60)
+    BTaskList.Size = UDim2.new(1, -12, 1, -74)
+    BTaskList.Position = UDim2.new(0, 6, 0, 66)
     BTaskList.BackgroundTransparency = 1
     BTaskList.BorderSizePixel = 0
     BTaskList.ScrollBarThickness = 4
@@ -2062,25 +2064,26 @@ do
         BTaskPanel.Visible = false
     end)
 
-    BTaskSaveLayout.MouseButton1Click:Connect(function()
+    SaveLayoutBtn.MouseButton1Click:Connect(function()
         ConfigData.buttonPositions = getButtonPositions()
-        SaveConfig()
-        BTaskSaveLayout.Text = "SAVED"
+        local ok = SaveConfig()
+        SaveLayoutBtn.Text = ok and "Saved" or "Failed"
+        SaveLayoutBtn.BackgroundColor3 = ok and Color3.fromRGB(70, 255, 150) or Color3.fromRGB(200, 80, 80)
         task.delay(0.8, function()
-            if BTaskSaveLayout and BTaskSaveLayout.Parent then
-                BTaskSaveLayout.Text = "SAVE LAYOUT"
+            if SaveLayoutBtn and SaveLayoutBtn.Parent then
+                SaveLayoutBtn.Text = "Save Layout"
+                SaveLayoutBtn.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
             end
         end)
     end)
 
-    BTaskLockLayout.MouseButton1Click:Connect(function()
+    LockLayoutBtn.MouseButton1Click:Connect(function()
         buttonsLocked = not buttonsLocked
         setButtonsDraggable(not buttonsLocked)
-        ConfigData.buttonPositions = getButtonPositions()
         ConfigData.buttonsLocked = buttonsLocked
         SaveConfig()
-        BTaskLockLayout.Text = buttonsLocked and "LOCKED" or "LOCK"
-        BTaskLockLayout.BackgroundColor3 = buttonsLocked and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(40, 40, 45)
+        LockLayoutBtn.Text = buttonsLocked and "Locked" or "Unlocked"
+        LockLayoutBtn.BackgroundColor3 = buttonsLocked and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(60, 60, 70)
     end)
 
     BTaskToggle.MouseButton1Click:Connect(function()
@@ -2107,17 +2110,26 @@ local function deserializeUDim2(data)
     return UDim2.new(data.XScale or 0, data.XOffset or 0, data.YScale or 0, data.YOffset or 0)
 end
 
-getButtonPositions = function()
-    local function findScreenButtonByText(snippet)
-        for _, child in ipairs(ScreenGui:GetChildren()) do
-            if child:IsA("TextButton") and (child.Text or ""):find(snippet, 1, true) then
-                return child
-            end
+local function getActionButtonsForLayout()
+    local found = {}
+    for _, child in ipairs(ScreenGui:GetChildren()) do
+        if child:IsA("TextButton") then
+            local t = child.Text or ""
+            if t:find("AUTO\nLEFT") then found.AutoLeft = child end
+            if t:find("AUTO\nRIGHT") then found.AutoRight = child end
+            if t:find("AUTO\nMEDUSA") then found.AutoMedusa = child end
+            if t:find("DESYNC") then found.Desync = child end
+            if t:find("LAGGER") then found.Lagger = child end
+            if t:find("TRACK") then found.Track = child end
+            if t:find("HIT") then found.Hit = child end
+            if t:find("JUKE") then found.Juke = child end
         end
-        return nil
     end
+    return found
+end
 
-    local positions = {
+getButtonPositions = function()
+    local smallPositions = {
         Speed = serializeUDim2(SmallSpeedGUI.Position),
         Unwalk = serializeUDim2(SmallUnwalkGUI.Position),
         ["Spin Bot"] = serializeUDim2(SmallSpinBotGUI.Position),
@@ -2131,28 +2143,21 @@ getButtonPositions = function()
         ["TP Up"] = serializeUDim2(SmallTPUpGUI.Position),
     }
 
-    local screenButtons = {
-        ["AUTO LEFT"] = findScreenButtonByText("AUTO\nLEFT"),
-        ["AUTO RIGHT"] = findScreenButtonByText("AUTO\nRIGHT"),
-        ["AUTO MEDUSA"] = findScreenButtonByText("AUTO\nMEDUSA"),
-        ["DESYNC BTN"] = findScreenButtonByText("DESYNC"),
-        ["LAGGER BTN"] = findScreenButtonByText("LAGGER"),
-        ["TRACK BTN"] = findScreenButtonByText("TRACK"),
-        ["HIT BTN"] = findScreenButtonByText("HIT"),
-        ["JUKE BTN"] = findScreenButtonByText("JUKE"),
-    }
-
-    for key, btn in pairs(screenButtons) do
-        if btn then
-            positions[key] = serializeUDim2(btn.Position)
-        end
+    local onScreenPositions = {}
+    for key, btn in pairs(getActionButtonsForLayout()) do
+        onScreenPositions[key] = serializeUDim2(btn.Position)
     end
 
-    return positions
+    return {
+        Small = smallPositions,
+        OnScreen = onScreenPositions,
+    }
 end
 
-local function applyButtonPositions(data)
+applyButtonPositions = function(data)
     if type(data) ~= "table" then return end
+
+    local smallData = data.Small or data
     local mapping = {
         Speed = SmallSpeedGUI,
         Unwalk = SmallUnwalkGUI,
@@ -2167,45 +2172,28 @@ local function applyButtonPositions(data)
         ["TP Up"] = SmallTPUpGUI,
     }
     for name, gui in pairs(mapping) do
-        if gui and data[name] then
-            local position = deserializeUDim2(data[name])
+        if gui and smallData[name] then
+            local position = deserializeUDim2(smallData[name])
             if position then
                 gui.Position = position
             end
         end
     end
-
-    local function findScreenButtonByText(snippet)
-        for _, child in ipairs(ScreenGui:GetChildren()) do
-            if child:IsA("TextButton") and (child.Text or ""):find(snippet, 1, true) then
-                return child
-            end
-        end
-        return nil
-    end
-
-    local screenMapping = {
-        ["AUTO LEFT"] = findScreenButtonByText("AUTO\nLEFT"),
-        ["AUTO RIGHT"] = findScreenButtonByText("AUTO\nRIGHT"),
-        ["AUTO MEDUSA"] = findScreenButtonByText("AUTO\nMEDUSA"),
-        ["DESYNC BTN"] = findScreenButtonByText("DESYNC"),
-        ["LAGGER BTN"] = findScreenButtonByText("LAGGER"),
-        ["TRACK BTN"] = findScreenButtonByText("TRACK"),
-        ["HIT BTN"] = findScreenButtonByText("HIT"),
-        ["JUKE BTN"] = findScreenButtonByText("JUKE"),
-    }
-
-    for name, btn in pairs(screenMapping) do
-        if btn and data[name] then
-            local position = deserializeUDim2(data[name])
-            if position then
-                btn.Position = position
+    if type(data.OnScreen) == "table" then
+        local actionButtons = getActionButtonsForLayout()
+        for key, savedPos in pairs(data.OnScreen) do
+            local btn = actionButtons[key]
+            if btn then
+                local position = deserializeUDim2(savedPos)
+                if position then
+                    btn.Position = position
+                end
             end
         end
     end
 end
 
-local function setButtonsDraggable(enabled)
+setButtonsDraggable = function(enabled)
     for _, gui in pairs({
         SmallSpeedGUI,
         SmallUnwalkGUI,
@@ -2216,26 +2204,19 @@ local function setButtonsDraggable(enabled)
         SmallAntiRagGUI,
         SmallRagdollTPGUI,
         SmallDropGUI,
+        SmallTPDownGUI,
+        SmallTPUpGUI,
     }) do
         if gui then
+            gui.Active = enabled
             gui.Draggable = enabled
         end
     end
 
-    for _, child in ipairs(ScreenGui:GetChildren()) do
-        if child:IsA("TextButton") then
-            local t = child.Text or ""
-            if t:find("AUTO\nLEFT", 1, true)
-                or t:find("AUTO\nRIGHT", 1, true)
-                or t:find("AUTO\nMEDUSA", 1, true)
-                or t:find("DESYNC", 1, true)
-                or t:find("LAGGER", 1, true)
-                or t:find("TRACK", 1, true)
-                or t:find("HIT", 1, true)
-                or t:find("JUKE", 1, true) then
-                child.Active = enabled
-                child.Draggable = enabled
-            end
+    for _, btn in pairs(getActionButtonsForLayout()) do
+        if btn then
+            btn.Active = enabled
+            btn.Draggable = enabled
         end
     end
 end
@@ -5179,4 +5160,119 @@ function createRightButtons(device)
         ConfigData.smallGuiHeight = smallGuiHeight
         SaveConfig()
         SaveStatus.Text = "✅ Saved!"
-     
+        SaveStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
+        task.delay(2, function() SaveStatus.Text = "" end)
+    end)
+
+    ResetBtn.MouseButton1Click:Connect(function()
+        jukeFloatY = DEFAULT_JUKE.floatY
+        jukeTPDelay = DEFAULT_JUKE.tpDelay
+        jukeFloatSpeed = DEFAULT_JUKE.floatSpeed
+        buttonSize = DEFAULT_JUKE.btnSize
+        leftBtnSize = DEFAULT_JUKE.leftBtnSize
+        smallGuiWidth = DEFAULT_JUKE.smallW
+        smallGuiHeight = DEFAULT_JUKE.smallH
+        FloatValLabel.Text = tostring(jukeFloatY)
+        DelayValLabel.Text = string.format("%.2f", jukeTPDelay)
+        SpeedValLabel.Text = tostring(jukeFloatSpeed)
+        BtnSizeValLabel.Text = tostring(buttonSize)
+        LeftBtnValLabel.Text = tostring(leftBtnSize)
+        SmallGuiValLabel.Text = tostring(smallGuiWidth)
+        relayoutRightButtons(buttonSize)
+        relayoutLeftButtons(leftBtnSize)
+        resizeSmallGUIs(smallGuiWidth, smallGuiHeight)
+        SaveStatus.Text = "🔄 Reset to defaults!"
+        SaveStatus.TextColor3 = Color3.fromRGB(255, 200, 80)
+        task.delay(2, function() SaveStatus.Text = "" end)
+    end)
+
+    -- Load saved settings if available
+    if ConfigData.jukeFloatY then jukeFloatY = ConfigData.jukeFloatY; FloatValLabel.Text = tostring(jukeFloatY) end
+    if ConfigData.jukeTPDelay then jukeTPDelay = ConfigData.jukeTPDelay; DelayValLabel.Text = string.format("%.2f", jukeTPDelay) end
+    if ConfigData.jukeFloatSpeed then jukeFloatSpeed = ConfigData.jukeFloatSpeed; SpeedValLabel.Text = tostring(jukeFloatSpeed) end
+    if ConfigData.jukeBtnSize then buttonSize = ConfigData.jukeBtnSize; BtnSizeValLabel.Text = tostring(buttonSize); relayoutRightButtons(buttonSize) end
+    if ConfigData.leftBtnSize then leftBtnSize = ConfigData.leftBtnSize; LeftBtnValLabel.Text = tostring(leftBtnSize); relayoutLeftButtons(leftBtnSize) end
+    if ConfigData.smallGuiWidth and ConfigData.smallGuiHeight then
+        smallGuiWidth = ConfigData.smallGuiWidth
+        smallGuiHeight = ConfigData.smallGuiHeight
+        SmallGuiValLabel.Text = tostring(smallGuiWidth)
+        resizeSmallGUIs(smallGuiWidth, smallGuiHeight)
+    end
+
+    -- Gear opens/closes settings
+    JukeGear.MouseButton1Click:Connect(function()
+        JukeSettings.Visible = not JukeSettings.Visible
+    end)
+
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ JUKE LOGIC: Float up, spam tool, wait, then TP down
+    -- ═══════════════════════════════════════════════════════
+
+    JukeButton.MouseButton1Click:Connect(function()
+        if jukeActive then return end
+        local c = player.Character
+        local r = c and c:FindFirstChild("HumanoidRootPart")
+        if not r then return end
+        jukeActive = true
+        JukeButton.BackgroundColor3 = THEME.PINK
+
+        local startPos = r.Position
+        local targetY = startPos.Y + jukeFloatY
+
+        -- Float up using velocity + spam tool activate
+        local floatConn
+        floatConn = RunService.Heartbeat:Connect(function()
+            if not jukeActive then if floatConn then floatConn:Disconnect() end return end
+            local rr = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+            if not rr then if floatConn then floatConn:Disconnect() end return end
+
+            -- Spam activate held tool
+            local char = player.Character
+            if char then
+                local tool = char:FindFirstChildOfClass("Tool")
+                if tool then
+                    pcall(function() tool:Activate() end)
+                end
+            end
+
+            if rr.Position.Y >= targetY then
+                rr.AssemblyLinearVelocity = Vector3.new(rr.AssemblyLinearVelocity.X, 0, rr.AssemblyLinearVelocity.Z)
+                floatConn:Disconnect()
+                -- Wait delay then TP down
+                task.delay(jukeTPDelay, function()
+                    local rrr = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                    if rrr then
+                        rrr.CFrame = CFrame.new(startPos.X, startPos.Y, startPos.Z)
+                        rrr.AssemblyLinearVelocity = Vector3.zero
+                    end
+                    jukeActive = false
+                    JukeButton.BackgroundColor3 = THEME.OFF
+                end)
+                return
+            end
+            rr.AssemblyLinearVelocity = Vector3.new(rr.AssemblyLinearVelocity.X, jukeFloatSpeed, rr.AssemblyLinearVelocity.Z)
+        end)
+    end)
+end
+
+print("══════════════════════════════════════════════")
+print("   CELESTIAL HUB LOADED")
+print("══════════════════════════════════════════════")
+print("✅ VISIBLE SMALL GUIs (5):")
+print("   Speed (ON), Unwalk (ON), Anti Rag (ON),")
+print("   Ragdoll TP (ON), Drop Brainrot (OFF)")
+print("✅ AUTO-ENABLED MAIN:")
+print("   Speed, Unwalk, Anti Rag, Ragdoll TP")
+print("✅ AUTO-ENABLED MISC:")
+print("   FPS, Optimizer, Hitbox, Anti Death")
+print("⚪ Hidden until you turn on:")
+print("   Inf Jump, Spin Bot, Float, FOV")
+print("✅ WORKS ON: PC, iPad, iPhone!")
+print("══════════════════════════════════════════════")
+
+game:GetService("Players").PlayerRemoving:Connect(function(plr)
+    if plr == player then
+        SaveConfig()
+        print("[CELESTIAL HUB] ✅ Auto-saved config on leave!")
+    end
+end)
