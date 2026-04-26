@@ -71,14 +71,6 @@ local buttonsLocked = false
 local getButtonPositions
 local SmallTPDownGUI, SmallTPDownButton, TPDownDot
 local SmallTPUpGUI, SmallTPUpButton, TPUpDot
-local OnScreenButtons = {}
-
-local function registerOnScreenButton(name, gui)
-    if not name or not gui then return end
-    OnScreenButtons[name] = gui
-    gui.Active = true
-    gui.Draggable = not buttonsLocked
-end
 
 local function SaveConfig()
     ConfigData.speedEnabled = SpeedBooster and SpeedBooster.Enabled or false
@@ -1980,7 +1972,7 @@ do
     Instance.new("UICorner", BTaskPanelClose).CornerRadius = UDim.new(0, 6)
 
     local BTaskList = Instance.new("ScrollingFrame")
-    BTaskList.Size = UDim2.new(1, -12, 1, -78)
+    BTaskList.Size = UDim2.new(1, -12, 1, -40)
     BTaskList.Position = UDim2.new(0, 6, 0, 32)
     BTaskList.BackgroundTransparency = 1
     BTaskList.BorderSizePixel = 0
@@ -2040,54 +2032,6 @@ do
     refreshListCanvas()
     BTaskLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(refreshListCanvas)
 
-    local BTaskActions = Instance.new("Frame")
-    BTaskActions.Size = UDim2.new(1, -12, 0, 34)
-    BTaskActions.Position = UDim2.new(0, 6, 1, -40)
-    BTaskActions.BackgroundTransparency = 1
-    BTaskActions.Parent = BTaskPanel
-
-    local SaveLayoutButton = Instance.new("TextButton")
-    SaveLayoutButton.Size = UDim2.new(0.48, 0, 1, 0)
-    SaveLayoutButton.Position = UDim2.new(0, 0, 0, 0)
-    SaveLayoutButton.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
-    SaveLayoutButton.Text = "Save Layout"
-    SaveLayoutButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    SaveLayoutButton.Font = Enum.Font.GothamBold
-    SaveLayoutButton.TextSize = 11
-    SaveLayoutButton.Parent = BTaskActions
-    Instance.new("UICorner", SaveLayoutButton).CornerRadius = UDim.new(0, 6)
-
-    local LockLayoutTaskButton = Instance.new("TextButton")
-    LockLayoutTaskButton.Size = UDim2.new(0.48, 0, 1, 0)
-    LockLayoutTaskButton.Position = UDim2.new(0.52, 0, 0, 0)
-    LockLayoutTaskButton.BackgroundColor3 = buttonsLocked and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(40, 40, 45)
-    LockLayoutTaskButton.Text = buttonsLocked and "Locked" or "Lock Layout"
-    LockLayoutTaskButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    LockLayoutTaskButton.Font = Enum.Font.GothamBold
-    LockLayoutTaskButton.TextSize = 11
-    LockLayoutTaskButton.Parent = BTaskActions
-    Instance.new("UICorner", LockLayoutTaskButton).CornerRadius = UDim.new(0, 6)
-
-    SaveLayoutButton.MouseButton1Click:Connect(function()
-        local ok = SaveConfig()
-        SaveLayoutButton.Text = ok and "Saved" or "Failed"
-        task.delay(0.8, function()
-            if SaveLayoutButton and SaveLayoutButton.Parent then
-                SaveLayoutButton.Text = "Save Layout"
-            end
-        end)
-    end)
-
-    LockLayoutTaskButton.MouseButton1Click:Connect(function()
-        buttonsLocked = not buttonsLocked
-        setButtonsDraggable(not buttonsLocked)
-        ConfigData.buttonPositions = getButtonPositions()
-        ConfigData.buttonsLocked = buttonsLocked
-        SaveConfig()
-        LockLayoutTaskButton.Text = buttonsLocked and "Locked" or "Lock Layout"
-        LockLayoutTaskButton.BackgroundColor3 = buttonsLocked and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(40, 40, 45)
-    end)
-
     BTaskSettings.MouseButton1Click:Connect(function()
         BTaskPanel.Visible = not BTaskPanel.Visible
     end)
@@ -2121,7 +2065,7 @@ local function deserializeUDim2(data)
 end
 
 getButtonPositions = function()
-    local positions = {
+    local pos = {
         Speed = serializeUDim2(SmallSpeedGUI.Position),
         Unwalk = serializeUDim2(SmallUnwalkGUI.Position),
         ["Spin Bot"] = serializeUDim2(SmallSpinBotGUI.Position),
@@ -2134,12 +2078,13 @@ getButtonPositions = function()
         ["TP Down"] = serializeUDim2(SmallTPDownGUI.Position),
         ["TP Up"] = serializeUDim2(SmallTPUpGUI.Position),
     }
-    for name, gui in pairs(OnScreenButtons) do
-        if gui then
-            positions[name] = serializeUDim2(gui.Position)
+    -- Save gameplay button positions by name
+    for _, btn in ipairs(_draggableGameplayButtons) do
+        if btn and btn.Name and btn.Name ~= "" then
+            pos["_btn_"..btn.Name] = serializeUDim2(btn.Position)
         end
     end
-    return positions
+    return pos
 end
 
 local function applyButtonPositions(data)
@@ -2157,9 +2102,6 @@ local function applyButtonPositions(data)
         ["TP Down"] = SmallTPDownGUI,
         ["TP Up"] = SmallTPUpGUI,
     }
-    for name, gui in pairs(OnScreenButtons) do
-        mapping[name] = gui
-    end
     for name, gui in pairs(mapping) do
         if gui and data[name] then
             local position = deserializeUDim2(data[name])
@@ -2168,6 +2110,59 @@ local function applyButtonPositions(data)
             end
         end
     end
+    -- Restore gameplay button positions (applied after buttons are created)
+    -- We store them and apply when _draggableGameplayButtons is populated
+    if type(data) == "table" then
+        task.defer(function()
+            for _, btn in ipairs(_draggableGameplayButtons) do
+                if btn and btn.Name then
+                    local key = "_btn_"..btn.Name
+                    if data[key] then
+                        local p = deserializeUDim2(data[key])
+                        if p then btn.Position = p end
+                    end
+                end
+            end
+        end)
+    end
+end
+
+-- All gameplay TextButtons that need drag support (filled after createAutoButtons/createRightButtons)
+local _draggableGameplayButtons = {}
+
+-- Makes a TextButton draggable via UIS (respects buttonsLocked)
+local function makeDraggableButton(btn)
+    if not btn then return end
+    table.insert(_draggableGameplayButtons, btn)
+    local dragging = false
+    local dragStartPos
+    local btnStartPos
+    btn.InputBegan:Connect(function(input)
+        if buttonsLocked then return end
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStartPos = input.Position
+            btnStartPos = btn.Position
+        end
+    end)
+    btn.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and not buttonsLocked then
+            if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+                local delta = input.Position - dragStartPos
+                btn.Position = UDim2.new(
+                    btnStartPos.X.Scale,
+                    btnStartPos.X.Offset + delta.X,
+                    btnStartPos.Y.Scale,
+                    btnStartPos.Y.Offset + delta.Y
+                )
+            end
+        end
+    end)
 end
 
 local function setButtonsDraggable(enabled)
@@ -2186,11 +2181,7 @@ local function setButtonsDraggable(enabled)
             gui.Draggable = enabled
         end
     end
-    for _, gui in pairs(OnScreenButtons) do
-        if gui then
-            gui.Draggable = enabled
-        end
-    end
+    -- Gameplay buttons use buttonsLocked flag; dragging is gated inside makeDraggableButton
 end
 
 local SpinBotScreen = Instance.new("Frame")
@@ -3647,10 +3638,6 @@ local function initializeGUI(device)
     createOpenButton(device)
     createAutoButtons(device)
     createRightButtons(device)
-    if ConfigData.buttonPositions then
-        applyButtonPositions(ConfigData.buttonPositions)
-    end
-    setButtonsDraggable(not buttonsLocked)
 
     -- Apply dark semi-transparent style and rounded corners to all UI
     applyWhiteHalfStyle()
@@ -3742,6 +3729,7 @@ function createAutoButtons(device)
 
     -- ✅ AUTO LEFT Button (GRAY!)
     local AutoLeftButton = Instance.new("TextButton")
+    AutoLeftButton.Name = "AutoLeftButton"
     AutoLeftButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     AutoLeftButton.Position = UDim2.new(1, rowX1, 0.5, rowY)
     AutoLeftButton.BackgroundColor3 = THEME.OFF
@@ -3751,7 +3739,7 @@ function createAutoButtons(device)
     AutoLeftButton.Font = Enum.Font.GothamBold
     AutoLeftButton.TextSize = device == "iPhone" and 9 or 12
     AutoLeftButton.Parent = ScreenGui
-    registerOnScreenButton("Auto Left", AutoLeftButton)
+    makeDraggableButton(AutoLeftButton)
 
     local LeftCorner = Instance.new("UICorner")
     LeftCorner.CornerRadius = UDim.new(0, 8)
@@ -3773,6 +3761,7 @@ function createAutoButtons(device)
 
     -- ✅ AUTO MEDUSA Button (above Auto Right)
     local AutoMedusaButton = Instance.new("TextButton")
+    AutoMedusaButton.Name = "AutoMedusaButton"
     AutoMedusaButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     AutoMedusaButton.Position = UDim2.new(1, rowX3, 0.5, rowY)
     AutoMedusaButton.BackgroundColor3 = THEME.OFF
@@ -3782,7 +3771,7 @@ function createAutoButtons(device)
     AutoMedusaButton.Font = Enum.Font.GothamBold
     AutoMedusaButton.TextSize = device == "iPhone" and 9 or 12
     AutoMedusaButton.Parent = ScreenGui
-    registerOnScreenButton("Auto Medusa", AutoMedusaButton)
+    makeDraggableButton(AutoMedusaButton)
 
     local MedusaCorner = Instance.new("UICorner")
     MedusaCorner.CornerRadius = UDim.new(0, 8)
@@ -3919,6 +3908,7 @@ function createAutoButtons(device)
         end
     end)
     local AutoRightButton = Instance.new("TextButton")
+    AutoRightButton.Name = "AutoRightButton"
     AutoRightButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     AutoRightButton.Position = UDim2.new(1, rowX2, 0.5, rowY)
     AutoRightButton.BackgroundColor3 = THEME.OFF
@@ -3928,7 +3918,7 @@ function createAutoButtons(device)
     AutoRightButton.Font = Enum.Font.GothamBold
     AutoRightButton.TextSize = device == "iPhone" and 9 or 12
     AutoRightButton.Parent = ScreenGui
-    registerOnScreenButton("Auto Right", AutoRightButton)
+    makeDraggableButton(AutoRightButton)
 
     local RightCorner = Instance.new("UICorner")
     RightCorner.CornerRadius = UDim.new(0, 8)
@@ -4002,6 +3992,7 @@ function createRightButtons(device)
 
     -- ✅ DESYNC Button (TOP ROW, LEFT)
     local DesyncButton = Instance.new("TextButton")
+    DesyncButton.Name = "DesyncButton"
     DesyncButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     DesyncButton.Position = UDim2.new(1, x1, 0.5, y1)
     DesyncButton.BackgroundColor3 = THEME.OFF
@@ -4011,7 +4002,7 @@ function createRightButtons(device)
     DesyncButton.Font = Enum.Font.GothamBold
     DesyncButton.TextSize = device == "iPhone" and 9 or 12
     DesyncButton.Parent = ScreenGui
-    registerOnScreenButton("Desync", DesyncButton)
+    makeDraggableButton(DesyncButton)
 
     local DesyncCorner = Instance.new("UICorner")
     DesyncCorner.CornerRadius = UDim.new(0, 8)
@@ -4121,6 +4112,7 @@ function createRightButtons(device)
     end
         -- ✅ LAGGER Button (TOP ROW, MIDDLE)
         local LaggerButton = Instance.new("TextButton")
+        LaggerButton.Name = "LaggerButton"
         LaggerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
         LaggerButton.Position = UDim2.new(1, x2, 0.5, y1)
         LaggerButton.BackgroundColor3 = THEME.OFF
@@ -4130,7 +4122,7 @@ function createRightButtons(device)
         LaggerButton.Font = Enum.Font.GothamBold
         LaggerButton.TextSize = device == "iPhone" and 9 or 12
         LaggerButton.Parent = ScreenGui
-        registerOnScreenButton("Lagger", LaggerButton)
+        makeDraggableButton(LaggerButton)
 
         local LaggerCorner = Instance.new("UICorner")
         LaggerCorner.CornerRadius = UDim.new(0, 8)
@@ -4461,6 +4453,7 @@ function createRightButtons(device)
 
     -- ✅ TRACK PLAYER Button (TOP ROW, RIGHT)
     local TrackPlayerButton = Instance.new("TextButton")
+    TrackPlayerButton.Name = "TrackPlayerButton"
     TrackPlayerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     TrackPlayerButton.Position = UDim2.new(1, x3, 0.5, y1)
     TrackPlayerButton.BackgroundColor3 = THEME.OFF
@@ -4470,7 +4463,7 @@ function createRightButtons(device)
     TrackPlayerButton.Font = Enum.Font.GothamBold
     TrackPlayerButton.TextSize = device == "iPhone" and 9 or 12
     TrackPlayerButton.Parent = ScreenGui
-    registerOnScreenButton("Track Player", TrackPlayerButton)
+    makeDraggableButton(TrackPlayerButton)
 
     local TrackCorner = Instance.new("UICorner")
     TrackCorner.CornerRadius = UDim.new(0, 8)
@@ -4504,6 +4497,7 @@ function createRightButtons(device)
 
     -- ✅ HIT CIRCLE Button (BOTTOM ROW, LEFT)
     local HitCircleButton = Instance.new("TextButton")
+    HitCircleButton.Name = "HitCircleButton"
     HitCircleButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     HitCircleButton.Position = UDim2.new(1, x1, 0.5, y2)
     HitCircleButton.BackgroundColor3 = THEME.OFF
@@ -4513,7 +4507,7 @@ function createRightButtons(device)
     HitCircleButton.Font = Enum.Font.GothamBold
     HitCircleButton.TextSize = device == "iPhone" and 9 or 12
     HitCircleButton.Parent = ScreenGui
-    registerOnScreenButton("Hit Circle", HitCircleButton)
+    makeDraggableButton(HitCircleButton)
 
     local HitCorner = Instance.new("UICorner")
     HitCorner.CornerRadius = UDim.new(0, 8)
@@ -4556,6 +4550,7 @@ function createRightButtons(device)
 
     -- JUKE Button (BOTTOM ROW, RIGHT)
     local JukeButton = Instance.new("TextButton")
+    JukeButton.Name = "JukeButton"
     JukeButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     JukeButton.Position = UDim2.new(1, x2, 0.5, y2)
     JukeButton.BackgroundColor3 = THEME.OFF
@@ -4565,7 +4560,7 @@ function createRightButtons(device)
     JukeButton.Font = Enum.Font.GothamBold
     JukeButton.TextSize = device == "iPhone" and 9 or 12
     JukeButton.Parent = ScreenGui
-    registerOnScreenButton("Juke", JukeButton)
+    makeDraggableButton(JukeButton)
 
     local JukeCorner = Instance.new("UICorner")
     JukeCorner.CornerRadius = UDim.new(0, 8)
@@ -5182,6 +5177,136 @@ function createRightButtons(device)
     JukeGear.MouseButton1Click:Connect(function()
         JukeSettings.Visible = not JukeSettings.Visible
     end)
+
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ BUTTON LAYOUT GUI (Save Layout + Lock)
+    -- ═══════════════════════════════════════════════════════
+
+    local LayoutGui = Instance.new("Frame")
+    LayoutGui.Name = "ButtonLayoutGUI"
+    LayoutGui.Size = UDim2.new(0, 160, 0, 80)
+    LayoutGui.Position = UDim2.new(0.5, -80, 0, 10)
+    LayoutGui.BackgroundColor3 = Color3.fromRGB(14, 14, 14)
+    LayoutGui.BackgroundTransparency = 0.05
+    LayoutGui.Active = true
+    LayoutGui.Draggable = true
+    LayoutGui.ZIndex = 12
+    LayoutGui.Parent = ScreenGui
+    Instance.new("UICorner", LayoutGui).CornerRadius = UDim.new(0, 10)
+    local LGStroke = Instance.new("UIStroke", LayoutGui)
+    LGStroke.Color = THEME.PINK
+    LGStroke.Thickness = 2
+    LGStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+    local LGTitle = Instance.new("TextLabel")
+    LGTitle.Size = UDim2.new(1, -30, 0, 22)
+    LGTitle.Position = UDim2.new(0, 8, 0, 2)
+    LGTitle.BackgroundTransparency = 1
+    LGTitle.Text = "✦ BUTTON LAYOUT"
+    LGTitle.TextColor3 = THEME.GOLD
+    LGTitle.Font = Enum.Font.GothamBold
+    LGTitle.TextSize = 11
+    LGTitle.TextXAlignment = Enum.TextXAlignment.Left
+    LGTitle.ZIndex = 13
+    LGTitle.Parent = LayoutGui
+
+    local LGMinimize = Instance.new("TextButton")
+    LGMinimize.Size = UDim2.new(0, 22, 0, 18)
+    LGMinimize.Position = UDim2.new(1, -26, 0, 3)
+    LGMinimize.BackgroundTransparency = 1
+    LGMinimize.Text = "–"
+    LGMinimize.TextColor3 = Color3.fromRGB(200, 200, 200)
+    LGMinimize.Font = Enum.Font.GothamBold
+    LGMinimize.TextSize = 16
+    LGMinimize.ZIndex = 14
+    LGMinimize.Parent = LayoutGui
+
+    local LGBody = Instance.new("Frame")
+    LGBody.Size = UDim2.new(1, 0, 1, -24)
+    LGBody.Position = UDim2.new(0, 0, 0, 24)
+    LGBody.BackgroundTransparency = 1
+    LGBody.ZIndex = 13
+    LGBody.Parent = LayoutGui
+
+    local SaveLayoutBtn = Instance.new("TextButton")
+    SaveLayoutBtn.Size = UDim2.new(0, 68, 0, 26)
+    SaveLayoutBtn.Position = UDim2.new(0, 6, 0, 8)
+    SaveLayoutBtn.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
+    SaveLayoutBtn.Text = "💾 SAVE"
+    SaveLayoutBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SaveLayoutBtn.Font = Enum.Font.GothamBold
+    SaveLayoutBtn.TextSize = 11
+    SaveLayoutBtn.ZIndex = 14
+    SaveLayoutBtn.Parent = LGBody
+    Instance.new("UICorner", SaveLayoutBtn).CornerRadius = UDim.new(0, 7)
+
+    local LockBtn = Instance.new("TextButton")
+    LockBtn.Size = UDim2.new(0, 68, 0, 26)
+    LockBtn.Position = UDim2.new(0, 82, 0, 8)
+    LockBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 180)
+    LockBtn.Text = "🔓 UNLOCK"
+    LockBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    LockBtn.Font = Enum.Font.GothamBold
+    LockBtn.TextSize = 10
+    LockBtn.ZIndex = 14
+    LockBtn.Parent = LGBody
+    Instance.new("UICorner", LockBtn).CornerRadius = UDim.new(0, 7)
+
+    local function updateLockBtn()
+        if buttonsLocked then
+            LockBtn.Text = "🔒 LOCKED"
+            LockBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+        else
+            LockBtn.Text = "🔓 UNLOCK"
+            LockBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 180)
+        end
+    end
+    updateLockBtn()
+
+    local LGStatus = Instance.new("TextLabel")
+    LGStatus.Size = UDim2.new(1, 0, 0, 14)
+    LGStatus.Position = UDim2.new(0, 0, 0, 38)
+    LGStatus.BackgroundTransparency = 1
+    LGStatus.Text = ""
+    LGStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
+    LGStatus.Font = Enum.Font.Gotham
+    LGStatus.TextSize = 10
+    LGStatus.ZIndex = 14
+    LGStatus.Parent = LGBody
+
+    SaveLayoutBtn.MouseButton1Click:Connect(function()
+        ConfigData.buttonPositions = getButtonPositions()
+        ConfigData.buttonsLocked = buttonsLocked
+        SaveConfig()
+        LGStatus.Text = "✅ Saved!"
+        LGStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
+        task.delay(2, function() LGStatus.Text = "" end)
+    end)
+
+    LockBtn.MouseButton1Click:Connect(function()
+        buttonsLocked = not buttonsLocked
+        setButtonsDraggable(not buttonsLocked)
+        updateLockBtn()
+        LGStatus.Text = buttonsLocked and "🔒 Locked!" or "🔓 Unlocked!"
+        LGStatus.TextColor3 = buttonsLocked and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(100, 255, 100)
+        task.delay(2, function() LGStatus.Text = "" end)
+    end)
+
+    local lgMinimized = false
+    LGMinimize.MouseButton1Click:Connect(function()
+        lgMinimized = not lgMinimized
+        LGBody.Visible = not lgMinimized
+        LayoutGui.Size = lgMinimized and UDim2.new(0, 160, 0, 26) or UDim2.new(0, 160, 0, 80)
+        LGMinimize.Text = lgMinimized and "+" or "–"
+    end)
+
+    -- Apply initial lock state to small GUIs
+    setButtonsDraggable(not buttonsLocked)
+
+    -- Apply saved gameplay button positions now that buttons exist
+    if ConfigData.buttonPositions then
+        applyButtonPositions(ConfigData.buttonPositions)
+    end
 
     -- ═══════════════════════════════════════════════════════
     -- ✅ JUKE LOGIC: Float up, spam tool, wait, then TP down
