@@ -63,17 +63,12 @@ local ConfigData = {
     fovEnabled = false,
     buttonsLocked = false,
     buttonPositions = nil,
-    extraLayoutPositions = nil,
     tpUpEnabled = false,
     tpDownVisible = false,
 }
 
 local buttonsLocked = false
 local getButtonPositions
-local getExtraLayoutPositions
-local applySavedExtraLayoutPositions
-local registerDraggableTarget
-local serializeUDim2, deserializeUDim2
 local SmallTPDownGUI, SmallTPDownButton, TPDownDot
 local SmallTPUpGUI, SmallTPUpButton, TPUpDot
 
@@ -88,8 +83,7 @@ local function SaveConfig()
     ConfigData.buttonsLocked = buttonsLocked or false
     ConfigData.tpUpEnabled = TPUpEnabled or false
     ConfigData.tpDownVisible = (SmallTPDownGUI and SmallTPDownGUI.Visible) or false
-    ConfigData.buttonPositions = getButtonPositions and getButtonPositions() or nil
-    ConfigData.extraLayoutPositions = getExtraLayoutPositions and getExtraLayoutPositions() or nil
+    ConfigData.buttonPositions = getButtonPositions()
 
     if writefile then
         local success, err = pcall(function()
@@ -1424,113 +1418,75 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = PlayerGui
 
-local DraggableTargets = {}
-local ActiveDrag = nil
+local customDragBindings = setmetatable({}, {__mode = "k"})
 
-local function clampToViewport(guiObject, xOffset, yOffset)
-    local cameraNow = workspace.CurrentCamera
-    local viewport = cameraNow and cameraNow.ViewportSize or Vector2.new(1280, 720)
-    local width = guiObject.AbsoluteSize.X
-    local height = guiObject.AbsoluteSize.Y
-    local maxX = math.max(0, viewport.X - width)
-    local maxY = math.max(0, viewport.Y - height)
-    return math.clamp(xOffset, 0, maxX), math.clamp(yOffset, 0, maxY)
-end
+local function makeTextButtonsDraggable(rootGui)
+    if not rootGui then return end
 
-registerDraggableTarget = function(guiObject, layoutKey)
-    if not guiObject or not guiObject:IsA("GuiObject") then return end
-    local key = layoutKey or guiObject:GetFullName()
-    DraggableTargets[key] = guiObject
-
-    guiObject.Active = true
-    guiObject.Draggable = false
-    if guiObject:GetAttribute("CH_DragBound") then return end
-    guiObject:SetAttribute("CH_DragBound", true)
-
-    guiObject.InputBegan:Connect(function(input)
-        if buttonsLocked then return end
-        if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then
-            return
+    local function apply(btn)
+        if btn and btn:IsA("TextButton") then
+            btn.Active = true
+            btn.Draggable = true
         end
-        ActiveDrag = {
-            object = guiObject,
-            dragInput = input,
-            dragStart = input.Position,
-            startPos = guiObject.Position,
-        }
+    end
 
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End and ActiveDrag and ActiveDrag.object == guiObject then
-                ActiveDrag = nil
-            end
-        end)
+    for _, guiObj in ipairs(rootGui:GetDescendants()) do
+        apply(guiObj)
+    end
+
+    rootGui.DescendantAdded:Connect(function(guiObj)
+        apply(guiObj)
     end)
 end
 
-UserInputService.InputChanged:Connect(function(input)
-    if not ActiveDrag then return end
-    if input ~= ActiveDrag.dragInput then return end
-    local obj = ActiveDrag.object
-    if not obj or not obj.Parent then
-        ActiveDrag = nil
-        return
-    end
+local function bindDragHandleToTarget(handle, target)
+    if not handle or not target then return end
+    if customDragBindings[handle] then return end
+    if not handle:IsA("GuiObject") or not target:IsA("GuiObject") then return end
 
-    local delta = input.Position - ActiveDrag.dragStart
-    local rawX = ActiveDrag.startPos.X.Offset + delta.X
-    local rawY = ActiveDrag.startPos.Y.Offset + delta.Y
-    local clampedX, clampedY = clampToViewport(obj, rawX, rawY)
-    obj.Position = UDim2.new(0, clampedX, 0, clampedY)
-end)
+    customDragBindings[handle] = true
+    handle.Active = true
+    pcall(function() handle.Draggable = false end)
 
-getExtraLayoutPositions = function()
-    local data = {}
-    for key, guiObject in pairs(DraggableTargets) do
-        if guiObject and guiObject.Parent and guiObject:IsA("GuiObject") then
-            data[key] = serializeUDim2(guiObject.Position)
+    local dragging = false
+    local dragInput = nil
+    local dragStart = nil
+    local startPos = nil
+
+    handle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = target.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
         end
-    end
-    return data
+    end)
+
+    handle.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input == dragInput and startPos and dragStart then
+            local delta = input.Position - dragStart
+            target.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
 end
 
-applySavedExtraLayoutPositions = function(savedPositions)
-    if type(savedPositions) ~= "table" then return end
-    for key, posData in pairs(savedPositions) do
-        local guiObject = DraggableTargets[key]
-        if guiObject and guiObject.Parent and guiObject:IsA("GuiObject") then
-            local position = deserializeUDim2(posData)
-            if position then
-                local clampedX, clampedY = clampToViewport(guiObject, position.X.Offset, position.Y.Offset)
-                guiObject.Position = UDim2.new(0, clampedX, 0, clampedY)
-            end
-        end
-    end
-end
-
-local function registerRootLevelDraggables(rootGui)
-    if not rootGui then return end
-
-    local function registerChild(child)
-        if child:IsA("TextButton") or child:IsA("ImageButton") then
-            registerDraggableTarget(child, child:GetFullName())
-            return
-        end
-        if child:IsA("Frame") then
-            local childName = tostring(child.Name)
-            if childName == "MainFrame" or childName:match("^Small") or childName:find("Settings") or childName == "SpinBotScreen" or childName == "BTaskFrame" or childName == "BTaskPanel" then
-                registerDraggableTarget(child, child:GetFullName())
-            end
-        end
-    end
-
-    for _, child in ipairs(rootGui:GetChildren()) do
-        registerChild(child)
-    end
-
-    rootGui.ChildAdded:Connect(registerChild)
-end
-
-registerRootLevelDraggables(ScreenGui)
+makeTextButtonsDraggable(ScreenGui)
 
 -- Rainbow outline: cycles UIStroke colors across the GUI
 local function startRainbowOutline()
@@ -1897,10 +1853,9 @@ do
     BTaskGui.ResetOnSpawn = false
     BTaskGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     BTaskGui.Parent = PlayerGui
-    registerRootLevelDraggables(BTaskGui)
+    makeTextButtonsDraggable(BTaskGui)
 
     local BTaskFrame = Instance.new("Frame")
-    BTaskFrame.Name = "BTaskFrame"
     BTaskFrame.Size = UDim2.new(0, 170, 0, 40)
     BTaskFrame.Position = UDim2.new(0.5, -85, 1, -58)
     BTaskFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
@@ -2050,7 +2005,6 @@ do
     end)
 
     local BTaskPanel = Instance.new("Frame")
-    BTaskPanel.Name = "BTaskPanel"
     BTaskPanel.Size = UDim2.new(0, 205, 0, 300)
     BTaskPanel.Position = UDim2.new(1, -205, 1, -365)
     BTaskPanel.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
@@ -2089,8 +2043,8 @@ do
     Instance.new("UICorner", BTaskPanelClose).CornerRadius = UDim.new(0, 6)
 
     local BTaskList = Instance.new("ScrollingFrame")
-    BTaskList.Size = UDim2.new(1, -12, 1, -74)
-    BTaskList.Position = UDim2.new(0, 6, 0, 66)
+    BTaskList.Size = UDim2.new(1, -12, 1, -40)
+    BTaskList.Position = UDim2.new(0, 6, 0, 32)
     BTaskList.BackgroundTransparency = 1
     BTaskList.BorderSizePixel = 0
     BTaskList.ScrollBarThickness = 4
@@ -2102,61 +2056,6 @@ do
     BTaskLayout.Padding = UDim.new(0, 6)
     BTaskLayout.SortOrder = Enum.SortOrder.LayoutOrder
     BTaskLayout.Parent = BTaskList
-
-    local BTaskSaveLayout = Instance.new("TextButton")
-    BTaskSaveLayout.Size = UDim2.new(0.48, 0, 0, 22)
-    BTaskSaveLayout.Position = UDim2.new(0.03, 0, 0, 34)
-    BTaskSaveLayout.BackgroundColor3 = Color3.fromRGB(55, 160, 70)
-    BTaskSaveLayout.Text = "Save Layout"
-    BTaskSaveLayout.TextColor3 = Color3.fromRGB(255, 255, 255)
-    BTaskSaveLayout.Font = Enum.Font.GothamBold
-    BTaskSaveLayout.TextSize = 10
-    BTaskSaveLayout.Parent = BTaskPanel
-    Instance.new("UICorner", BTaskSaveLayout).CornerRadius = UDim.new(0, 6)
-
-    local BTaskLockLayout = Instance.new("TextButton")
-    BTaskLockLayout.Size = UDim2.new(0.48, 0, 0, 22)
-    BTaskLockLayout.Position = UDim2.new(0.51, 0, 0, 34)
-    BTaskLockLayout.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-    BTaskLockLayout.Text = "Lock Layout"
-    BTaskLockLayout.TextColor3 = Color3.fromRGB(255, 255, 255)
-    BTaskLockLayout.Font = Enum.Font.GothamBold
-    BTaskLockLayout.TextSize = 10
-    BTaskLockLayout.Parent = BTaskPanel
-    Instance.new("UICorner", BTaskLockLayout).CornerRadius = UDim.new(0, 6)
-
-    local function updateLockButtonVisual()
-        if buttonsLocked then
-            BTaskLockLayout.Text = "Locked"
-            BTaskLockLayout.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
-        else
-            BTaskLockLayout.Text = "Lock Layout"
-            BTaskLockLayout.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-        end
-    end
-
-    BTaskSaveLayout.MouseButton1Click:Connect(function()
-        ConfigData.buttonPositions = getButtonPositions and getButtonPositions() or nil
-        ConfigData.extraLayoutPositions = getExtraLayoutPositions and getExtraLayoutPositions() or nil
-        ConfigData.buttonsLocked = buttonsLocked
-        if SaveConfig() then
-            BTaskSaveLayout.Text = "Saved"
-            task.delay(1, function()
-                if BTaskSaveLayout and BTaskSaveLayout.Parent then
-                    BTaskSaveLayout.Text = "Save Layout"
-                end
-            end)
-        end
-    end)
-
-    BTaskLockLayout.MouseButton1Click:Connect(function()
-        setButtonsDraggable(buttonsLocked)
-        ConfigData.buttonsLocked = buttonsLocked
-        SaveConfig()
-        updateLockButtonVisual()
-    end)
-
-    updateLockButtonVisual()
 
     local function createListRow(itemName)
         local row = Instance.new("Frame")
@@ -2222,7 +2121,7 @@ do
     applyButtonVisibility()
 end
 
-serializeUDim2 = function(value)
+local function serializeUDim2(value)
     return {
         XScale = value.X.Scale,
         XOffset = value.X.Offset,
@@ -2231,7 +2130,7 @@ serializeUDim2 = function(value)
     }
 end
 
-deserializeUDim2 = function(data)
+local function deserializeUDim2(data)
     if type(data) ~= "table" then return nil end
     return UDim2.new(data.XScale or 0, data.XOffset or 0, data.YScale or 0, data.YOffset or 0)
 end
@@ -2278,7 +2177,6 @@ local function applyButtonPositions(data)
 end
 
 local function setButtonsDraggable(enabled)
-    buttonsLocked = not enabled
     for _, gui in pairs({
         SmallSpeedGUI,
         SmallUnwalkGUI,
@@ -3060,6 +2958,9 @@ local function createMainGUI(device)
         end
         refreshSmallButtonPositions()
     end, true)
+
+    bindDragHandleToTarget(SpeedMainBtn, MainFrame)
+    bindDragHandleToTarget(SpeedSettingsBtn, MainFrame)
 
     -- ✅ SPEED CUSTOMIZER (S1/S2 COLLAPSIBLE)
     local SpeedCustomizer = {
@@ -5326,14 +5227,6 @@ function createRightButtons(device)
         end)
     end)
 end
-
-if ConfigData.buttonPositions then
-    applyButtonPositions(ConfigData.buttonPositions)
-end
-if ConfigData.extraLayoutPositions then
-    applySavedExtraLayoutPositions(ConfigData.extraLayoutPositions)
-end
-setButtonsDraggable(not buttonsLocked)
 
 print("══════════════════════════════════════════════")
 print("   CELESTIAL HUB LOADED")
