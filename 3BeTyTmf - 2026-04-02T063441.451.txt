@@ -2408,6 +2408,8 @@ StealBarContainer.Size = UDim2.new(0, 320, 0, 50)
 StealBarContainer.Position = UDim2.new(0.5, -160, 1, -90)
 StealBarContainer.BackgroundColor3 = Color3.fromRGB(20, 25, 20)
 StealBarContainer.BorderSizePixel = 0
+StealBarContainer.Active = true
+StealBarContainer.Draggable = true
 StealBarContainer.Parent = ScreenGui
 
 local ContainerCorner = Instance.new("UICorner")
@@ -2698,60 +2700,62 @@ local function createMainGUI(device)
         MainFrame.Visible = false
     end)
 
-    local sidebarWidth = device == "iPhone" and 70 or (device == "iPad" and 150 or 200)
+    local TabBar = Instance.new("Frame")
+    TabBar.Size = UDim2.new(1, -24, 0, 38)
+    TabBar.Position = UDim2.new(0, 12, 0, 58)
+    TabBar.BackgroundColor3 = THEME.PANEL
+    TabBar.BackgroundTransparency = 0.05
+    TabBar.BorderSizePixel = 0
+    TabBar.Parent = MainFrame
 
-    local Sidebar = Instance.new("Frame")
-    Sidebar.Size = UDim2.new(0, sidebarWidth, 1, -60)
-    Sidebar.Position = UDim2.new(0, 0, 0, 55)
-    Sidebar.BackgroundTransparency = 1
-    Sidebar.Parent = MainFrame
+    local TabBarCorner = Instance.new("UICorner")
+    TabBarCorner.CornerRadius = UDim.new(0, 10)
+    TabBarCorner.Parent = TabBar
 
-    local function createTab(icon, name, order)
+    local TabBarStroke = Instance.new("UIStroke")
+    TabBarStroke.Color = THEME.GOLD
+    TabBarStroke.Thickness = 1.5
+    TabBarStroke.Transparency = 0.2
+    TabBarStroke.Parent = TabBar
+
+    local function createTab(name, order)
+        local tabWidth = 0.5
         local TabButton = Instance.new("TextButton")
         TabButton.Name = name
-        TabButton.Size = UDim2.new(1, -10, 0, device == "iPhone" and 55 or 50)
-        TabButton.Position = UDim2.new(0, 5, 0, (order - 1) * (device == "iPhone" and 60 or 60))
-        TabButton.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-        TabButton.BorderSizePixel = 0
+        TabButton.Size = UDim2.new(tabWidth, 0, 1, 0)
+        TabButton.Position = UDim2.new((order - 1) * tabWidth, 0, 0, 0)
+        TabButton.BackgroundTransparency = 1
         TabButton.Text = ""
-        TabButton.Parent = Sidebar
-
-        local TabCorner = Instance.new("UICorner")
-        TabCorner.CornerRadius = UDim.new(0, 10)
-        TabCorner.Parent = TabButton
-
-        local IconLabel = Instance.new("TextLabel")
-        IconLabel.Size = UDim2.new(0, 30, 0, 30)
-        IconLabel.Position = device == "iPhone" and UDim2.new(0.5, -15, 0, 5) or UDim2.new(0, 10, 0.5, -15)
-        IconLabel.BackgroundTransparency = 1
-        IconLabel.Text = icon
-        IconLabel.TextSize = device == "iPhone" and 16 or 20
-        IconLabel.Font = Enum.Font.GothamBold
-        IconLabel.TextColor3 = Color3.fromRGB(150, 150, 160)
-        IconLabel.Parent = TabButton
+        TabButton.Parent = TabBar
 
         local TextLabel = Instance.new("TextLabel")
-        TextLabel.Size = device == "iPhone" and UDim2.new(1, 0, 0, 18) or UDim2.new(1, -45, 1, 0)
-        TextLabel.Position = device == "iPhone" and UDim2.new(0, 0, 1, -20) or UDim2.new(0, 45, 0, 0)
+        TextLabel.Size = UDim2.new(1, 0, 1, 0)
         TextLabel.BackgroundTransparency = 1
         TextLabel.Text = name
-        TextLabel.TextColor3 = Color3.fromRGB(150, 150, 160)
+        TextLabel.TextColor3 = THEME.TEXT
         TextLabel.Font = Enum.Font.GothamBold
-        TextLabel.TextSize = device == "iPhone" and 8 or (device == "iPad" and 12 or 16)
-        TextLabel.TextXAlignment = Enum.TextXAlignment.Left
+        TextLabel.TextSize = device == "iPhone" and 10 or 12
+        TextLabel.TextXAlignment = Enum.TextXAlignment.Center
         TextLabel.Parent = TabButton
 
-        tabButtons[name] = {Button = TabButton, Icon = IconLabel, Text = TextLabel}
-
+        tabButtons[name] = {Button = TabButton, Text = TextLabel}
         return TabButton
     end
 
-    local MainTab = createTab("🛡️", "FEATURES", 1)
-    local SettingsTab = createTab("⚙️", "SETTINGS", 2)
+    local TabDivider = Instance.new("Frame")
+    TabDivider.Size = UDim2.new(0, 1, 1, -10)
+    TabDivider.Position = UDim2.new(0.5, 0, 0, 5)
+    TabDivider.BackgroundColor3 = THEME.GOLD
+    TabDivider.BackgroundTransparency = 0.45
+    TabDivider.BorderSizePixel = 0
+    TabDivider.Parent = TabBar
+
+    local MainTab = createTab("FEATURES", 1)
+    local SettingsTab = createTab("SETTINGS", 2)
 
     local ContentContainer = Instance.new("Frame")
-    ContentContainer.Size = UDim2.new(1, -sidebarWidth - 20, 1, -70)
-    ContentContainer.Position = UDim2.new(0, sidebarWidth + 10, 0, 60)
+    ContentContainer.Size = UDim2.new(1, -24, 1, -108)
+    ContentContainer.Position = UDim2.new(0, 12, 0, 102)
     ContentContainer.BackgroundTransparency = 1
     ContentContainer.Parent = MainFrame
 
@@ -2761,8 +2765,8 @@ local function createMainGUI(device)
         Content.Size = UDim2.new(1, 0, 1, 0)
         Content.BackgroundTransparency = 1
         Content.BorderSizePixel = 0
-        Content.ScrollBarThickness = 4
-        Content.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 110)
+        Content.ScrollBarThickness = 6
+        Content.ScrollBarImageColor3 = THEME.GOLD
         Content.CanvasSize = UDim2.new(0, 0, 0, 0)
         Content.Visible = false
         Content.Parent = ContentContainer
@@ -2792,13 +2796,13 @@ local function createMainGUI(device)
 
         for name, elements in pairs(tabButtons) do
             if name == tabName then
-                elements.Button.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                elements.Text.TextColor3 = Color3.fromRGB(30, 30, 35)
-                elements.Icon.TextColor3 = Color3.fromRGB(30, 30, 35)
+                elements.Button.BackgroundColor3 = THEME.ON
+                elements.Button.BackgroundTransparency = 0
+                elements.Text.TextColor3 = THEME.TEXT
             else
                 elements.Button.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-                elements.Text.TextColor3 = Color3.fromRGB(150, 150, 160)
-                elements.Icon.TextColor3 = Color3.fromRGB(150, 150, 160)
+                elements.Button.BackgroundTransparency = 1
+                elements.Text.TextColor3 = Color3.fromRGB(170, 170, 180)
             end
         end
 
@@ -2828,7 +2832,8 @@ local function createMainGUI(device)
         local Button = Instance.new("TextButton")
         Button.Size = UDim2.new(1, buttonWidth, 0, 50)
         Button.Position = UDim2.new(0, 0, 0, 0)
-        Button.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+        Button.BackgroundColor3 = THEME.PANEL
+        Button.BackgroundTransparency = 0
         Button.BorderSizePixel = 0
         Button.Text = ""
         Button.Parent = Container
@@ -2837,12 +2842,18 @@ local function createMainGUI(device)
         Corner.CornerRadius = UDim.new(0, 10)
         Corner.Parent = Button
 
+        local BtnStroke = Instance.new("UIStroke")
+        BtnStroke.Color = THEME.GOLD
+        BtnStroke.Thickness = 1.4
+        BtnStroke.Transparency = 0.2
+        BtnStroke.Parent = Button
+
         local Label = Instance.new("TextLabel")
         Label.Size = UDim2.new(1, -15, 1, 0)
         Label.Position = UDim2.new(0, 15, 0, 0)
         Label.BackgroundTransparency = 1
         Label.Text = name
-        Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Label.TextColor3 = THEME.TEXT
         Label.Font = Enum.Font.GothamBold
         Label.TextSize = device == "iPhone" and 11 or 14
         Label.TextXAlignment = Enum.TextXAlignment.Left
@@ -2854,9 +2865,9 @@ local function createMainGUI(device)
             local SettingsButton = Instance.new("TextButton")
             SettingsButton.Size = UDim2.new(0, 50, 0, 50)
             SettingsButton.Position = UDim2.new(1, -50, 0, 0)
-            SettingsButton.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
+            SettingsButton.BackgroundColor3 = THEME.OFF
             SettingsButton.Text = "⚙️"
-            SettingsButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+            SettingsButton.TextColor3 = THEME.TEXT
             SettingsButton.Font = Enum.Font.GothamBold
             SettingsButton.TextSize = device == "iPhone" and 16 or 20
             SettingsButton.Parent = Container
@@ -2864,6 +2875,12 @@ local function createMainGUI(device)
             local SettingsCorner = Instance.new("UICorner")
             SettingsCorner.CornerRadius = UDim.new(0, 10)
             SettingsCorner.Parent = SettingsButton
+
+            local SettingsStroke = Instance.new("UIStroke")
+            SettingsStroke.Color = THEME.GOLD
+            SettingsStroke.Thickness = 1.2
+            SettingsStroke.Transparency = 0.25
+            SettingsStroke.Parent = SettingsButton
 
             return Container, SettingsButton, Button, Label
         end
@@ -3615,6 +3632,8 @@ function createOpenButton(device)
     OpenButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     OpenButton.Font = Enum.Font.GothamBold
     OpenButton.TextSize = device == "iPhone" and 10 or 14
+    OpenButton.Active = true
+    OpenButton.Draggable = true
     OpenButton.Parent = ScreenGui
 
     local OpenCorner = Instance.new("UICorner")
@@ -3676,6 +3695,8 @@ function createAutoButtons(device)
     AutoLeftButton.TextColor3 = THEME.TEXT
     AutoLeftButton.Font = Enum.Font.GothamBold
     AutoLeftButton.TextSize = device == "iPhone" and 9 or 12
+    AutoLeftButton.Active = true
+    AutoLeftButton.Draggable = true
     AutoLeftButton.Parent = ScreenGui
 
     local LeftCorner = Instance.new("UICorner")
@@ -3706,6 +3727,8 @@ function createAutoButtons(device)
     AutoMedusaButton.TextColor3 = THEME.TEXT
     AutoMedusaButton.Font = Enum.Font.GothamBold
     AutoMedusaButton.TextSize = device == "iPhone" and 9 or 12
+    AutoMedusaButton.Active = true
+    AutoMedusaButton.Draggable = true
     AutoMedusaButton.Parent = ScreenGui
 
     local MedusaCorner = Instance.new("UICorner")
@@ -3851,6 +3874,8 @@ function createAutoButtons(device)
     AutoRightButton.TextColor3 = THEME.TEXT
     AutoRightButton.Font = Enum.Font.GothamBold
     AutoRightButton.TextSize = device == "iPhone" and 9 or 12
+    AutoRightButton.Active = true
+    AutoRightButton.Draggable = true
     AutoRightButton.Parent = ScreenGui
 
     local RightCorner = Instance.new("UICorner")
@@ -3933,6 +3958,8 @@ function createRightButtons(device)
     DesyncButton.TextColor3 = THEME.TEXT
     DesyncButton.Font = Enum.Font.GothamBold
     DesyncButton.TextSize = device == "iPhone" and 9 or 12
+    DesyncButton.Active = true
+    DesyncButton.Draggable = true
     DesyncButton.Parent = ScreenGui
 
     local DesyncCorner = Instance.new("UICorner")
@@ -4051,6 +4078,8 @@ function createRightButtons(device)
         LaggerButton.TextColor3 = THEME.TEXT
         LaggerButton.Font = Enum.Font.GothamBold
         LaggerButton.TextSize = device == "iPhone" and 9 or 12
+        LaggerButton.Active = true
+        LaggerButton.Draggable = true
         LaggerButton.Parent = ScreenGui
 
         local LaggerCorner = Instance.new("UICorner")
@@ -4390,6 +4419,8 @@ function createRightButtons(device)
     TrackPlayerButton.TextColor3 = THEME.TEXT
     TrackPlayerButton.Font = Enum.Font.GothamBold
     TrackPlayerButton.TextSize = device == "iPhone" and 9 or 12
+    TrackPlayerButton.Active = true
+    TrackPlayerButton.Draggable = true
     TrackPlayerButton.Parent = ScreenGui
 
     local TrackCorner = Instance.new("UICorner")
@@ -4432,6 +4463,8 @@ function createRightButtons(device)
     HitCircleButton.TextColor3 = THEME.TEXT
     HitCircleButton.Font = Enum.Font.GothamBold
     HitCircleButton.TextSize = device == "iPhone" and 9 or 12
+    HitCircleButton.Active = true
+    HitCircleButton.Draggable = true
     HitCircleButton.Parent = ScreenGui
 
     local HitCorner = Instance.new("UICorner")
@@ -4483,6 +4516,8 @@ function createRightButtons(device)
     JukeButton.TextColor3 = THEME.TEXT
     JukeButton.Font = Enum.Font.GothamBold
     JukeButton.TextSize = device == "iPhone" and 9 or 12
+    JukeButton.Active = true
+    JukeButton.Draggable = true
     JukeButton.Parent = ScreenGui
 
     local JukeCorner = Instance.new("UICorner")
@@ -4521,7 +4556,7 @@ function createRightButtons(device)
 
     local JukeSettings = Instance.new("Frame")
     JukeSettings.Name = "JukeSettings"
-    JukeSettings.Size = UDim2.new(0, 210, 0, 380)
+    JukeSettings.Size = UDim2.new(0, 210, 0, 420)
     JukeSettings.Position = UDim2.new(0.5, -105, 0.5, -140)
     JukeSettings.BackgroundColor3 = Color3.fromRGB(14, 14, 14)
     JukeSettings.BackgroundTransparency = 0.05
@@ -5094,6 +5129,234 @@ function createRightButtons(device)
         smallGuiHeight = ConfigData.smallGuiHeight
         SmallGuiValLabel.Text = tostring(smallGuiWidth)
         resizeSmallGUIs(smallGuiWidth, smallGuiHeight)
+    end
+
+    -- ═══════════════════════════════════════════════════════
+    -- ✅ UI LAYOUT CONTROLS
+    -- ═══════════════════════════════════════════════════════
+
+    local UILayoutDivider = Instance.new("TextLabel")
+    UILayoutDivider.Size = UDim2.new(1, -20, 0, 18)
+    UILayoutDivider.Position = UDim2.new(0, 10, 0, 278)
+    UILayoutDivider.BackgroundTransparency = 1
+    UILayoutDivider.Text = "─── UI Layout ───"
+    UILayoutDivider.TextColor3 = Color3.fromRGB(180, 180, 200)
+    UILayoutDivider.Font = Enum.Font.GothamBold
+    UILayoutDivider.TextSize = 10
+    UILayoutDivider.TextXAlignment = Enum.TextXAlignment.Center
+    UILayoutDivider.Parent = JukeSettings
+    UILayoutDivider.ZIndex = 11
+
+    -- Lock/Unlock state tracking
+    local _lockedDraggables = {}
+
+    local function lockUILayout()
+        _lockedDraggables = {}
+        for _, v in ipairs(PlayerGui:GetDescendants()) do
+            pcall(function()
+                if v:IsA("GuiObject") and v.Draggable == true then
+                    table.insert(_lockedDraggables, v)
+                    v.Draggable = false
+                end
+            end)
+        end
+        buttonsLocked = true
+        ConfigData.buttonsLocked = true
+    end
+
+    local function unlockUILayout()
+        if #_lockedDraggables > 0 then
+            -- Restore exactly the elements that were locked
+            for _, v in ipairs(_lockedDraggables) do
+                pcall(function()
+                    if v and v.Parent then v.Draggable = true end
+                end)
+            end
+            _lockedDraggables = {}
+        else
+            -- Fallback: re-enable all Active top-level GuiObjects in all ScreenGuis
+            setButtonsDraggable(true)
+            for _, guiRoot in ipairs(PlayerGui:GetChildren()) do
+                if guiRoot:IsA("ScreenGui") then
+                    for _, child in ipairs(guiRoot:GetChildren()) do
+                        pcall(function()
+                            if child:IsA("GuiObject") and child.Active == true then
+                                child.Draggable = true
+                            end
+                        end)
+                    end
+                end
+            end
+        end
+        buttonsLocked = false
+        ConfigData.buttonsLocked = false
+    end
+
+    local function saveUILayout()
+        ConfigData.buttonPositions = getButtonPositions()
+        local extraPos = {}
+        for _, child in ipairs(ScreenGui:GetChildren()) do
+            pcall(function()
+                if child:IsA("GuiObject") and child.Name ~= "" then
+                    extraPos[child.Name] = {
+                        XScale = child.Position.X.Scale,
+                        XOffset = child.Position.X.Offset,
+                        YScale = child.Position.Y.Scale,
+                        YOffset = child.Position.Y.Offset,
+                    }
+                end
+            end)
+        end
+        -- Also save positions of non-ScreenGui roots (e.g. ButtonsTaskGui)
+        for _, guiRoot in ipairs(PlayerGui:GetChildren()) do
+            if guiRoot:IsA("ScreenGui") and guiRoot ~= ScreenGui then
+                for _, child in ipairs(guiRoot:GetChildren()) do
+                    pcall(function()
+                        if child:IsA("GuiObject") and child.Name ~= "" then
+                            extraPos["_extra_"..child.Name] = {
+                                XScale = child.Position.X.Scale,
+                                XOffset = child.Position.X.Offset,
+                                YScale = child.Position.Y.Scale,
+                                YOffset = child.Position.Y.Offset,
+                            }
+                        end
+                    end)
+                end
+            end
+        end
+        ConfigData.extraUIPositions = extraPos
+        SaveConfig()
+    end
+
+    local function loadUILayout()
+        if ConfigData.buttonPositions then
+            applyButtonPositions(ConfigData.buttonPositions)
+        end
+        if type(ConfigData.extraUIPositions) == "table" then
+            for _, child in ipairs(ScreenGui:GetChildren()) do
+                pcall(function()
+                    local p = ConfigData.extraUIPositions[child.Name]
+                    if child:IsA("GuiObject") and p then
+                        child.Position = UDim2.new(p.XScale, p.XOffset, p.YScale, p.YOffset)
+                    end
+                end)
+            end
+            -- Restore other ScreenGui roots
+            for _, guiRoot in ipairs(PlayerGui:GetChildren()) do
+                if guiRoot:IsA("ScreenGui") and guiRoot ~= ScreenGui then
+                    for _, child in ipairs(guiRoot:GetChildren()) do
+                        pcall(function()
+                            local p = ConfigData.extraUIPositions["_extra_"..child.Name]
+                            if child:IsA("GuiObject") and p then
+                                child.Position = UDim2.new(p.XScale, p.XOffset, p.YScale, p.YOffset)
+                            end
+                        end)
+                    end
+                end
+            end
+        end
+    end
+
+    -- 🔒 Lock button
+    local LockLayoutBtn = Instance.new("TextButton")
+    LockLayoutBtn.Size = UDim2.new(0.44, 0, 0, 26)
+    LockLayoutBtn.Position = UDim2.new(0.03, 0, 0, 300)
+    LockLayoutBtn.BackgroundColor3 = Color3.fromRGB(200, 110, 20)
+    LockLayoutBtn.Text = "🔒 Lock"
+    LockLayoutBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    LockLayoutBtn.Font = Enum.Font.GothamBold
+    LockLayoutBtn.TextSize = 11
+    LockLayoutBtn.Parent = JukeSettings
+    LockLayoutBtn.ZIndex = 11
+    Instance.new("UICorner", LockLayoutBtn).CornerRadius = UDim.new(0, 6)
+
+    -- 🔓 Unlock button
+    local UnlockLayoutBtn = Instance.new("TextButton")
+    UnlockLayoutBtn.Size = UDim2.new(0.44, 0, 0, 26)
+    UnlockLayoutBtn.Position = UDim2.new(0.53, 0, 0, 300)
+    UnlockLayoutBtn.BackgroundColor3 = Color3.fromRGB(50, 160, 50)
+    UnlockLayoutBtn.Text = "🔓 Unlock"
+    UnlockLayoutBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    UnlockLayoutBtn.Font = Enum.Font.GothamBold
+    UnlockLayoutBtn.TextSize = 11
+    UnlockLayoutBtn.Parent = JukeSettings
+    UnlockLayoutBtn.ZIndex = 11
+    Instance.new("UICorner", UnlockLayoutBtn).CornerRadius = UDim.new(0, 6)
+
+    -- 💾 Save Layout button
+    local SaveLayoutBtn = Instance.new("TextButton")
+    SaveLayoutBtn.Size = UDim2.new(0.44, 0, 0, 26)
+    SaveLayoutBtn.Position = UDim2.new(0.03, 0, 0, 332)
+    SaveLayoutBtn.BackgroundColor3 = Color3.fromRGB(40, 100, 210)
+    SaveLayoutBtn.Text = "💾 Save Layout"
+    SaveLayoutBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SaveLayoutBtn.Font = Enum.Font.GothamBold
+    SaveLayoutBtn.TextSize = 10
+    SaveLayoutBtn.Parent = JukeSettings
+    SaveLayoutBtn.ZIndex = 11
+    Instance.new("UICorner", SaveLayoutBtn).CornerRadius = UDim.new(0, 6)
+
+    -- 📂 Load Layout button
+    local LoadLayoutBtn = Instance.new("TextButton")
+    LoadLayoutBtn.Size = UDim2.new(0.44, 0, 0, 26)
+    LoadLayoutBtn.Position = UDim2.new(0.53, 0, 0, 332)
+    LoadLayoutBtn.BackgroundColor3 = Color3.fromRGB(100, 55, 185)
+    LoadLayoutBtn.Text = "📂 Load Layout"
+    LoadLayoutBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    LoadLayoutBtn.Font = Enum.Font.GothamBold
+    LoadLayoutBtn.TextSize = 10
+    LoadLayoutBtn.Parent = JukeSettings
+    LoadLayoutBtn.ZIndex = 11
+    Instance.new("UICorner", LoadLayoutBtn).CornerRadius = UDim.new(0, 6)
+
+    local LayoutStatus = Instance.new("TextLabel")
+    LayoutStatus.Size = UDim2.new(1, 0, 0, 18)
+    LayoutStatus.Position = UDim2.new(0, 0, 0, 364)
+    LayoutStatus.BackgroundTransparency = 1
+    LayoutStatus.Text = ""
+    LayoutStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
+    LayoutStatus.Font = Enum.Font.Gotham
+    LayoutStatus.TextSize = 10
+    LayoutStatus.TextXAlignment = Enum.TextXAlignment.Center
+    LayoutStatus.Parent = JukeSettings
+    LayoutStatus.ZIndex = 11
+
+    LockLayoutBtn.MouseButton1Click:Connect(function()
+        lockUILayout()
+        LockLayoutBtn.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
+        UnlockLayoutBtn.BackgroundColor3 = Color3.fromRGB(50, 160, 50)
+        LayoutStatus.Text = "🔒 Locked!"
+        LayoutStatus.TextColor3 = Color3.fromRGB(255, 160, 60)
+        task.delay(2, function() LayoutStatus.Text = "" end)
+    end)
+
+    UnlockLayoutBtn.MouseButton1Click:Connect(function()
+        unlockUILayout()
+        LockLayoutBtn.BackgroundColor3 = Color3.fromRGB(200, 110, 20)
+        UnlockLayoutBtn.BackgroundColor3 = Color3.fromRGB(60, 220, 100)
+        LayoutStatus.Text = "🔓 Unlocked!"
+        LayoutStatus.TextColor3 = Color3.fromRGB(100, 255, 150)
+        task.delay(2, function() LayoutStatus.Text = "" end)
+    end)
+
+    SaveLayoutBtn.MouseButton1Click:Connect(function()
+        saveUILayout()
+        LayoutStatus.Text = "✅ Layout Saved!"
+        LayoutStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
+        task.delay(2, function() LayoutStatus.Text = "" end)
+    end)
+
+    LoadLayoutBtn.MouseButton1Click:Connect(function()
+        loadUILayout()
+        LayoutStatus.Text = "📂 Layout Loaded!"
+        LayoutStatus.TextColor3 = Color3.fromRGB(150, 200, 255)
+        task.delay(2, function() LayoutStatus.Text = "" end)
+    end)
+
+    -- Auto-apply lock state from config
+    if buttonsLocked then
+        task.defer(lockUILayout)
+        LockLayoutBtn.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
     end
 
     -- Gear opens/closes settings
