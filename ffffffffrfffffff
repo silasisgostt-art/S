@@ -5154,7 +5154,9 @@ function createRightButtons(device)
         _lockedDraggables = {}
         for _, v in ipairs(PlayerGui:GetDescendants()) do
             pcall(function()
-                if v:IsA("GuiObject") and v.Draggable == true then
+                -- SpeedSettingsGUI is ALWAYS draggable, skip it
+                if v:IsA("GuiObject") and v.Draggable == true
+                    and v.Name ~= "SpeedSettingsGUI" then
                     table.insert(_lockedDraggables, v)
                     v.Draggable = false
                 end
@@ -5187,6 +5189,10 @@ function createRightButtons(device)
                     end
                 end
             end
+        end
+        -- SpeedSettingsGUI is always draggable regardless
+        if SpeedSettingsGUI and SpeedSettingsGUI.Parent then
+            SpeedSettingsGUI.Draggable = true
         end
         buttonsLocked = false
         ConfigData.buttonsLocked = false
@@ -5322,16 +5328,28 @@ function createRightButtons(device)
     LayoutStatus.ZIndex = 11
 
     LockLayoutBtn.MouseButton1Click:Connect(function()
-        lockUILayout()
-        LockLayoutBtn.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
-        UnlockLayoutBtn.BackgroundColor3 = Color3.fromRGB(50, 160, 50)
-        LayoutStatus.Text = "🔒 Locked!"
-        LayoutStatus.TextColor3 = Color3.fromRGB(255, 160, 60)
+        if buttonsLocked then
+            -- Already locked — toggle to unlock
+            unlockUILayout()
+            LockLayoutBtn.Text = "🔒 Lock"
+            LockLayoutBtn.BackgroundColor3 = Color3.fromRGB(200, 110, 20)
+            UnlockLayoutBtn.BackgroundColor3 = Color3.fromRGB(50, 160, 50)
+            LayoutStatus.Text = "🔓 Unlocked!"
+            LayoutStatus.TextColor3 = Color3.fromRGB(100, 255, 150)
+        else
+            lockUILayout()
+            LockLayoutBtn.Text = "🔓 Unlock"
+            LockLayoutBtn.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
+            UnlockLayoutBtn.BackgroundColor3 = Color3.fromRGB(50, 160, 50)
+            LayoutStatus.Text = "🔒 Locked!"
+            LayoutStatus.TextColor3 = Color3.fromRGB(255, 160, 60)
+        end
         task.delay(2, function() LayoutStatus.Text = "" end)
     end)
 
     UnlockLayoutBtn.MouseButton1Click:Connect(function()
         unlockUILayout()
+        LockLayoutBtn.Text = "🔒 Lock"
         LockLayoutBtn.BackgroundColor3 = Color3.fromRGB(200, 110, 20)
         UnlockLayoutBtn.BackgroundColor3 = Color3.fromRGB(60, 220, 100)
         LayoutStatus.Text = "🔓 Unlocked!"
@@ -5356,6 +5374,7 @@ function createRightButtons(device)
     -- Auto-apply lock state from config
     if buttonsLocked then
         task.defer(lockUILayout)
+        LockLayoutBtn.Text = "🔓 Unlock"
         LockLayoutBtn.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
     end
 
