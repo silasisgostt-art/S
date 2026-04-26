@@ -2822,15 +2822,15 @@ local function createMainGUI(device)
 
     local function createMainButton(name, order, callback, hasSettings)
         local Container = Instance.new("Frame")
-        Container.Size = UDim2.new(1, 0, 0, 50)
+        Container.Size = UDim2.new(1, 0, 0, 36)
         Container.BackgroundTransparency = 1
         Container.LayoutOrder = order
         Container.Parent = MainContent
 
-        local buttonWidth = hasSettings and -60 or 0
+        local buttonWidth = hasSettings and -44 or 0
 
         local Button = Instance.new("TextButton")
-        Button.Size = UDim2.new(1, buttonWidth, 0, 50)
+        Button.Size = UDim2.new(1, buttonWidth, 0, 36)
         Button.Position = UDim2.new(0, 0, 0, 0)
         Button.BackgroundColor3 = THEME.PANEL
         Button.BackgroundTransparency = 0
@@ -2839,7 +2839,7 @@ local function createMainGUI(device)
         Button.Parent = Container
 
         local Corner = Instance.new("UICorner")
-        Corner.CornerRadius = UDim.new(0, 10)
+        Corner.CornerRadius = UDim.new(0, 8)
         Corner.Parent = Button
 
         local BtnStroke = Instance.new("UIStroke")
@@ -2855,7 +2855,7 @@ local function createMainGUI(device)
         Label.Text = name
         Label.TextColor3 = THEME.TEXT
         Label.Font = Enum.Font.GothamBold
-        Label.TextSize = device == "iPhone" and 11 or 14
+        Label.TextSize = device == "iPhone" and 10 or 12
         Label.TextXAlignment = Enum.TextXAlignment.Left
         Label.Parent = Button
 
@@ -2863,17 +2863,17 @@ local function createMainGUI(device)
 
         if hasSettings then
             local SettingsButton = Instance.new("TextButton")
-            SettingsButton.Size = UDim2.new(0, 50, 0, 50)
-            SettingsButton.Position = UDim2.new(1, -50, 0, 0)
+            SettingsButton.Size = UDim2.new(0, 36, 0, 36)
+            SettingsButton.Position = UDim2.new(1, -36, 0, 0)
             SettingsButton.BackgroundColor3 = THEME.OFF
             SettingsButton.Text = "⚙️"
             SettingsButton.TextColor3 = THEME.TEXT
             SettingsButton.Font = Enum.Font.GothamBold
-            SettingsButton.TextSize = device == "iPhone" and 16 or 20
+            SettingsButton.TextSize = device == "iPhone" and 14 or 16
             SettingsButton.Parent = Container
 
             local SettingsCorner = Instance.new("UICorner")
-            SettingsCorner.CornerRadius = UDim.new(0, 10)
+            SettingsCorner.CornerRadius = UDim.new(0, 8)
             SettingsCorner.Parent = SettingsButton
 
             local SettingsStroke = Instance.new("UIStroke")
@@ -2915,7 +2915,7 @@ local function createMainGUI(device)
 
     local SpeedSettingsGUI = Instance.new("Frame")
     SpeedSettingsGUI.Name = "SpeedSettingsGUI"
-    SpeedSettingsGUI.Size = UDim2.new(0, 150, 0, 195)
+    SpeedSettingsGUI.Size = UDim2.new(0, 150, 0, 220)
     SpeedSettingsGUI.Position = UDim2.new(0.5, 180, 0.5, -95)
     SpeedSettingsGUI.BackgroundColor3 = THEME.PANEL
     SpeedSettingsGUI.BackgroundTransparency = 0.08
@@ -3047,13 +3047,41 @@ local function createMainGUI(device)
     createSpeedInput("Steal", 40, "StealValue")
     createSpeedInput("Jump", 75, "JumpValue")
 
+    -- 💾 Save button inside Speed Settings panel
+    local SpeedSaveBtn = Instance.new("TextButton", InputContainer)
+    SpeedSaveBtn.Size = UDim2.new(1, -24, 0, 24)
+    SpeedSaveBtn.Position = UDim2.new(0, 12, 0, 112)
+    SpeedSaveBtn.BackgroundColor3 = Color3.fromRGB(60, 180, 255)
+    SpeedSaveBtn.Text = "💾 Save Settings"
+    SpeedSaveBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SpeedSaveBtn.Font = Enum.Font.GothamBold
+    SpeedSaveBtn.TextSize = 10
+    Instance.new("UICorner", SpeedSaveBtn).CornerRadius = UDim.new(0, 5)
+
+    local SpeedSavedLabel = Instance.new("TextLabel", InputContainer)
+    SpeedSavedLabel.Size = UDim2.new(1, 0, 0, 14)
+    SpeedSavedLabel.Position = UDim2.new(0, 0, 0, 140)
+    SpeedSavedLabel.BackgroundTransparency = 1
+    SpeedSavedLabel.Text = ""
+    SpeedSavedLabel.TextColor3 = Color3.fromRGB(100, 255, 150)
+    SpeedSavedLabel.Font = Enum.Font.Gotham
+    SpeedSavedLabel.TextSize = 10
+    SpeedSavedLabel.TextXAlignment = Enum.TextXAlignment.Center
+
+    SpeedSaveBtn.MouseButton1Click:Connect(function()
+        applyPreset()
+        SaveConfig()
+        SpeedSavedLabel.Text = "✅ Saved!"
+        task.delay(2, function() SpeedSavedLabel.Text = "" end)
+    end)
+
     HeaderButton.MouseButton1Click:Connect(function()
         SpeedCustomizer.Collapsed = not SpeedCustomizer.Collapsed
         if SpeedCustomizer.Collapsed then
             SpeedSettingsGUI:TweenSize(UDim2.new(0, 150, 0, 65), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
             InputContainer.Visible = false
         else
-            SpeedSettingsGUI:TweenSize(UDim2.new(0, 150, 0, 195), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
+            SpeedSettingsGUI:TweenSize(UDim2.new(0, 150, 0, 220), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
             task.delay(0.1, function() InputContainer.Visible = true end)
         end
     end)
