@@ -1403,9 +1403,9 @@ end
 
 local selectedDevice = nil
 local GUI_SIZES = {
-    PC = {Width = 390, Height = 500},
-    iPad = {Width = 360, Height = 470},
-    iPhone = {Width = 300, Height = 430}
+    PC = {Width = 430, Height = 300},
+    iPad = {Width = 340, Height = 280},
+    iPhone = {Width = 220, Height = 280}
 }
 
 -- ═══════════════════════════════════════════════════════
@@ -2623,8 +2623,8 @@ local function createMainGUI(device)
     MainFrame.Name = "MainFrame"
     MainFrame.Size = UDim2.new(0, width, 0, height)
     MainFrame.Position = UDim2.new(0.5, -width/2, 0.5, -height/2)
-    MainFrame.BackgroundColor3 = THEME.PANEL
-    MainFrame.BackgroundTransparency = 0.08
+    MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    MainFrame.BackgroundTransparency = 0.1
     MainFrame.BorderSizePixel = 0
     MainFrame.Active = true
     MainFrame.Draggable = true
@@ -2635,15 +2635,9 @@ local function createMainGUI(device)
     MainCorner.CornerRadius = UDim.new(0, 15)
     MainCorner.Parent = MainFrame
 
-    local MainStroke = Instance.new("UIStroke")
-    MainStroke.Color = THEME.GOLD
-    MainStroke.Thickness = 2
-    MainStroke.Transparency = 0.2
-    MainStroke.Parent = MainFrame
-
     local Header = Instance.new("Frame")
     Header.Size = UDim2.new(1, 0, 0, 50)
-    Header.BackgroundColor3 = THEME.BG
+    Header.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
     Header.BorderSizePixel = 0
     Header.Parent = MainFrame
 
@@ -2654,7 +2648,7 @@ local function createMainGUI(device)
     local HeaderMask = Instance.new("Frame")
     HeaderMask.Size = UDim2.new(1, 0, 0, 15)
     HeaderMask.Position = UDim2.new(0, 0, 1, -15)
-    HeaderMask.BackgroundColor3 = THEME.BG
+    HeaderMask.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
     HeaderMask.BorderSizePixel = 0
     HeaderMask.Parent = Header
 
@@ -2675,7 +2669,7 @@ local function createMainGUI(device)
     TitleLabel.Position = UDim2.new(0, 50, 0, 0)
     TitleLabel.BackgroundTransparency = 1
     TitleLabel.Text = "CELESTIAL HUB"
-    TitleLabel.TextColor3 = THEME.TEXT
+    TitleLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
     TitleLabel.Font = Enum.Font.GothamBold
     TitleLabel.TextSize = titleSize
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -2684,9 +2678,9 @@ local function createMainGUI(device)
     local CloseButton = Instance.new("TextButton")
     CloseButton.Size = UDim2.new(0, 30, 0, 30)
     CloseButton.Position = UDim2.new(1, -35, 0.5, -15)
-    CloseButton.BackgroundColor3 = THEME.OFF
+    CloseButton.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
     CloseButton.Text = "-"
-    CloseButton.TextColor3 = THEME.TEXT
+    CloseButton.TextColor3 = Color3.fromRGB(200, 200, 200)
     CloseButton.Font = Enum.Font.GothamBold
     CloseButton.TextSize = 18
     CloseButton.Parent = Header
@@ -2707,25 +2701,30 @@ local function createMainGUI(device)
     end)
 
     local TabBar = Instance.new("Frame")
-    TabBar.Size = UDim2.new(1, -24, 0, 40)
+    TabBar.Size = UDim2.new(1, -24, 0, 38)
     TabBar.Position = UDim2.new(0, 12, 0, 58)
-    TabBar.BackgroundColor3 = THEME.OFF
+    TabBar.BackgroundColor3 = THEME.PANEL
+    TabBar.BackgroundTransparency = 0.05
     TabBar.BorderSizePixel = 0
     TabBar.Parent = MainFrame
-    Instance.new("UICorner", TabBar).CornerRadius = UDim.new(0, 10)
+
+    local TabBarCorner = Instance.new("UICorner")
+    TabBarCorner.CornerRadius = UDim.new(0, 10)
+    TabBarCorner.Parent = TabBar
+
     local TabBarStroke = Instance.new("UIStroke")
     TabBarStroke.Color = THEME.GOLD
     TabBarStroke.Thickness = 1.5
-    TabBarStroke.Transparency = 0.35
+    TabBarStroke.Transparency = 0.2
     TabBarStroke.Parent = TabBar
 
     local function createTab(name, order)
+        local tabWidth = 0.5
         local TabButton = Instance.new("TextButton")
         TabButton.Name = name
-        TabButton.Size = UDim2.new(0.5, 0, 1, 0)
-        TabButton.Position = UDim2.new((order - 1) * 0.5, 0, 0, 0)
+        TabButton.Size = UDim2.new(tabWidth, 0, 1, 0)
+        TabButton.Position = UDim2.new((order - 1) * tabWidth, 0, 0, 0)
         TabButton.BackgroundTransparency = 1
-        TabButton.BorderSizePixel = 0
         TabButton.Text = ""
         TabButton.Parent = TabBar
 
@@ -2735,30 +2734,27 @@ local function createMainGUI(device)
         TextLabel.Text = name
         TextLabel.TextColor3 = THEME.TEXT
         TextLabel.Font = Enum.Font.GothamBold
-        TextLabel.TextSize = device == "iPhone" and 12 or 13
+        TextLabel.TextSize = device == "iPhone" and 10 or 12
         TextLabel.TextXAlignment = Enum.TextXAlignment.Center
         TextLabel.Parent = TabButton
 
-        if order == 1 then
-            local Divider = Instance.new("Frame")
-            Divider.Size = UDim2.new(0, 1, 1, -10)
-            Divider.Position = UDim2.new(1, 0, 0, 5)
-            Divider.BackgroundColor3 = THEME.GOLD
-            Divider.BackgroundTransparency = 0.5
-            Divider.BorderSizePixel = 0
-            Divider.Parent = TabButton
-        end
-
         tabButtons[name] = {Button = TabButton, Text = TextLabel}
-
         return TabButton
     end
+
+    local TabDivider = Instance.new("Frame")
+    TabDivider.Size = UDim2.new(0, 1, 1, -10)
+    TabDivider.Position = UDim2.new(0.5, 0, 0, 5)
+    TabDivider.BackgroundColor3 = THEME.GOLD
+    TabDivider.BackgroundTransparency = 0.45
+    TabDivider.BorderSizePixel = 0
+    TabDivider.Parent = TabBar
 
     local MainTab = createTab("FEATURES", 1)
     local SettingsTab = createTab("SETTINGS", 2)
 
     local ContentContainer = Instance.new("Frame")
-    ContentContainer.Size = UDim2.new(1, -24, 1, -110)
+    ContentContainer.Size = UDim2.new(1, -24, 1, -108)
     ContentContainer.Position = UDim2.new(0, 12, 0, 102)
     ContentContainer.BackgroundTransparency = 1
     ContentContainer.Parent = MainFrame
@@ -2769,8 +2765,8 @@ local function createMainGUI(device)
         Content.Size = UDim2.new(1, 0, 1, 0)
         Content.BackgroundTransparency = 1
         Content.BorderSizePixel = 0
-        Content.ScrollBarThickness = 4
-        Content.ScrollBarImageColor3 = THEME.PINK
+        Content.ScrollBarThickness = 6
+        Content.ScrollBarImageColor3 = THEME.GOLD
         Content.CanvasSize = UDim2.new(0, 0, 0, 0)
         Content.Visible = false
         Content.Parent = ContentContainer
@@ -2800,12 +2796,13 @@ local function createMainGUI(device)
 
         for name, elements in pairs(tabButtons) do
             if name == tabName then
-                elements.Button.BackgroundColor3 = THEME.PINK
-                elements.Button.BackgroundTransparency = 0.15
-                elements.Text.TextColor3 = Color3.fromRGB(255, 255, 255)
-            else
-                elements.Button.BackgroundTransparency = 1
+                elements.Button.BackgroundColor3 = THEME.ON
+                elements.Button.BackgroundTransparency = 0
                 elements.Text.TextColor3 = THEME.TEXT
+            else
+                elements.Button.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+                elements.Button.BackgroundTransparency = 1
+                elements.Text.TextColor3 = Color3.fromRGB(170, 170, 180)
             end
         end
 
@@ -2835,7 +2832,8 @@ local function createMainGUI(device)
         local Button = Instance.new("TextButton")
         Button.Size = UDim2.new(1, buttonWidth, 0, 50)
         Button.Position = UDim2.new(0, 0, 0, 0)
-        Button.BackgroundColor3 = THEME.OFF
+        Button.BackgroundColor3 = THEME.PANEL
+        Button.BackgroundTransparency = 0
         Button.BorderSizePixel = 0
         Button.Text = ""
         Button.Parent = Container
@@ -2843,6 +2841,12 @@ local function createMainGUI(device)
         local Corner = Instance.new("UICorner")
         Corner.CornerRadius = UDim.new(0, 10)
         Corner.Parent = Button
+
+        local BtnStroke = Instance.new("UIStroke")
+        BtnStroke.Color = THEME.GOLD
+        BtnStroke.Thickness = 1.4
+        BtnStroke.Transparency = 0.2
+        BtnStroke.Parent = Button
 
         local Label = Instance.new("TextLabel")
         Label.Size = UDim2.new(1, -15, 1, 0)
@@ -2854,12 +2858,6 @@ local function createMainGUI(device)
         Label.TextSize = device == "iPhone" and 11 or 14
         Label.TextXAlignment = Enum.TextXAlignment.Left
         Label.Parent = Button
-
-        local ButtonStroke = Instance.new("UIStroke")
-        ButtonStroke.Color = THEME.GOLD
-        ButtonStroke.Thickness = 1
-        ButtonStroke.Transparency = 0.4
-        ButtonStroke.Parent = Button
 
         Button.MouseButton1Click:Connect(callback)
 
@@ -2880,8 +2878,8 @@ local function createMainGUI(device)
 
             local SettingsStroke = Instance.new("UIStroke")
             SettingsStroke.Color = THEME.GOLD
-            SettingsStroke.Thickness = 1
-            SettingsStroke.Transparency = 0.4
+            SettingsStroke.Thickness = 1.2
+            SettingsStroke.Transparency = 0.25
             SettingsStroke.Parent = SettingsButton
 
             return Container, SettingsButton, Button, Label
