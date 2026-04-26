@@ -1418,75 +1418,31 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = PlayerGui
 
-local customDragBindings = setmetatable({}, {__mode = "k"})
+local function shouldAllowDragging(obj)
+    return obj and (obj:IsA("TextButton") or obj:IsA("ImageButton") or obj:IsA("Frame"))
+end
 
-local function makeTextButtonsDraggable(rootGui)
-    if not rootGui then return end
-
-    local function apply(btn)
-        if btn and btn:IsA("TextButton") then
-            btn.Active = true
-            btn.Draggable = true
-        end
-    end
-
-    for _, guiObj in ipairs(rootGui:GetDescendants()) do
-        apply(guiObj)
-    end
-
-    rootGui.DescendantAdded:Connect(function(guiObj)
-        apply(guiObj)
+local function setDraggableState(obj, enabled)
+    if not shouldAllowDragging(obj) then return end
+    pcall(function()
+        obj.Active = enabled
+        obj.Draggable = enabled
     end)
 end
 
-local function bindDragHandleToTarget(handle, target)
-    if not handle or not target then return end
-    if customDragBindings[handle] then return end
-    if not handle:IsA("GuiObject") or not target:IsA("GuiObject") then return end
-
-    customDragBindings[handle] = true
-    handle.Active = true
-    pcall(function() handle.Draggable = false end)
-
-    local dragging = false
-    local dragInput = nil
-    local dragStart = nil
-    local startPos = nil
-
-    handle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            dragStart = input.Position
-            startPos = target.Position
-
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
-        end
-    end)
-
-    handle.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-            dragInput = input
-        end
-    end)
-
-    UserInputService.InputChanged:Connect(function(input)
-        if dragging and input == dragInput and startPos and dragStart then
-            local delta = input.Position - dragStart
-            target.Position = UDim2.new(
-                startPos.X.Scale,
-                startPos.X.Offset + delta.X,
-                startPos.Y.Scale,
-                startPos.Y.Offset + delta.Y
-            )
-        end
-    end)
+local function applyGlobalDraggableState(enabled)
+    for _, obj in ipairs(ScreenGui:GetDescendants()) do
+        setDraggableState(obj, enabled)
+    end
 end
 
-makeTextButtonsDraggable(ScreenGui)
+ScreenGui.DescendantAdded:Connect(function(obj)
+    task.defer(function()
+        if obj and obj.Parent then
+            setDraggableState(obj, not buttonsLocked)
+        end
+    end)
+end)
 
 -- Rainbow outline: cycles UIStroke colors across the GUI
 local function startRainbowOutline()
@@ -1853,7 +1809,6 @@ do
     BTaskGui.ResetOnSpawn = false
     BTaskGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     BTaskGui.Parent = PlayerGui
-    makeTextButtonsDraggable(BTaskGui)
 
     local BTaskFrame = Instance.new("Frame")
     BTaskFrame.Size = UDim2.new(0, 170, 0, 40)
@@ -2177,23 +2132,7 @@ local function applyButtonPositions(data)
 end
 
 local function setButtonsDraggable(enabled)
-    for _, gui in pairs({
-        SmallSpeedGUI,
-        SmallUnwalkGUI,
-        SmallSpinBotGUI,
-        SmallInfJumpGUI,
-        SmallFloatGUI,
-        SmallFOVGUI,
-        SmallAntiRagGUI,
-        SmallRagdollTPGUI,
-        SmallDropGUI,
-        SmallTPDownGUI,
-        SmallTPUpGUI,
-    }) do
-        if gui then
-            gui.Draggable = enabled
-        end
-    end
+    applyGlobalDraggableState(enabled)
 end
 
 local SpinBotScreen = Instance.new("Frame")
@@ -2959,9 +2898,6 @@ local function createMainGUI(device)
         refreshSmallButtonPositions()
     end, true)
 
-    bindDragHandleToTarget(SpeedMainBtn, MainFrame)
-    bindDragHandleToTarget(SpeedSettingsBtn, MainFrame)
-
     -- ✅ SPEED CUSTOMIZER (S1/S2 COLLAPSIBLE)
     local SpeedCustomizer = {
         Collapsed = false,
@@ -3656,6 +3592,7 @@ local function initializeGUI(device)
 
     -- Apply dark semi-transparent style and rounded corners to all UI
     applyWhiteHalfStyle()
+    setButtonsDraggable(not buttonsLocked)
 
     -- ✅ AUTO-LOAD CONFIG ON START!
     if ConfigData.speedEnabled then
