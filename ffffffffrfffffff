@@ -1418,32 +1418,6 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = PlayerGui
 
-local function shouldAllowDragging(obj)
-    return obj and (obj:IsA("TextButton") or obj:IsA("ImageButton") or obj:IsA("Frame"))
-end
-
-local function setDraggableState(obj, enabled)
-    if not shouldAllowDragging(obj) then return end
-    pcall(function()
-        obj.Active = enabled
-        obj.Draggable = enabled
-    end)
-end
-
-local function applyGlobalDraggableState(enabled)
-    for _, obj in ipairs(ScreenGui:GetDescendants()) do
-        setDraggableState(obj, enabled)
-    end
-end
-
-ScreenGui.DescendantAdded:Connect(function(obj)
-    task.defer(function()
-        if obj and obj.Parent then
-            setDraggableState(obj, not buttonsLocked)
-        end
-    end)
-end)
-
 -- Rainbow outline: cycles UIStroke colors across the GUI
 local function startRainbowOutline()
     task.spawn(function()
@@ -2132,7 +2106,21 @@ local function applyButtonPositions(data)
 end
 
 local function setButtonsDraggable(enabled)
-    applyGlobalDraggableState(enabled)
+    for _, gui in pairs({
+        SmallSpeedGUI,
+        SmallUnwalkGUI,
+        SmallSpinBotGUI,
+        SmallInfJumpGUI,
+        SmallFloatGUI,
+        SmallFOVGUI,
+        SmallAntiRagGUI,
+        SmallRagdollTPGUI,
+        SmallDropGUI,
+    }) do
+        if gui then
+            gui.Draggable = enabled
+        end
+    end
 end
 
 local SpinBotScreen = Instance.new("Frame")
@@ -2420,6 +2408,8 @@ StealBarContainer.Size = UDim2.new(0, 320, 0, 50)
 StealBarContainer.Position = UDim2.new(0.5, -160, 1, -90)
 StealBarContainer.BackgroundColor3 = Color3.fromRGB(20, 25, 20)
 StealBarContainer.BorderSizePixel = 0
+StealBarContainer.Active = true
+StealBarContainer.Draggable = true
 StealBarContainer.Parent = ScreenGui
 
 local ContainerCorner = Instance.new("UICorner")
@@ -3592,7 +3582,6 @@ local function initializeGUI(device)
 
     -- Apply dark semi-transparent style and rounded corners to all UI
     applyWhiteHalfStyle()
-    setButtonsDraggable(not buttonsLocked)
 
     -- ✅ AUTO-LOAD CONFIG ON START!
     if ConfigData.speedEnabled then
@@ -3628,6 +3617,8 @@ function createOpenButton(device)
     OpenButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     OpenButton.Font = Enum.Font.GothamBold
     OpenButton.TextSize = device == "iPhone" and 10 or 14
+    OpenButton.Active = true
+    OpenButton.Draggable = true
     OpenButton.Parent = ScreenGui
 
     local OpenCorner = Instance.new("UICorner")
@@ -3689,6 +3680,8 @@ function createAutoButtons(device)
     AutoLeftButton.TextColor3 = THEME.TEXT
     AutoLeftButton.Font = Enum.Font.GothamBold
     AutoLeftButton.TextSize = device == "iPhone" and 9 or 12
+    AutoLeftButton.Active = true
+    AutoLeftButton.Draggable = true
     AutoLeftButton.Parent = ScreenGui
 
     local LeftCorner = Instance.new("UICorner")
@@ -3719,6 +3712,8 @@ function createAutoButtons(device)
     AutoMedusaButton.TextColor3 = THEME.TEXT
     AutoMedusaButton.Font = Enum.Font.GothamBold
     AutoMedusaButton.TextSize = device == "iPhone" and 9 or 12
+    AutoMedusaButton.Active = true
+    AutoMedusaButton.Draggable = true
     AutoMedusaButton.Parent = ScreenGui
 
     local MedusaCorner = Instance.new("UICorner")
@@ -3864,6 +3859,8 @@ function createAutoButtons(device)
     AutoRightButton.TextColor3 = THEME.TEXT
     AutoRightButton.Font = Enum.Font.GothamBold
     AutoRightButton.TextSize = device == "iPhone" and 9 or 12
+    AutoRightButton.Active = true
+    AutoRightButton.Draggable = true
     AutoRightButton.Parent = ScreenGui
 
     local RightCorner = Instance.new("UICorner")
@@ -3946,6 +3943,8 @@ function createRightButtons(device)
     DesyncButton.TextColor3 = THEME.TEXT
     DesyncButton.Font = Enum.Font.GothamBold
     DesyncButton.TextSize = device == "iPhone" and 9 or 12
+    DesyncButton.Active = true
+    DesyncButton.Draggable = true
     DesyncButton.Parent = ScreenGui
 
     local DesyncCorner = Instance.new("UICorner")
@@ -4064,6 +4063,8 @@ function createRightButtons(device)
         LaggerButton.TextColor3 = THEME.TEXT
         LaggerButton.Font = Enum.Font.GothamBold
         LaggerButton.TextSize = device == "iPhone" and 9 or 12
+        LaggerButton.Active = true
+        LaggerButton.Draggable = true
         LaggerButton.Parent = ScreenGui
 
         local LaggerCorner = Instance.new("UICorner")
@@ -4403,6 +4404,8 @@ function createRightButtons(device)
     TrackPlayerButton.TextColor3 = THEME.TEXT
     TrackPlayerButton.Font = Enum.Font.GothamBold
     TrackPlayerButton.TextSize = device == "iPhone" and 9 or 12
+    TrackPlayerButton.Active = true
+    TrackPlayerButton.Draggable = true
     TrackPlayerButton.Parent = ScreenGui
 
     local TrackCorner = Instance.new("UICorner")
@@ -4445,6 +4448,8 @@ function createRightButtons(device)
     HitCircleButton.TextColor3 = THEME.TEXT
     HitCircleButton.Font = Enum.Font.GothamBold
     HitCircleButton.TextSize = device == "iPhone" and 9 or 12
+    HitCircleButton.Active = true
+    HitCircleButton.Draggable = true
     HitCircleButton.Parent = ScreenGui
 
     local HitCorner = Instance.new("UICorner")
@@ -4496,6 +4501,8 @@ function createRightButtons(device)
     JukeButton.TextColor3 = THEME.TEXT
     JukeButton.Font = Enum.Font.GothamBold
     JukeButton.TextSize = device == "iPhone" and 9 or 12
+    JukeButton.Active = true
+    JukeButton.Draggable = true
     JukeButton.Parent = ScreenGui
 
     local JukeCorner = Instance.new("UICorner")
