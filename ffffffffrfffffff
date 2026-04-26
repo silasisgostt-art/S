@@ -63,12 +63,17 @@ local ConfigData = {
     fovEnabled = false,
     buttonsLocked = false,
     buttonPositions = nil,
+    extraLayoutPositions = nil,
     tpUpEnabled = false,
     tpDownVisible = false,
 }
 
 local buttonsLocked = false
 local getButtonPositions
+local getExtraLayoutPositions
+local applySavedExtraLayoutPositions
+local registerDraggableTarget
+local serializeUDim2, deserializeUDim2
 local SmallTPDownGUI, SmallTPDownButton, TPDownDot
 local SmallTPUpGUI, SmallTPUpButton, TPUpDot
 
@@ -83,7 +88,8 @@ local function SaveConfig()
     ConfigData.buttonsLocked = buttonsLocked or false
     ConfigData.tpUpEnabled = TPUpEnabled or false
     ConfigData.tpDownVisible = (SmallTPDownGUI and SmallTPDownGUI.Visible) or false
-    ConfigData.buttonPositions = getButtonPositions()
+    ConfigData.buttonPositions = getButtonPositions and getButtonPositions() or nil
+    ConfigData.extraLayoutPositions = getExtraLayoutPositions and getExtraLayoutPositions() or nil
 
     if writefile then
         local success, err = pcall(function()
@@ -1418,6 +1424,114 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = PlayerGui
 
+local DraggableTargets = {}
+local ActiveDrag = nil
+
+local function clampToViewport(guiObject, xOffset, yOffset)
+    local cameraNow = workspace.CurrentCamera
+    local viewport = cameraNow and cameraNow.ViewportSize or Vector2.new(1280, 720)
+    local width = guiObject.AbsoluteSize.X
+    local height = guiObject.AbsoluteSize.Y
+    local maxX = math.max(0, viewport.X - width)
+    local maxY = math.max(0, viewport.Y - height)
+    return math.clamp(xOffset, 0, maxX), math.clamp(yOffset, 0, maxY)
+end
+
+registerDraggableTarget = function(guiObject, layoutKey)
+    if not guiObject or not guiObject:IsA("GuiObject") then return end
+    local key = layoutKey or guiObject:GetFullName()
+    DraggableTargets[key] = guiObject
+
+    guiObject.Active = true
+    guiObject.Draggable = false
+    if guiObject:GetAttribute("CH_DragBound") then return end
+    guiObject:SetAttribute("CH_DragBound", true)
+
+    guiObject.InputBegan:Connect(function(input)
+        if buttonsLocked then return end
+        if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then
+            return
+        end
+        ActiveDrag = {
+            object = guiObject,
+            dragInput = input,
+            dragStart = input.Position,
+            startPos = guiObject.Position,
+        }
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End and ActiveDrag and ActiveDrag.object == guiObject then
+                ActiveDrag = nil
+            end
+        end)
+    end)
+end
+
+UserInputService.InputChanged:Connect(function(input)
+    if not ActiveDrag then return end
+    if input ~= ActiveDrag.dragInput then return end
+    local obj = ActiveDrag.object
+    if not obj or not obj.Parent then
+        ActiveDrag = nil
+        return
+    end
+
+    local delta = input.Position - ActiveDrag.dragStart
+    local rawX = ActiveDrag.startPos.X.Offset + delta.X
+    local rawY = ActiveDrag.startPos.Y.Offset + delta.Y
+    local clampedX, clampedY = clampToViewport(obj, rawX, rawY)
+    obj.Position = UDim2.new(0, clampedX, 0, clampedY)
+end)
+
+getExtraLayoutPositions = function()
+    local data = {}
+    for key, guiObject in pairs(DraggableTargets) do
+        if guiObject and guiObject.Parent and guiObject:IsA("GuiObject") then
+            data[key] = serializeUDim2(guiObject.Position)
+        end
+    end
+    return data
+end
+
+applySavedExtraLayoutPositions = function(savedPositions)
+    if type(savedPositions) ~= "table" then return end
+    for key, posData in pairs(savedPositions) do
+        local guiObject = DraggableTargets[key]
+        if guiObject and guiObject.Parent and guiObject:IsA("GuiObject") then
+            local position = deserializeUDim2(posData)
+            if position then
+                local clampedX, clampedY = clampToViewport(guiObject, position.X.Offset, position.Y.Offset)
+                guiObject.Position = UDim2.new(0, clampedX, 0, clampedY)
+            end
+        end
+    end
+end
+
+local function registerRootLevelDraggables(rootGui)
+    if not rootGui then return end
+
+    local function registerChild(child)
+        if child:IsA("TextButton") or child:IsA("ImageButton") then
+            registerDraggableTarget(child, child:GetFullName())
+            return
+        end
+        if child:IsA("Frame") then
+            local childName = tostring(child.Name)
+            if childName == "MainFrame" or childName:match("^Small") or childName:find("Settings") or childName == "SpinBotScreen" or childName == "BTaskFrame" or childName == "BTaskPanel" then
+                registerDraggableTarget(child, child:GetFullName())
+            end
+        end
+    end
+
+    for _, child in ipairs(rootGui:GetChildren()) do
+        registerChild(child)
+    end
+
+    rootGui.ChildAdded:Connect(registerChild)
+end
+
+registerRootLevelDraggables(ScreenGui)
+
 -- Rainbow outline: cycles UIStroke colors across the GUI
 local function startRainbowOutline()
     task.spawn(function()
@@ -1783,8 +1897,10 @@ do
     BTaskGui.ResetOnSpawn = false
     BTaskGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     BTaskGui.Parent = PlayerGui
+    registerRootLevelDraggables(BTaskGui)
 
     local BTaskFrame = Instance.new("Frame")
+    BTaskFrame.Name = "BTaskFrame"
     BTaskFrame.Size = UDim2.new(0, 170, 0, 40)
     BTaskFrame.Position = UDim2.new(0.5, -85, 1, -58)
     BTaskFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
@@ -1934,6 +2050,7 @@ do
     end)
 
     local BTaskPanel = Instance.new("Frame")
+    BTaskPanel.Name = "BTaskPanel"
     BTaskPanel.Size = UDim2.new(0, 205, 0, 300)
     BTaskPanel.Position = UDim2.new(1, -205, 1, -365)
     BTaskPanel.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
@@ -1972,8 +2089,8 @@ do
     Instance.new("UICorner", BTaskPanelClose).CornerRadius = UDim.new(0, 6)
 
     local BTaskList = Instance.new("ScrollingFrame")
-    BTaskList.Size = UDim2.new(1, -12, 1, -40)
-    BTaskList.Position = UDim2.new(0, 6, 0, 32)
+    BTaskList.Size = UDim2.new(1, -12, 1, -74)
+    BTaskList.Position = UDim2.new(0, 6, 0, 66)
     BTaskList.BackgroundTransparency = 1
     BTaskList.BorderSizePixel = 0
     BTaskList.ScrollBarThickness = 4
@@ -1985,6 +2102,61 @@ do
     BTaskLayout.Padding = UDim.new(0, 6)
     BTaskLayout.SortOrder = Enum.SortOrder.LayoutOrder
     BTaskLayout.Parent = BTaskList
+
+    local BTaskSaveLayout = Instance.new("TextButton")
+    BTaskSaveLayout.Size = UDim2.new(0.48, 0, 0, 22)
+    BTaskSaveLayout.Position = UDim2.new(0.03, 0, 0, 34)
+    BTaskSaveLayout.BackgroundColor3 = Color3.fromRGB(55, 160, 70)
+    BTaskSaveLayout.Text = "Save Layout"
+    BTaskSaveLayout.TextColor3 = Color3.fromRGB(255, 255, 255)
+    BTaskSaveLayout.Font = Enum.Font.GothamBold
+    BTaskSaveLayout.TextSize = 10
+    BTaskSaveLayout.Parent = BTaskPanel
+    Instance.new("UICorner", BTaskSaveLayout).CornerRadius = UDim.new(0, 6)
+
+    local BTaskLockLayout = Instance.new("TextButton")
+    BTaskLockLayout.Size = UDim2.new(0.48, 0, 0, 22)
+    BTaskLockLayout.Position = UDim2.new(0.51, 0, 0, 34)
+    BTaskLockLayout.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    BTaskLockLayout.Text = "Lock Layout"
+    BTaskLockLayout.TextColor3 = Color3.fromRGB(255, 255, 255)
+    BTaskLockLayout.Font = Enum.Font.GothamBold
+    BTaskLockLayout.TextSize = 10
+    BTaskLockLayout.Parent = BTaskPanel
+    Instance.new("UICorner", BTaskLockLayout).CornerRadius = UDim.new(0, 6)
+
+    local function updateLockButtonVisual()
+        if buttonsLocked then
+            BTaskLockLayout.Text = "Locked"
+            BTaskLockLayout.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        else
+            BTaskLockLayout.Text = "Lock Layout"
+            BTaskLockLayout.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+        end
+    end
+
+    BTaskSaveLayout.MouseButton1Click:Connect(function()
+        ConfigData.buttonPositions = getButtonPositions and getButtonPositions() or nil
+        ConfigData.extraLayoutPositions = getExtraLayoutPositions and getExtraLayoutPositions() or nil
+        ConfigData.buttonsLocked = buttonsLocked
+        if SaveConfig() then
+            BTaskSaveLayout.Text = "Saved"
+            task.delay(1, function()
+                if BTaskSaveLayout and BTaskSaveLayout.Parent then
+                    BTaskSaveLayout.Text = "Save Layout"
+                end
+            end)
+        end
+    end)
+
+    BTaskLockLayout.MouseButton1Click:Connect(function()
+        setButtonsDraggable(buttonsLocked)
+        ConfigData.buttonsLocked = buttonsLocked
+        SaveConfig()
+        updateLockButtonVisual()
+    end)
+
+    updateLockButtonVisual()
 
     local function createListRow(itemName)
         local row = Instance.new("Frame")
@@ -2050,7 +2222,7 @@ do
     applyButtonVisibility()
 end
 
-local function serializeUDim2(value)
+serializeUDim2 = function(value)
     return {
         XScale = value.X.Scale,
         XOffset = value.X.Offset,
@@ -2059,13 +2231,13 @@ local function serializeUDim2(value)
     }
 end
 
-local function deserializeUDim2(data)
+deserializeUDim2 = function(data)
     if type(data) ~= "table" then return nil end
     return UDim2.new(data.XScale or 0, data.XOffset or 0, data.YScale or 0, data.YOffset or 0)
 end
 
 getButtonPositions = function()
-    local pos = {
+    return {
         Speed = serializeUDim2(SmallSpeedGUI.Position),
         Unwalk = serializeUDim2(SmallUnwalkGUI.Position),
         ["Spin Bot"] = serializeUDim2(SmallSpinBotGUI.Position),
@@ -2078,13 +2250,6 @@ getButtonPositions = function()
         ["TP Down"] = serializeUDim2(SmallTPDownGUI.Position),
         ["TP Up"] = serializeUDim2(SmallTPUpGUI.Position),
     }
-    -- Save gameplay button positions by name
-    for _, btn in ipairs(_draggableGameplayButtons) do
-        if btn and btn.Name and btn.Name ~= "" then
-            pos["_btn_"..btn.Name] = serializeUDim2(btn.Position)
-        end
-    end
-    return pos
 end
 
 local function applyButtonPositions(data)
@@ -2110,62 +2275,10 @@ local function applyButtonPositions(data)
             end
         end
     end
-    -- Restore gameplay button positions (applied after buttons are created)
-    -- We store them and apply when _draggableGameplayButtons is populated
-    if type(data) == "table" then
-        task.defer(function()
-            for _, btn in ipairs(_draggableGameplayButtons) do
-                if btn and btn.Name then
-                    local key = "_btn_"..btn.Name
-                    if data[key] then
-                        local p = deserializeUDim2(data[key])
-                        if p then btn.Position = p end
-                    end
-                end
-            end
-        end)
-    end
-end
-
--- All gameplay TextButtons that need drag support (filled after createAutoButtons/createRightButtons)
-local _draggableGameplayButtons = {}
-
--- Makes a TextButton draggable via UIS (respects buttonsLocked)
-local function makeDraggableButton(btn)
-    if not btn then return end
-    table.insert(_draggableGameplayButtons, btn)
-    local dragging = false
-    local dragStartPos
-    local btnStartPos
-    btn.InputBegan:Connect(function(input)
-        if buttonsLocked then return end
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            dragStartPos = input.Position
-            btnStartPos = btn.Position
-        end
-    end)
-    btn.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = false
-        end
-    end)
-    UserInputService.InputChanged:Connect(function(input)
-        if dragging and not buttonsLocked then
-            if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-                local delta = input.Position - dragStartPos
-                btn.Position = UDim2.new(
-                    btnStartPos.X.Scale,
-                    btnStartPos.X.Offset + delta.X,
-                    btnStartPos.Y.Scale,
-                    btnStartPos.Y.Offset + delta.Y
-                )
-            end
-        end
-    end)
 end
 
 local function setButtonsDraggable(enabled)
+    buttonsLocked = not enabled
     for _, gui in pairs({
         SmallSpeedGUI,
         SmallUnwalkGUI,
@@ -2176,12 +2289,13 @@ local function setButtonsDraggable(enabled)
         SmallAntiRagGUI,
         SmallRagdollTPGUI,
         SmallDropGUI,
+        SmallTPDownGUI,
+        SmallTPUpGUI,
     }) do
         if gui then
             gui.Draggable = enabled
         end
     end
-    -- Gameplay buttons use buttonsLocked flag; dragging is gated inside makeDraggableButton
 end
 
 local SpinBotScreen = Instance.new("Frame")
@@ -3729,7 +3843,6 @@ function createAutoButtons(device)
 
     -- ✅ AUTO LEFT Button (GRAY!)
     local AutoLeftButton = Instance.new("TextButton")
-    AutoLeftButton.Name = "AutoLeftButton"
     AutoLeftButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     AutoLeftButton.Position = UDim2.new(1, rowX1, 0.5, rowY)
     AutoLeftButton.BackgroundColor3 = THEME.OFF
@@ -3739,7 +3852,6 @@ function createAutoButtons(device)
     AutoLeftButton.Font = Enum.Font.GothamBold
     AutoLeftButton.TextSize = device == "iPhone" and 9 or 12
     AutoLeftButton.Parent = ScreenGui
-    makeDraggableButton(AutoLeftButton)
 
     local LeftCorner = Instance.new("UICorner")
     LeftCorner.CornerRadius = UDim.new(0, 8)
@@ -3761,7 +3873,6 @@ function createAutoButtons(device)
 
     -- ✅ AUTO MEDUSA Button (above Auto Right)
     local AutoMedusaButton = Instance.new("TextButton")
-    AutoMedusaButton.Name = "AutoMedusaButton"
     AutoMedusaButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     AutoMedusaButton.Position = UDim2.new(1, rowX3, 0.5, rowY)
     AutoMedusaButton.BackgroundColor3 = THEME.OFF
@@ -3771,7 +3882,6 @@ function createAutoButtons(device)
     AutoMedusaButton.Font = Enum.Font.GothamBold
     AutoMedusaButton.TextSize = device == "iPhone" and 9 or 12
     AutoMedusaButton.Parent = ScreenGui
-    makeDraggableButton(AutoMedusaButton)
 
     local MedusaCorner = Instance.new("UICorner")
     MedusaCorner.CornerRadius = UDim.new(0, 8)
@@ -3908,7 +4018,6 @@ function createAutoButtons(device)
         end
     end)
     local AutoRightButton = Instance.new("TextButton")
-    AutoRightButton.Name = "AutoRightButton"
     AutoRightButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     AutoRightButton.Position = UDim2.new(1, rowX2, 0.5, rowY)
     AutoRightButton.BackgroundColor3 = THEME.OFF
@@ -3918,7 +4027,6 @@ function createAutoButtons(device)
     AutoRightButton.Font = Enum.Font.GothamBold
     AutoRightButton.TextSize = device == "iPhone" and 9 or 12
     AutoRightButton.Parent = ScreenGui
-    makeDraggableButton(AutoRightButton)
 
     local RightCorner = Instance.new("UICorner")
     RightCorner.CornerRadius = UDim.new(0, 8)
@@ -3992,7 +4100,6 @@ function createRightButtons(device)
 
     -- ✅ DESYNC Button (TOP ROW, LEFT)
     local DesyncButton = Instance.new("TextButton")
-    DesyncButton.Name = "DesyncButton"
     DesyncButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     DesyncButton.Position = UDim2.new(1, x1, 0.5, y1)
     DesyncButton.BackgroundColor3 = THEME.OFF
@@ -4002,7 +4109,6 @@ function createRightButtons(device)
     DesyncButton.Font = Enum.Font.GothamBold
     DesyncButton.TextSize = device == "iPhone" and 9 or 12
     DesyncButton.Parent = ScreenGui
-    makeDraggableButton(DesyncButton)
 
     local DesyncCorner = Instance.new("UICorner")
     DesyncCorner.CornerRadius = UDim.new(0, 8)
@@ -4112,7 +4218,6 @@ function createRightButtons(device)
     end
         -- ✅ LAGGER Button (TOP ROW, MIDDLE)
         local LaggerButton = Instance.new("TextButton")
-        LaggerButton.Name = "LaggerButton"
         LaggerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
         LaggerButton.Position = UDim2.new(1, x2, 0.5, y1)
         LaggerButton.BackgroundColor3 = THEME.OFF
@@ -4122,7 +4227,6 @@ function createRightButtons(device)
         LaggerButton.Font = Enum.Font.GothamBold
         LaggerButton.TextSize = device == "iPhone" and 9 or 12
         LaggerButton.Parent = ScreenGui
-        makeDraggableButton(LaggerButton)
 
         local LaggerCorner = Instance.new("UICorner")
         LaggerCorner.CornerRadius = UDim.new(0, 8)
@@ -4453,7 +4557,6 @@ function createRightButtons(device)
 
     -- ✅ TRACK PLAYER Button (TOP ROW, RIGHT)
     local TrackPlayerButton = Instance.new("TextButton")
-    TrackPlayerButton.Name = "TrackPlayerButton"
     TrackPlayerButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     TrackPlayerButton.Position = UDim2.new(1, x3, 0.5, y1)
     TrackPlayerButton.BackgroundColor3 = THEME.OFF
@@ -4463,7 +4566,6 @@ function createRightButtons(device)
     TrackPlayerButton.Font = Enum.Font.GothamBold
     TrackPlayerButton.TextSize = device == "iPhone" and 9 or 12
     TrackPlayerButton.Parent = ScreenGui
-    makeDraggableButton(TrackPlayerButton)
 
     local TrackCorner = Instance.new("UICorner")
     TrackCorner.CornerRadius = UDim.new(0, 8)
@@ -4497,7 +4599,6 @@ function createRightButtons(device)
 
     -- ✅ HIT CIRCLE Button (BOTTOM ROW, LEFT)
     local HitCircleButton = Instance.new("TextButton")
-    HitCircleButton.Name = "HitCircleButton"
     HitCircleButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     HitCircleButton.Position = UDim2.new(1, x1, 0.5, y2)
     HitCircleButton.BackgroundColor3 = THEME.OFF
@@ -4507,7 +4608,6 @@ function createRightButtons(device)
     HitCircleButton.Font = Enum.Font.GothamBold
     HitCircleButton.TextSize = device == "iPhone" and 9 or 12
     HitCircleButton.Parent = ScreenGui
-    makeDraggableButton(HitCircleButton)
 
     local HitCorner = Instance.new("UICorner")
     HitCorner.CornerRadius = UDim.new(0, 8)
@@ -4550,7 +4650,6 @@ function createRightButtons(device)
 
     -- JUKE Button (BOTTOM ROW, RIGHT)
     local JukeButton = Instance.new("TextButton")
-    JukeButton.Name = "JukeButton"
     JukeButton.Size = UDim2.new(0, buttonSize, 0, buttonSize)
     JukeButton.Position = UDim2.new(1, x2, 0.5, y2)
     JukeButton.BackgroundColor3 = THEME.OFF
@@ -4560,7 +4659,6 @@ function createRightButtons(device)
     JukeButton.Font = Enum.Font.GothamBold
     JukeButton.TextSize = device == "iPhone" and 9 or 12
     JukeButton.Parent = ScreenGui
-    makeDraggableButton(JukeButton)
 
     local JukeCorner = Instance.new("UICorner")
     JukeCorner.CornerRadius = UDim.new(0, 8)
@@ -5179,136 +5277,6 @@ function createRightButtons(device)
     end)
 
     -- ═══════════════════════════════════════════════════════
-    -- ✅ BUTTON LAYOUT GUI (Save Layout + Lock)
-    -- ═══════════════════════════════════════════════════════
-
-    local LayoutGui = Instance.new("Frame")
-    LayoutGui.Name = "ButtonLayoutGUI"
-    LayoutGui.Size = UDim2.new(0, 160, 0, 80)
-    LayoutGui.Position = UDim2.new(0.5, -80, 0, 10)
-    LayoutGui.BackgroundColor3 = Color3.fromRGB(14, 14, 14)
-    LayoutGui.BackgroundTransparency = 0.05
-    LayoutGui.Active = true
-    LayoutGui.Draggable = true
-    LayoutGui.ZIndex = 12
-    LayoutGui.Parent = ScreenGui
-    Instance.new("UICorner", LayoutGui).CornerRadius = UDim.new(0, 10)
-    local LGStroke = Instance.new("UIStroke", LayoutGui)
-    LGStroke.Color = THEME.PINK
-    LGStroke.Thickness = 2
-    LGStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-
-    local LGTitle = Instance.new("TextLabel")
-    LGTitle.Size = UDim2.new(1, -30, 0, 22)
-    LGTitle.Position = UDim2.new(0, 8, 0, 2)
-    LGTitle.BackgroundTransparency = 1
-    LGTitle.Text = "✦ BUTTON LAYOUT"
-    LGTitle.TextColor3 = THEME.GOLD
-    LGTitle.Font = Enum.Font.GothamBold
-    LGTitle.TextSize = 11
-    LGTitle.TextXAlignment = Enum.TextXAlignment.Left
-    LGTitle.ZIndex = 13
-    LGTitle.Parent = LayoutGui
-
-    local LGMinimize = Instance.new("TextButton")
-    LGMinimize.Size = UDim2.new(0, 22, 0, 18)
-    LGMinimize.Position = UDim2.new(1, -26, 0, 3)
-    LGMinimize.BackgroundTransparency = 1
-    LGMinimize.Text = "–"
-    LGMinimize.TextColor3 = Color3.fromRGB(200, 200, 200)
-    LGMinimize.Font = Enum.Font.GothamBold
-    LGMinimize.TextSize = 16
-    LGMinimize.ZIndex = 14
-    LGMinimize.Parent = LayoutGui
-
-    local LGBody = Instance.new("Frame")
-    LGBody.Size = UDim2.new(1, 0, 1, -24)
-    LGBody.Position = UDim2.new(0, 0, 0, 24)
-    LGBody.BackgroundTransparency = 1
-    LGBody.ZIndex = 13
-    LGBody.Parent = LayoutGui
-
-    local SaveLayoutBtn = Instance.new("TextButton")
-    SaveLayoutBtn.Size = UDim2.new(0, 68, 0, 26)
-    SaveLayoutBtn.Position = UDim2.new(0, 6, 0, 8)
-    SaveLayoutBtn.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
-    SaveLayoutBtn.Text = "💾 SAVE"
-    SaveLayoutBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    SaveLayoutBtn.Font = Enum.Font.GothamBold
-    SaveLayoutBtn.TextSize = 11
-    SaveLayoutBtn.ZIndex = 14
-    SaveLayoutBtn.Parent = LGBody
-    Instance.new("UICorner", SaveLayoutBtn).CornerRadius = UDim.new(0, 7)
-
-    local LockBtn = Instance.new("TextButton")
-    LockBtn.Size = UDim2.new(0, 68, 0, 26)
-    LockBtn.Position = UDim2.new(0, 82, 0, 8)
-    LockBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 180)
-    LockBtn.Text = "🔓 UNLOCK"
-    LockBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    LockBtn.Font = Enum.Font.GothamBold
-    LockBtn.TextSize = 10
-    LockBtn.ZIndex = 14
-    LockBtn.Parent = LGBody
-    Instance.new("UICorner", LockBtn).CornerRadius = UDim.new(0, 7)
-
-    local function updateLockBtn()
-        if buttonsLocked then
-            LockBtn.Text = "🔒 LOCKED"
-            LockBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-        else
-            LockBtn.Text = "🔓 UNLOCK"
-            LockBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 180)
-        end
-    end
-    updateLockBtn()
-
-    local LGStatus = Instance.new("TextLabel")
-    LGStatus.Size = UDim2.new(1, 0, 0, 14)
-    LGStatus.Position = UDim2.new(0, 0, 0, 38)
-    LGStatus.BackgroundTransparency = 1
-    LGStatus.Text = ""
-    LGStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
-    LGStatus.Font = Enum.Font.Gotham
-    LGStatus.TextSize = 10
-    LGStatus.ZIndex = 14
-    LGStatus.Parent = LGBody
-
-    SaveLayoutBtn.MouseButton1Click:Connect(function()
-        ConfigData.buttonPositions = getButtonPositions()
-        ConfigData.buttonsLocked = buttonsLocked
-        SaveConfig()
-        LGStatus.Text = "✅ Saved!"
-        LGStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
-        task.delay(2, function() LGStatus.Text = "" end)
-    end)
-
-    LockBtn.MouseButton1Click:Connect(function()
-        buttonsLocked = not buttonsLocked
-        setButtonsDraggable(not buttonsLocked)
-        updateLockBtn()
-        LGStatus.Text = buttonsLocked and "🔒 Locked!" or "🔓 Unlocked!"
-        LGStatus.TextColor3 = buttonsLocked and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(100, 255, 100)
-        task.delay(2, function() LGStatus.Text = "" end)
-    end)
-
-    local lgMinimized = false
-    LGMinimize.MouseButton1Click:Connect(function()
-        lgMinimized = not lgMinimized
-        LGBody.Visible = not lgMinimized
-        LayoutGui.Size = lgMinimized and UDim2.new(0, 160, 0, 26) or UDim2.new(0, 160, 0, 80)
-        LGMinimize.Text = lgMinimized and "+" or "–"
-    end)
-
-    -- Apply initial lock state to small GUIs
-    setButtonsDraggable(not buttonsLocked)
-
-    -- Apply saved gameplay button positions now that buttons exist
-    if ConfigData.buttonPositions then
-        applyButtonPositions(ConfigData.buttonPositions)
-    end
-
-    -- ═══════════════════════════════════════════════════════
     -- ✅ JUKE LOGIC: Float up, spam tool, wait, then TP down
     -- ═══════════════════════════════════════════════════════
 
@@ -5358,6 +5326,14 @@ function createRightButtons(device)
         end)
     end)
 end
+
+if ConfigData.buttonPositions then
+    applyButtonPositions(ConfigData.buttonPositions)
+end
+if ConfigData.extraLayoutPositions then
+    applySavedExtraLayoutPositions(ConfigData.extraLayoutPositions)
+end
+setButtonsDraggable(not buttonsLocked)
 
 print("══════════════════════════════════════════════")
 print("   CELESTIAL HUB LOADED")
