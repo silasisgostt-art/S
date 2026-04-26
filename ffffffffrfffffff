@@ -1,3 +1,21 @@
+-- join discord.gg/freesources for more leaks
+-- leaked by @5ohj_
+
+local HttpService = game:GetService("HttpService")
+local CONFIG_FILE = "lainee_config.json"
+local Saved = {}
+
+if readfile and isfile and isfile(CONFIG_FILE) then
+    pcall(function()
+        Saved = HttpService:JSONDecode(readfile(CONFIG_FILE))
+    end)
+end
+
+local function SaveConfig()
+    if writefile then
+        writefile(CONFIG_FILE,HttpService:JSONEncode(Saved))
+    end
+end
 
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
