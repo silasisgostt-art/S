@@ -3419,7 +3419,234 @@ local function createMainGUI(device)
     -- SETTINGS TAB CONTENT
     -- ═══════════════════════════════════════════════════════
 
-    -- Settings tab no longer needs manual config buttons. Settings will auto-save on change.
+    -- ── Layout Controls Header ────────────────────────────
+    local LayoutHeader = Instance.new("TextLabel")
+    LayoutHeader.Size = UDim2.new(1, 0, 0, 28)
+    LayoutHeader.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    LayoutHeader.BorderSizePixel = 0
+    LayoutHeader.Text = "🔧  UI LAYOUT"
+    LayoutHeader.TextColor3 = Color3.fromRGB(255, 200, 100)
+    LayoutHeader.Font = Enum.Font.GothamBold
+    LayoutHeader.TextSize = device == "iPhone" and 11 or 13
+    LayoutHeader.LayoutOrder = 1
+    LayoutHeader.Parent = SettingsContent
+    Instance.new("UICorner", LayoutHeader).CornerRadius = UDim.new(0, 8)
+
+    -- Status feedback label
+    local LayoutStatus = Instance.new("TextLabel")
+    LayoutStatus.Size = UDim2.new(1, 0, 0, 20)
+    LayoutStatus.BackgroundTransparency = 1
+    LayoutStatus.Text = ""
+    LayoutStatus.TextColor3 = Color3.fromRGB(100, 255, 150)
+    LayoutStatus.Font = Enum.Font.Gotham
+    LayoutStatus.TextSize = device == "iPhone" and 9 or 11
+    LayoutStatus.LayoutOrder = 2
+    LayoutStatus.Parent = SettingsContent
+
+    local function showLayoutStatus(msg, color)
+        LayoutStatus.Text = msg
+        LayoutStatus.TextColor3 = color or Color3.fromRGB(100, 255, 150)
+        task.delay(2.5, function() LayoutStatus.Text = "" end)
+    end
+
+    -- Helper: create a settings row button
+    local function createSettingsButton(labelText, iconText, order, bgColor, callback)
+        local Container = Instance.new("Frame")
+        Container.Size = UDim2.new(1, 0, 0, 46)
+        Container.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+        Container.BackgroundTransparency = 0.15
+        Container.BorderSizePixel = 0
+        Container.LayoutOrder = order
+        Container.Parent = SettingsContent
+        Instance.new("UICorner", Container).CornerRadius = UDim.new(0, 10)
+
+        local IconLabel = Instance.new("TextLabel")
+        IconLabel.Size = UDim2.new(0, 34, 1, 0)
+        IconLabel.Position = UDim2.new(0, 8, 0, 0)
+        IconLabel.BackgroundTransparency = 1
+        IconLabel.Text = iconText
+        IconLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
+        IconLabel.Font = Enum.Font.GothamBold
+        IconLabel.TextSize = device == "iPhone" and 14 or 18
+        IconLabel.Parent = Container
+
+        local NameLabel = Instance.new("TextLabel")
+        NameLabel.Size = UDim2.new(1, -120, 1, 0)
+        NameLabel.Position = UDim2.new(0, 46, 0, 0)
+        NameLabel.BackgroundTransparency = 1
+        NameLabel.Text = labelText
+        NameLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+        NameLabel.Font = Enum.Font.GothamBold
+        NameLabel.TextSize = device == "iPhone" and 10 or 13
+        NameLabel.TextXAlignment = Enum.TextXAlignment.Left
+        NameLabel.Parent = Container
+
+        local Btn = Instance.new("TextButton")
+        Btn.Size = UDim2.new(0, 60, 0, 30)
+        Btn.Position = UDim2.new(1, -68, 0.5, -15)
+        Btn.BackgroundColor3 = bgColor or Color3.fromRGB(50, 100, 200)
+        Btn.Text = "GO"
+        Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Btn.Font = Enum.Font.GothamBold
+        Btn.TextSize = device == "iPhone" and 9 or 11
+        Btn.Parent = Container
+        Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 8)
+        local s = Instance.new("UIStroke", Btn)
+        s.Color = Color3.fromRGB(255,255,255)
+        s.Thickness = 1.5
+        s.Transparency = 0.6
+
+        Btn.MouseButton1Click:Connect(callback)
+
+        return Container, Btn, NameLabel
+    end
+
+    -- ── LOCK LAYOUT ───────────────────────────────────────
+    local _, LockBtn, LockNameLabel = createSettingsButton(
+        "Lock Layout", "🔒", 3,
+        Color3.fromRGB(200, 80, 80),
+        function()
+            -- no-op; handled by toggle below
+        end
+    )
+    -- Override with toggle logic
+    LockBtn.MouseButton1Click:Connect(nil) -- clear placeholder
+    LockBtn.MouseButton1Click:Connect(function()
+        if buttonsLocked then
+            -- Already locked — do nothing (use Unlock button)
+            showLayoutStatus("⚠️ Already locked! Use Unlock.", Color3.fromRGB(255, 200, 80))
+        else
+            buttonsLocked = true
+            -- Lock all draggable small GUIs and on-screen buttons
+            for _, entry in pairs(SmallGUIInstances) do
+                if entry and entry.Frame then entry.Frame.Draggable = false end
+            end
+            for _, child in ipairs(ScreenGui:GetChildren()) do
+                if child:IsA("TextButton") or child:IsA("Frame") then
+                    pcall(function() child.Draggable = false end)
+                end
+            end
+            LockBtn.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+            LockBtn.Text = "LOCKED"
+            showLayoutStatus("🔒 Layout locked!", Color3.fromRGB(50, 255, 100))
+            ConfigData.buttonsLocked = true
+        end
+    end)
+    if buttonsLocked then
+        LockBtn.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        LockBtn.Text = "LOCKED"
+    end
+
+    -- ── UNLOCK LAYOUT ─────────────────────────────────────
+    local _, UnlockBtn, _ = createSettingsButton(
+        "Unlock Layout", "🔓", 4,
+        Color3.fromRGB(50, 160, 255),
+        function()
+            buttonsLocked = false
+            -- Re-enable dragging on all small GUIs and on-screen buttons
+            for _, entry in pairs(SmallGUIInstances) do
+                if entry and entry.Frame then
+                    entry.Frame.Active = true
+                    entry.Frame.Draggable = true
+                end
+            end
+            for _, child in ipairs(ScreenGui:GetChildren()) do
+                if child:IsA("TextButton") or child:IsA("Frame") then
+                    pcall(function()
+                        child.Active = true
+                        child.Draggable = true
+                    end)
+                end
+            end
+            LockBtn.BackgroundColor3 = Color3.fromRGB(200, 80, 80)
+            LockBtn.Text = "GO"
+            showLayoutStatus("🔓 Layout unlocked!", Color3.fromRGB(100, 200, 255))
+            ConfigData.buttonsLocked = false
+        end
+    )
+    UnlockBtn.Text = "GO"
+
+    -- ── SAVE LAYOUT ───────────────────────────────────────
+    local _, SaveLayoutBtn, _ = createSettingsButton(
+        "Save Layout", "💾", 5,
+        Color3.fromRGB(50, 180, 50),
+        function()
+            ConfigData.buttonPositions = getButtonPositions()
+            ConfigData.buttonsLocked = buttonsLocked
+
+            -- Also save all on-screen button positions
+            local extraPositions = {}
+            for _, child in ipairs(ScreenGui:GetChildren()) do
+                if (child:IsA("TextButton") or child:IsA("Frame")) and child.Name ~= "" then
+                    pcall(function()
+                        extraPositions[child.Name] = {
+                            XScale = child.Position.X.Scale,
+                            XOffset = child.Position.X.Offset,
+                            YScale = child.Position.Y.Scale,
+                            YOffset = child.Position.Y.Offset,
+                        }
+                    end)
+                end
+            end
+            ConfigData.extraButtonPositions = extraPositions
+
+            local ok = SaveConfig()
+            if ok then
+                SaveLayoutBtn.BackgroundColor3 = Color3.fromRGB(100, 255, 100)
+                showLayoutStatus("💾 Layout saved!", Color3.fromRGB(100, 255, 100))
+                task.delay(1.5, function() SaveLayoutBtn.BackgroundColor3 = Color3.fromRGB(50, 180, 50) end)
+            else
+                showLayoutStatus("❌ Save failed.", Color3.fromRGB(255, 80, 80))
+            end
+        end
+    )
+    SaveLayoutBtn.Text = "SAVE"
+
+    -- ── LOAD LAYOUT ───────────────────────────────────────
+    local _, LoadLayoutBtn, _ = createSettingsButton(
+        "Load Layout", "📂", 6,
+        Color3.fromRGB(180, 120, 50),
+        function()
+            local ok = LoadConfig()
+            if ok then
+                -- Restore small GUI positions
+                if ConfigData.buttonPositions then
+                    applyButtonPositions(ConfigData.buttonPositions)
+                end
+                -- Restore extra on-screen button positions
+                if ConfigData.extraButtonPositions then
+                    for _, child in ipairs(ScreenGui:GetChildren()) do
+                        if (child:IsA("TextButton") or child:IsA("Frame")) and child.Name ~= "" then
+                            local saved = ConfigData.extraButtonPositions[child.Name]
+                            if saved then
+                                pcall(function()
+                                    child.Position = UDim2.new(
+                                        saved.XScale or 0, saved.XOffset or 0,
+                                        saved.YScale or 0, saved.YOffset or 0
+                                    )
+                                end)
+                            end
+                        end
+                    end
+                end
+                -- Restore lock state
+                buttonsLocked = ConfigData.buttonsLocked or false
+                if buttonsLocked then
+                    LockBtn.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+                    LockBtn.Text = "LOCKED"
+                    for _, entry in pairs(SmallGUIInstances) do
+                        if entry and entry.Frame then entry.Frame.Draggable = false end
+                    end
+                end
+                LoadLayoutBtn.BackgroundColor3 = Color3.fromRGB(255, 200, 80)
+                showLayoutStatus("📂 Layout loaded!", Color3.fromRGB(255, 200, 80))
+                task.delay(1.5, function() LoadLayoutBtn.BackgroundColor3 = Color3.fromRGB(180, 120, 50) end)
+            else
+                showLayoutStatus("❌ No saved layout found.", Color3.fromRGB(255, 80, 80))
+            end
+        end
+    )
+    LoadLayoutBtn.Text = "LOAD"
 
     -- ═══════════════════════════════════════════════════════
     -- CREDITS TAB CONTENT
